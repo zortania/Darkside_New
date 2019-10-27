@@ -584,22 +584,54 @@ snd.core()</script>
 						<Alias isActive="yes" isFolder="no">
 							<name>Auto Harvest Rocks</name>
 							<script>if snd.toggles.rockharvest then
+  snd.which_path = ""
+  
+  if matches[3] then
+    if matches[3] == "bloodwood" or matches[3] == "vortex" or matches[3] == "lair" or matches[3] == "endgame" or matches[3] == "high" or matches[3] == "medium" or matches[3] == "low" then 
+      snd.which_path = matches[3]
+    else
+		  cecho("\n&lt;red&gt;Not a viable choice! Enter a viable choice or only enter 'gogo'!")
+		  cecho("\n&lt;green&gt;bloodwood (99+ and separate), vortex (99+ and separate), luziths lair (99+ and separate), endgame (93+), high (61-93), medium (31-60), and low (1-30)")
+    end
+  else
+    local level = ""
+    for check in string.gmatch(gmcp.Char.Status.level, '[%d]+') do
+      if level == "" then
+			   level = tonumber(check)
+  		end
+    end
+    if level &gt; 93 then
+		  snd.which_path = "endgame"
+    elseif (level &lt; 93 and level &gt; 60) then
+		  snd.which_path = "high"
+    elseif (level &lt; 60 and level &gt; 31) then
+		  snd.which.path = "medium"
+	  else
+  		snd.which_path = "low"
+  	end
+  end
+  
+  if snd.rock_on then
+	  snd.rock_on = false
+	  bot.going = false
+	  echo("ROCK HARVEST OFF")
+  else
+	  snd.rock_on = true
+	  echo("ROCK HARVEST ON")
+	end
 
-if gmcp.Room.Info.area == "the Caverns of Mor" then
-		snd.which_path = "high"
-		echo("Rock Harvester ON")
-end
-	
+  
 	if snd.which_path ~= "" then
   	bot.going = true
 		bot.path =  sndpathpick()
 	end
-  
+	
+end
 
-end</script>
+</script>
 							<command></command>
 							<packageName></packageName>
-							<regex>^rockgo$</regex>
+							<regex>^rockgo( (\w+))?$</regex>
 						</Alias>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
@@ -840,22 +872,21 @@ send(" ")</script>
 							<script>x = bot.info.room
 x = "v"..x
 if bot.going then
- if bot.path[x] ~= nil then
-  if string.find(bot.path[x], "pth") then
-	 y = string.sub(bot.path[x], 4)
-	 snd.moving_to = y
-	 send(" ")
-	elseif mmp ~= nil then
-   expandAlias("goto "..bot.path[x], false)
-  else
-   snd.moving_to = bot.path[x]
-	 send(" ")
-  end
- else
-  echo("where r we")
- end
+    if bot.path[x] ~= nil then
+      if string.find(bot.path[x], "pth") then
+	      y = string.sub(bot.path[x], 4)
+	      snd.moving_to = y
+	      send(" ")
+	    elseif mmp ~= nil then
+        expandAlias("goto "..bot.path[x], false)
+      else
+        snd.moving_to = bot.path[x]
+	      send(" ")
+      end
+    else
+      echo("where r we")
+    end
 end
-
 </script>
 							<command></command>
 							<packageName></packageName>
@@ -937,30 +968,6 @@ end
 							<command></command>
 							<packageName></packageName>
 							<regex>^vermon$</regex>
-						</Alias>
-						<Alias isActive="yes" isFolder="no">
-							<name>Squisher</name>
-							<script>if snd.squish_on == true then
-	snd.squish_on = false
-	bot.going = false
-	echo("SQUISHING OFF")
-else
-	snd.squish_on = true
-	snd.which_path = "squish"
-	echo("SQUISHING ON")
-	enableTimer("moveroom2")
-	
-	if snd.which_path ~= "" then
-  	bot.going = true
-		bot.path =  sndpathpick()
-	end
-	
-end
-
-</script>
-							<command></command>
-							<packageName></packageName>
-							<regex>^squishon$</regex>
 						</Alias>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
@@ -8146,6 +8153,8 @@ function snd.attack_function()
 		else
 			string = string.."cast ruin "..snd.target
 		end
+  elseif snd.checkAff("sight") and not snd.checkAff("voidtrapped") then
+		string = string.."cast voidgaze " ..snd.target..snd.sep
 	elseif not snd.checksomeAffs({"vomiting", "haemophilia"}, 1) and hasSkill("Fever") then
 		string = string.."cast fever "..snd.target
   else
@@ -8172,8 +8181,6 @@ snd.starting_attack()
 function snd.attack_function()
  local string = ""
  if not snd.waiting.queue then
- 
- hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
  
  local shadestring = "order shadeling kill "..snd.target..snd.sep
  
@@ -8207,24 +8214,12 @@ function snd.attack_function()
 			string = string.."cast hew "..snd.target
 		end
 	
-	elseif not snd.checkAff("imbued") and gmcp.Char.Vitals.singularity == "supermassive" then
+	elseif not snd.checkAff("imbued") and gmcp.Char.Vitals.singularity ~= "" then
 		string = string..shadestring.."gravity imbue "..snd.target..snd.sep
-		echo("\nWe have imbue now.")
-	elseif snd.gravity == 0 and gmcp.Char.Vitals.singularity == "supermassive" and not snd.checkAff("impede") then
+	elseif snd.gravity == 0 and gmcp.Char.Vitals.singularity ~= "" and not snd.checkAff("impede") then
 		string = string..shadestring.."gravity grip "..snd.target..snd.sep
-		echo("\nWe have gravity now.")
-	elseif snd.gravity &gt; 0 and gmcp.Char.Vitals.singularity == "supermassive" and not snd.checkAff("impede") then
+	elseif snd.gravity &gt; 0 and gmcp.Char.Vitals.singularity ~= "" and not snd.checkAff("impede") then
 		string = string..shadestring.."gravity impede "..snd.target..snd.sep
-		echo("\nWe have impede now.")
-	elseif not snd.checkAff("haunt") then
-		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."shadowprice haunt " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."shadowprice haunt " ..snd.target..snd.sep
-		else
-			string = string.."cast haunt " ..snd.target..snd.sep
-		end
-		echo("\nWe have haunt now.")
 	elseif not snd.checkAff("shaderot_benign") then
 		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
 			string = string.."shadowprice rot " ..snd.target..snd.sep
@@ -8233,7 +8228,20 @@ function snd.attack_function()
 		else
 			string = string.."cast rot " ..snd.target..snd.sep
 		end
-		echo("\nWe have rot now.")
+	elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") then
+		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."shadowprice voidgaze " ..snd.target..snd.sep
+		elseif shadowprice &lt; "3" then
+			string = string.."shadowprice voidgaze " ..snd.target..snd.sep
+		end
+	elseif snd.balance.shadowsphere and not snd.checkAff("shadowsphere") and total_aff_count &gt; 4 then
+		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."shadowprice sphere " ..snd.target..snd.sep
+		elseif shadowprice &lt; "3" then
+			string = string.."shadowprice sphere " ..snd.target..snd.sep
+		else
+			string = string.."cast sphere " ..snd.target..snd.sep
+		end
 	elseif not snd.checkAff("gloom") then
 		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
 			string = string..shadestring.."shadowprice gloom "..snd.target
@@ -8242,23 +8250,6 @@ function snd.attack_function()
 		else
 			string = string..shadestring.."cast gloom "..snd.target
 		end
-		echo("\nWe are giving gloom.")
-	elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") then
-		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."shadowprice voidgaze " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."shadowprice voidgaze " ..snd.target..snd.sep
-		end
-		echo("\nTrying to get voidgaze, but sight was in place.")
-	elseif snd.balance.shadowsphere and not snd.checkAff("shadowsphere") and total_aff_count &gt; 4 then
-		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."shadowprice sphere " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."shadowprice sphere " ..snd.target..snd.sep
-		else
-			string = string.."cast sphere " ..snd.target..snd.sep
-		end	
-		echo("\nWe have shadowsphere now.")
 	elseif scourgecount &lt; 5 and snd.checkAff("shadowsphere") then
 		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
 			string = string.."shadowprice scourge " ..snd.target..snd.sep
@@ -8267,8 +8258,7 @@ function snd.attack_function()
 		else
 			string = string.."cast scourge " ..snd.target..snd.sep
 		end
-		echo("\nWe have scourging action going now.")
-	elseif hp &gt;= 40 and snd.checksomeAffs({"haemophilia", "nyctophobia"}, 2) then
+	elseif snd.checksomeAffs({"haemophilia", "nyctophobia"}, 2) then
 		if not snd.checksomeAffs({"dementia", "exhausted"}, 1) then
 			if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
 				string = string.."shadowprice falter " ..snd.target..snd.sep
@@ -8280,19 +8270,14 @@ function snd.attack_function()
 		else
 			string = string.."cast falter " ..snd.target..snd.sep
 		end
-		echo("\nWe have falter action going now.")
 	elseif not snd.checksomeAffs({"vomiting", "haemophilia"}, 1) then
 		string = string.."cast fever "..snd.target
-		echo("\nWe have fever action going now.")
 	elseif not snd.checksomeAffs({"clumsiness", "paresis"}, 1) then
 		string = string.."cast ruin "..snd.target
-		echo("\nWe have ruin action going now.")
 	elseif snd.checkAff("sight") and not snd.checkAff("voidtrapped") then
 		string = string.."cast voidgaze " ..snd.target..snd.sep
-		echo("\nTrying to get voidtrapped, and sight was gone.")
 	else
 		string = string.."cast ruin " ..snd.target..snd.sep
-		echo("\nWe have ruin damage action going now.")
 	end
 	
   if string ~= snd.last_attack and not snd.waiting.queue then
@@ -8372,11 +8357,23 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Limbs</name>
 									<script>if snd.class == "Sciomancer" then
-snd.starting_attack()
-function snd.attack_function()
- local string = ""
- if not snd.waiting.queue then
- limbs = {"left leg", "right leg", "left arm", "right arm"}
+  snd.starting_attack()
+  function snd.attack_function()
+    local string = ""
+    if not snd.waiting.queue then
+      limbs = {"left leg", "right leg", "left arm", "right arm"}
+      for limb in pairs(limbs) do
+      -- ignore last hit and any limbs being resto'd
+        if
+          limbs[limb] ~= snd.last_hit_limb and
+          limbs[limb] ~= snd.resto_limb
+        then
+          if targ == "nothing" then
+            targ = limbs[limb]
+          end
+        end
+      end
+
 	if snd.used.shield then
    string = string.."cast hew "..snd.target
 	elseif gmcp.Char.Vitals.singularity == "" then
@@ -8388,19 +8385,13 @@ function snd.attack_function()
   elseif snd.gravity &lt; 5 then
 		string = string.."gravity grip "..snd.target
   else
-		if not snd.checkAff("a broken left leg") then
-			string = string.."gravity erupt "..snd.target.." left leg"
-		elseif not snd.checkAff("a broken right leg") then
-			string = string.."gravity erupt "..snd.target.." right leg"
-		elseif not snd.checkAff("a broken left arm") then
-			string = string.."gravity erupt "..snd.target.." left arm"
-		elseif not snd.checkAff("a broken right arm") then
-			string = string.."gravity erupt "..snd.target.." right arm"
+		if not snd.checkAff("a broken "..targ) then
+			string = string.."gravity erupt "..snd.target..targ
 		else
 			if hasSkill("Transfix") then
 				string = string.."cast transfix "..snd.target
 			else
-				string = string.."cast rot "..snd.target
+				string = string.."cast chill "..snd.target
 			end
 		end
   end
@@ -8419,6 +8410,13 @@ end</script>
 									<regex>^limbs$</regex>
 								</Alias>
 							</AliasGroup>
+							<Alias isActive="yes" isFolder="no">
+								<name>Sing Summon</name>
+								<script>snd.send("qeb gravity genesis tether weight absorb attunement retardation pulsar")</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^sing1$</regex>
+							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>Praenomen</name>
