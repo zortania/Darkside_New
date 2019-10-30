@@ -3281,7 +3281,7 @@ if snd.class == "Shapeshifter" then
 				string = "spleenrip "..snd.target
 			elseif snd.checkAff("thighlock") and not snd.checkAff("groinrip") then-- Checking for Rip opertunities
 				string = "groinrip "..snd.target
-			elseif snd.proned and mangled ~= "nothing" and not snd.jawlocked then -- Checking for Jawlock opertunities
+			elseif snd.proned() and mangled ~= "nothing" and not snd.jawlocked then -- Checking for Jawlock opertunities
 				if string.find(mangled, "leg") and not snd.checkAff("groinrip")then
 	  			string = "jawlock thigh of "..snd.target
 	 			elseif mangled == "head" and not snd.checkAff("throatrip") then
@@ -3384,7 +3384,7 @@ end -- end the class if
 				
 			elseif snd.checksomeAffs({"thighlock", "necklock", "armpitlock"},3) and not snd.jawlocked then -- check if we can jawlock now!
 	 			string = "quarter "..snd.target
-  		elseif snd.proned and mangled ~= "nothing" and not snd.jawlocked then -- Checking for Jawlock opertunities
+  		elseif snd.proned() and mangled ~= "nothing" and not snd.jawlocked then -- Checking for Jawlock opertunities
 				if string.find(mangled, "leg") and not snd.checkAff("groinrip")then
 	  			string = "jawlock thigh of "..snd.target
 	 			elseif mangled == "head" and not snd.checkAff("throatrip") then
@@ -7409,7 +7409,9 @@ function snd.attack_function()
    right = "epseth"
   end
 	x = ""
-  if snd.used.rebounding and snd.used.shield then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif snd.used.rebounding and snd.used.shield then
    string = "raze "..snd.target
   elseif snd.used.rebounding or snd.used.shield then
    string = "pole razehack "..snd.target.." "..right
@@ -7485,7 +7487,9 @@ function snd.attack_function()
    right = "epseth"
   end
 	x = ""
-  if snd.used.rebounding and snd.used.shield then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif snd.used.rebounding and snd.used.shield then
    string = "raze "..snd.target
   elseif snd.used.rebounding or snd.used.shield then
    string = "pole razehack "..snd.target.." "..right
@@ -7542,7 +7546,9 @@ snd.starting_attack()
 function snd.attack_function()
  snd.handle_hounds()
  if not snd.waiting.queue then
-  if snd.used.rebounding or snd.used.shield then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif snd.used.rebounding or snd.used.shield then
    string = "raze "..snd.target
   elseif snd.target_prone then
    if table.contains(snd.target_has, "crushed_chest") then
@@ -7617,7 +7623,9 @@ function snd.attack_function()
    right = "epseth"
   end
 	x = ""
-  if snd.used.rebounding and snd.used.shield then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif snd.used.rebounding and snd.used.shield then
    string = "raze "..snd.target
   elseif snd.used.rebounding or snd.used.shield then
    string = "pole razehack "..snd.target.." "..right
@@ -7680,7 +7688,9 @@ snd.starting_attack()
 function snd.attack_function()
  local string = ""
  if not snd.waiting.queue then
-  if snd.used.shield then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif snd.used.shield then
 		string = "soul erode "..snd.target
   
 	elseif theyran then
@@ -7723,7 +7733,9 @@ function snd.attack_function()
   -- list what limbs to hit
   limbs = {"left leg", "right leg", "left arm", "right arm"}
 	-- check if we can pulverize now!
-  if table.contains(snd.target_has, "crushed_chest") and snd.target_prone then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif table.contains(snd.target_has, "crushed_chest") and snd.target_prone then
    string = "hammer pulverize "..snd.target
 	-- or if we should set up pulverize...
 	elseif snd.target_prone and snd.resto_limb ~= "none" then
@@ -7801,7 +7813,9 @@ function snd.attack_function()
   -- list what limbs to hit
   limbs = {"left leg", "right leg", "left arm", "right arm"}
 	-- check if we can pulverize now!
-  if table.contains(snd.target_has, "crushed_chest") and snd.target_prone then
+  if snd.have_raloth then
+    string = "pole hook "..sndtarget
+  elseif table.contains(snd.target_has, "crushed_chest") and snd.target_prone then
    string = "hammer pulverize "..snd.target
 	-- or if they're prone and staying that way
 	elseif snd.target_prone and ((snd.limb_dmg["left leg"] &gt;= 33.33 and snd.limb_dmg["right leg"] &gt;= 33.33) or snd.limb_dmg["left leg"] &gt;= 66.66 or snd.limb_dmg["right leg"] &gt;= 66.66) then
@@ -8111,6 +8125,60 @@ end</script>
 									<regex>^aff$</regex>
 								</Alias>
 							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Limbs</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Limbs Mode</name>
+									<script>if snd.class == "Teradrim" then -- Note that this is intended for groups, not 1v1
+  snd.starting_attack()
+  function snd.attack_function()
+    local sandstorm = tonumber(gmcp.Char.Vitals.sandstorm) -- not used but useful for building
+    local string = ""
+    if not snd.waiting.queue then
+ 		   if snd.used.shield or snd.used.rebounding and sandstorm &gt;= 5 then
+         string = "sand slice "..snd.target.." storm"
+       elseif snd.used.shield or snd.used.rebounding then
+         string = "earth stoneblast "..snd.target
+       elseif theytumbling then
+         string = "earth impale "..snd.target
+       elseif snd.proned() then
+         string = "earth pulp "..snd.target
+       elseif not snd.lev_gone then
+         string = "earth overhand "..snd.target
+       elseif not snd.proned() and snd.lev_gone then
+         string = "earth shockwave "..snd.target      
+    	 elseif not snd.checkAff("sandrot") and sandstorm &gt;=5 then
+         string = "sand curse "..snd.target.. " storm"
+       elseif not snd.checkAff("sandrot") then
+         string = "sand curse "..snd.target
+       elseif not snd.checksomeAffs({"a broken left arm", "a broken right arm", "a broken left leg", "a broken right leg"},1) then
+         string = "sand scourge "..snd.target
+       elseif snd.balance.momentum then
+         string = "prepare earthenwill"..snd.sep.."earth momentum"..snd.sep.."earth batter "..snd.target
+       else 
+         string = "prepare earthenwill"..snd.sep.."earth batter "..snd.target
+  	   end
+		
+       if string ~= snd.last_attack and not snd.waiting.queue then
+         snd.last_attack = string
+         snd.attack(snd.last_attack)
+         snd.waiting.queue = true
+         tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+       end
+    end
+  end
+  
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limbs$</regex>
+								</Alias>
+							</AliasGroup>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>Sciomancer</name>
@@ -8416,6 +8484,13 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^sing1$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Gravity Cannon</name>
+								<script>snd.send("qeb gravity cannon "..snd.target)</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^gc$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
