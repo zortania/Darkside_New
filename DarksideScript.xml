@@ -448,6 +448,7 @@ snd.physical_affs = {
 "left_arm_broken",
 "right_leg_broken",
 "right_arm_broken",
+"physical_disruption",
 "heamophilia",
 "asthma",
 "impairment",
@@ -460,7 +461,6 @@ snd.physical_affs = {
 "blood_poison",
 "blood_curse",
 "crippled throat",
-"numb_arms",
 "sandrot",
 "disfigurement",
 "ablaze",
@@ -476,6 +476,13 @@ snd.physical_affs = {
 "burnt_eyes",
 "blurry vision",
 "migraine",
+"lightwound",
+"hypothermia",
+"magic_fire",
+"whiplash",
+"backstrain",
+"sore_wrist",
+"sore_ankle",
 "deadening"
 }
 
@@ -489,12 +496,11 @@ snd.mental_affs = {
 "peace",
 "paranoia",
 "hallucinations",
-"stuttering",
 "dizziness",
 "indifference",
 "berserking",
 "pacifism",
-"lovers effect",
+"lovers_effect",
 "laxity",
 "hatred",
 "generosity",
@@ -509,6 +515,7 @@ snd.mental_affs = {
 "impatience",
 "confusion",
 "dementia",
+"nyctophobia",
 "premonition"
 }
 
@@ -9830,7 +9837,10 @@ end
 		snd.firstaidassAscendril()	
 		
 	elseif snd.class_hitting == "indorani" and #snd.class_hitting &lt; 2 and snd.toggles.active then
-		snd.firstaidassIndorani()					
+		snd.firstaidassIndorani()	
+		
+	elseif snd.class_hitting == "monk" and #snd.class_hitting &lt; 2 and snd.toggles.active then
+		snd.firstaidassMonk()						
 		
 	end
 
@@ -9851,14 +9861,37 @@ end
     if snd.have_aff("right_arm_broken") then
         snd.limbbrokencount = snd.limbbrokencount + 1
     end
+    
+  if snd.have_aff("ravaged") and snd.firstprerestore then
+		send("firstaid prestore off")
+	elseif not snd.firstprerestore and not snd.have_aff("ravaged") then
+		send("firstaid prestore on")
+	end
+  
+  if snd.salveaffflag then
+		if not snd.have_aff("slickness") then
+			if not snd.kaicripple and not (snd.have_aff("left_arm_damaged") or snd.have_aff("right_arm_damaged")) then 
+				send("queue salve " ..snd.salvapplytype.. " " ..snd.mendingtype.. " arms") 
+			elseif not snd.kaicripple and not (snd.have_aff("left_leg_damaged") or snd.have_aff("right_leg_damaged")) then 
+				send("queue salve " ..snd.salvapplytype.. " " ..snd.mendingtype.. " legs")
+			end
+		end
+	end
 	
 
-	if snd.sync and (snd.have_aff("sandrot") or snd.have_aff("slickness")) and (snd.class_hitting == "archivist" or snd.class_hitting == "indorani") and #snd.limbbrokencount &gt; 2 then
-		snd.send("restore")
+	if snd.sync and (snd.have_aff("sandrot") or snd.have_aff("slickness")) and snd.class_hitting == "indorani" and #snd.limbbrokencount &gt; 2 then
+		snd.send("qeb restore")
 		snd.sync = false
 	end
 
 
+end
+
+function snd.firstaidassMonk()  -- curing based on class being attacked by
+	if snd.firstaidcuretrack.anorexia ~= "5" then
+		send("firstaid priority anorexia 5")
+	end	
+	Msys.firstaidchangecure = false  -- keep last	
 end
 
 function snd.firstaidassSentinel()  -- curing based on class being attacked by
@@ -10959,14 +10992,15 @@ def_ironskin = "on",
 def_bloodtrails = "on",
 def_phalanx = "on",
 --def_blindsense = "on",
---def_greenheart = "on",
+def_greenheart = "on",
 --def_endure = "once",
 --def_mountaineer = "on",
 --def_dustcoat = "on",
 --def_resilience = "on",
 --def_desolation = "on",
---def_circulation = "on",
+def_circulation = "on",
 },
+
 
 ascendril = {
 def_fangbarrier = "on",
@@ -12417,6 +12451,7 @@ function snd.reset_target()
  snd.triangleseal = false
  snd.circleseal = false
  snd.firefly_down = false
+ snd.my_mutagen = false
 end
 
 function snd.set_faction()
@@ -12986,7 +13021,7 @@ wwk = false
 punches = {
 hook = false,
 ucp = false,
-hamemerLeft = false,
+hammerLeft = false,
 hammerRight = false,
 spearLeft = false,
 spearRight = false,
