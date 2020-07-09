@@ -7607,6 +7607,49 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>damage</name>
+									<script>if snd.class == "Archivist" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ local bioessence = tonumber(gmcp.Char.Vitals.bio) 
+ local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+ local biostring = "" 
+
+      if bioessence &gt; 1 then
+      	biostring = "bio stimulant"..snd.sep
+      end
+
+
+ if not snd.waiting.queue then
+  if snd.used.shield then
+   	string = "incite fork "..snd.target
+	elseif theytumbling then
+		string = "elicit return "..snd.target.." 3"
+	elseif hp &lt;= 70 and bioessence &gt; 1 then
+		if snd.defenses.def_ethereal.state ~= "deffed" then
+			string = "bio ethereal"
+		end
+	elseif snd.my_incite == "nil" then
+		string = "incite hex "..snd.target..snd.sep
+	else
+		string = "geo impress star"..snd.sep.."incite crux "..snd.target..snd.sep
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^dmg$</regex>
+								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
 								<name>Afflictions</name>
@@ -8523,7 +8566,7 @@ end</script>
 								<packageName></packageName>
 								<regex></regex>
 								<Alias isActive="yes" isFolder="no">
-									<name>damage</name>
+									<name>Damage</name>
 									<script>if snd.class == "Indorani" then
 snd.starting_attack()
 function snd.attack_function()
@@ -8585,7 +8628,7 @@ function snd.attack_function()
  if not snd.waiting.queue then
   if snd.used.shield then
 		string = "touch hammer "..snd.target
-	elseif snd.need_leech_aura == true then
+	elseif snd.need_leech_aura then
 		string = "leech "..snd.target
 	else
 	  if snd.balance.sun then
@@ -8626,48 +8669,48 @@ end</script>
 									<packageName></packageName>
 									<regex>^aff$</regex>
 								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>LImbs</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
 								<Alias isActive="yes" isFolder="no">
-									<name>damage</name>
-									<script>if snd.class == "Archivist" then
-snd.starting_attack()
-function snd.attack_function()
- local string = ""
- local bioessence = tonumber(gmcp.Char.Vitals.bio) 
- local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
- local biostring = "" 
+									<name>Limbs/Vivi</name>
+									<script>if snd.class == "Indorani" then
+  snd.starting_attack()
+  function snd.attack_function()
+    local string = ""
 
-      if bioessence &gt; 1 then
-      	biostring = "bio stimulant"..snd.sep
-      end
-
-
- if not snd.waiting.queue then
-  if snd.used.shield then
-   	string = "incite fork "..snd.target
-	elseif theytumbling then
-		string = "elicit return "..snd.target.." 3"
-	elseif hp &lt;= 70 and bioessence &gt; 1 then
-		if snd.defenses.def_ethereal.state ~= "deffed" then
-			string = "bio ethereal"
-		end
-	elseif snd.my_incite == "nil" then
-		string = "incite hex "..snd.target..snd.sep
-	else
-		string = "geo impress star"..snd.sep.."incite crux "..snd.target..snd.sep
+    if not snd.waiting.queue then
+      if snd.used.shield then
+          string = "touch hammer "..snd.target
+      elseif snd.target_has_aura and snd.need_leech_aura then
+          string = "leech "..snd.target
+      elseif snd.checksomeAffs({"a broken right leg", "a broken left leg", "a broken right arm", "a broken left arm"}, 4) then
+        string = "vivisect "..snd.target
+      else
+        for aff in ipairs({"a broken right leg", "a broken left leg", "a broken right arm", "a broken left arm"}) do
+          if not snd.checkAff(aff) then
+            string = "shrivel "..snd.target..aff:gsub("a broken", "")
+            break
+          end
+        end
+      end 
+    if string ~= snd.last_attack and not snd.waiting.queue then
+     snd.last_attack = string
+     snd.attack(snd.last_attack)
+     snd.waiting.queue = true
+     tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+    end
   end
-  if string ~= snd.last_attack and not snd.waiting.queue then
-   snd.last_attack = string
-   snd.attack(snd.last_attack)
-   snd.waiting.queue = true
-   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-  end
- end
-end
-snd.attack_function()
+  snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^dmg$</regex>
+									<regex>^limbs$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>
@@ -9340,9 +9383,21 @@ end</script>
 									<script>if snd.class == "Praenomen" then
 snd.starting_attack()
 function snd.attack_function()
-  local string = ""
+  local string = "contemplate "..snd.target..snd.sep
   local corpus = "none"
   local touse = {}
+      local physcount = 0
+      for aff in pairs(snd.physical_affs) do
+          if table.contains(snd.target_has, snd.physical_affs[aff]) then
+              physcount = physcount + 1
+          end
+      end
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
+      end
 
 	snd.giving_whisper = {
 			"impatience",
@@ -9363,15 +9418,15 @@ function snd.attack_function()
 	
   if not snd.waiting.queue then
 	 	if theytumbling then
-			string = "breathe "..snd.target..snd.sep.."qeb feed "..snd.target
+			string = string .. "breathe "..snd.target..snd.sep.."qeb feed "..snd.target
 		elseif theyran then
-			string = "lure "..snd.target
+			string = string .. "lure "..snd.target
 		elseif snd.mana_percent &lt; 35 and not snd.used.shield then
- 			string = "annihilate "..snd.target
+ 			string = string .. "annihilate "..snd.target
   	elseif snd.proned() then
-	 		string = "siphon "..snd.target
+	 		string = string .. "siphon "..snd.target
   	elseif not snd.checkAff("transfixed") then
- 			string = "mesmerize "..snd.target
+ 			string = string .. "mesmerize "..snd.target
 		else
 			
 			for i in pairs(snd.giving_whisper) do
@@ -9386,8 +9441,6 @@ function snd.attack_function()
     end
 	end
 
-  string = "contemplate "..snd.target..snd.sep..string
-
  
  if string ~= snd.last_attack and not snd.waiting.queue then
   snd.last_attack = string
@@ -9401,6 +9454,111 @@ end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^mez$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Test</name>
+									<script>if snd.class == "Praenomen" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ local corpus = "none"
+ 	local touse = {} -- this will store the affs we still want to hit with
+	local tohit = {} -- this will store the effects from touse
+local whis = {}
+ 
+ snd.giving_whisper = {
+            "impatience",
+            "loneliness",
+            "peace",
+            "stupidity",
+            "confusion",
+            "anorexia",
+            "berserking",
+            "recklessness",
+            "agoraphobia",
+            "vertigo",
+            "indifference",
+            "masochism",
+            "paranoia",
+ 
+    }
+snd.giving = {
+        "paresis",
+        "clumsiness",
+        "weariness",
+}
+      for i in pairs(snd.giving) do
+				if not snd.checkAff(snd.giving[i]) then
+					if not table.contains(touse, snd.giving[i]) then
+						table.insert(touse, snd.giving[i])
+					end
+				end
+			end
+			for aff in pairs(touse) do
+				table.insert(tohit, snd.effects[touse[aff]])
+			end
+
+            for j in pairs(snd.giving_whisper) do
+                if not snd.checkAff(snd.giving_whisper[j]) then
+                    if not table.contains(whis, snd.giving_whisper[j]) then
+                        table.insert(whis, snd.giving_whisper[j])
+                    end
+                end
+            end
+      local physcount = 0
+      for aff in pairs(snd.physical_affs) do
+          if table.contains(snd.target_has, snd.physical_affs[aff]) then
+              physcount = physcount + 1
+          end
+      end
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
+      end
+    --if snd.mana_percent == (snd.mana_percent-5*mentcount) then
+   -- end
+   -- string = "contemplate "..snd.target..snd.sep..string
+   
+  if not snd.waiting.queue then
+  
+        if snd.mana_percent &lt; 35 and not snd.used.shield then
+ 			      string = "annihilate "..snd.target
+        elseif theytumbling then
+            string = "breathe "..snd.target..snd.sep.."qeb feed "..snd.target
+        elseif not snd.runeused then
+            string =  "blood rune " ..snd.target
+        elseif theyran then
+            string = "lure "..snd.target
+        elseif mentcount &gt;= 3 and not table.contains(snd.target_has, "blood_curse") then
+            string = "blood curse " ..snd.target
+        elseif snd.mana_percent &lt; 41 and not snd.balance.seize then
+            string = "activate rune"
+        elseif mentcount &gt;= 8 and snd.balance.seize  then
+            string = "blood seize " ..snd.target
+        elseif snd.used.rebounding then
+            string = "contemplate " ..snd.target..snd.sep.."claw " ..snd.target..snd.sep.. "whisper "..whis[1].." "..whis[2].." "..snd.target
+        elseif snd.used.shield then
+            string = "contemplate "..snd.target..snd.sep.."frenzy "..snd.target..snd.sep.."whisper "..whis[1].." "..whis[2].." "..snd.target
+        else
+            string = "contemplate "..snd.target..snd.sep.."gash "..snd.target.." "..tohit[1]..snd.sep.."whisper "..whis[1].." "..whis[2].." "..snd.target
+        end
+    end
+   
+   
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(d), [[snd.waiting.queue = false]])
+  end
+ end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^test$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>
