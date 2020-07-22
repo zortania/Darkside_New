@@ -40,6 +40,9 @@
 
 --5.07
 --Updated Teradrim items from comparing Ehtias' posted information. This includes adding some of his test aliases.
+--Shifter trigger updates for better accuracy and expanded functionality.
+--Updates for Scio/Archi bashing from Saidenn.
+--Class fixes from last two classlead rounds, that can be done in code.
 
 --5.06
 --Cleaned up monk and zealot stuff
@@ -7557,7 +7560,7 @@ snd.areas = {
 {area = "the Fengard Keep", level = "85-95", targets = {"a massive argobole", "a fiery phenkyre", "an ogre berserker", "a horrid basilwyrm", "a shrieking grimshrill", "a vicious horned garwhol", "a brawny glaive knight", "a tall chempala", "a radiant lumore", "a pious invoker", "a pungent lichosphere"}, items = {}},
 {area = "the Ayhesa Cliffs", level = "90-100", targets = {"a Spellshaper Archon", "a Spellshaper Master", "a Spellshaper Adept"}, items = {"a flat metal disc"}},
 {area = "Yuzurai village", level = "90-100", targets = {"a massive rojalli matriarch", "a sleek black rojalli", "a savage rojalli"}},
-{area = "Dramedo Warrens", level = "90-100", targets = {"a vast ochre ooze", "a winged fungal horror","a shambling fungal abomination", "a gigantic fungal strider","a cloud of fungal spores"}}, 
+{area = "the Dramedo Warrens", level = "90-100", targets = {"a vast ochre ooze", "a winged fungal horror","a shambling fungal abomination", "a gigantic fungal strider","a cloud of fungal spores"}}, 
 {area = "the Isle of Despair", level = "90-100", targets = {"a darkened soul", "a severed male head"}},
 {area = "the Shattered Vortex (Low Level)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone"}, items = {}},
 {area = "the Shattered Vortex (Shadow)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a guardian angel", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
@@ -7864,6 +7867,11 @@ function snd.luminary_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 then
   	battack = "angel aura me"
+	elseif snd.bashcounterattack then
+		battack = "touch shield"
+	elseif snd.pushattack then
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
 	elseif snd.toggles.lightning then
   	battack = "evoke lightning "..snd.bashing.target
  	else
@@ -7901,7 +7909,10 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 then
   	battack = "touch shield"
 	elseif snd.bashcounterattack then
-			battack = "touch shield"
+		battack = "touch shield"
+	elseif snd.pushattack then
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
 	else
 		battack = "commune boost"..snd.sep.."commune lightning "..snd.bashing.target
 	end
@@ -7911,6 +7922,11 @@ function snd.sentinel_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 then
   	battack = "touch shield"
+	elseif snd.bashcounterattack then
+		battack = "touch shield"
+	elseif snd.pushattack then
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
 	elseif snd.toggles.newbie then
   	battack = "dhuriv combo "..snd.bashing.target.." slash stab"
  	else
@@ -8009,7 +8025,9 @@ end
 function snd.archivist_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 bioessence = tonumber(gmcp.Char.Vitals.bio) 
-	if hp &lt;= 70 and bioessence &gt; 1 then
+  if hp &lt;= 70 and not snd.knit and bioessence &gt; 0 then
+    battack = "bio knitting"
+	elseif hp &lt;= 60 and bioessence &gt; 1 then
 		if snd.defenses.def_ethereal.state ~= "deffed" then
 			battack = "bio ethereal"
 		end
@@ -8021,7 +8039,11 @@ bioessence = tonumber(gmcp.Char.Vitals.bio)
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
 	else
-    battack = "incite crux "..snd.bashing.target
+    if bioessence &gt; 1 and snd.defenses.def_ethereal.state ~= "deffed" then
+      battack = "incite crux "..snd.bashing.target..snd.sep.."bio stimulant"
+    else
+      battack = "incite crux "..snd.bashing.target
+    end
 	end
 end
 
@@ -8029,6 +8051,11 @@ function snd.zealot_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 70 then
     battack = "touch shield"
+	elseif snd.bashcounterattack then
+		battack = "touch shield"
+	elseif snd.pushattack then
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
 	else
 		battack = "flow "..snd.bashing.target.." pummel pummel"
 	end
@@ -8059,11 +8086,14 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
     if hp &lt;= 60 then
     	battack = "sand shield me"
-    elseif snd.bashcounterattack == true then
+    elseif snd.bashcounterattack then
       battack = "sand shield me"
-    elseif snd.balance.momentum == true and endur&gt;=45 then
+	  elseif snd.pushattack then
+		  battack = "push "..snd.bashing.target
+		  snd.pushattack = false
+    elseif snd.balance.momentum and endur&gt;=45 then
       battack = "earth momentum "..snd.sep.."earth skullbash "..snd.bashing.target..snd.sep.."golem recover"
-    elseif snd.balance.momentum == true and endur&lt;=45 then
+    elseif snd.balance.momentum and endur&lt;=45 then
       battack = "earth momentum "..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
     elseif endur&gt;=45 then
       battack = "earth skullbash "..snd.bashing.target..snd.sep.."golem recover"
@@ -8095,7 +8125,9 @@ end
 
 function snd.sciomancer_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	if hp &lt;= 60 then
+	if hp &lt;= 40 then
+    battack = "touch shield"
+  elseif hp &lt;= 60 then
 		if snd.reflection_charge &gt; 0 then
 			battack = "cast reflection"
 		else
@@ -8104,16 +8136,24 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	elseif snd.bashcounterattack then
 			battack = "touch shield"
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
-		snd.pushattack = false
+		  battack = "push "..snd.bashing.target
+		  snd.pushattack = false
 	elseif snd.toggles.newbie then
-  	battack = "cast ruin "..snd.bashing.target
+  	  battack = "cast ruin "..snd.bashing.target
  	else
-		if gmcp.Char.Vitals.shadowprice &lt; "2" then
-			battack = "shadowprice gloom "..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
-		else
-			battack = "cast fever "..snd.bashing.target
-		end
+		if table.contains(gmcp.Char.Defences.List, "shadow_mantle") then
+      if tonumber(gmcp.Char.Vitals.shadowprice) &lt; 4 then
+        battack = "shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
+      else
+        battack = "cast fever " ..snd.bashing.target
+      end
+    else
+      if tonumber(gmcp.Char.Vitals.shadowprice) &lt; 2 then
+        battack = "shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target..snd.sep.."absorb ylem"
+      else
+        battack = "cast fever " ..snd.bashing.target..snd.sep.."absorb ylem"
+      end
+    end
  	end
 end</script>
 						<eventHandlerList />
@@ -12216,6 +12256,7 @@ snd.triangleseal = false
 snd.circleseal = false
 snd.conjoin = false
 snd.tree_used = false
+snd.knit = false
 
 --Shaman
 snd.shamanpet = ""
@@ -13104,6 +13145,7 @@ end</script>
  "Anka",
 "Yedan",
 "Justus",
+"Talomae",
 "Cai",
 "Robyn",
 "Taj",
@@ -13332,9 +13374,13 @@ end</script>
 "Phoenecia",
 "Renia",
 "Saerward",
+"Zephon",
 "Talonnb",
 "Miralla",
+"Sryaen",
 "Nymma",
+"Sessizlik",
+"Alystrine",
 "Noon",
 "Kayt",
 "Arbre",
