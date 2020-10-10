@@ -456,7 +456,18 @@ moss = 0,
 pear = 0,
 sileris = 0,
 skullcap = 0,
-valerian = 0
+valerian = 0,
+antipsychotic = 0,
+amaurosis = 0,
+steroid = 0,
+opiate = 0,
+panacea = 0,
+euphoriant = 0,
+ototoxin = 0,
+decongestant = 0,
+stimulant = 0,
+depressant = 0,
+waterbreathing = 0,
 }
 
 snd.physical_affs = {
@@ -668,6 +679,42 @@ snd.landmarks = {
 }</script>
 							<eventHandlerList />
 						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>class_catch</name>
+							<packageName></packageName>
+							<script>function class_catch()
+
+  if snd.class == "Luminary" then
+    snd.defenses.def_constitution = snd.alternative_class_defenses.Luminary_constitution
+  end
+  
+  if snd.class == "Syssin" then
+    snd.defenses.def_shroud = snd.alternative_class_defenses.Syssin_shroud
+  end
+  
+  if snd.class == "Carnifex" then
+    snd.defenses.def_shroud = snd.alternative_class_defenses.Carnifex_shroud
+  end
+  
+   if snd.class == "Indorani" then
+    snd.defenses.def_shroud = snd.alternative_class_defenses.Indorani_shroud
+  end
+
+
+  if snd.assumed_class ~= nil then return end
+	local stats = gmcp.Char.Vitals.charstats
+	for i,v in ipairs(stats) do
+ 		stat = string.split(v, ": ")
+ 		if stat[1] == "Class" then
+   			snd.class = stat[2]
+  		end
+	end
+  
+end</script>
+							<eventHandlerList>
+								<string>gmcp.Char.Vitals</string>
+							</eventHandlerList>
+						</Script>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Events</name>
@@ -845,17 +892,14 @@ function gmcp_items()
   end
  elseif gmcp.Char.Items.List.location == "inv" then
   snd.wielded = {left =  {name="", id=""}, right = {name="", id=""}}
-  for _, v in ipairs(gmcp.Char.Items.List.items) do
-	 if v.attrib == "l" then
-	  if snd.wielded.left.name == "" then
-		 snd.wielded.left.name = v.name
-		 snd.wielded.left.id = v.id
-		elseif snd.wielded.right.name == "" then
-		 snd.wielded.right.name = v.name
-		 snd.wielded.right.id = v.id
-		end
-	 end
-	end
+  if gmcp.Char.Vitals.wield_left ~= "empty" then
+    snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
+    snd.wielded.left.id = string.match(gmcp.Char.Vitals.wield_left, "%d+")
+  end
+  if gmcp.Char.Vitals.wield_right ~= "empty" then
+    snd.wielded.right.name = string.match(gmcp.Char.Vitals.wield_right, "%a+")
+    snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
+  end
  end
  snd.updateItems()
 end</script>
@@ -872,16 +916,15 @@ function gmcp_item_add()
  if gmcp.Char.Items.Add.location == "room" then
   if not snd.items[v.name] then snd.items[v.name] = {} end
   table.insert(snd.items[v.name], v.id)
- elseif gmcp.Char.Items.List.location == "inv" then
-  if v.attrib == "l" then
-	 if snd.wielded.left.name == "" then
-	  snd.wielded.left.name = v.name
-		snd.wielded.left.id = v.id
-	 elseif snd.wielded.right.name == "" then
-	  snd.wielded.right.name = v.name
-		snd.wielded.right.id = v.id
-	 end
-	end
+ elseif gmcp.Char.Items.List ~= nil then
+  if gmcp.Char.Vitals.wield_left ~= "empty" then
+    snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
+    snd.wielded.left.id = string.match(gmcp.Char.Vitals.wield_left, "%d+")
+  end
+  if gmcp.Char.Vitals.wield_right ~= "empty" then
+    snd.wielded.right.name = string.match(gmcp.Char.Vitals.wield_right, "%a+")
+    snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
+  end
  end
  snd.updateItems()
 end</script>
@@ -907,14 +950,17 @@ function gmcp_item_remove()
 		end
 	 end
 	end
- elseif gmcp.Char.Items.List.location == "inv" then
-  if snd.wielded.left.id == v.id then
-	 snd.wielded.left.id = ""
-	 snd.wielded.left.name = ""
-	elseif snd.wielded.right.id == v.id then
-	 snd.wielded.right.id = ""
-	 snd.wielded.right.name = ""	
-	end
+ elseif gmcp.Char.Items.List ~= nil then
+  if gmcp.Char.Items.List.location == "inv" then
+    if gmcp.Char.Vitals.wield_left ~= "empty" then
+      snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
+      snd.wielded.left.id = string.match(gmcp.Char.Vitals.wield_left, "%d+")
+    end
+    if gmcp.Char.Vitals.wield_right ~= "empty" then
+      snd.wielded.right.name = string.match(gmcp.Char.Vitals.wield_right, "%a+")
+      snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
+    end
+  end
  end
  snd.updateItems()
 end
@@ -932,14 +978,14 @@ function gmcp_item_update()
  v = gmcp.Char.Items.Update.item
  --echo(v.name)
  if gmcp.Char.Items.Update.location == "inv" then
-  if v.attrib == "l" then
-	 if snd.wielded.left.name == "" and snd.wielded.right.id ~= v.id then
-	  snd.wielded.left.name = v.name
-		snd.wielded.left.id = v.id
-	 elseif snd.wielded.right.name == "" and snd.wielded.left.id ~= v.id then
-	  snd.wielded.right.name = v.name
-		snd.wielded.right.id = v.id
-	 end
+    if gmcp.Char.Vitals.wield_left ~= "empty" then
+      snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
+      snd.wielded.left.id = string.match(gmcp.Char.Vitals.wield_left, "%d+")
+    end
+    if gmcp.Char.Vitals.wield_left ~= "empty" then
+      snd.wielded.right.name = string.match(gmcp.Char.Vitals.wield_right, "%a+")
+      snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
+    end
 	else
 	 if snd.wielded.left.id == v.id then
 	  snd.wielded.left.name = ""
@@ -949,7 +995,6 @@ function gmcp_item_update()
 		snd.wielded.right.id = ""
 	 end
 	end
- end
  snd.updateItems()
 end</script>
 							<eventHandlerList>
@@ -1149,6 +1194,93 @@ end</script>
 								<string>gmcp.Char.Defences.Remove</string>
 							</eventHandlerList>
 						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>gmcp_communication</name>
+							<packageName></packageName>
+							<script>function gmcp_communication()
+--work in progress
+
+	local channel = gmcp.Comm.Channel.Start
+	local talker =  gmcp.Comm.Channel.Text.talker
+	local text = gmcp.Comm.Channel.Text.text
+  
+  --You can choose whether you want it to match only names that are in the database (excluding divine)
+  --Or if you want it to just match any one word name. Some NPCs might slip through.
+  
+ --[[ if sndNDB.players[talker] == nil then
+    if not table.isMember(sndNDB.divine, talker) then 
+      return 
+    end
+  end]]
+  
+  if string.match(talker, "%W") then return end
+  
+  local mobs_to_ignore = {
+    "Nysaac",
+    "Tayiv",
+    "Huemotl",
+    "Damari",
+    "Jinjin",
+    "Micotetotl",
+    "Hob",
+    "Saaik",}
+  if table.isMember(mobs_to_ignore, talker) then return end
+  
+  if channel:find("clt") then channel = "clt" end
+  
+  snd.who_is_talking = talker or ""
+  snd.we_saw_a_thot = false
+  snd.last_channel = "Misc"
+  snd.channel_ignores = {
+	hints = true,
+}
+
+--will maybe be useful at some point but not used right now. Not sure how to append a specific set of text that isn't gotten through the append func.
+--text = string.gsub (text, string.char (27) .. "%[(.-)m", "") &lt;- removes extraneous data from raw gmcp data
+--demonnic.chat:append(snd.channel_list[channel], text)
+
+	snd.channel_list = {
+	["newbie"] = "Misc",
+	["market"] = "Misc",
+	["web"] = "Web",
+	["ct"] = "City",
+	["cnt"] = "City",
+  ["emotes"] = "Local",
+	["gt"] = "Guild",
+	["gts"] = "Guild",
+	["clt"] = "Clans",
+	["tell"] = "Tells",
+	["says"] = "Local",
+	["ot"] = "Order",
+  ["cot"] = "Order",
+
+}
+
+	if channel == "web" and snd.toggles.listening and table.contains(snd.callers, talker) then
+      text = text:lower()
+			if text:find("target:") and not text:find("list") and not text:find("calling") and not text:find("priority") and not text:find("removed") and not text:find("next") then
+				local check = string.match(text, "target: (%w+)%.")
+				if check:lower()~= snd.target:lower() then
+					expandAlias("t " .. check)
+				end
+			end
+	end
+  
+  for c, t in pairs(snd.channel_list) do
+		if channel == c then
+			snd.last_channel = t
+			break
+		end
+	end
+  
+  if snd.channel_ignores[channel] then return false end
+  enableTrigger("generic capture")
+  
+end</script>
+							<eventHandlerList>
+								<string>gmcp.Comm.Channel.Start</string>
+							</eventHandlerList>
+						</Script>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Misc</name>
@@ -1163,13 +1295,12 @@ end</script>
 						<ScriptGroup isActive="yes" isFolder="yes">
 							<name>Skill Checking</name>
 							<packageName></packageName>
-							<script>-------------------------------------------------
---         Put your Lua functions here.        --
---                                             --
--- Note that you can also use external Scripts --
--------------------------------------------------
-</script>
-							<eventHandlerList />
+							<script>	snd.skills = {}
+  snd.skills.tattoos_on_me = snd.skills.tattoos_on_me or {}
+  snd.skills.raceskills = snd.skills.raceskills or {}</script>
+							<eventHandlerList>
+								<string>gmcp.Comm.Channel.Start</string>
+							</eventHandlerList>
 							<Script isActive="yes" isFolder="no">
 								<name>parse_skillsets</name>
 								<packageName></packageName>
@@ -1209,7 +1340,12 @@ end</script>
 								<name>has_skill</name>
 								<packageName></packageName>
 								<script>function hasSkill(skill, tree)
+
 	if not snd.skills then return false end
+
+  if skill == "Generic" or skill == "Goggle" then return true end
+  
+  if snd.assumed_class ~= nil then return true end
 
 	if tree then
 		if snd.skills[tree:lower()] and table.contains(snd.skills[tree:lower()], skill) then
@@ -1748,18 +1884,86 @@ end
 							<name>random functions</name>
 							<packageName></packageName>
 							<script>function round(num, idp)
-  local mult = 10^(idp or 0)
+  local mult = 10 ^ (idp or 0)
   return math.floor(num * mult + 0.5) / mult
 end
 
 function table.isMember(table, member)
-	for i, m in ipairs(table) do
-		if m == member then
-			return true
-		end	
-	end
-	
-	return false
+  for i, m in ipairs(table) do
+    if m == member then
+      return true
+    end
+  end
+  return false
+end
+
+function snd.count(table)
+  local count = 0
+  for i, v in ipairs(table) do
+    count = count + 1
+  end
+  return count
+end
+
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
+function deleteFull()
+  deleteLine()
+  tempLineTrigger(1,1,[[if isPrompt() then
+    deleteLine()
+  end]])
+end
+
+function padLeft(s, l, c)
+  return string.rep(c or ' ', l - #s) .. s
+end
+
+function padRight(s, l, c)
+  return s .. string.rep(c or ' ', l - #s)
+end
+
+function snd.goggle_update()
+
+  local goggle_defenses = {
+    --heatsight = {level = 1, non_goggle_method = {needybalancetake = "heatsight"}, non_goggle_skill = "Heatsight"},
+    nightsight = {level = 1, non_goggle = {special = "nightsight"} , non_goggle_skill = "Nightsight"},
+    mindseye_tattoo = {level = 2, non_goggle = {balanceequilibrium = "touch allsight"}, non_goggle_skill = "Generic"},
+    thirdeye = {level = 2, non_goggle = {eat = "acuity"}, non_goggle_skill = "Generic"},
+    overwatch = {level = 5, non_goggle = {""}, non_goggle_skill = "Generic"},
+    insight = {level = 8, non_goggle = {needyequilibriumtake = "mind insight on"}, non_goggle_skill = "Insight"},
+    lifevision = {level = 9, non_goggle = {balanceequilibriumtake = "lifevision"}, non_goggle_skill = "Lifevision"},
+    lipreading = {level = 17, non_goggle = {needybalancetake = "lipread"}, non_goggle_skill = "Lipread"},
+}
+
+  for k, v in pairs(goggle_defenses) do
+    if tonumber(snd.toggles.goggle_level) &gt;= v.level and snd.toggles.goggles then
+      snd.def_options.general_defs["def_"..k] = "on"
+      snd.defenses["def_"..k].skill = "Goggle"
+      if k:find("tattoo") then
+        snd.defenses["def_"..k].balance = {special = "goggle toggle mindseye"}
+      else
+        snd.defenses["def_"..k].balance = {special = "goggle toggle "..k}
+      end
+    else
+      snd.defenses["def_"..k].balance = goggle_defenses[k].non_goggle
+      snd.defenses["def_"..k].skill = goggle_defenses[k].non_goggle_skill
+    end
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Who groups parser</name>
+							<packageName></packageName>
+							<script>function snd.parse_who()
+  snd.who_list = {}
+
+  enableTrigger("Who parser")
+  send("who")
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -1927,6 +2131,7 @@ snd.priorities = {
 "aff_heartflutter",
 "aff_sandrot",
 "def_firefly_tattoo",
+"aff_ice_encased",
 	
 "aff_baldness",
 "aff_clumsiness",
@@ -2409,21 +2614,40 @@ aff_broken_leg = {state = "healed", effect = "", cures = {salve = "mending to le
 aff_adder_tarot = {state = "healed", effect = "", cures = {balanceequilibrium = "rip card from body"}, assess = false, timer = createStopWatch()},
 
 aff_ablaze = {state = "healed", effect = "", cures = {salve = "mending to body", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_achromatopsia = {state = "healed", effect = "colors leeched away", cures = {}, assess = false, timer = createStopWatch()},
 aff_addiction = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_agoraphobia = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_allergies = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_amplify_asphyxiation = {state = "healed", effect = "more dmg from asphyx source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_blunt = {state = "healed", effect = "more dmg from blunt source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_cold = {state = "healed", effect = "more dmg from cold source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_cutting = {state = "healed", effect = "more dmg from cutting source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_electric = {state = "healed", effect = "more dmg from electric source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_fire = {state = "healed", effect = "more dmg from fire source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_magic = {state = "healed", effect = "more dmg from magic source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_poison = {state = "healed", effect = "more dmg from poison source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_psychic = {state = "healed", effect = "more dmg from psychic source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_shadow = {state = "healed", effect = "more dmg from shadow source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_spirit = {state = "healed", effect = "more dmg from spirit source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_unblockable = {state = "healed", effect = "more dmg from unblockable source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_airwreath = {state = "healed", effect = "dmg over time", cures = {}, assess = false, timer = createStopWatch()},
+aff_arrow_wound = {state = "healed", effect = "delayed by stacks of arrows", cures = {}, assess = false, timer = createStopWatch()},
+aff_asphyxiation_weakness = {state = "healed", effect = "more dmg from asphyx source", cures = {}, assess = false, timer = createStopWatch()},
 aff_attuned = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_backstabbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_backstrain = {state = "healed", effect = "torso dmg on standing", cures = {tree = "send", salve = "soothing to torso"}, assess = false, timer = createStopWatch()},
 aff_baldness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_battle_hunger = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_berserking = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_blackout = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_blighted = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_blisters = {state = "healed", effect = "poison dmg/bleeding when using bal/eq", cures = {tree = "send", herb = "bloodroot"}, assess = false, timer = createStopWatch()},
 aff_blood_curse = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_blood_poison = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_bloodlust = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_blurry_vision = {state = "healed", effect = "", cures = {salve = "epidermal to body", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_body_odor = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_bulimia = {state = "healed", effect = "vomit the next thing you eat", cures = {}, assess = false, timer = createStopWatch()},
 aff_burnt_eyes = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_burnt_skin = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_chaos_warp = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -2442,10 +2666,15 @@ aff_crippled_throat = {state = "healed", effect = "", cures = {salve = "mending 
 aff_crushed_chest = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_crushed_elbows = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_crushed_kneecaps = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_cutting_weakness = {state = "healed", effect = "more dmg from cuttingsource", cures = {}, assess = false, timer = createStopWatch()},
+aff_dazed = {state = "healed", effect = "can't regain balance normally", cures = {balanceequilibrium = "recoup"}, assess = false, timer = createStopWatch()},
 aff_deadening = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_deepwound = {state = "healed", effect = "makes bleeding more impactful (cant clot immediately)", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_dementia = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_despair = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_destroyed_throat = {state = "healed", effect = "", cures = {salve = "mending to head", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_direfrost = {state = "healed", effect = "leads to frostbrand", cures = {}, assess = false, timer = createStopWatch()},
+aff_disabled = {state = "healed", effect = "divine only? unsure", cures = {}, assess = false, timer = createStopWatch()},
 aff_disfigurement = {state = "healed", effect = "", cures = {smoke = "valerian", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_disrupted = {state = "healed", effect = "", cures = {special = "concentrate"}, assess = false, timer = createStopWatch()},
 aff_dissonance = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -2459,13 +2688,19 @@ aff_effused_blood = {state = "healed", effect = "", cures = {}, assess = false, 
 aff_eldritch_invocation = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_electric_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_emberbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_egocentric = {state = "healed", effect = "can't help others", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_embedded_axe = {state = "healed", effect = "does major limb damage when pulled", cures = {balanceequilibrium = "pull axe from me"}, assess = false, timer = createStopWatch()},
 aff_epilepsy = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_exhausted = {state = "healed", effect = "dodge cut in half, slower movement", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_farag_rot = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_faintness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_fear = {state = "healed", effect = "", cures = {special = "compose"}, assess = false, timer = createStopWatch()},
 aff_fire_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_flash_blindness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_flamewreathed_limb = {state = "healed", effect = "extra limb damage if hit by fire spell", cures = {}, assess = false, timer = createStopWatch()},
+aff_flared = {state = "healed", effect = "unable to stealth or go incorporeal", cures = {}, assess = false, timer = createStopWatch()},
 aff_forestbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_frostwreath = {state = "healed", effect = "divine only? unsure", cures = {}, assess = false, timer = createStopWatch()},
 aff_frozen = {state = "healed", effect = "", cures = {salve = "caloric to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_frozen_feet = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_generosity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
@@ -2484,22 +2719,27 @@ aff_head_bruised_moderate = {state = "healed", effect = "", cures = {salve = "me
 aff_head_damaged = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_deepwound = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_head_mangled = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
+aff_head_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_heartflutter = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hellsight = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hubris = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hypersomnia = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hypertension = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hypochondria = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_hypothermia = {state = "healed", effect = "", cures = {salve = "epidermal to torso"}, assess = false, timer = createStopWatch()},
+aff_hypothermia = {state = "healed", effect = "", cures = {salve = "caloric to torso"}, assess = false, timer = createStopWatch()},
+aff_ice_encased = {state = "healed", effect = "", cures = {salve = "caloric to torso"}, assess = false, timer = createStopWatch()},
 aff_idiocy = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_impairment = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_plodding = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_imbued = {state = "healed", effect = "auto gravity from scio spells", cures = {}, assess = false, timer = createStopWatch()},
 aff_impatience = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_indifference = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_infernal_seal = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infernal_shroud = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infested = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_insomnia = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_itchy = {state = "healed", effect = "tree has to cure this first always", cures = { tree = "send" }, assess = false, timer = createStopWatch()},
+aff_intimidated = {state = "healed", effect = "can't heal above 90%", cures = {}, assess = false, timer = createStopWatch()},
 aff_justice = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_laxity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_leeched_aura = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -2509,28 +2749,32 @@ aff_left_arm_bruised = {state = "healed", effect = "", cures = {salve = "mending
 aff_left_arm_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_damaged = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
-aff_left_arm_deepwound = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_arm_dislocated = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_mangled = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_left_arm_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_leg_amputated = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_broken = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_left_leg_bruised = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_damaged = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
-aff_left_leg_deepwound = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_leg_dislocated = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_mangled = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_left_leg_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_lemniscate = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lethargy = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_lifebane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_lightwound = {state = "healed", effect = "extra bleeding", cures = {salve = "mending to body"}, assess = false, timer = createStopWatch()},
 aff_limp_veins = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_loneliness = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_lovers_effect = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_magic_fire = {state = "healed", effect = "ablaze mask aff", cures = {salve = "mending"}, assess = false, timer = createStopWatch()},
 aff_magical_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_magnanimity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_malevolence = {state = "healed", effect = "destroys shield, extra damage from weather", cures = {}, assess = false, timer = createStopWatch()},
+aff_marked  = {state = "healed", effect = "marked by a mage", cures = {}, assess = false, timer = createStopWatch()},
 aff_masochism = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_mauled_face = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_mental_disruption = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
@@ -2538,12 +2782,14 @@ aff_mental_fatigue = {state = "healed", effect = "", cures = {}, assess = false,
 aff_merciful = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_migraine = {state = "healed", effect = "", cures = {smoke = "valerian", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_turmoil = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_mindclamped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_mind_clamped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_mirroring = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_mistbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_muddled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_mutagen = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_mutation_sickness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_nightmare  = {state = "healed", effect = "???", cures = {}, assess = false, timer = createStopWatch()},
+aff_nyctophobia  = {state = "healed", effect = "can't move in to/out of darkness", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_numb_arms = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_numbed_skin = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_oiled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -2555,6 +2801,8 @@ aff_peace = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "
 aff_penance = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_petrified = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_physical_disruption = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_polymorph = {state = "healed", effect = "divine only? unsure", cures = {}, assess = false, timer = createStopWatch()},
+aff_poison_weakness = {state = "healed", effect = "more dmg from poison source", cures = {}, assess = false, timer = createStopWatch()},
 aff_pre_restore_head = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_pre_restore_left_arm = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
 aff_pre_restore_left_leg = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
@@ -2562,30 +2810,37 @@ aff_pre_restore_right_arm = {state = "healed", effect = "", cures = {salve = "re
 aff_pre_restore_right_leg = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_pre_restore_torso = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_premonition = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_psi_tether = {state = "healed", effect = "hurts you if you walk too far from zealot", cures = {}, assess = false, timer = createStopWatch()},
+aff_psychic_weakness = {state = "healed", effect = "more dmg from psychic source", cures = {}, assess = false, timer = createStopWatch()},
+aff_punished_arms = {state = "healed", effect = "unable to parry", cures = {}, assess = false, timer = createStopWatch()},
+aff_punished_legs = {state = "healed", effect = "movement has 33% chance to fail", cures = {}, assess = false, timer = createStopWatch()},
 aff_quicksand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_ravaged = {state = "healed", effect = "applying salves hurts you", cures = {}, assess = false, timer = createStopWatch()},
 aff_recklessness = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_rend = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_resin_glauxe = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_resonance = {state = "healed", effect = "templar can assess/diagnose you for free", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_arm_amputated = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
 aff_right_arm_broken = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_right_arm_bruised = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_damaged = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
-aff_right_arm_deepwound = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_arm_dislocated = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_mangled = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
 aff_right_arm_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_right_arm_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_leg_amputated = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_right_leg_broken = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_right_leg_bruised = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_damaged = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
-aff_right_leg_deepwound = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_leg_dislocated = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_mangled = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_right_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_right_leg_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
+aff_ringing_ears = {state = "healed", effect = "unable to become deaf until cured", cures = {herb = "lobelia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_ripped_groin = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_spleen = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_throat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -2599,14 +2854,28 @@ aff_sapped_dexterity = {state = "healed", effect = "", cures = {}, assess = fals
 aff_sapped_intelligence = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sapped_stats = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sapped_strength = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_sealing_circle = {state = "healed", effect = "circle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
+aff_sealing_square = {state = "healed", effect = "square affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
+aff_sealing_triangle = {state = "healed", effect = "triangle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
 aff_selarnia = {state = "healed", effect = "", cures = {salve = "mending to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 ["aff_self-pity"] = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_seduction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sensitivity = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_shaderot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_shaderot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_shaderot_heat = {state = "healed", effect = "shaderot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_shaderot_spirit = {state = "healed", effect = "shaderot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_shaderot_wither = {state = "healed", effect = "shaderot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_shadow_coat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_shadow_weakness = {state = "healed", effect = "more dmg from shadow source", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadowbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_shadowed = {state = "healed", effect = "gain affs if luminary shine hits you", cures = {}, assess = false, timer = createStopWatch()},
+aff_shadowsphere = {state = "healed", effect = "hides scio affs and generally a bad time", cures = {}, assess = false, timer = createStopWatch()},
 aff_shivering = {state = "healed", effect = "", cures = {salve = "caloric", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_shyness = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_smashed_throat = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
+aff_sore_ankle = {state = "healed", effect = "leg dmg on movement", cures = {tree = "send", salve = "soothing to legs"}, assess = false, timer = createStopWatch()},
+aff_sore_wrist = {state = "healed", effect = "arm dmg on parry", cures = {tree = "send", salve = "soothing to arms"}, assess = false, timer = createStopWatch()},
 aff_soul_disease = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_soul_poison = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_soulchill = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -2617,13 +2886,18 @@ aff_soulroot = {state = "healed", effect = "", cures = {}, assess = false, timer
 aff_spinal_rip = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_spiritbane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_spiritbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_spirit_weakness = {state = "healed", effect = "more dmg from spirit source", cures = {}, assess = false, timer = createStopWatch()},
 aff_squelched = {state = "healed", effect = "", cures = {smoke = "valerian", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_stiffness = {state = "healed", effect = "lower dodge/divert, soothing cured affs can break bones", cures = {tree = "send", salve = "soothing to torso"}, assess = false, timer = createStopWatch()},
 aff_stonebrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_stonevice = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_stormtouched = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_stupidity = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_stuttering = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_superstition = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_temptation = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_taunted = {state = "healed", effect = "can only hit who taunted you", cures = {}, assess = false, timer = createStopWatch()},
+aff_terror = {state = "healed", effect = "prevents ability to compose", cures = {}, assess = false, timer = createStopWatch()},
 aff_thin_blood = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_thorns = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_throatclaw = {state = "healed", effect = "", cures = {salve = "mending to head", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -2633,17 +2907,22 @@ aff_torso_bruised = {state = "healed", effect = "", cures = {salve = "mending to
 aff_torso_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to torso"}, assess = false, timer = createStopWatch()},
 aff_torso_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to torso"}, assess = false, timer = createStopWatch()},
 aff_torso_damaged = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
-aff_torso_deepwound = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_torso_mangled = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
+aff_torso_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_tree_seared = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_trick_flame = {state = "healed", effect = "doubles ablaze stacks, easier re-application of stacks", cures = {}, assess = false, timer = createStopWatch()},
 aff_troubled_breathing = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_vertigo = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_vinethorns = {state = "healed", effect = "", cures = {special = "pull thorn from body"}, assess = false, timer = createStopWatch()},
 aff_vitalbane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_void = {state = "healed", effect = "", cures = {salve = "caloric"}, assess = false, timer = createStopWatch()},
+aff_voidgaze = {state = "healed", effect = "gives stacking affs while active", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
+aff_voidtrapped = {state = "healed", effect = "stuck prone for a bit via voidgaze", cures = {}, assess = false, timer = createStopWatch()},
 aff_vomiting = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_voyria = {state = "healed", effect = "", cures = {drink = "immunity"}, assess = false, timer = createStopWatch()},
+aff_voyria = {state = "healed", effect = "", cures = {vial = "immunity"}, assess = false, timer = createStopWatch()},
+aff_weak_grip = {state = "healed", effect = "bypass fist sigil", cures = {tree = "send", salve = "soothing to arms"}, assess = false, timer = createStopWatch()},
 aff_weakvoid = {state = "healed", effect = "", cures = {salve = "caloric"}, assess = false, timer = createStopWatch()},
+aff_whiplash = {state = "healed", effect = "head dmg", cures = {tree = "send", salve = "soothing to legs"}, assess = false, timer = createStopWatch()},
 aff_weariness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_windbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_withering = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -2656,11 +2935,13 @@ aff_writhe_impaled = {state = "healed", effect = "", cures = {writhe = "send"}, 
 aff_writhe_lure = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_necklock = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_ropes = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
-aff_writhe_tar = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
+aff_writhe_gunk = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_thighlock = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_transfix = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_vines = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_web = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
+aff_writhe_grappled = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
+aff_writhe_stasis = {state = "healed", effect = "can't move, can attack", cures = {}, assess = false, timer = createStopWatch()},
 
 }</script>
 								<eventHandlerList />
@@ -2907,39 +3188,63 @@ end</script>
 								<packageName></packageName>
 								<script>
 snd.defenses = {
-def_gripping = {defense = "gripping", type = "normal", effect = "Prevents disarming", balance = {balanceequilibrium = "grip"}, state = "down", needit = false, timer = createStopWatch()},
-def_divert_melee = {defense = "divert_melee", type = "normal", effect = "Protects from melee damage", balance = {special = "divert melee"}, state = "down", needit = false, timer = createStopWatch()},
-def_dodge_melee = {defense = "dodge_melee", type = "normal", effect = "Protects from melee damage", balance = {special = "dodge melee"}, state = "down", needit = false, timer = createStopWatch()},
-def_starburst = {defense = "starburst", type = "blue", effect = "Instant revival on death", balance = {tattoo = "starburst"}, state = "down", needit = false, timer = createStopWatch()},
-def_cloak_tattoo = {defense = "cloak", type = "blue", effect = "Protects from unwanted summons", balance = {tattoo = "cloak"}, state = "down", needit = false, timer = createStopWatch()},
-def_mindseye_tattoo = {defense = "mindseye", type = "green", effect = "Allows deaf/blind hearing/vision", balance = {balanceequilibrium = "touch mindseye"}, state = "down", needit = false, timer = createStopWatch()},
---def_mindseye_tattoo = {defense = "mindseye", type = "green", effect = "Allows deaf/blind hearing/vision", balance = {tattoo = "mindseye"}, state = "down", needit = false, timer = createStopWatch()},
-def_firefly_tattoo = {defense = "firefly", type = "green", effect = "Protects you against them Sciomancers", balance = {tattoo = "firefly"},state = "down", needit = false, timer = createStopWatch()},
-def_fitness = {defense = "fitness", type = "normal", effect = "Protects from asthma", balance = {balanceequilibriumtake = "fitness"}, state = "down", needit = false, timer = createStopWatch()},
-def_deafness = {defense = "deafness", type = "normal", effect = "Protects from sonic effects", balance = {herb = "ototoxin"}, state = "down", needit = false, timer = createStopWatch()},
-def_blindness = {defense = "blindness", type = "normal", effect = "Protects from visual effects", balance = {herb = "amaurosis"}, state = "down", needit = false, timer = createStopWatch()},
-def_waterbreathing = {defense = "waterbreathing", type = "normal", effect = "Prevents choking underwater", balance = {herb = "waterbreathing"}, state = "down", needit = false, timer = createStopWatch()},
-def_kola = {defense = "instawake", type = "normal", effect = "Removes the WAKE delay", balance = {eat = "stimulant"}, state = "down", needit = false, timer = createStopWatch()},
-def_insomnia = {defense = "insomnia", type = "normal", effect = "Prevents sleep effects", balance = {eat = "kawhepill"}, state = "down", needit = false, timer = createStopWatch()},
-def_deathsight = {defense = "deathsight", type = "normal", effect = "Reports player deaths", balance = {eat = "thanatonin"}, state = "down", needit = false, timer = createStopWatch()},
-def_thirdeye = {defense = "thirdeye", type = "normal", effect = "Adds locations to WHO", balance = {eat = "acuity"}, state = "down", needit = false, timer = createStopWatch()},
-def_venom = {defense = "venom_resistance", type = "normal", effect = "Protects against poison damage", balance = {drink = "antivenin"}, state = "down", needit = false, timer = createStopWatch()},
-def_levitation = {defense = "levitation", type = "normal", effect = "Protects against falling effects", balance = {drink = "levitation"}, state = "down", needit = false, timer = createStopWatch()},
-def_frost = {defense = "temperance", type = "normal", effect = "Protects against fire damage", balance = {drink = "frost"}, state = "down", needit = false, timer = createStopWatch()},
-def_speed = {defense = "speed", type = "green", effect = "Protects against aeon affliction", balance = {drink = "speed"}, state = "down", needit = false, timer = createStopWatch()},
-def_caloric = {defense = "insulation", type = "normal", effect = "Protects against cold damage", balance = {salve = "caloric"}, state = "down", needit = false, timer = createStopWatch()},
-def_vigor = {defense = "vigor", type = "normal", effect = "Critical hits heal you", balance = {drink = "vigor"}, state = "down", needit = false, timer = createStopWatch()},
-def_fangbarrier = {defense = "fangbarrier", type = "normal", effect = "Protects against syssin bites", balance = {special = "outc paste"..snd.sep.."apply paste"}, state = "down", needit = false, timer = createStopWatch()},
-def_rebounding = {defense = "rebounding", type = "blue", effect = "Causes weapon attacks to backfire", balance = {smoke = "reishi"}, state = "down", needit = false, timer = createStopWatch()},
-def_density = {defense = "density", type = "red", effect = "Resists forced movement", balance = {salve = "mass"}, state = "down", needit = false, timer = createStopWatch()},
-def_nightsight = {defense = "nightsight", type = "normal", effect = "Allows glancing at night", balance = {special = "nightsight"}, state = "down", needit = false, timer = createStopWatch()},
-def_clarity = {defense = "clarity", type = "normal", effect = "Protects against some mental affs", balance = {needyequilibriumtake = "clarity"}, state = "down", needit = false, timer = createStopWatch()},
-def_waterwalking = {defense = "waterwalking", type = "normal", effect = "Allows you to walk on water", balance = {special = "touch waterwalking"}, state = "down", needit = false, timer = createStopWatch()},
-def_safeguard = {defense = "safeguard", type = "normal", effect = "Increased resistances", balance = {balanceequilibrium = "safeguard"}, state = "down", needit = false, timer = createStopWatch()},
-def_warmth = {defense = "warmth", type = "normal", effect = "Increased resistances", balance = {balanceequilibrium = "warmth"}, state = "down", needit = false, timer = createStopWatch()},
-def_miasma = {defense = "miasma", type = "normal", effect = "Increased resistances", balance = {balanceequilibrium = "miasma"}, state = "down", needit = false, timer = createStopWatch()},
+-- Probably handled by firstaid anyways, otherwise auto assume people have plants/vials. 
+def_deafness = {defense = "deafness", type = "normal", effect = "Protects from sonic effects", balance = {herb = "ototoxin"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_blindness = {defense = "blindness", type = "normal", effect = "Protects from visual effects", balance = {herb = "amaurosis"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_waterbreathing = {defense = "waterbreathing", type = "normal", effect = "Prevents choking underwater", balance = {herb = "waterbreathing"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_kola = {defense = "instawake", type = "normal", effect = "Removes the WAKE delay", balance = {eat = "stimulant"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_insomnia = {defense = "insomnia", type = "normal", effect = "Prevents sleep effects", balance = {eat = "kawhepill"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_deathsight = {defense = "deathsight", type = "normal", effect = "Reports player deaths", balance = {eat = "thanatonin"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_thirdeye = {defense = "thirdeye", type = "normal", effect = "Adds locations to WHO", balance = {eat = "acuity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_venom = {defense = "venom_resistance", type = "normal", effect = "Protects against poison damage", balance = {vial = "antivenin"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_levitation = {defense = "levitation", type = "normal", effect = "Protects against falling effects", balance = {vial = "levitation"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_frost = {defense = "temperance", type = "normal", effect = "Protects against fire damage", balance = {vial = "frost"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_speed = {defense = "speed", type = "green", effect = "Protects against aeon affliction", balance = {drink = "speed"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_caloric = {defense = "insulation", type = "normal", effect = "Protects against cold damage", balance = {salve = "caloric"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_vigor = {defense = "vigor", type = "normal", effect = "Critical hits heal you", balance = {drink = "vigor"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_fangbarrier = {defense = "fangbarrier", type = "normal", effect = "Protects against syssin bites", balance = {special = "apply paste"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_rebounding = {defense = "rebounding", type = "blue", effect = "Causes weapon attacks to backfire", balance = {smoke = "reishi"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+
+--Generic skills or occurs in more than one
+def_nightsight = {defense = "nightsight", type = "normal", effect = "Allows glancing at night", balance = {special = "nightsight on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Nightsight"},
+def_fitness = {defense = "fitness", type = "normal", effect = "Protects from asthma", balance = {balanceequilibriumtake = "fitness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Fitness"},
+def_divert_melee = {defense = "divert_melee", type = "normal", effect = "Protects from melee damage", balance = {special = "divert melee"}, state = "down", needit = false, timer = createStopWatch(), skill = "Jerk"},
+def_dodge_melee = {defense = "dodge_melee", type = "normal", effect = "Protects from melee damage", balance = {special = "dodge melee"}, state = "down", needit = false, timer = createStopWatch(), skill = "Sidestep"},
+def_clarity = {defense = "clarity", type = "normal", effect = "Protects against some mental affs", balance = {needyequilibriumtake = "clarity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Clarity"},
+def_shroud = { }, -- handled and set per class elsewhere
+def_manipulation_aegis = {defense = "manipulation_aegis", type = "normal", effect = "cheap prism", balance = {needyequilibriumtake = "manipulate pylon for aegis"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_gripping = {defense = "gripping", type = "normal", effect = "Prevents disarming", balance = {balanceequilibrium = "grip"}, state = "down", needit = false, timer = createStopWatch(), skill = "Gripping"},
+def_starburst = {defense = "starburst", type = "blue", effect = "Instant revival on death", balance = {tattoo = "starburst"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_density = {defense = "density", type = "red", effect = "Resists forced movement", balance = {salve = "mass"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_waterwalking = {defense = "waterwalking", type = "normal", effect = "Allows you to walk on water", balance = {special = "touch waterwalking"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_overwatch = {defense = "overwatch", type = "normal", effect = "See items in the air/trees", balance = {special = "goggle toggle overwatch"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_divine_speed = {defense = "divine_speed", type = "normal", effect = "Faster movement through Divine Grace", balance = {balanceequilibriumtake = "grace"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_hypersight = {defense = "hypersight", type = "normal", effect = "see through shenanigans", balance = {needyequilibriumtake = "hypersight on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+
+--Ylem
+def_amber_orb = {defense= "amber_orb", type = "ansi_light_yellow", effect = "5% increase in experience", balance = {special = "activate amber orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_green_orb = {defense= "green_orb", type = "lawn_green", effect = "25% increase in vigour healing", balance = {special = "activate green orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_crimson_orb = {defense= "crimson_orb", type = "firebrick", effect = "more damage to and less from denizens", balance = {special = "activate crimson orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_cerulean_orb = {defense= "cerulean_orb", type = "ansiLightBlue", effect = "protection from damage", balance = {special = "activate cerulean orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_white_orb = {defense= "white_orb", type = "ghost_white", effect = "increased ylem gain from eld", balance = {special = "activate white orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+
+--Generic endgame
+def_safeguard = {defense = "safeguard", type = "normal", effect = "Increased resistances", balance = {special = "safeguard"}, state = "down", needit = false, timer = createStopWatch(), skill = "Instill"},
+def_warmth = {defense = "warmth", type = "normal", effect = "Increased resistances", balance = {special = "warmth"}, state = "down", needit = false, timer = createStopWatch(), skill = "Instill"},
+def_miasma = {defense = "miasma", type = "normal", effect = "Increased resistances", balance = {special = "miasma"}, state = "down", needit = false, timer = createStopWatch(), skill = "Instill"},
+
+--Raceskills or tattoos
+def_pacing = {defense = "pacing", type = "red", effect = "Keep up while following", balance = {needybalancetake = "pacing on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Pacing"},
+def_heatsight = {defense = "heatsight", type = "normal", effect = "See hidden people", balance = {needybalancetake = "heatsight"}, state = "down", needit = false, timer = createStopWatch(), skill = "Heatsight"},
+def_chameleon = {defense = "chameleon", type = "normal", effect = "Change your name on QW/WHO", balance = {balanceequilibrium = "touch chameleon "}, state = "down", needit = false, timer = createStopWatch(), skill = "ChameleonTattoo"},
+def_cloak_tattoo = {defense = "cloak", type = "blue", effect = "Protects from unwanted summons", balance = {tattoo = "cloak"}, state = "down", needit = false, timer = createStopWatch(), skill = "CloakTattoo"},
+def_mindseye_tattoo = {defense = "mindseye", type = "green", effect = "Allows deaf/blind hearing/vision", balance = {balanceequilibrium = "touch allsight"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_firefly_tattoo = {defense = "firefly", type = "green", effect = "Protects you against them Sciomancers", balance = {tattoo = "firefly"},state = "down", needit = false, timer = createStopWatch(), skill = "FireflyTattoo"},
+def_flame_tattoo = {defense = "flame", type = "green", effect = "Helps protect against writhe affs", balance = {tattoo = "flame"},state = "down", needit = false, timer = createStopWatch(), skill = "FlameTattoo"},
+def_shield_tattoo = {defense = "shielded", type = "green", effect = "Magical shield to stop attacks", balance = {tattoo = "shield"},state = "down", needit = false, timer = createStopWatch(), skill = "ShieldTattoo"},
+--balance = {needyequilibriumtake = "heatsight"}
+
 def_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "maingauche"}, state = "down", needit = false, timer = createStopWatch()},
-def_pacing = {defense = "pacing", type = "red", effect = "Keep up while following", balance = {needybalancetake = "pacing on"}, state = "down", needit = false, timer = createStopWatch()},
 def_nimbleness = {defense = "nimbleness", type = "red", effect = "Light on your feet", balance = {needybalancetake = "nimbleness"}, state = "down", needit = false, timer = createStopWatch()},
 def_chameleon_tattoo = {defense = "chameleon_tattoo", type = "normal", effect = "Allows you to assume the appearance of another", state = "down", needit = false, timer = createStopWatch()},
 
@@ -2978,6 +3283,7 @@ def_fury = {defense = "fury", type = "normal", effect = "Fury in ya", balance = 
 def_lightshield = {defense = "lightshield", type = "normal", effect = "Light-based damage resistance", balance = {needyequilibriumtake = "evoke lightshield"}, state = "down", needit = false, timer = createStopWatch()},
 def_inspiration = {defense = "inspiration_strength", type = "normal", effect = "Increases strength", balance = {needyequilibriumtake = "perform inspiration strength"}, state = "down", needit = false, timer = createStopWatch()},
 def_fireblock = {defense = "fireblock", type = "normal", effect = "Resists fire attacks", balance = {needybalancetake = "evoke fireblock"}, state = "down", needit = false, timer = createStopWatch()},
+def_shine = {defense = "shine", type = "normal", effect = "Dealing AoE room damage to enemies", balance = {needybalancetake = "evoke shine"}, state = "down", needit = false, timer = createStopWatch(), skill = "Shine"},
 
 --Syssin
 def_hiding = {defense = "hiding", type = "blue", effect = "Conceals your presence", balance = {needybalancetake = "hide"}, state = "down", needit = false, timer = createStopWatch()},
@@ -2997,6 +3303,9 @@ def_constitution = {defense = "constitution", type = "normal", effect = "Protect
 def_split_mind = {defense = "split_mind", type = "normal", effect = "Constant meditation", balance = {needyequilibriumtake = "split mind"}, state = "down", needit = false, timer = createStopWatch()},
 def_kaido_immunity = {defense = "immunity", type = "normal", effect = "You will auto cure the next poison you are hit with", balance = {needyequilibriumtake = "immunity"}, state = "down", needit = false, timer = createStopWatch()},
 def_boosted_regen = {defense = "boosted_regen", type = "normal", effect = "Even more HP regen", balance = {special = "boost regeneration"}, state = "down", needit = false, timer = createStopWatch()},
+def_insight = {defense = "insight", type = "normal", effect = "See the thoughts of others", balance = {needyequilibriumtake = "mind insight on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Insight"},
+def_toughness = {defense = "toughness", type = "normal", effect = "Cutting resistance", balance = {needyequilibriumtake = "toughness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Toughness"},
+def_resistance = {defense = "resistance", type = "normal", effect = "Magic resistance", balance = {needyequilibriumtake = "resistance"}, state = "down", needit = false, timer = createStopWatch(), skill = "Resistance"},
 
 --Sentinel
 def_barkskin = {defense = "barkskin", type = "normal", effect = "10% Resist to Cutting/Blunt", balance = {needyequilibriumtake = "barkskin"}, state = "down", needit = false, timer = createStopWatch()},
@@ -3037,7 +3346,7 @@ def_soulmask = {defense = "soulmask", type = "normal", effect = "Your soul is ha
 def_vengeance = {defense = "vengeance", type = "normal", effect = "You will deal AoE damage to enemies upon death.", balance = {balanceequilibriumtake = "vengeance"}, state = "down", needit = false, timer = createStopWatch() },
 def_deathaura = {defense = "deathaura", type = "normal", effect = "You deal damage to enemies in room passively.", balance = {balanceequilibriumtake = "deathaura on"}, state = "down", needit = false, timer = createStopWatch() },
 def_gravechill = {defense = "gravechill", type = "normal", effect = "Cold damage on decay instead of magic.", balance = {balanceequilibriumtake = "gravechill"}, state = "down", needit = false, timer = createStopWatch() },
---def_lifevision = {defense = "lifevision ", type = "normal", effect = "See all things living, sometimes identify illusions.", balance = {balanceequilibriumtake = "lifevision"}, state = "down", needit = false, timer = createStopWatch() },
+def_lifevision = {defense = "lifevision ", type = "normal", effect = "See all things living, sometimes identify illusions.", balance = {balanceequilibriumtake = "lifevision"}, state = "down", needit = false, timer = createStopWatch() },
 def_soulcage = {defense = "soulcage", type = "normal", effect = "You come back to life upon death instantly.", balance = {balanceequilibriumtake = "soulcage"}, state = "down", needit = false, timer = createStopWatch() },
 def_devilpact = {defense = "devil", type = "normal", effect = "Throw 2 cards at once.", balance = {balanceequilibriumtake = "outc blank as devil"..snd.sep.."fling devil at ground"}, state = "down", needit = false, timer = createStopWatch() },
 def_eclipse = {defense = "eclipse", type = "normal", effect = "Every 3rd card is hidden, sun/moon only.", balance = {balanceequilibriumtake = "outc blank as eclipse"..snd.sep.."fling eclipse at me"}, state = "down", needit = false, timer = createStopWatch() },
@@ -3114,7 +3423,20 @@ def_wrath = {defense = "wrath", type = "normal", effect = "see what other would 
 def_zenith = {defense = "zenith", type = "normal", effect = "cure a random AFF, use certain attacks off bal", balance = {balanceequilibriumtake = "enact zenith"}, state = "down", needit = false, timer = createStopWatch() },
 def_mindspark = {defense = "mindspark", type = "normal", effect = "raises your intelligence", balance = {balanceequilibrium = "psi mindspark"}, state = "down", needit = false, timer = createStopWatch() },
 
-}</script>
+}
+
+
+snd.alternative_class_defenses = {
+Luminary_constitution = {defense = "constitution", type = "normal", effect = "Protection against vomiting", balance = {needyequilibriumtake = "perform constitution"}, state = "down", needit = false, timer = createStopWatch(), skill = "Constitution"},
+Indorani_shroud = { defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "shroud"}, state = "down", needit = false, timer = createStopWatch(), skill = "Shroud" },
+Carnifex_shroud = {defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "soul shroud"}, state = "down", needit = false, timer = createStopWatch(), skill = "Shroud" },
+Syssin_shroud = { defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "conjure cloak"}, state = "down", needit = false, timer = createStopWatch(), skill = "Cloak" },
+
+
+}
+
+
+</script>
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
@@ -7901,16 +8223,60 @@ end
 
 function snd.shaman_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+if snd.familiar then
 	if hp &lt;= 60 then
-  	battack = "touch shield"
+    if snd.balance.morph then
+      if snd.shamanpet == "bear" then
+        battack = "familiar morph spider"..snd.sep.."touch shield"
+      elseif snd.shamanpet == "spider" then
+      	battack = "familiar morph bear"..snd.sep.."touch shield"
+      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	battack = "familiar morph bear"..snd.sep.."touch shield"
+      end
+    else
+      battack = "touch shield"
+    end
 	elseif snd.bashcounterattack then
-		battack = "touch shield"
+    if snd.balance.morph then
+      if snd.shamanpet == "bear" then
+        battack = "familiar morph spider"..snd.sep.."touch shield"
+      elseif snd.shamanpet == "spider" then
+      	battack = "familiar morph bear"..snd.sep.."touch shield"
+      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	battack = "familiar morph bear"..snd.sep.."touch shield"
+      end
+    else
+      battack = "touch shield"
+    end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
-		snd.pushattack = false
+    if snd.balance.morph then
+      if snd.shamanpet == "bear" then
+        battack = "familiar morph spider"..snd.sep.."push "..snd.bashing.target
+      elseif snd.shamanpet == "spider" then
+      	battack = "familiar morph bear"..snd.sep.."push "..snd.bashing.target
+      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	battack = "familiar morph bear"..snd.sep.."push "..snd.bashing.target
+      end
+    else
+		  battack = "push "..snd.bashing.target
+		  snd.pushattack = false
+    end
 	else
-		battack = "commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+    if snd.balance.morph then
+      if snd.shamanpet == "bear" then
+        battack = "familiar morph spider"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+      elseif snd.shamanpet == "spider" then
+      	battack = "familiar morph bear"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	battack = "familiar morph bear"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+      end
+    else
+		  battack = "commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+    end
 	end
+else
+  battack = "familiar recall##order spirit follow me"
+end
 end
 
 function snd.sentinel_bash()
@@ -8021,9 +8387,9 @@ function snd.archivist_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 bioessence = tonumber(gmcp.Char.Vitals.bio) 
 
-  if hp &lt;= 70 and not snd.knit and bioessence &gt; 0 and hasSkill("Knitting") then 
+  if hp &lt;= 70 and not snd.knit and bioessence &gt; 0 then 
     battack = "bio knitting"
-	elseif hp &lt;= 60 and bioessence &gt; 1  and hasSkill("Ethereal") then
+	elseif hp &lt;= 60 and bioessence &gt; 1 then
 		if snd.defenses.def_ethereal.state ~= "deffed" then
 			battack = "bio ethereal"
 		end
@@ -8035,11 +8401,7 @@ bioessence = tonumber(gmcp.Char.Vitals.bio)
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
 	else
-    if bioessence &gt; 1 and snd.defenses.def_ethereal.state ~= "deffed" then
-      battack = "incite crux "..snd.bashing.target..snd.sep.."bio stimulant"
-    else
-      battack = "incite crux "..snd.bashing.target
-    end
+    battack = "incite crux "..snd.bashing.target
 	end
 end
 
@@ -10505,6 +10867,7 @@ end</script>
 	snd.firstaidcuretrack.frozen = "6"	
 	snd.firstaidcuretrack.gorged = "6"
 	
+	snd.firstaidcuretrack.ice_encased = "7"
 	snd.firstaidcuretrack.hypothermia = "7"
 	snd.firstaidcuretrack.ablaze = "7"
 	
@@ -10707,6 +11070,9 @@ function snd.firstaidresetlistnone()
 	end
 	if snd.firstaidcuretrack.hypersomnia ~= "7" then
 		send("firstaid priority hypersomnia 7")
+	end
+	if snd.firstaidcuretrack.ice_encased ~= "7" then
+		send("firstaid priority ice_encased 7")
 	end
 	if snd.firstaidcuretrack.hypothermia ~= "7" then
 		send("firstaid priority hypothermia 7")
@@ -10930,6 +11296,9 @@ function snd.firstaidassZealot()  -- curing based on class being attacked by
 end
 
 function snd.firstaidassAscendril()  -- curing based on class being attacked by
+	if snd.firstaidcuretrack.ice_encased ~= "5" then
+		send("firstaid priority ice_encased 5")
+	end	
 	if snd.firstaidcuretrack.hypothermia ~= "5" then
 		send("firstaid priority hypothermia 5")
 	end	
@@ -10937,7 +11306,7 @@ function snd.firstaidassAscendril()  -- curing based on class being attacked by
 		send("firstaid priority frozen 3")
 	end	
 	if snd.firstaidcuretrack.torso ~= "4" then
-		send("FIRSTAID PRIORITY PRESTORE torso 1% 4")
+		send("FIRSTAID PRIORITY PRESTORE torso 5% 4")
 	end
 	if snd.firstaidcuretrack.shivering ~= "4" then
 		send("FIRSTAID PRIORITY shivering 4")
@@ -11880,6 +12249,7 @@ def_devilpact = "on",
 },
 
 shaman = {
+
 def_fangbarrier = "on",
 def_thirdeye = "on",
 def_mindseye_tattoo = "on",
@@ -11892,10 +12262,18 @@ def_venom = "on",
 def_levitation = "on",
 def_speed = "on",
 def_caloric = "on",
-def_divert_melee = "on",
-def_dodge_melee = "on",
 def_nightsight = "on",
 def_lifevision = "on",
+def_overwatch = "on",
+def_insight = "on",
+def_deafness = "on",
+def_blindness = "on",
+def_clarity = "on",
+def_warmth = "on",
+def_divert_melee = "on",
+def_dodge_melee = "on",
+def_clarity = "on",
+def_waterbreathing = "on",
 def_spiritbond = "on",
 def_protection = "on",
 def_shaman_spiritsight = "once",
@@ -12247,6 +12625,7 @@ snd.morphpet = true
 snd.panacea = true
 snd.stormcloud = false
 snd.incomingomen = false
+snd.familiar = false
 
 --Wayfarer
 snd.highjumped = false
@@ -12569,7 +12948,6 @@ epidermal = {
 "anorexia",
 "gorged",
 "effused_blood",
-"hypothermia",
 "indifference",
 "stuttering",
 "blurry vision",
@@ -12578,6 +12956,8 @@ epidermal = {
 },
 
 caloric = {
+"hypothermia",
+"ice_encased",
 "frozen",
 "shivering",
 "no_caloric"
@@ -12841,16 +13221,9 @@ function snd.target_used(curative)
     for affliction in pairs(snd.cures[curative]) do
       for i in pairs(snd.target_has) do
         if snd.target_has[i] == snd.cures[curative][affliction] and not aff_found then
-          if curative == "epidermal" and snd.cures[curative][affliction] == "hypothermia" then
-            if snd.limb_dmg.torso == 0 then
-              snd.target_cured(snd.cures[curative][affliction])
-              aff_found = true
-            end
-          elseif curative == "caloric" and snd.cures[curative][affliction] == "no_caloric" then
-            if not snd.checkAff("hypothermia") then
-              snd.target_cured(snd.cures[curative][affliction])
-              aff_found = true
-            end
+          if curative == "caloric" and snd.cures[curative][affliction] == "no_caloric" then
+            snd.target_cured(snd.cures[curative][affliction])
+            aff_found = true
           elseif curative == "panacea" then
 						if table.contains(gmcp.Room.Info.details, "darkness") then
             	if snd.cures[curative][affliction] == "shaderot_body" then
@@ -13145,10 +13518,10 @@ end</script>
 "Seurimas",
 "Borminchia",
 "Marin",
-"Validan",
+"Rainaka",
 "Desidora",
 "Aniko",
-"Taiyang",
+"Ishmar",
 "Azarae",
 "Ensis",
 "Blaze",
@@ -13336,7 +13709,12 @@ end</script>
 "Arcannia",
 "Ameliah",
 "Amedeus",
+"Lin",
+"Minette",
 "Ellbryan",
+"Nuovis",
+"Aolin",
+"Taiyang",
 "Hallis",
 "Falinzin",
 "Tristram",
@@ -13368,12 +13746,17 @@ end</script>
 "Nymma",
 "Sessizlik",
 "Alystrine",
+"Tamarja",
+"Shugawata",
+"Evelyn",
 "Noon",
+"Validan",
 "Kayt",
 "Arbre",
 "Rinata",
 "Lirael",
 "Agothine",
+"Effrosyni",
 "Bastian",
 "Ashel",
 "Kitza",
