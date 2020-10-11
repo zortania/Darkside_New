@@ -47,7 +47,11 @@ send("Config Ansi ON", false)
 send("Config mxp on", false)
 send("config simpletargeting on", false)
 send("config dialogue highlight", false)
-send("Config prettynumbers off", false)</script>
+send("Config prettynumbers off", false)
+sndNDB_Install()
+sndNDB.highlightNames = false
+expandAlias("qwp")
+</script>
 							<command></command>
 							<packageName></packageName>
 							<regex>^\?setup$</regex>
@@ -762,8 +766,8 @@ snd.target_trigger_idlow = tempTrigger(string.lower(snd.target), [[selectString(
 							<name>Add Target List</name>
 							<script>local list = matches[2]:gsub(" ", ", ")
 
-swarm.addTargetList(list)
-swarm.callTargetList()</script>
+snd.addTargetList(list)
+snd.callTargetList()</script>
 							<command></command>
 							<packageName></packageName>
 							<regex>^atl (.+)$</regex>
@@ -773,9 +777,9 @@ swarm.callTargetList()</script>
 							<script>local tar = matches[2]:title()
 local pos = matches[3] or nil
 
-swarm.addSingleTarget(tar, pos)
+snd.addSingleTarget(tar, pos)
 
-if snd.toggles.calling then --! NOTE: Replace with your system's toggle variable. Cf notes in the scripts.
+if snd.toggles.calling then
 	if pos then
 		send("wt Target priority: " .. tar .. " " .. pos)
 	else
@@ -788,20 +792,20 @@ end</script>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
 							<name>List Targets</name>
-							<script>swarm.displayTargetList()
-swarm.callTargetList()</script>
+							<script>snd.displayTargetList()
+snd.callTargetList()</script>
 							<command></command>
 							<packageName></packageName>
 							<regex>^tlist$</regex>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
 							<name>Clear Target List</name>
-							<script>swarm.clearTargetList()</script>
+							<script>snd.clearTargetList()</script>
 							<command></command>
 							<packageName></packageName>
 							<regex>^atlc$</regex>
 						</Alias>
-						<Alias isActive="yes" isFolder="no">
+						<Alias isActive="no" isFolder="no">
 							<name>Toggle Auto Targeting</name>
 							<script>if swarm.targeting.auto then
 	swarm.e.warn("AUTO TARGETING DISABLED!", true, true)
@@ -817,8 +821,8 @@ end</script>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
 							<name>Next Target</name>
-							<script>swarm.e.echo("Finding next target!", true, true)
-swarm.autoTargeting()</script>
+							<script>snd.targeting.skip = true
+snd.get_new_target()</script>
 							<command></command>
 							<packageName></packageName>
 							<regex>^nt$</regex>
@@ -827,9 +831,9 @@ swarm.autoTargeting()</script>
 							<name>Remove Target</name>
 							<script>local who = matches[2]:title()
 
-swarm.removeTarget(who)
+snd.removeTarget(who)
 
-if snd.toggles.calling then --! NOTE: Replace with your system's toggle variable. Cf notes in the scripts.
+if snd.toggles.calling then 
 	send("wt Target removed: " .. who)
 end</script>
 							<command></command>
@@ -1390,7 +1394,7 @@ snd.send("qeb use translocator")</script>
 						<Alias isActive="yes" isFolder="no">
 							<name>Wielding</name>
 							<script>if snd.class == "Archivist" then
-	if (snd.wielded.left.name or snd.wielded.right.name) == "a Master Gulleye's Rod" then
+	if (snd.wielded.left.name or snd.wielded.right.name) == "a venantium fishing rod" then
 		snd.send("qeb unwield pole")
 		tempTimer(3, [[expandAlias("wbsh", false)]])
 	else
@@ -4247,7 +4251,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>wield bashing</name>
 									<script>if snd.class == "Luminary" then
-snd.send("quickwield both tower mace")
+  snd.send("quickwield both tower mace")
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -5897,6 +5901,15 @@ end</script>
 									<regex>^tco(.*)$</regex>
 								</Alias>
 							</AliasGroup>
+							<Alias isActive="yes" isFolder="no">
+								<name>Wield bashing</name>
+								<script>if snd.class == "Shaman" then
+  snd.send("quickwield both quarterstaff")
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^wbsh$</regex>
+							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>Templar</name>
@@ -5913,7 +5926,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>wield bashing</name>
 									<script>if snd.class == "Templar" then
-snd.send("quickwield both longsword shield")
+  snd.send("quickwield both longsword shield")
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -8097,7 +8110,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>wield bashing</name>
 									<script>if snd.class == "Carnifex" then
-snd.send("quickwield both greatmaul")
+  snd.send("quickwield both greatmaul")
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -10378,6 +10391,230 @@ tempTimer(1, [[disableTrigger'who groups']])</script>
 						<packageName></packageName>
 						<regex>^whos$</regex>
 					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Name database help file</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;Name Database &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------------------------------------")
+cecho("\n&lt;ForestGreen&gt;The name databse that &lt;green&gt;Sunder&lt;ForestGreen&gt; utilizes will be familiar to many of you who have come from other IRE games, including the utilization and coloring effects. See below for aliases to toggle certain items and general upkeep of the names contained.")
+cecho("\n")
+cecho("\n&lt;ForestGreen&gt;Please note that you do NOT need to utilize the highlighting if you do not want to, but you absolutely do need the name database for other functions of &lt;green&gt;Sunder&lt;ForestGreen&gt;.")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;------------")
+cecho("\n&lt;ForestGreen&gt;By default, the name database should be installed when you set everything up. You can either make your own database of names as you go, or check on the discord and see if there's an updated list - you'll probably wind up with 1000+ names!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;sndb settings         &lt;ForestGreen&gt;Shows you current color configuration of everyone.")
+cecho("\n&lt;DeepSkyBlue&gt;sndb hl               &lt;ForestGreen&gt;Toggles the highlighting of names on/off.")
+cecho("\n&lt;DeepSkyBlue&gt;sndb hl &lt;org&gt; &lt;color&gt; &lt;ForestGreen&gt;Change your custom color config per city.")
+cecho("\n&lt;DeepSkyBlue&gt;As a note --          Enemy highlighting isn't functional yet but is being worked on.")
+cecho("\n&lt;DeepSkyBlue&gt;qwp                   &lt;ForestGreen&gt;Parse the who list to add new names.")
+cecho("\n&lt;DeepSkyBlue&gt;whois &lt;person&gt;        &lt;ForestGreen&gt;Shows basic info like level and class.")
+cecho("\n&lt;tomato&gt;Please don't use this to metagame. Self police.")
+cecho("\n&lt;DeepSkyBlue&gt;honors &lt;person&gt;       &lt;ForestGreen&gt;Update one individual person.")
+cecho("\n&lt;DeepSkyBlue&gt;sndb clearout         &lt;ForestGreen&gt;Remove unranked/people below level 50.")
+cecho("\n&lt;DeepSkyBlue&gt;sndb redo             &lt;ForestGreen&gt;Re-check everyone in the database.")
+cecho("\n")
+cecho("\n&lt;ForestGreen&gt;There are some more functions in the scripts for use in your code for checking city/class/if they exist in the database etc.")
+
+cecho("\n&lt;MediumSeaGreen&gt;-------------------------------------------")
+
+--[[
+sndb settings - Shows basic settings information
+sndb install - Initial install alias, otherwise unused
+
+sndb hl - Highlight Names
+sndb hl (org) (colour) - Change highlighting of a particular city
+sndb hlprio (org|enemies) - Change highlight priority between cities/enemies
+sndb ehl (i|u|b) - Change format of enemy highlighting (italics/bold/underline)
+ -- Enemy highlighting isn't functional yet but is being worked on.
+
+qwp - Parse online people. As a failsafe, it won't print if there's unchecked people. Just use it again once it's checked them.
+whois (person) - Prints information pertaining to a person.
+honours (person) - Will honours as per usual, but also check them via API.
+sndb clearout - Remove unranked/low level people (under 50).
+sndb redo - Will re-honours everyone currently in the database.
+
+
+sndNDB_getColour(person) - Useful for highlighting; will return the colour of the person's city.
+sndNDB_Exists(person) - Will tell you if they're tracked by the NDB yet.
+
+sndNDB_getClass(person)
+sndNDB_getCitizenship(person) - Both self-explanatory.
+sndNDB_isCitizenOf(city, person) - Will return true if they're a citizen of X city.
+
+]]</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (N|n)amedb$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Questing Help File</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;QUESTING &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------------------------------------")
+cecho("\n&lt;ForestGreen&gt;Always ending up with odds and ends in your inventory or kestrels following you around EVERYWHERE because you dared to walk through Three Widows? Well no more! You will now be able to toggle quests on and off so that you only whistle or pick up items when you want!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;------------")
+cecho("\n&lt;ForestGreen&gt;As of right now, there is only one toggle to turn it on/off. More may be added in the future! It will not auto-walk areas for you, you will still need to walk around and while you do so &lt;green&gt;Sunder&lt;ForestGreen&gt; will pick up items and turn them in as appropriate. ")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;toggle questing       &lt;ForestGreen&gt;Toggles questing on/off")
+cecho("\n&lt;MediumSeaGreen&gt;-------------------------------------------")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (q|Q)uesting$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Who Help File</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;WHO &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;---------------------------------------")
+cecho("\n&lt;ForestGreen&gt;Tired of looking through the who list trying to figure out who is where and who they are with when looking for that pesky lesser that was just tapped? Well, thanks to &lt;green&gt;Czcibor&lt;ForestGreen&gt;, &lt;green&gt;Sunder &lt;ForestGreen&gt;has built in group checking via the who list!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------")
+cecho("\n&lt;ForestGreen&gt;Using the alias &lt;DeepSkyBlue&gt;WHO GROUPS &lt;green&gt;Sunder &lt;ForestGreen&gt;will now sift through the who list and capture room locations. Once it is done with that, it will show you the names of the rooms that have more than one person in that location, how many people are there, and then who all is in that location! Note that those with the &lt;red&gt;cloaking&lt;ForestGreen&gt; artifact or in hidden rooms are unable to be tracked in this manner.")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;who groups            &lt;ForestGreen&gt;Shows the full WHO list and then the grouped rooms with more than one person")
+cecho("\n&lt;MediumSeaGreen&gt;---------------------------------------")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (w|W)ho$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Vermin Help File</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;VERMIN &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;-----------------------------------------")
+cecho("\n&lt;ForestGreen&gt;We get it! Every time you see that daily/weekly/monthly(especially the monthly) milestone for vermin, you just want to run head first into a team of mages collapsing singularities and calamaties! So hopefully these will make your life easier from here on out and save you from death by mages! No guarantees :(")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------")
+cecho("\n&lt;ForestGreen&gt;First, you will want to make sure you are wielding whatever you need to kill the vermin. After you are ready to start your quest of ridding a city of its vermin, you just &lt;DeepSkyBlue&gt;PATH TRACK &lt;ForestGreen&gt;to any city &lt;LimeGreen&gt;(make sure you are not an enemy!) &lt;ForestGreen&gt;and then type &lt;DeepSkyBlue&gt;toggle vermin &lt;ForestGreen&gt;to start! This will work similar to &lt;DeepSkyBlue&gt;gogo &lt;ForestGreen&gt;in that it will just begin bashing from where you are currently. No matter which city you begin your vermin bashing in, it will end at the vermin mob and will automatically sell your vermin! So no more accidental offerings of vermin to your gods! Should you need to finish early, just type &lt;DeepSkyBlue&gt;toggle vermin &lt;ForestGreen&gt;again and an echo will pop up to remind you to go sell your vermin!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;toggle vermin         &lt;ForestGreen&gt;Toggles the vermin autobasher on/off")
+cecho("\n&lt;MediumSeaGreen&gt;-----------------------------------------")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (v|V)ermin$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Fluidcache Help File</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;FLUIDCACHE &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;---------------------------------------------")
+cecho("\n&lt;ForestGreen&gt;Ever log in and notice you lost a bunch of refills because your vials, bandages, or (gods forbid) rags decayed? Well NO MORE! Or at least, LESS LIKELY! &lt;green&gt;Sunder &lt;ForestGreen&gt;is now equipped with a few more aliases to help alleviate this problem!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------")
+cecho("\n&lt;ForestGreen&gt;Simply input the alias you want to use and then either let &lt;green&gt;Sunder &lt;ForestGreen&gt;fill your empty vials, bandages, or rags or consume them into your fluidcache. If you are new to Aetolia, make sure you read &lt;green&gt;HELP FLUIDCACHE &lt;ForestGreen&gt;if you have not already!")
+cecho("\n")
+cecho("\n&lt;ForestGreen&gt;Keep in mind that these aliases will not buy anything for you. Please refer to &lt;DeepSkyBlue&gt;sunder help shops &lt;ForestGreen&gt;to see the aliases that will purchase bulk items for you!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;venoms                &lt;ForestGreen&gt;First buy the rags you need for combat and type &lt;DeepSkyBlue&gt;venoms")
+cecho("\n                      &lt;ForestGreen&gt;to have &lt;green&gt;Sunder &lt;ForestGreen&gt;fill your rags for you. You can search this")
+cecho("\n                      &lt;ForestGreen&gt;alias in your scripts to change which venoms you want it to fill!")
+cecho("\n")
+cecho("\n&lt;DeepSkyBlue&gt;unvenom               &lt;ForestGreen&gt;Just what it says! Typing &lt;DeepSkyBlue&gt;unvenom &lt;ForestGreen&gt;will fluidcache consume")
+cecho("\n                      &lt;ForestGreen&gt;all the venoms from your rags!")
+cecho("\n")
+cecho("\n&lt;DeepSkyBlue&gt;fillvials             &lt;ForestGreen&gt;This alias will fill the vials in your inventory from your fluidcache.")
+cecho("\n")
+cecho("\n&lt;DeepSkyBlue&gt;unfillvials           &lt;ForestGreen&gt;Like &lt;DeepSkyBlue&gt;unvenom&lt;ForestGreen&gt;, this alias will consume the elixirs")
+cecho("\n                      &lt;ForestGreen&gt;in your vials back into your fluidcache.")
+cecho("\n")
+cecho("\n&lt;DeepSkyBlue&gt;fillbandages          &lt;ForestGreen&gt;This will fill the clean bandages in your inventory with the poultices")
+cecho("\n                      &lt;ForestGreen&gt;from your fluidcache.")
+cecho("\n")
+cecho("\n&lt;DeepSkyBlue&gt;unfillbandages        &lt;ForestGreen&gt;Again... same as the other 'un' aliases, but for poultices.")
+cecho("\n&lt;MediumSeaGreen&gt;---------------------------------------------")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (F|f)luidcache$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Shop Help File</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;SHOPS &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;----------------------------------------")
+cecho("\n&lt;ForestGreen&gt;Purchasing necessary items from shops can be a bit mundane, but NO MORE! Often you will find yourself buying many refills or masses of pills - to help combat this, &lt;green&gt;Sunder &lt;ForestGreen&gt;includes a few aliases to help make that less painful!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------")
+cecho("\n&lt;ForestGreen&gt;The first thing you need to do is find a shop. You can do this by going to any city (including Esterport!) and using &lt;DeepSkyBlue&gt;PATH TRACK DIRECTORY&lt;ForestGreen&gt;. This will take you to the directory where you can peruse all the shops in that city (think of it like a search engine). From there you can &lt;DeepSkyBlue&gt;DIRECTORY &lt;ForestGreen&gt;'&lt;DeepSkyBlue&gt;item&lt;ForestGreen&gt;' to see which shop is carrying the item(s) you need. If you have MXP turned on, you can click on the vnum for the shop you want or &lt;DeepSkyBlue&gt;PATH TRACK vnum &lt;ForestGreen&gt;to get there.")
+cecho("\n")
+cecho("\n&lt;ForestGreen&gt;Once you are in a shop, you will simply need to put in the alias for the items you wish to purchase and let &lt;green&gt;Sunder &lt;ForestGreen&gt;do the rest!")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;buypills #            &lt;ForestGreen&gt;Pills! Typing &lt;DeepSkyBlue&gt;buypills &lt;ForestGreen&gt;followed by an amount will buy that amount")
+cecho("\n                      &lt;ForestGreen&gt;of every type of pill! EXAMPLE: &lt;DeepSkyBlue&gt;buypills 500 &lt;ForestGreen&gt;will buy &lt;LimeGreen&gt;500 &lt;ForestGreen&gt;of each pill.")
+cecho("\n")
+cecho("\n&lt;DeepSkyBlue&gt;fillcache # type      &lt;ForestGreen&gt;Fluidcache! Just use &lt;DeepSkyBlue&gt;fillcache &lt;ForestGreen&gt;followed by the number of times")
+cecho("\n                      &lt;ForestGreen&gt;you want to buy a refill and what type of refill you want to buy.")
+cecho("\n                      &lt;ForestGreen&gt;The types are: &lt;DeepSkyBlue&gt;venoms&lt;ForestGreen&gt;, &lt;DeepSkyBlue&gt;poultices&lt;ForestGreen&gt;, and &lt;DeepSkyBlue&gt;elixirs&lt;ForestGreen&gt;. EXAMPLE: &lt;DeepSkyBlue&gt;fillcache") 
+cecho("\n                      &lt;DeepSkyBlue&gt;10 elixirs &lt;ForestGreen&gt;will purchase &lt;LimeGreen&gt;10 &lt;ForestGreen&gt;refills of each type of elixir. The purchase")
+cecho("\n                      &lt;ForestGreen&gt;line may be gagged, so just check your FC before and after purchasing!")
+cecho("\n                      &lt;LimeGreen&gt;**NOTE** &lt;ForestGreen&gt;This will buy the amount of refills, so to fill your cache(&lt;LimeGreen&gt;1500&lt;ForestGreen&gt;)")
+cecho("\n                      &lt;ForestGreen&gt;you will only need to purchase &lt;LimeGreen&gt;30 &lt;ForestGreen&gt;refills!")
+cecho("\n&lt;MediumSeaGreen&gt;----------------------------------------")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (S|s)hops$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Fishing Help File</name>
+						<script>cecho("&lt;CadetBlue&gt; Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;FISHING &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;------------------------------------------")
+cecho("\n&lt;ForestGreen&gt;Our &lt;green&gt;Sunder &lt;ForestGreen&gt;fishing system has been put together from several different systems, and will help you with your fishing milestones or just when you want to kick back and relax to earn some gold.")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
+cecho("\n&lt;MediumSeaGreen&gt;-------------")
+cecho("\n&lt;ForestGreen&gt;1. Put up your wielded items manually and wield your pole.\n")
+cecho("&lt;ForestGreen&gt;2. Go to a fishing hole.\n")
+cecho("&lt;ForestGreen&gt;3. Do '&lt;DeepSkyBlue&gt;FISHING DISCERN&lt;ForestGreen&gt;' to make sure you see fish. This will\n")
+cecho("&lt;ForestGreen&gt;   track the hole type, vnum, and what fish you see automatically\n")
+cecho("&lt;ForestGreen&gt;   in a database it creates on the first time you use it.\n")
+cecho("&lt;ForestGreen&gt;4. If you can fish there and there are fish, type in '&lt;DeepSkyBlue&gt;afish&lt;ForestGreen&gt;'\n") 
+cecho("&lt;ForestGreen&gt;   to turn on the auto-fisher.\n")
+cecho("&lt;ForestGreen&gt;5. If you run out of fish in this hole, it will turn off fishing on\n")
+cecho("&lt;ForestGreen&gt;   its own. You can also type in '&lt;DeepSkyBlue&gt;afish&lt;ForestGreen&gt;' to turn it off.\n")
+cecho("\n")
+cecho("\n&lt;CadetBlue&gt;ALIASES")
+cecho("\n&lt;MediumSeaGreen&gt;-------")
+cecho("\n&lt;DeepSkyBlue&gt;afish                 &lt;ForestGreen&gt; Turns the auto-fisher off/on")
+cecho("\n&lt;DeepSkyBlue&gt;fishing search ??  &lt;ForestGreen&gt;    You can search for a water hole type, or fish, from holes you've discerned.")
+cecho("\n&lt;DeepSkyBlue&gt;fishing search full ?? &lt;ForestGreen&gt;If you prepend &lt;DeepSkyBlue&gt;info&lt;ForestGreen&gt; or &lt;DeepSkyBlue&gt;full&lt;ForestGreen&gt; it displays complete info instead of abridged.")
+cecho("\n&lt;MediumSeaGreen&gt;------------------------------------------")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (F|f)ishing$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Sunder Utilities Index</name>
+						<script>cecho("&lt;CadetBlue&gt;Welcome to the &lt;green&gt;Sunder &lt;DeepSkyBlue&gt;UTILITIES &lt;CadetBlue&gt;help file!")
+cecho("\n&lt;MediumSeaGreen&gt;------------------------------------------")
+cecho("\n&lt;green&gt;Sunder &lt;ForestGreen&gt;has several different utilities that are quite useful! Below is a summarized list that will direct you to the correct files so that you can become familiar with them and reference back to them at any time!")
+cecho("\n")
+cecho("\n&lt;MediumTurquoise&gt;To view the following &lt;green&gt;Sunder &lt;MediumTurquoise&gt;help files, use &lt;DeepSkyBlue&gt;sunder help &lt;MediumTurquoise&gt;&lt;filename&gt;!")
+cecho("\n&lt;DeepSkyBlue&gt;Vermin               &lt;ForestGreen&gt;Explantion on &lt;green&gt;Sunder's &lt;ForestGreen&gt;vermin autobasher!")
+cecho("\n&lt;DeepSkyBlue&gt;Fishing              &lt;ForestGreen&gt;Explantion on how to use &lt;green&gt;Sunder's &lt;ForestGreen&gt;fishing utilities!")
+cecho("\n&lt;DeepSkyBlue&gt;Shops                &lt;ForestGreen&gt;Quick aliases to make purchasing easier!")
+cecho("\n&lt;DeepSkyBlue&gt;Fluidcache           &lt;ForestGreen&gt;Aliases to consume and fill vials/rags/bandages!")
+cecho("\n&lt;DeepSkyBlue&gt;Who                  &lt;green&gt;Sunder's &lt;ForestGreen&gt;WHO parsing system and how it works!")
+cecho("\n&lt;DeepSkyBlue&gt;Questing             &lt;ForestGreen&gt;Helpful questing aliases (no more pesky kestrels following you around!)")
+cecho("\n&lt;DeepSkyBlue&gt;Namedb               &lt;ForestGreen&gt;All the commands for the databse.")
+cecho("\n&lt;MediumSeaGreen&gt;------------------------------------------")
+</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^(S|s)under (H|h)elp (U|u)tilities$</regex>
+					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Fishing</name>
@@ -10423,10 +10660,11 @@ end</script>
 	echo("Autofishing disabled.\n")
 	if currently_fishing then snd.send("qeb fishing cut") end
 	currently_fishing = false
+  expandAlias("wbsh")
 else
 	echo("Autofishing enabled.\n")
 	currently_fishing = true
-	snd.send("wield pole"..snd.sep.."qeb fishing cast")
+	snd.send("secure left"..snd.sep.."secure right"..snd.sep.."wield pole"..snd.sep.."qeb fishing cast")
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -10574,6 +10812,228 @@ send("firstaid priority superstition 10")</script>
 					<packageName></packageName>
 					<regex>^firstaidstart$</regex>
 				</Alias>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Sunder Ndb Aliases</name>
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
+					<AliasGroup isActive="yes" isFolder="yes">
+						<name>Configurations</name>
+						<script></script>
+						<command></command>
+						<packageName></packageName>
+						<regex></regex>
+						<Alias isActive="yes" isFolder="no">
+							<name>Toggle Highlighting</name>
+							<script>if sndNDB.highlightNames then
+	--Remove any highlights, and turn off the toggle.
+	sndNDB.highlightNames = false
+	sndNDB_Unhighlight()
+	snd.message("Disabled name highlighting.")
+else
+	--Begin highlighting again, and enable them all.
+	sndNDB.highlightNames = true
+	sndNDB_loadHighlights()
+	snd.message("Enabled name highlighting.")
+end</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb hl$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Set Org Colours</name>
+							<script>local cities = {"Bloodloch", "Duiran", "Enemies", "Enorian", "Rogues", "Spinesreach"}
+
+local city, colour = "", ""
+
+if table.contains(cities, matches[2]:title()) then
+	city = matches[2]:title()
+	colour = matches[3]
+elseif table.contains(cities, matches[3]:title()) then
+	city = matches[3]:title()
+	colour = matches[2]
+else
+	snd.message("That is not a valid option, please choose from: &lt;green&gt;Bloodloch, Duiran, Enemies, Enorian, Rogues or Spinesreach")
+end
+
+if city ~= "" then
+	if table.contains(color_table, colour) then
+		snd.message(city.." will now be highlighted in &lt;"..colour.."&gt;"..colour..".")
+		if city ~= "Enemies" then
+			sndNDB_updateHighlights(city, colour)
+		else
+			sndNDB_enemyHighlights()
+		end
+	else
+		snd.message("That is not a valid colour to choose from.")
+	end
+end</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb hl (\w+) (\w+)$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Show Settings</name>
+							<script>local count = 0
+for i,v in pairs(sndNDB.players) do
+	count = count + 1
+end
+
+snd.message("       snd Name Database Settings")
+echo("\n ")
+snd.message((sndNDB.highlightNames and "&lt;green&gt;We are" or "&lt;red&gt;We are not").."&lt;NavajoWhite&gt; currently highlighting names.")
+cecho("\n       &lt;NavajoWhite&gt;      Total of &lt;white&gt;"..count.."&lt;NavajoWhite&gt; names!\n\n")
+
+snd.message("       Highlight settings:")
+for city, colour in pairs(sndNDB.highlighting) do
+	cecho("\n &lt;"..colour.."&gt;"..city.."&lt;white&gt;"..string.rep(" ", 12-string.len(city)).."citizens will be highlighted in &lt;"..colour.."&gt;"..colour..".")
+end
+
+cecho("\n ")
+snd.message("       Enemy settings:")
+cecho("\n "..(sndNDB.highlightPriority == "enemies" and "&lt;green&gt;Prioritising" or "&lt;red&gt;Not prioritising").."&lt;NavajoWhite&gt; highlighting of enemies.")
+cecho("\n &lt;LightSkyBlue&gt;Enemies will be highlighted in &lt;"..sndNDB.highlighting.Enemies.."&gt;"..sndNDB.highlighting.Enemies..".")
+cecho("\n    &lt;LightSkyBlue&gt;-Special-")
+cecho("\n  "..(sndNDB.enemySettings.bold and "&lt;green&gt;" or "&lt;red&gt;")..string.char(7).." &lt;NavajoWhite&gt;Bolded letters.")
+cecho("\n  "..(sndNDB.enemySettings.underline and "&lt;green&gt;" or "&lt;red&gt;")..string.char(7).." &lt;NavajoWhite&gt;Underlined letters.")
+cecho("\n  "..(sndNDB.enemySettings.italics and "&lt;green&gt;" or "&lt;red&gt;")..string.char(7).." &lt;NavajoWhite&gt;Italicized letters.")
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb settings$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Set Highlight Priority</name>
+							<script>local type, colour = matches[2], matches[3]
+
+if sndNDB.highlightPriority ~= matches[2] then
+	sndNDB.highlightPriority = matches[2]
+	snd.message("Highlighting will give priority to "..sndNDB.highlightPriority..".")
+	sndNDB_enemyHighlights()
+else
+	snd.message("Already prioritising highlighting of that.")
+end
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb hlprio (enemies|city)$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Toggle Highlighting Options For Enemies</name>
+							<script>local x = { i = "italics", b = "bold", u = "underline" }
+local opt = x[matches[2]]
+if not sndNDB.enemySettings[opt] then
+	sndNDB.enemySettings[opt] = true
+	snd.message("Enemies &lt;green&gt;will now have &lt;NavajoWhite&gt;"..opt.." applied to it.")
+else
+	sndNDB.enemySettings[opt] = false
+	snd.message("Enemies &lt;red&gt;will no longer have &lt;NavajoWhite&gt;"..opt.." applied to it.")
+end
+sndNDB_enemyHighlights()</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb ehl (i|u|b)$</regex>
+						</Alias>
+					</AliasGroup>
+					<AliasGroup isActive="yes" isFolder="yes">
+						<name>Actions</name>
+						<script></script>
+						<command></command>
+						<packageName></packageName>
+						<regex></regex>
+						<Alias isActive="yes" isFolder="no">
+							<name>Install</name>
+							<script>sndNDB_Install()</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb install$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Parse Names Online</name>
+							<script>if not sndNDB.installed then
+	snd.message("Please install name database first.")
+else
+	parsingQW = true
+	peopleOnline = {}
+	if matches[2] then
+		parsingCity = matches[2]
+	end
+	sendGMCP("Comm.Channel.Players")
+	send(" ")
+	sndNDB_GetOnline()
+end
+	</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^qwp(?: (\w+)|)$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Honours Person</name>
+							<script>checkingPlayerCity = tempTimer(2, [[; checkingPlayerCity = nil;]])
+sndNDB_Acquire(matches[2]:title(),false)
+send(matches[1])</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^honou?r?s (\w+)$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Whois Person</name>
+							<script>local name = matches[2]:title()
+local x, c
+if not sndNDB_Exists(name) then
+	snd.message(name.." isn't tracked by database.")
+else
+	x = sndNDB.players[name]
+	c = sndNDB_getColour(name)
+
+	cecho("\n&lt;blue&gt;- &lt;NavajoWhite&gt;"..x.title.." &lt;blue&gt;"..string.rep("-", 70-(string.len(x.title)+3)).."\n")
+	cecho("\n&lt;DimGrey&gt; City :   &lt;"..c.."&gt;"..x.city..string.rep(" ", 31-string.len(x.city)).."  &lt;DimGrey&gt; Level:   &lt;white&gt;"..x.level)
+	cecho("\n&lt;DimGrey&gt; Guild:   &lt;white&gt;"..x.guild..string.rep(" ", 31-string.len(x.guild)).."  &lt;DimGrey&gt; Rank :   &lt;white&gt;"..x.xp_rank)
+	cecho("\n&lt;DimGrey&gt; Class:   &lt;white&gt;"..x.class..string.rep(" ", 31-string.len(x.class)).."  &lt;DimGrey&gt; Race :   &lt;white&gt;"..x.race.."\n")
+	cecho("\n&lt;blue&gt;"..string.rep("-", 70))
+	cecho("\n ")
+	send(" ",false)
+end	</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^whois (\w+)$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Remove Low/Unranked</name>
+							<script>local remove = {}
+
+for i,v in pairs(sndNDB.players) do
+	if v.xp_rank == nil or v.level &lt; 50 or v.xp_rank == 0 then
+		table.insert(remove, v.name)
+		sndNDB.players[v.name] = nil
+	end
+end
+table.sort(remove)
+
+snd.message("Removed a total of &lt;green&gt;"..#remove.."&lt;NavajoWhite&gt; unranked people from the database:\n - "..
+	table.concat(remove, ", ")..".")
+send(" ")
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb clearout$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Re-honours everyone</name>
+							<script>local count = 0
+snd.message("Updating everyone who's currently in the database.")
+for i,v in pairs(sndNDB.players) do
+	count = count + 1
+	sndNDB_Acquire(v.name:title(),false)
+end
+snd.message("Update complete. Total of "..count.." people have been re-checked.")</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^sndb redo$</regex>
+						</Alias>
+					</AliasGroup>
+				</AliasGroup>
 			</AliasGroup>
 			<Alias isActive="yes" isFolder="no">
 				<name>Version</name>

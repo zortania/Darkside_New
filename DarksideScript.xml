@@ -217,6 +217,10 @@ support = false, -- if you want to use a support system or not
 questing = false, -- questing turns on or off, prevents the auto-questing spam from before
 dison = false, -- dispersing toggle
 farm = false, -- farming
+goggle_level = 9,
+nontargetgags = true, -- spam filter for removing non-target curing
+aegis = false,
+auto_reject = false,
 
 }
 
@@ -749,37 +753,38 @@ function gmcp_room()
 	 end
 	end
 	if snd.toggles.rockharvest then
-	   snd.send("harvest rock")
+	 snd.send("harvest rock")
 	end
-	if snd.toggles.roe then
+	if snd.toggles.plants then
 	 snd.send("plants")
 	end
   if snd.bashing_loaded then
- 	 	enableTimer("looktimer")
-		snd.vermin = 0
-	 	if snd.vermin_on then
- 			enableTimer("moveroom")
-   	end
-
+	 snd.vermin = 0
+	 if snd.toggles.vermin then
+ 		enableTimer("moveroom")
+   end
 --Initiate fasthunt if necessary
-  	snd.need_loot = false
-   	snd.new.room = true
-	 	snd.room_clear = false
-	 	if snd.my.room == 56222 or snd.my.room == 55185 or snd.my.room == 55150 or snd.my.room == 55188 then
-	  	snd.send("pull lever")
-	 	end
-	 	if snd.my.room == 55187 then
-	  	snd.send("pull lever196935")
-	 	end
-    if snd.my.room == 55184 then
-      snd.send("pull lever121296")
-      snd.send("pull lever190759")
-    end
+   snd.need_loot = false
+   snd.new.room = true
+	 snd.room_clear = false
+	 if (snd.my.room == 56222 or snd.my.room == 55185) and snd.toggles.fasthunt then
+	 -- snd.send("pull lever")
+   -- snd.send("west")
+	 end
+	 if snd.my.room == 55187 and snd.toggles.fasthunt then
+	 -- snd.send("pull lever196935")
+   -- snd.send("east")
+	 end
+   if snd.my.room == 16941 then
+    snd.send("push bookcase")
+   end
+   if snd.my.room == 16949 then
+    snd.send("pull lever")
+   end
 	end
 	if snd.offense_loaded then
 	 snd.class_hitting = "none"
 	 snd.person_hitting = "none"
-	 snd.singcount = 0
 	end
 	if snd.ylem_loaded then
 	 if snd.my.room == tonumber(ylm.next_zone) then
@@ -789,11 +794,11 @@ function gmcp_room()
  end
 --Check current area
  if snd.my.area ~= gmcp.Room.Info.area then
-  if snd.my.area ~= "Eld" and not snd.my.area:find("Vortex") then --have exceptions for fracture and vortex
---Initiate new area targets, if necessary
-   snd.my.area = gmcp.Room.Info.area
---Set current area
-   snd.new.area = true
+  if snd.my.area ~= "Eld" and (not (snd.my.area:find("Vortex") and gmcp.Room.Info.area == "the Shattered Vortex") 
+    or  (snd.my.area:find("Vortex") and gmcp.Room.Info.area ~= "the Shattered Vortex")) 
+    then --have exceptions for fracture and vortex then 
+   snd.my.area = gmcp.Room.Info.area --Initiate new area targets, if necessary
+   snd.new.area = true --Set current area
   end
  end
 end
@@ -1061,42 +1066,34 @@ end</script>
 							<script>people_update = function()
 	spirit_people:clear()
 	shadow_people:clear()
-
+	snd.shadow_targets = {}
+	snd.spirit_targets = {}
+	
 	local spiritpeoplehere = {}
 	for name, val in pairs(snd.players_here) do
-		if val and (table.isMember(snd.spirit, val) or table.isMember(snd.randomspirit, val)) then 
+		if sndNDB.players[val] and sndNDB.players[val].tether == "Spirit" then 
 			table.insert(spiritpeoplehere, val) 
 		end
 	end
 	
 	local shadowpeoplehere = {}
 	for name, val in pairs(snd.players_here) do
-		if val and (table.isMember(snd.shadow, val) or table.isMember(snd.randomshadow, val)) then
+		if sndNDB.players[val] and sndNDB.players[val].tether == "Shadow" then
 			table.insert(shadowpeoplehere, val) 
 		end
 	end
 	
-	for name, val in pairs(snd.players_here) do
-		if val and not table.isMember(snd.spirit, val) and not table.isMember(snd.shadow, val) 
-		and not table.isMember(snd.randomspirit, val) and not table.isMember(snd.randomshadow, val)
-		and not table.isMember(snd.player_names_to_check, val) then
-			table.insert(snd.player_names_to_check, val)
-			local check = OnlineCharacters()
-			if (check == "Bloodloch" or check == "Spinesreach") then
-				table.insert(shadowpeoplehere, val)
-			elseif (check == "Enorian" or check == "Duiran") then
-				table.insert(spiritpeoplehere, val)
-			end
-		end
-	end
-	
 	if #spiritpeoplehere &gt;= 1 then
-	 spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+   if snd.gui_loaded then
+	  spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+   end
 	 snd.spirit_targets = spiritpeoplehere
   end
 	
 	if #shadowpeoplehere &gt;= 1 then
-	 shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+	 if snd.gui_loaded then
+    shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+   end
 	 snd.shadow_targets = shadowpeoplehere
   end
 	
@@ -1748,7 +1745,6 @@ function snd.no_target()
   snd.waiting.balance = false
   snd.waiting.equilibrium = false
   snd.bashing.target_priority = 10000
-	send("ql")
  end
 end
 
@@ -1759,7 +1755,7 @@ function snd.untarget()
  "paresis",
  "paralysis",
  "crippled",
- "mental_disruption",
+ "mental disruption",
  "physical disruption",
  "crippled body",
  }
@@ -1769,7 +1765,7 @@ function snd.untarget()
  for limb in pairs(snd.limb_bruising) do
   snd.limb_bruising[limb] = 0
  end
- snd.broken_limbs = 0
+ 
  for i in pairs(snd.used) do
   snd.used[i] = false
  end
@@ -3526,181 +3522,613 @@ end</script>
 							</Script>
 						</ScriptGroup>
 					</ScriptGroup>
-					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>Auto-Targetting</name>
+					<Script isActive="yes" isFolder="no">
+						<name>Rounding</name>
 						<packageName></packageName>
-						<script>swarm = swarm or {}
-swarm.targeting = {
-	auto = false,
-	list = {},
-}
-swarm.room = swarm.room or {}
+						<script>function roundUp(number, places)
+   return math.ceil(number * math.pow(10,places)) / math.pow(10,places)
+end
 
-swarm.e = {
-	echo	= function (str, lnb, lna)
-		if lnb then echo("\n") end
-		cecho(string.format("%s", "&lt;medium_sea_green&gt;(&lt;aquamarine&gt;SWARM&lt;medium_sea_green&gt;): &lt;slate_blue&gt;Update: &lt;grey&gt;") .. str:title())
-		if lna then echo("\n") end
-	end,
+function roundDown(number, places)
+   return math.floor(number * math.pow(10,places)) / math.pow(10,places)
+end</script>
+						<eventHandlerList />
+					</Script>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Sunder NDB</name>
+						<packageName></packageName>
+						<script>sndNDB = sndNDB or {}
 
-	warn	= function (str, lnb, lna)
-		if lnb then echo("\n") end
-		cecho(string.format("%s", "&lt;medium_sea_green&gt;(&lt;aquamarine&gt;SWARM&lt;medium_sea_green&gt;): &lt;orange_red&gt;Warning:&lt;navajo_white&gt; ") .. str:title())
-		if lna then echo("\n") end
-	end,
-	}</script>
+function sndNDB_Install()
+	--Will only probably be used on initial loading of system.
+	sndNDB = {}
+	sndNDB = {
+		installed = true,
+		players = {},
+		highlightNames = false,
+		highlighting = {
+			Bloodloch = "firebrick",
+			Duiran = "a_green",
+			Enorian = "a_darkcyan",
+			Spinesreach = "a_darkmagenta",
+			Rogues = "a_brown",
+      Enemies = "IndianRed",
+			
+		},
+      divine = {
+			"Keroc", "Razmael", "Tiur", "Varian",
+			"Avareti", "Damariel", "Dhar", "Chakrasul", "Ethne", "Haern", "Iosyne", "Ivoln",
+			"Tanixalthas", "Omei", "Severn", "Slyphe", "Bamathis",
+		
+			"Alecto", "Megaera", "Tisiphone", "Veritas", "Imvra",
+			"Becue", "Ere", "Nalus", "Tsoede",
+		},
+		cityEnemies = {},
+		highlightPriority = "city",
+		enemySettings = {bold = false, italics = false, underline = false},
+	}
+
+	snd.message("Sunder NDB installed perfectly and is ready to go.")
+	sndNDB_Unhighlight()
+	sndNDB_saveSettings(false)
+	--Save on install, as a failsafe.
+end</script>
 						<eventHandlerList />
 						<Script isActive="yes" isFolder="no">
-							<name>Auto Target Calling</name>
+							<name>Saving and Loading</name>
 							<packageName></packageName>
-							<script>function swarm.autoTargeting()
-
-	if not swarm.targeting.auto then return end
-
-	for _, tar in ipairs(swarm.targeting.list) do
-		if table.contains(swarm.room, tar) then
-			expandAlias("t " .. tar) --! NOTE: Make sure this matches the targeting alias in your system!
-			break
-		end
+							<script>function sndNDB_saveSettings(disp)
+	if not sndNDB or not sndNDB.installed then
+		return false
 	end
 
-end
+	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
+	local ndb_loc = getMudletHomeDir() .. separator .. "SunderNDB"
 
-
-function swarm.removeTarget(tar)
-
-	local who = tar:title()
-
-	for k, v in pairs(swarm.targeting.list) do
-		if v == who then
-			table.remove(swarm.targeting.list, k)
-			swarm.e.echo("Removed " .. who .. " from targeting list!", true, true)
-			break
-		end
-	end
-
-end
-
-
-function swarm.addTargetList(str)
-
-	local targets = string.split(str, ", ")
+	table.save(ndb_loc, sndNDB)
 	
-	for _, v in ipairs(targets) do
-		if table.contains(swarm.targeting.list, v) then
+	if disp then
+		snd.message("Player information saved safely.")
+	end	
+end
+
+function sndNDB_loadSettings()
+	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
+	local ndb_loc = getMudletHomeDir() .. separator .. "SunderNDB"
+
+	if not io.exists(ndb_loc) then 
+		snd.message("Name database not found. Use 'sndb install' to fix this.")
+		return
+	end
+
+	sndNDB = {}
+	table.load(ndb_loc, sndNDB)
+	snd.message("Player information found and loaded in.")
+
+	sndNDB_saveSettings(false)
+end
+
+registerAnonymousEventHandler("sysDisconnectionEvent", "sndNDB_saveSettings", true)
+registerAnonymousEventHandler("sysLoadEvent", "sndNDB_loadSettings")
+
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Grab Information</name>
+							<packageName></packageName>
+							<script>function sndNDB_GetOnline()
+	local path = getMudletHomeDir().."/sndndb"
+	
+	if not lfs.attributes(path) then
+		--We'll need a folder to store downloaded data. Don't worry, it won't cause issues.
+		lfs.mkdir(path)
+		snd.message("Created folder to store downloaded data at: "..path)
+	end
+	
+	downloadFile(path .. "/Online.json", "http://api.aetolia.com/characters.json")
+
+	snd.message("Let me find a list of online players really quick...")
+
+	ndbWatcher = ndbWatcher or createStopWatch()
+	startStopWatch(ndbWatcher)
+end
+
+function sndNDB_Acquire(person)
+
+	assert(person)
+	local person = person:title()
+	local path = getMudletHomeDir().."/sndndb"
+
+	if not lfs.attributes(path) then
+		--We'll need a folder to store downloaded data. Don't worry, it won't cause issues.
+		lfs.mkdir(path)
+		snd.message("Created folder to store downloaded data at: "..path)
+	end
+	
+	downloadFile(path .. "/"..person..".json", "http://api.aetolia.com/characters/"..person..".json")
+
+end
+
+function sndNDB_NameList(names)
+	--Parse list to see who isn't tracked.
+	for _, name in pairs(names) do
+		if not table.contains(sndNDB.divine, name) then
+			sndNDB_Acquire(name)
+		end
+	end
+	snd.message("Name database is now up to date.")
+end</script>
+							<eventHandlerList />
+							<Script isActive="yes" isFolder="no">
+								<name>ndb_download_failed</name>
+								<packageName></packageName>
+								<script>function ndb_download_failed(_, filepath)
+	if not filepath:find("sndndb") and not filepath:find("gamefeed") then return end 
+	
+	snd.message("Error downloading information.")
+	if filepath:find("gamefeed") then
+		snd.message("Unknown error while downloading: " .. filepath)
+		os.remove(getMudletHomeDir().."/gamefeed.json")
+	elseif filepath:match("server replied: Not Found") then
+		
+		local person = filepath:match("/(%w+).json")
+		local fpr = getMudletHomeDir().."/sndndb/"..person..".json"
+
+		snd.message("This person does not exist: "..person)
+		sndNDB_Remove(person)
+		os.remove(fpr)
+	else
+		snd.message("Unknown error while downloading: " .. filepath)
+	end
+end</script>
+								<eventHandlerList>
+									<string>sysDownloadError</string>
+								</eventHandlerList>
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>ndb_download_success</name>
+								<packageName></packageName>
+								<script>function ndb_download_success(_, filepath)
+	--Do not mess with if it's not Sunder NDB information.
+	if not filepath:find("sndndb", 1, true) and not filepath:find("gamefeed",1,true) then return end
+
+	if filepath:find("Online",1,true) then
+		sndNDB_SortOnline(filepath)
+		return
+	elseif filepath:find("gamefeed",1,true) then
+		sndNDB_parseFeed(filepath)
+		return
+	end
+
+	local f, s = io.open(filepath)
+	if f then s = f:read("*l"); io.close(f) end
+
+	-- didn't get JSON data? 
+	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
+		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
+		return 
+	end
+	local t = yajl.to_value(s)
+	local cities = {"Bloodloch", "Duiran", "Enorian", "Spinesreach"}
+	local name = t.name
+	local title = t.fullname
+	local guild = t.guild:title()
+	local xp_rank = t["xp rank"]:gsub("th", ""):gsub("nd", ""):gsub("st", ""):gsub("rd", "")
+	if xp_rank == "Unranked" then xp_rank = 0 else local xp_rank = tonumber(xp_rank) end
+	local city = t.city:title()
+  local tether = ""
+    if (city == "Duiran" or city == "Enorian") then 
+      tether = "Spirit"
+    elseif (city == "Spinesreach" or city == "Bloodloch") then 
+      tether = "Shadow" 
+    end
+	local class = t.class:title()
+	local level = tonumber(t.level)
+  local race = t.race
+  
+	sndNDB.players[name] = {
+		name = name,
+		title = title,
+		guild = guild,
+		xp_rank = xp_rank,
+		city = city,
+		level = level,
+		class = class,
+    race = race,
+    tether = tether
+	}
+
+	if guild:find("none") then
+		sndNDB.players[name].guild = "None"
+	else
+		sndNDB.players[name].guild = guild:title()
+	end
+
+	if city:find("none") or city == "" then
+		sndNDB.players[name].city = "None"
+	else
+		sndNDB.players[name].city = city:title()
+	end
+
+  	os.remove(filepath)
+	
+  raiseEvent("sndNDB Check Highlight", t.name)
+
+end</script>
+								<eventHandlerList>
+									<string>sysDownloadDone</string>
+								</eventHandlerList>
+							</Script>
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Ndb API</name>
+							<packageName></packageName>
+							<script>function sndNDB_getColour(name)
+	if not sndNDB_Exists(name) then
+		return "white"
+	else
+		return sndNDB.highlighting[sndNDB_getCitizenship(name)]
+	end
+end
+function sndNDB_getClass(name)
+	if sndNDB.players[name] then
+		return sndNDB.players[name:title()].class
+	else
+		return "Unknown"
+	end
+end
+
+function sndNDB_Exists(name)
+	if not sndNDB.players[name] then
+		return false
+	else
+		return true
+	end
+end
+
+function sndNDB_isCitizenOf(city, name)
+	if sndNDB_Exists(name) then
+		return (sndNDB.players[name:title()].city == city:title() and true or false)
+	else
+		snd.message("That person's information has not yet been gathered.")
+		return false
+	end
+end
+
+function sndNDB_getCitizenship(name)
+	if sndNDB_Exists(name) then
+		if sndNDB.players[name].city:lower() == "none" or sndNDB.players[name].city:lower() == "(hidden)" then
+			return "Rogues"
 		else
-			v = v:title()
-			table.insert(swarm.targeting.list, v)
+			return sndNDB.players[name].city
 		end
-	end
-
-	swarm.displayTargetList()
-
-end
-
-
-function swarm.addSingleTarget(tar, pos)
-
-	if not pos then pos = 1 end
-	
-	tar = tar:title()
-	
-	if table.contains(swarm.targeting.list, tar) then --! just tidying so we don't end up with the same name in a bunch of places
-		for k, v in pairs(swarm.targeting.list) do
-			if v == tar then
-				table.remove(swarm.targeting.list, k)
-				break
-			end
-		end
-	end
-	table.insert(swarm.targeting.list, pos, tar)
-
-	swarm.displayTargetList()
-
-end
-
-
-function swarm.displayTargetList()
-
-	local string = "Targeting order is "
-	
-	if #swarm.targeting.list == 0 then
-		string = "Targeting list is empty!"
 	else
-		for k,v in ipairs(swarm.targeting.list) do
-			if k &lt; #swarm.targeting.list then
-				string = string .. v .. ", "
-			elseif #swarm.targeting.list == 1 then
-				string = string .. v .. "."
-			else
-				string = string .. v .. "."
-			end
-		end
+		return "Unknown"
 	end
-
-	swarm.e.echo(string, true, true)
-
 end
 
 
-function swarm.callTargetList()
-
-	if not snd.toggles.calling then return end  --! NOTE: tmp.web_calling needs to be replaced with your system's calling toggle variable 
-                                          --!       if you want to be able to call. If not, the core functions will work regardless.
-	local string = "Target list: "
-	
-	if #swarm.targeting.list == 0 then
-		string = "Out of targets!"
+function sndNDB_Remove(name)
+	local person = name:title()
+	if sndNDB_Exists(person) then
+		sndNDB.players[person] = nil
+		--If any highlight available, then clear it.
+		if sndNDB.highlightTriggers and sndNDB.highlightTriggers[person] then
+			killTrigger(sndNDB.highlightTriggers[person])
+		end
+		snd.message(person.." has been removed from the database.")
 	else
-		for k,v in ipairs(swarm.targeting.list) do
-			if k &lt; #swarm.targeting.list then
-				string = string .. v .. ", "
-			elseif #swarm.targeting.list == 1 then
-				string = string .. v .. "."
-			else
-				string = string .. v .. "."
-			end
+		snd.message(person.." is not in the database, anyway.")
+	end
+end
+
+function sndNDB_SortOnline(filepath)
+	local f, s = io.open(filepath)
+    if f then s = f:read("*l"); io.close(f) end
+
+	-- didn't get JSON data? 
+	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
+		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
+		return 
+	end
+
+	local t = yajl.to_value(s)
+
+	apiOnlineFound = {}
+	apiNeedUpdate = {}
+	for ind, tab in pairs(t.characters) do
+		if not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
+			table.insert(apiOnlineFound, tab.name)
 		end
 	end
+
+	for ind, tab in pairs(gmcp.Comm.Channel.Players) do
+		if not table.contains(apiOnlineFound, tab.name) and not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
+			table.insert(apiOnlineFound, tab.name)
+		end
+	end
+
+	os.remove(filepath)
+	table.sort(apiOnlineFound)
+
+	--Parse the list to see who needs to be added.
+	local count = 0
+	for index, name in pairs(apiOnlineFound) do
+		if not sndNDB_Exists(name) and not table.contains(sndNDB.divine, name) then
+			count = count + 1
+			table.insert(apiNeedUpdate, name)
+		end
+	end
+
+	if count &gt; 0 then
+		snd.message(count.." new names identified, grabbing their info.")
+		cecho("\n&lt;a_darkgrey&gt; - "..table.concat(apiNeedUpdate, ", ")..".")
+		sndNDB_NameList(apiNeedUpdate)
+	else
+		if parsingCity then
+			if parsingCity:lower() == "classes" then
+				sndNDB_displayOnlineClass(apiOnlineFound)
+			else
+				sndNDB_displayOnlineCity(apiOnlineFound)
+			end
+		else
+			sndNDB_displayOnline(apiOnlineFound)
+		end
+	end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Ndb Highlighting</name>
+							<packageName></packageName>
+							<script>function sndNDB_Unhighlight()
+	if not sndNDB.highlightTriggers or not next(sndNDB.highlightTriggers) then return end
+
+  	local killTrigger = killTrigger
+  	for k,v in pairs(sndNDB.highlightTriggers) do
+    		killTrigger(v)
+  	end
+
+  	sndNDB.highlightTriggers = {}
+end
+
+function sndNDB_enemyHighlights()
+	snd.message("Clearing all highlights to prevent errors. One moment, please.")
+	sndNDB_Unhighlight()
+	tempTimer(2, [[ snd.message("Loading new highlights now."); sndNDB_loadHighlights() ]])	
+end
+
+
+local my_names_not_to_color = {
+  "Example",
+  }
+
+function sndNDB_loadHighlights()
+	sndNDB.highlightTriggers = sndNDB.highlightTriggers or {}
+	collectgarbage("stop")
+
+	sndNDB_Unhighlight()
+
+	if sndNDB.highlightNames then
+		for index, person in pairs(sndNDB.players) do
+			 sndNDB_highlightName( person.name, person.city )
+		end
+	end
+
+	collectgarbage()
+end
+
+function sndNDB_addHighlight(_, name)
+
+	if not sndNDB.highlightNames then return end	
+	if not name then return end
+	if not sndNDB.players[name] then return end
+
+	sndNDB_highlightName( sndNDB.players[name].name, sndNDB.players[name].city)
+end
+
+
+function sndNDB_updateHighlights(city, colour)
+
+	sndNDB.highlighting[city] = colour
 	
-	send("wt " .. string)
+  	local killTrigger = killTrigger
+  	for name, trig in pairs(sndNDB.highlightTriggers) do
+  		if sndNDB.players[name].city == city then
+      			killTrigger(trig)
+  			if sndNDB.highlightNames then
+  				sndNDB_highlightName( sndNDB.players[name].name, sndNDB.players[name].city )
+  			end
+  		elseif city == "Rogues" or city == "(hidden)" then
+  			if sndNDB_getCitizenship(name) == "None" then
+  				killTrigger(trig)
+  				if sndNDB.highlightNames then
+  					sndNDB_highlightName( sndNDB.players[name].name, sndNDB.players[name].city )
+  				end
+  			end
+  		end
+  	end
 
 end
 
 
-function swarm.clearTargetList()
-
-	swarm.targeting.list = {}
-	swarm.e.echo("Target list cleared!", true, true)
-	
-	if snd.toggles.calling and swarm.targeting.auto then --! NOTE: See the previous comment regarding the tmp.web_calling variable.
-		send("wt Target list cleared.")
+function sndNDB_highlightName(who, city)
+	--If any highlight available, then clear it.
+	if sndNDB.highlightTriggers and sndNDB.highlightTriggers[who] then
+		killTrigger(sndNDB.highlightTriggers[who])
 	end
+
+	local colour = sndNDB.highlighting.Rogues
+
+	--Get the necessary colour.
+		--Check enemy list first
+	if sndNDB.highlightPriority == "enemies" then
+		if table.contains(sndNDB.cityEnemies, who) then
+			colour = sndNDB.highlighting.Enemies
+		else
+			if city == "None" or city == "(hidden)" then
+				colour = sndNDB.highlighting.Rogues
+			else
+				colour = sndNDB.highlighting[city]
+			end
+		end
+	else
+		if city == "None" or city == "(hidden)" then
+			colour = sndNDB.highlighting.Rogues
+		else
+			colour = sndNDB.highlighting[city]
+		end
+	end
+
+	sndNDB.highlightTriggers = sndNDB.highlightTriggers or {}
+	if not table.isMember(my_names_not_to_color, who) then
+    sndNDB.highlightTriggers[who] = tempTrigger(who, ([[sndNDB_highlight("%s", %s)]]):format(who,
+		(colour and '"' .. colour .. '"' or "false")
+	 ))
+  end
+end
+
+function sndNDB_highlight(name, colour)
+	local c, k = 1, 1
+	while k &gt; 0 do
+		k = line:find(name, k)
+		if k == nil then return end
+		c = c + 1
+
+		if k == line:find("%f[%a]"..name.."%f[%A]", k) then
+			if selectString(name, c-1) &gt; -1 then
+				if colour then fg(colour) end
+				if sndNDB.highlightPriority == "enemies" and table.contains(sndNDB.cityEnemies, name) then
+					if sndNDB.enemySettings.bold then setBold(true) end
+					if sndNDB.enemySettings.underline then setUnderline(true) end
+					if sndNDB.enemySettings.italics then setItalics(true) end
+				end
+				resetFormat()
+			else 
+				return 
+			end
+    		end
+		k = k + 1
+	end
+end
+registerAnonymousEventHandler("sndNDB Check Highlight", "sndNDB_addHighlight")
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Display API</name>
+							<packageName></packageName>
+							<script>function sndNDB_displayOnlineClass(players)
+	local classList = {
+		"Ascendril", "Luminary", "Sentinel", "Shaman", "Zealot", "Templar",
+		"Monk", "Shapeshifter", "Syssin", "Wayfarer",
+		"Archivist", "Carnifex", "Indorani", "Praenomen", "Sciomancer", "Teradrim",
+	}
+	local classes = {
+		Ascendril = {}, Luminary = {}, Sentinel = {}, Shaman = {}, Zealot = {}, Templar = {},
+		Monk = {}, Shapeshifter = {}, Syssin = {}, Wayfarer = {}, 
+		Archivist = {}, Carnifex = {}, Indorani = {}, Praenomen = {}, Sciomancer = {}, Teradrim = {}, 
+	}
+
+	for _, player in pairs(players) do
+		local class = sndNDB.players[player].class
+		table.insert(classes[class], player)
+	end
+	
+	snd.message("Data acqusition completed and analysed. Showing class count for online players.")
+
+	for _, class in ipairs(classList) do
+		cecho("\n &lt;DimGrey&gt;[&lt;NavajoWhite&gt;"..class:title().."&lt;DimGrey&gt;]"..string.rep(" ", 13-string.len(class)).."- &lt;NavajoWhite&gt;"..#classes[class].." tracked people are "..class..".")
+	end
+	send(" ")
+	parsingCity = nil
+end
+
+function sndNDB_displayOnlineCity(players)
+	local peopleFound = {}
+
+	snd.message("Data acqusition completed and analysed. Showing online players from &lt;"..sndNDB.highlighting[parsingCity:title()].."&gt;"..parsingCity:title()..".")
+
+	for _, person in pairs(players) do
+		if sndNDB_isCitizenOf(parsingCity:title(), person) then
+			cecho("\n &lt;"..sndNDB.highlighting[parsingCity:title()].."&gt;"..person..string.rep(" ", 13-string.len(person)).."- &lt;NavajoWhite&gt;"..sndNDB_getClass(person))
+		end
+	end
+	send(" ")
+	parsingCity = nil
+end
+
+function sndNDB_displayOnline(players)
+	local onlinePeople = {
+		Bloodloch = {}, Duiran = {}, Enorian = {}, Spinesreach = {}, Rogues = {}, Untracked = {},
+	}
+
+	for _, person in pairs(players) do
+		if not sndNDB_Exists(person) then
+			table.insert(onlinePeople.Untracked, person)
+		elseif sndNDB_getCitizenship(person):lower() == "none" or sndNDB_getCitizenship(person) == "(hidden)"  or sndNDB_getCitizenship(person) == "Unknown" then
+			table.insert(onlinePeople.Rogues, person)
+		else
+			table.insert(onlinePeople[sndNDB_getCitizenship(person)], person)
+		end
+	end
+
+	snd.message("Data acquisition completed and analysed. List of players online:")
+	echo("\n"..table.concat(apiOnlineFound, ", ")..".\nTotal players visible to us: "..#apiOnlineFound..".\n")
+
+	snd.message(" City affiliations of currently online people:")
+	cecho(string.format("\n&lt;%s&gt;[Bloodloch]   :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Bloodloch, #onlinePeople.Bloodloch, sndNDB.highlighting.Bloodloch, table.concat(onlinePeople.Bloodloch, ", ")))
+	cecho(string.format("\n&lt;%s&gt;[Duiran]      :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Duiran, #onlinePeople.Duiran, sndNDB.highlighting.Duiran, table.concat(onlinePeople.Duiran, ", ")))
+	cecho(string.format("\n&lt;%s&gt;[Enorian]     :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Enorian, #onlinePeople.Enorian, sndNDB.highlighting.Enorian, table.concat(onlinePeople.Enorian, ", ")))
+	cecho(string.format("\n&lt;%s&gt;[Spinesreach] :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Spinesreach, #onlinePeople.Spinesreach, sndNDB.highlighting.Spinesreach, table.concat(onlinePeople.Spinesreach, ", ")))
+	cecho(string.format("\n&lt;%s&gt;[Rogues]      :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Rogues, #onlinePeople.Rogues, sndNDB.highlighting.Rogues, table.concat(onlinePeople.Rogues, ", ")))
+	echo("\n ")
+	send(" ")
+
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Gamefeed Parser</name>
+							<packageName></packageName>
+							<script>function sndNDB_parseFeed(fp)
+
+	local f, s = io.open(fp)
+	if f then s = f:read("*l"); io.close(f) end
+
+	-- didn't get JSON data? 
+	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
+		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
+		return 
+	end
+	local t = yajl.to_value(s)
+	
+	local colours = {LDN = "a_darkred", LUP = "a_darkgreen",
+		DEA = "tomato",
+	}
+	local gcolour	= false
+	snd.message("Aetolia Game Feed")
+	for _, list in pairs(t) do
+		if table.contains(colours, list.type) then
+			gcolour = colours[list.type]
+		else
+			gcolour = "NavajoWhite"
+		end
+		cecho("\n&lt;NavajoWhite&gt;[&lt;"..gcolour.."&gt;"..list.date.."&lt;NavajoWhite&gt;]:")
+		cecho(string.rep(" ", 23-string.len(list.date)).."&lt;"..gcolour.."&gt;"..string.trim(list.description))
+	end
+	send(" ")
+  os.remove(fp)
 
 end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>swarm.parseRoom</name>
+							<name>Custom Colour Table</name>
 							<packageName></packageName>
-							<script>function swarm.parseRoom()
-	if not gmcp.Room then return end
-
-	local list = gmcp.Room.Players
-	
-	swarm.room = {}	
-	for k, v in pairs(list) do
-		table.insert(swarm.room, list[k].name)
-	end
-end</script>
-							<eventHandlerList>
-								<string>gmcp.Room.Players</string>
-							</eventHandlerList>
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Color Table</name>
-							<packageName></packageName>
-							<script>swarm_color_table = {
+							<script>color_table = {
         snow                  = {255, 250, 250},
         ghost_white           = {248, 248, 255},
         GhostWhite            = {248, 248, 255},
@@ -3835,7 +4263,6 @@ end</script>
         LawnGreen             = {124, 252, 0},
         green                 = {0, 255, 0},
         chartreuse            = {127, 255, 0},
-        medium_spring_green   = {0, 250, 154},
         MediumSpringGreen     = {0, 250, 154},
         green_yellow          = {173, 255, 47},
         GreenYellow           = {173, 255, 47},
@@ -3852,8 +4279,6 @@ end</script>
         khaki                 = {240, 230, 140},
         pale_goldenrod        = {238, 232, 170},
         PaleGoldenrod         = {238, 232, 170},
-        light_goldenrod_yellow= {250, 250, 210},
-        LightGoldenrodYellow  = {250, 250, 210},
         light_yellow          = {255, 255, 224},
         LightYellow           = {255, 255, 224},
         yellow                = {255, 255, 0},
@@ -3940,23 +4365,45 @@ end</script>
         a_blue                = {0, 85, 255},
         a_magenta             = {255, 0, 255},
         a_cyan                = {0, 255, 255},
-        a_white               = {255, 255, 255},
-}</script>
+		a_white               = {255, 255, 255},
+
+		chat_bg 				 = {25, 25, 25},
+}
+
+function fgcolor(color)
+	setFgColor(color_table[color][1], color_table[color][2], color_table[color][3])
+end
+
+function bgcolor(color)
+	setBgColor(color_table[color][1], color_table[color][2], color_table[color][3])
+end
+
+function cfgcolor(console, color)
+	setFgColor(console, color_table[color][1], color_table[color][2], color_table[color][3])
+end
+
+function cbgcolor(console, color)
+	setBgColor(console, color_table[color][1], color_table[color][2], color_table[color][3])
+end
+
+function showColours(num)
+	cecho("\n&lt;green&gt; Showing a list of available colours, with "..num.." columns: \n")
+	local lineBreak = num
+	local linecount = 0
+	local padding = math.floor(90/num)
+	
+	for col, tab in pairs(color_table) do
+		linecount = linecount + 1
+		cecho(string.rep(" ", padding-#col).."&lt;"..col.."&gt;"..col.."&lt;NavajoWhite&gt;,")
+		if linecount &gt;= lineBreak then
+			echo("\n")
+			linecount = 0
+		end
+	end
+end</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
-					<Script isActive="yes" isFolder="no">
-						<name>Rounding</name>
-						<packageName></packageName>
-						<script>function roundUp(number, places)
-   return math.ceil(number * math.pow(10,places)) / math.pow(10,places)
-end
-
-function roundDown(number, places)
-   return math.floor(number * math.pow(10,places)) / math.pow(10,places)
-end</script>
-						<eventHandlerList />
-					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Bashing</name>
@@ -7813,22 +8260,32 @@ snd.vermin = 0</script>
 						<packageName></packageName>
 						<script>
 snd.areas = {
-{area = "Difohr Passage", level = "Quest", targets = {"a skittering onyx eld","a fragmented eld of shadowy onyx","a shattered eld monstrosity"}},
+{area = "Bloodloch", level = "globes only", targets = {"a massive elemental"}},
+{area = "Duiran", level = "globes only", targets = {"a massive elemental"}},
+{area = "the City of Enorian", level = "globes only", targets = {"a massive elemental"}},
+{area = "Spinesreach", level = "globes only", targets = {"a massive elemental"}},
+
+{area = "Difohr Passage", level = "Quest", targets = {"a skittering onyx eld"}},
 {area = "Myesian Run", level = "Quest", targets = {"a skittering verdant eld"}},
 {area = "Cinderbreach Mine", level = "Quest", targets = {"a fiery crimson fragmented eld", "a shattered eld monstrosity", "a skittering crimson eld"}, items = {}},
 {area = "Radial Dig Shaft #15", level = "Quest", targets = {"a shattered eld monstrosity", "an icy azure fragmented eld", "a skittering azure eld"}, items = {}},
+
 {area = "Trapped within a mirror", level = "Quest", targets = {"a fragment of living glass"}},
-{area = "the Kingdom of New Sehal", level = "Newbie", targets = {"a soulless pixie", "a stern Imp warrior", "a boisterous Imp boy", "a charming Imp girl", "a fluffy white sheep", "a fuzzy grey rabbit"}, items = {}},
-{area = "the Valley of Lodi", level = "Newbie", targets = {"a cave bat", "a sheep", "a white hen", "a juvenile wildcat", "an adult wildcat"}, items = {}},
-{area = "the Village of Gorshire", level = "Newbie", targets = {"a guard pig", "a portly gnome sentry", "a gnome man", "a gnome woman", "a little gnome boy", "a gnome sentry", "a little gnome girl", "a skinny gnome sentry", "a deputy constable", "a lithe weasel", "a large grey goose", "a large gray goose"}, items = {}},
+
+{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
+{area = "the Holy Impire of Sehal", level = "newbie", targets = {"a soulless pixie", "a stern Imp warrior", "a boisterous Imp boy", "a charming Imp girl", "a fluffy white sheep", "a fuzzy grey rabbit"}, items = {}},
+{area = "the Valley of Lodi", level = "newbie", targets = {"a cave bat", "a sheep", "a white hen", "a juvenile wildcat", "an adult wildcat"}, items = {}},
+{area = "the village of Gorshire", level = "newbie", targets = {"a guard pig", "a portly gnome sentry", "a gnome man", "a gnome woman", "a little gnome boy", "a gnome sentry", "a little gnome girl", "a skinny gnome sentry", "a deputy constable", "a lithe weasel", "a large grey goose", "a large gray goose"}, items = {}},
 {area = "the Tarean Caverns", level = "Newbie", targets = {"a small, black bat", "an unkempt Trog", "a chubby Trog woman", "a rambunctious young Trog", "a hulking Trog man", "a rotting rattlesnake", "an irritable, rabid zebra", "a blood-spattered leopard", "a frothing, manic buffalo", "a gigantic cave bear"}, items = {"a jagged stone shard"}},
 {area = "the Crags", level = "Newbie", targets = {"a light grey stone worm", "a dark grey stone worm", "an infant-like cragling", "a steady cragling", "a vile snatcher", "a hulking snatcher"}, items = {"a dull, irregular gem"}},
 {area = "the village of Rahveir", level = "Newbie", targets = {"a disgustingly warped missionary", "a malevolent poltergeist", "a corrupted spirit"}, items = {"a strange black sphere"}},
 {area = "Forsaken Evlasu", level = "Newbie", targets = {"an unnaturally lithe, shadowy aberration", "a hideous winged aberration", "a grotesque, warped aberration", "a corrupted cultist"}, items = {"a cluster of pure white starflower", "a corrupted aberration's feather", "a blighted branch", "a minute, corrupted totem"}},
 {area = "Yohanan Village", level = "Newbie", targets = {"a fleshless skeleton", "a female villager", "a villager", "an old guard", "a small girl", "a young village guard", "a mangy rat", "a cave bat"}, items = {}},
+
 {area = "Raim Vale", level = "15-30", targets = {"a mutilated creature","a disfigured woman","a rabid dog","a deformed man","a diseased man","Midolo Raim, the failed experiment","a misshapen woman"}, items = {}},
 {area = "the Centipede Cave", level = "25-35", targets = {"a large centipede", "a skittering centipede", "a chitinous centipede", "a venomous centipede", "a juvenile centipede", "a massive centipede queen"}, items = {}},
 {area = "Riparium", level = "25-50", targets = {"a large red crab", "a moray eel", "a mantaglow fish", "a large, deepwater salmon", "an angler fish"}, items = {}},
+
 {area = "the Siroccian Mountains", level = "30+", targets = {"a vicious wolverine", "a powerful wolverine"}},
 {area = "the Festering Wastes", level = "30-40", targets = {"a darkly patterned sand viper", "a gray, spotted bobcat", "a ragged brown coyote", "a tiny black scorpion", "a deep green lizard", "a shivering jackrabbit", "a small yellow rattlesnake"}, items = {}},
 {area = "Halls of Tornos", level = "30-40", targets = {"a speckled tinyok", "a snowy armadilleon", "a malformed beast", "a botched phase-hound", "a rabid blood-fiend", "a crazed blood-fiend", "a mutated blood-fiend"}},
@@ -7837,6 +8294,7 @@ snd.areas = {
 {area = "the Vilimo Fields", level = "35-50", targets = {"a field monitor", "a field harvester", "a decaying donkey", "a semi-conscious elderly man", "a semi-conscious elderly woman", "a semi-conscious child"}, items = {}},
 {area = "the Central Wilderness", level = "35-50", targets = {"a gnat", "a mottled green bullfrog", "a dragonfly"}},
 {area = "the Cathedral of Gloaming", level = "35-50", targets = {"a Dwarven priest", "a vengeful spirit"}},
+
 {area = "Mount Humgurd", level = "40+", targets = {"a black-spotted cow"}},
 {area = "the Western Itzatl Rainforest", level = "40-50", targets = {"an orange, black-striped tiger","an iridescent tizapez","a menacing black rojalli","a colorful toucan","a crooked-beaked jicocte","a beautiful quetzal bird","a swarm of tsetse flies","an enormous anaconda","a rojalli cub","a razor nahuac","an ecru axolotl","a xenosaurus lizard","a furry coatimundi","a playful oniro","an ocelot","a shadow bat","a white stone oyster","a firemouth cichlid","a lithe black panther","a poisonous purple lora","a frilled lizard","a cricket"}, items = {"a glistening iridescent pearl", "a beautiful rough sapphire"}},
 {area = "the Village of Torston", level = "40-50", targets = {"an enormous blue-green crocodile","a frail Xorani man","a dark-skinned Grook woman","a dusky-skinned Grook man","a tall Horkvali woman","the Torstonite chef","a stalwart Horkvali guard","a wary Xorani guard","a carefree Grook boy","a mottled brown frog","a little Grook girl",}},
@@ -7845,12 +8303,14 @@ snd.areas = {
 {area = "the Dolbodi Campsite", level = "45-60", targets = {"a brawny hunter", "a slender forager", "a burly lumberjack", "a grizzly foreman", "a lithe buckawn"}, items = {}},
 {area = "Three Widows", level = "45-60", targets = {"a white-coated chinchilla","a short-horned chamois",}, items = {}},
 {area = "Dun Fortress", level = "45-60", targets = {"an orc guard","a demonic screamer","an ogre bowman","a slime-encrusted spitter","an orc soldier","a large catfish","a dangerous water snake","an ogre knight","a prisoner","an orc sergeant","an orc archer","an ogre sentry",	"an orc cook","an orc captain","an ogre captain",}, items = {}},
+
 {area = "the Arurer Haven", level = "50-60", targets = {"an aged priest","a young celestial angel","a striking supernal angel","a youthful priest","a budding priestess","a savvy priestess","a young celestial angel","Tisian, a young priest","Father Garron, the priest"}},
 {area = "a snake pit", level = "50-60", targets = {"a venenigol snake", "an andragil snake", "a tiny hatchling", "a large sertag snake", "a grassel snake","a muselon snake",}},
 {area = "the Ruins of Farsai", level = "50-60", targets = {"an unctuous creepling", "a shadowdrop", "a darkling"}},
 {area = "Asper", level = "50-60", targets = {"a fearsome icewyrm", "a malevolent spectre", "a failed experiment", "an animated golem of flesh", "a wild bobcat", "a snowshoe hare"}, items = {}},
 {area = "the Khauskin Mines", level = "50-60", targets = {"a statuesque Dwarven guard", "a burly Dwarven miner", "a Dwarven girl", "a Dwarven boy", "a stocky Dwarven woman", "a stout Dwarven man", "a powerful Dwarven warrior", "a soft-shelled klikkin", "a grotesque fangtooth"}, items = {}},
 {area = "City of Djeir", level = "50+", targets = {"a gargantuan spider"}},
+
 {area = "the Three Rock Outpost", level = "60+", targets = {"a huge, scarred wildcat","a beautiful wild horse","a mountain wildcat","a wildcat kitten", "a long-haired buffalo", "an enormous Troll bandit","a shifty bandit", "the cave bear, White Ghost"}},
 {area = "the village of Bihrkaen", level = "60-80", targets = {"a grotesque snapping turtle", "a mire hound", "a bog hound", "a mire pup", "an alpha female hound", "a slender mud adder", "a speckled, brown turtle", "an alpha male hound"}},
 {area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf", "a large bhfaol", "silver-feathered orel", "a gargantuan Augerweald rabbit", "a tall, white elk", "a large, snowy fox"}},
@@ -7858,6 +8318,7 @@ snd.areas = {
 {area = "the Fractal Bloom", level = "65+", targets = {"a towering crystalline entity", "a slender crystalline entity", "a radiant crystalline entity", "a squat crystalline entity", "a fractured crystalline entity", "a faceted crystalline entity"}}, 
 {area = "the Kalydian Forest", level = "65+", targets = {"a gaunt elk",  "a rabid rabbit", "a ravenous squirrel"}},
 {area = "the Maghuir Fissure", level = "65+", targets = {"an amorphous black umbra","a darkly robed priest"}},
+
 {area = "the Torturers' Caverns", level = "70-80", targets = {"Mellias, an elegant Tsol'aa consanguine", "Tuera, the torturer", "Sentinel Rozhirr", "a rank ghoul", "a vampiric overseer", "a maggot-ridden skeleton", "a flesh golem sentry", "a vile inquisitor", "a hulking ghast", "a scheming terramancer"}},
 {area = "the Salma Settlement", level = "70-80", targets = {"a Salmati warrior","a Salmati guard","an unclean miner","a common man","an ordinary woman","an engrossed scholar","a busy mage","a hooded scholar","Dima, Captain of the Salmati Guard","a robust blacksmith","an energetic child",}},
 {area = "the Caverns of Mor", level = "70-85", targets = {"a ravenous, shadowy ghast", "a robed, skeletal lich", "a stench-ridden ghoul", "a skeletal warrior", "a vampiric warrior", "a vampiric sentry"}, items = {}},
@@ -7865,6 +8326,7 @@ snd.areas = {
 {area = "the Mamashi Tunnels", level = "75+", targets = {"a greater nalas", "a young nalas", "a mature nalas","a Mit'olk bladesman", "a Mit'olk axeman", "a Mit'olk illusionist","a Githani master","a Githani grappler","a Githani inscriber",}},
 {area = "the Lich Gardens", level = "75-90", targets = {"a dissected child", "a commanding lich scientist", "a dark Cabalist scholar", "a monstrous Carnifex guard", "a mindless experiment", "a guardian wraith", "a tattered Bahkatu experiment", "a student of the lich"}, items = {}},
 {area = "Raugol Fissure", level = "75-90", targets = {"a scything skitterer","a stonescale ravager","a stonescale mephit",}, items = {}},
+
 {area = "the Isle of Ollin", level = "80-90", targets = {"a ferocious Alpha Syll","a giant, rabid Syll", "a massive, verdant-furred Syll", "a young Syll cub", "a blackened, ravenous shark", "a massive black crab", "a dark-furred, rabid boar", "a towering Nazetu guard", "a stinking Nazetu soldier", "a rotting Nazetu ghoul", "a Nazetu comfort woman", "a boisterous Nazetu child", "a sharp-clawed Boru prowler", "a fiendish, tainted Syll", "a diligent Boru harvester"}, items = {}},
 {area = "the Itzatl Morass", level = "80-90", targets = {"an oversized fly", "an oversized earthworm", "a capybara", "a poisonous water moccasin", "a green slime toad", "a silent reed cat", "a vicious snapping turtle", "a long-toothed beaver"}},
 {area = "Saliltul Swamp", level = "80-90", targets = {"a rabid direwolf", "a mutilated humanoid", "a red-eyed water snake"}},
@@ -7875,6 +8337,7 @@ snd.areas = {
 {area = "Arbothia", level = "85-95", targets = {"an enraged female servant", "an enraged male servant", "an enraged female villager", "an enraged male villager"}},
 {area = "the Eresh Mines", level = "85-95", targets = {"an angry vampire bat", "a blind wolf spider", "a swarm of black beetles"}, items = {}},
 {area = "the Fengard Keep", level = "85-95", targets = {"a massive argobole", "a fiery phenkyre", "an ogre berserker", "a horrid basilwyrm", "a shrieking grimshrill", "a vicious horned garwhol", "a brawny glaive knight", "a tall chempala", "a radiant lumore", "a pious invoker", "a pungent lichosphere"}, items = {}},
+
 {area = "the Ayhesa Cliffs", level = "90-100", targets = {"a Spellshaper Archon", "a Spellshaper Master", "a Spellshaper Adept"}, items = {"a flat metal disc"}},
 {area = "Yuzurai village", level = "90-100", targets = {"a massive rojalli matriarch", "a sleek black rojalli", "a savage rojalli"}},
 {area = "the Dramedo Warrens", level = "90-100", targets = {"a vast ochre ooze", "a winged fungal horror","a shambling fungal abomination", "a gigantic fungal strider","a cloud of fungal spores"}}, 
@@ -7882,7 +8345,6 @@ snd.areas = {
 {area = "the Shattered Vortex (Low Level)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone"}, items = {}},
 {area = "the Shattered Vortex (Shadow)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a guardian angel", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
 {area = "the Shattered Vortex (Spirit)", level = "90-100", targets = {"a chaos worm", "a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob", "a warrior of the Aztob", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
-{area = "the Shattered Vortex (Agothaxl)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a guardian angel", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby", "a small box of supplies"}},
 {area = "Tiyen Esityi", level = "95+", targets = {"Commander Marakhi", "Tirahl the Necromancer", "Lieutenant Gharvoi", "a ball of chitinous legs", "insubstantial whispers", "Quartermaster Kuius", "Lieutenant Chiakhi", "a crazed Nazetu cutter", "a mutated Nazetu intercessor", "a Nazetu cook", "a Nazetu halberdier", "a Nazetu provost", "a deformed Nazetu priest", "a Nazetu crossbowman", "a bound shade", "a Nazetu corrupter", "a Nazetu necromancer", "a supply officer", "a victimised intruder"}},
 {area = "the Nal'jin Depths", level = "95+", targets = {"an enormous spinelash fish", "a sinewy Nal'jin eel", "a shadow ray", "a serpentine jawsnapper"}},
 {area = "the Forgotten Dome", level = "95+", targets = {"a gibbering kelki reaver", "a deformed kelki ravener", "a mutated kelki ravager", "a vile kelki prowler"}},
@@ -7895,7 +8357,7 @@ snd.areas = {
 {area = "the Feral Caves", level = "95+", targets = {"a small green blob", "a slimy green blob", "a massive green blob", "a gigantic green blob"}},
 {area = "The Forgotten Mausoleum", level = "95+", targets = {"a reanimated Dwarf woman", "a rotting Dwarf archer", "a decomposing Dwarf", "a robed reanimated Dwarf"}},
 {area = "Tcanna Island", level = "95+", targets = {"a brown and tan python", "a blue crab", "a box jellyfish", "a large capybara", "a small ocelot", "a spotted leopard", "a howler monkey", "a striped tiger", "a water buffalo", "an enormous elephant", "a vicious copperhead snake", "an oversized tortoise", "a diseased raccoon", "a dark green alligator", "a white-tailed deer", "a lithe cougar", "a black bear", "a black and white badger","a great white stag", "a spotted jaguar","a long billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a ragged coyote", "a Troll guard", "a Troll cook","a white goose", "a Nazetu officer"}},
-{area = "Xaanhal", level = "really high", targets = {"a suspicious Xorani patrol", "a wiry Xorani guard", "a cautious Xorani guard", "a merciless Xorani warrior", "a willowy nest guardian"}, items = {"a fragment of a mosaic"}},
+{area = "Xaanhal", level = "really high", targets = {"a helpless Xorani nestling", "an arrogant Xorani master at arms", "a suspicious Xorani patrol", "a wiry Xorani guard", "a cautious Xorani guard", "a merciless Xorani warrior", "a willowy nest guardian"}, items = {"a fragment of a mosaic"}},
 {area = "the Maul", level = "95+", targets = {"a ravenous vakmut warhound","a lithe Aslinn houndmaster","a wary Aslinn slaver","a gaunt Aslinn guard","an Aslinn slave catcher","a wretched Aslinn slaver"}}
 }</script>
 						<eventHandlerList />
@@ -8048,6 +8510,7 @@ snd.global_targets = {
 						<name>run basher</name>
 						<packageName></packageName>
 						<script>function snd.runBasher()
+
   snd.gathering = {}
   snd.bashing.targeted = false
   snd.bashing.target_priority = 10000
@@ -8056,7 +8519,7 @@ snd.global_targets = {
     if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then
       table.insert(snd.gathering, "sovereigns")
     elseif
-      string.find(item, "the corpse of") or
+      (string.find(item, "the corpse of") and not string.find(item, "staked")) or
       table.contains(snd.possible_items, item) or
       table.contains(snd.global_items, item)
     then
@@ -8070,8 +8533,16 @@ snd.global_targets = {
       for targ in pairs(snd.possible_targets) do
         if snd.possible_targets[targ] == item and targ &lt; snd.bashing.target_priority then
           snd.bashing.targeted = true
-          snd.bashing.target = snd.items[item][1]
-          snd.bashing.target_priority = targ
+          if snd.toggles.generics then
+            snd.bashing.target = generic_bashing_name(snd.possible_targets[targ])
+            if snd.bashing.target ~= snd.bashing.old_target then
+             if snd.toggles.calling then snd.send("wt target: "..snd.bashing.target) end
+              snd.bashing.old_target = snd.bashing.target
+            end
+          else
+            snd.bashing.target = snd.items[item][1]
+            snd.bashing.target_priority = targ
+          end   
         end
       end
       for targ in pairs(snd.global_targets) do
@@ -8093,7 +8564,8 @@ snd.global_targets = {
       --  tempTimer(1.5, [[expandAlias("move")]])
     end
   else
-    if snd.toggles.calling then
+    snd.counterattack_active = false
+    if snd.toggles.calling and snd.bashing.old_target ~= snd.bashing.target and snd.bashing.target ~= "none" then
       snd.send("wt target: " .. snd.bashing.target)
     end
   end
@@ -8223,60 +8695,77 @@ end
 
 function snd.shaman_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-if snd.familiar then
-	if hp &lt;= 60 then
-    if snd.balance.morph then
-      if snd.shamanpet == "bear" then
-        battack = "familiar morph spider"..snd.sep.."touch shield"
-      elseif snd.shamanpet == "spider" then
-      	battack = "familiar morph bear"..snd.sep.."touch shield"
-      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
-      	battack = "familiar morph bear"..snd.sep.."touch shield"
+wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
+  if snd.familiar then
+	  if hp &lt;= 60 then
+      if snd.balance.morph then
+        if snd.shamanpet == "bear" then
+          battack = "familiar morph spider"..snd.sep.."touch shield"
+        elseif snd.shamanpet == "spider" then
+      	 battack = "familiar morph bear"..snd.sep.."touch shield"
+        elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	 battack = "familiar morph bear"..snd.sep.."touch shield"
+        end
+      else
+        battack = "touch shield"
       end
-    else
-      battack = "touch shield"
-    end
-	elseif snd.bashcounterattack then
-    if snd.balance.morph then
-      if snd.shamanpet == "bear" then
-        battack = "familiar morph spider"..snd.sep.."touch shield"
-      elseif snd.shamanpet == "spider" then
-      	battack = "familiar morph bear"..snd.sep.."touch shield"
-      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
-      	battack = "familiar morph bear"..snd.sep.."touch shield"
+	  elseif snd.bashcounterattack then
+      if snd.balance.morph then
+        if snd.shamanpet == "bear" then
+          battack = "familiar morph spider"..snd.sep.."touch shield"
+        elseif snd.shamanpet == "spider" then
+      	  battack = "familiar morph bear"..snd.sep.."touch shield"
+        elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	  battack = "familiar morph bear"..snd.sep.."touch shield"
+        end
+      else
+        battack = "touch shield"
       end
-    else
-      battack = "touch shield"
-    end
-	elseif snd.pushattack then
-    if snd.balance.morph then
-      if snd.shamanpet == "bear" then
-        battack = "familiar morph spider"..snd.sep.."push "..snd.bashing.target
-      elseif snd.shamanpet == "spider" then
-      	battack = "familiar morph bear"..snd.sep.."push "..snd.bashing.target
-      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
-      	battack = "familiar morph bear"..snd.sep.."push "..snd.bashing.target
+	  elseif snd.pushattack then
+      if snd.balance.morph then
+        if snd.shamanpet == "bear" then
+          battack = "familiar morph spider"..snd.sep.."push "..snd.bashing.target
+        elseif snd.shamanpet == "spider" then
+      	  battack = "familiar morph bear"..snd.sep.."push "..snd.bashing.target
+        elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+      	  battack = "familiar morph bear"..snd.sep.."push "..snd.bashing.target
+        end
+      else
+		    battack = "push "..snd.bashing.target
+		    snd.pushattack = false
       end
-    else
-		  battack = "push "..snd.bashing.target
-		  snd.pushattack = false
-    end
-	else
-    if snd.balance.morph then
-      if snd.shamanpet == "bear" then
-        battack = "familiar morph spider"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
-      elseif snd.shamanpet == "spider" then
-      	battack = "familiar morph bear"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
-      elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
-      	battack = "familiar morph bear"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+	  else
+      if snd.balance.morph then
+        if snd.shamanpet == "bear" then
+          if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		        battack = "familiar morph spider"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+          else
+            battack = "familiar morph spider"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
+          end
+        elseif snd.shamanpet == "spider" then
+        if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		        battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+          else
+            battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
+          end
+        elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+          if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		        battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+          else
+            battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
+          end
+        end
+      else
+        if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		      battack = "order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+        else
+          battack = "commune lightning "..snd.bashing.target
+        end
       end
-    else
-		  battack = "commune boost"..snd.sep.."commune lightning "..snd.bashing.target
-    end
-	end
-else
-  battack = "familiar recall##order spirit follow me"
-end
+	  end   
+  else
+    battack = "familiar recall##order spirit follow me"
+  end
 end
 
 function snd.sentinel_bash()
@@ -8527,6 +9016,471 @@ end</script>
 
   snd.core()
 end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Generic bashing targets</name>
+						<packageName></packageName>
+						<script>
+function generic_bashing_name(mob)
+
+  local area = gmcp.Room.Info.area
+  local target = ""
+  if snd.generic_bashing_table_by_area[area] then 
+    target = snd.generic_bashing_table_by_area[area] 
+  elseif snd.generic_bashing_table_specific_names[mob] then
+    target = snd.generic_bashing_table_specific_names[mob]
+  else
+    for k, v in ipairs(snd.generic_bashing_table_duplicate_names) do
+     if string.match(' '.. mob:lower() ..' ', '%A'.. v ..'%A') ~= nil then
+      target = v
+     end
+    end
+  end
+  
+  return target
+  
+end
+
+
+snd.generic_bashing_table_by_area = {
+  ["the Forgotten Dome"] = "kelki",
+  ["a volcano"] = "elemental",
+  ["Xaanhal"] = "xorani",
+  ["Luzith's Lair"] = "spider",
+  ["the Bloodwood"] = "spirit",
+  ["the Fractal Bloom"] = "entity",
+  ["the Ayhesa Cliffs"] = "spellshaper",
+  ["the Caverns of Mor"] = "undead",
+  ["the Sparklight Rift"] = "elemental",
+  ["the Centipede Cave"] = "centipede",
+  ["the Teshen Caldera"] = "teshen",
+  ["Dovan Hollow"] = "slaver",
+  ["a snake pit"] = "snake",
+}
+
+
+snd.generic_bashing_table_specific_names = {
+  ["a monstrous Carnifex guard"] = "carnifex",
+  ["a fluffy jambaali"] = "jambaali",
+  ["a howler monkey"] = "monkey",
+  ["a spunky white tamarin"] = "tamarin",
+  ["a beautiful wild horse"] = "horse",
+  ["a white-tailed deer"] = "deer",
+  ["a tiny hatchling"] = "hatchling",
+  ["a school of spinebacks"] = "spinebacks",
+  ["a Masilidean physicalist"] = "physicalist",
+  ["a bemused artist"] = "artist",
+  ["a deputy constable"] = "constable",
+  ["a stonescale mephit"] = "mephit",
+  ["a soulless pixie"] = "pixie",
+  ["a playful oniro"] = "oniro",
+  ["a Dwarven craftsman"] = "craftsman",
+  ["a petrified treant"] = "treant",
+  ["a fanged lugore"] = "lugore",
+  ["a white hen"] = "hen",
+  ["a piece of an amalgamation"] = "piece",
+  ["a ball of chitinous legs"] = "legs",
+  ["a rabid plant"] = "plant",
+  ["a pungent lichosphere"] = "lichosphere",
+  ["Igrar, Captain of the Gral"] = "igrar",
+  ["the impish outcast, Qezirath"] = "qezirath",
+  ["a large, snowy fox"] = "fox",
+  ["a scything skitterer"] = "skitterer",
+  ["a stonescale ravager"] = "ravager",
+  ["a shambling fungal abomination"] = "abomination",
+  ["a stalwart templar"] = "templar",
+  ["a mature bullrush"] = "bullrush",
+  ["a horrid basilwyrm"] = "basilwyrm",
+  ["a chittering chicken"] = "chicken",
+  ["a Dwarven boy"] = "dwarf",
+  ["a lanky, Trollish witch doctor"] = "troll",
+  ["a massive orgyuk"] = "orgyuk",
+  ["an energetic orangutan"] = "orangutan",
+  ["a rot-infested swordfish"] = "swordfish",
+  ["a vast ochre ooze"] = "ooze",
+  ["an ogre berserker"] = "ogre",
+  ["a giant squid"] = "squid",
+  ["an amorphous black umbra"] = "umbra",
+  ["a swarm of tsetse flies"] = "flies",
+  ["a male gorilla"] = "gorilla",
+  ["a naive neo-Ankyrean"] = "neo-ankyrean",
+  ["a bald eagle"] = "eagle",
+  ["a vicious horned garwhol"] = "garwhol",
+  ["a Masilidean etherealist"] = "etherealist",
+  ["a guard pig"] = "pig",
+  ["an irritated crow"] = "crow",
+  ["a black and white badger"] = "badger",
+  ["a lithe cougar"] = "cougar",
+  ["a serpentine couatl"] = "couatl",
+  ["a barnacle-encrusted oyster"] = "oyster",
+  ["a long-toothed beaver"] = "beaver",
+  ["a tentacled morbol"] = "morbol",
+  ["a frazzled-looking possum"] = "possum",
+  ["a battle-worn Ascendril"] = "ascendril",
+  ["a fetish-decorated shaman"] = "shaman",
+  ["a burly, stone-fisted laborer"] = "laborer",
+  ["Mellias, an elegant Tsol'aa consanguine"] = "consanguine",
+  ["a boisterous Imp boy"] = "imp",
+  ["a slender, female arachnoid"] = "arachnoid",
+  ["a moth"] = "moth",
+  ["a chaos storm"] = "storm",
+  ["a large gray and black dugger"] = "dugger",
+  ["a black-spotted cow"] = "cow",
+  ["a black ram"] = "ram",
+  ["a gnat"] = "gnat",
+  ["a furry oberglot"] = "oberglot",
+  ["a splintering earthrager"] = "earthrager",
+  ["a willowy nest guardian"] = "guardian",
+  ["Gwenil, the Dwarven blacksmith"] = "dwarf",
+  ["a tree frog"] = "frog",
+  ["a Masilidean mentalist"] = "mentalist",
+  ["a spindly village alpha"] = "alpha",
+  ["a corrupted hackle"] = "hackle",
+  ["a poisonous purple lora"] = "lora",
+  ["an iridescent tizapez"] = "tizapez",
+  ["Sentinel Rozhirr"] = "rozhirr",
+  ["a panther-like Rajamala"] = "rajamala",
+  ["a chaos orb"] = "orb",
+  ["Muiran, a trapper"] = "muiran",
+  ["a handsom nayar"] = "nayar",
+  ["a lava daemon"] = "daemon",
+  ["a long billed toucan"] = "toucan",
+  ["a shadowy, mindless demon"] = "demon",
+  ["a chimera"] = "chimera",
+  ["an enchanting meayan"] = "meayan",
+  ["a slimy aryeim"] = "aryeim",
+  ["a malevolent spectre"] = "spectre",
+  ["an enormous anaconda"] = "anaconda",
+  ["a rebellious rancher"] = "rancher",
+  ["a rabid blood-fiend"] = "blood-fiend",
+  ["a strong pine"] = "pine",
+  ["insubstantial whispers"] = "whispers",
+  ["a Dwarven archeologist"] = "dwarf",
+  ["Head Foreman Cadric"] = "cadric",
+  ["an ethereal firelord"] = "firelord",
+  ["Quartermaster Kuius"] = "kuius",
+  ["a foul-smelling zombie"] = "zombie",
+  ["a shrieking grimshrill"] = "grimshrill",
+  ["a cloud of fungal spores"] = "spores",
+  ["a spatial anomaly"] = "anomoly",
+  ["a Troll cook"] = "cook",
+  ["a swarm of black beetles"] = "beetles",
+  ["an opossum"] = "opossum",
+  ["Blacksmith Udhomentesh"] = "udhomentesh",
+  ["a banded scrubland racer"] = "racer",
+  ["a black rhinoceros"] = "rhinoceros",
+  ["a ruffled grouse"] = "grouse",
+  ["Tuera, the torturer"] = "tuera",
+  ["a willow sappling"] = "willow",
+  ["Tohrul, the Dwarven supervisor"] = "dwarf",
+  ["a demonic screamer"] = "screamer",
+  ["Edgar, the gardener"] = "edgar",
+  ["a silent reed cat"] = "cat",
+  ["a monstrous arachnid"] = "arachnid",
+  ["a tower watchman"] = "watchman",
+  ["Elenina, the astrologer"] = "elenina",
+  ["a field hauler"] = "hauler",
+  ["Morrid, a village elder"] = "morrid",
+  ["a bloodleech"] = "bloodleech",
+  ["silver-feathered orel"] = "orel",
+  ["a victimised intruder"] = "intruder",
+  ["Foreman Grummosh"] = "grummosh",
+  ["Deorkaan, the Hlugna smithy"] = "deorkaan",
+  ["a warden of the Hlugnic clans"] = "warden",
+  ["a blackened darkwalker"] = "darkwalker",
+  ["a school of piranha"] = "piranha",
+  Jehanne = "jehanne",
+  ["an insignificant lime caterpillar"] = "caterpillar",
+  ["a humbug"] = "humbug",
+  ["a ravenous locust"] = "locust",
+  ["a shadowdrop"] = "shadowdrop",
+  ["a mire pup"] = "pup",
+  ["Commander Marakhi"] = "marakhi",
+  ["Foreman Dugan"] = "dugan",
+  ["a monstrous coelacanth"] = "coelacanth",
+  ["a brown rockling"] = "rockling",
+  ["a magpie"] = "magpie",
+  ["a severed male head"] = "head",
+  ["Lassorn, a village cooper"] = "lassorn",
+  ["a large buck"] = "buck",
+  ["a soft-shelled klikkin"] = "klikkin",
+  ["a green slime"] = "slime",
+  ["a lake trout"] = "trout",
+  ["a blackbird"] = "blackbird",
+  ["a Hlugnic runeguard"] = "runeguard",
+  ["a crazed blood-fiend"] = "blood-fiend",
+  ["a mutated blood-fiend"] = "blood-fiend",
+  ["a Mamashi lioness"] = "lioness",
+  ["a large bhfaol"] = "bhfaol",
+  ["a spotted jaguar"] = "jaguar",
+  ["a winged fungal horror"] = "horror",
+  ["a burrowing owl"] = "owl",
+  ["a squat penguin"] = "penguin",
+  ["an agile Sentaari monk"] = "monk",
+  ["a grotesque fangtooth"] = "fangtooth",
+  ["a dark green alligator"] = "alligator",
+  ["a colorful toucan"] = "toucan",
+  ["a Bloodloch soldier"] = "soldier",
+  ["a djeirani ghost"] = "ghost",
+  ["a striped tzatica"] = "tzatica",
+  ["a cave-dwelling avisme"] = "avisme",
+  ["a pious invoker"] = "invoker",
+  ["a brawny glaive knight"] = "knight",
+  ["a vile inquisitor"] = "inquisitor",
+  ["a student of the lich"] = "student",
+  ["a fragment of living glass"] = "fragment",
+  ["the Dwarven alemaster"] = "alemaster",
+  ["a bubonis"] = "bubonis",
+  ["a dull brown lamprey"] = "lamprey",
+  ["a burly lumberjack"] = "lumberjack",
+  ["a fiery phenkyre"] = "phenkyre",
+  ["a large, juicy cavehopper"] = "cavehopper",
+  ["Nolid, the Dwarven fisherman"] = "fisherman",
+  ["a voracious blind-fish"] = "blind-fish",
+  ["a disembodied soul"] = "soul",
+  ["a lithe weasel"] = "weasel",
+  ["a lurking shadow"] = "shadow",
+  ["a dwarven boy"] = "boy",
+  ["a mottled green bullfrog"] = "bullfrog",
+  ["a tenacious tough"] = "tough",
+  ["a glossy black silk-spinner"] = "silk-spinner",
+  ["a gigantic fungal strider"] = "strider",
+  ["a Masilidean focus"] = "focus",
+  ["a five-tentacled octopus of jade"] = "octopus",
+  ["a Dwarven excavator"] = "excavator",
+  ["a zombie cleric"] = "cleric",
+  ["a draconic zogura"] = "zogura",
+  ["Head Archeologist, Dolus"] = "dolus",
+  ["Lieutenant Chiakhi"] = "chiakhi",
+  ["an immense Trollish chieftain"] = "chieftain",
+  ["a sering Sycophant"] = "sycophant",
+  ["a field monitor"] = "monitor",
+  ["a white-coated chinchilla"] = "chinchilla",
+  ["a pathfinder"] = "pathfinder",
+  ["a brown and tan python"] = "python",
+  ["an unctuous creepling"] = "creepling",
+  ["Moritsio, Owner of the Pub"] = "moritsio",
+  ["Baruin, the Dwarven mason"] = "baruin",
+  ["Maeron, the Quartermaster"] = "maeron",
+  ["a decaying donkey"] = "donkey",
+  ["a field harvester"] = "harvester",
+  ["a gamey goat"] = "goat",
+  ["Lesiv, the Torstonite chieftain"] = "lesiv",
+  ["a malevolent poltergeist"] = "poltergeist",
+  ["a short-horned chamois"] = "chamois",
+  ["Laoghaire, the monitor"] = "laoghaire",
+  ["Lieutenant Gharvoi"] = "gharvoi",
+  ["a rock devil"] = "devil",
+  ["the Dwarven miller"] = "miller",
+  ["a tall chempala"] = "chempala",
+  ["Administrator Kamakshi"] = "kamakshi",
+  ["a carefree Grook boy"] = "boy",
+  ["an oversized efreeti"] = "efreeti",
+  ["a gargantuan cicada"] = "cicada",
+  ["a large, deepwater salmon"] = "salmon",
+  ["Midolo Raim"] = "midolo",
+  ["General Abeshentesh"] = "abeshentesh",
+  ["a mutilated creature"] = "creature",
+  ["a corrupted cultist"] = "cultist",
+  ["a diminutive necromancer"] = "necromancer",
+  ["a choke creeper"] = "creeper",
+  ["a wealthy sailor"] = "sailor",
+  ["a savage mutant pumpkin"] = "pumpkin",
+  ["a white-collared lemming"] = "lemming",
+  ["Hassik, the village elder"] = "elder",
+  Firthar = "firthar",
+  ["Mala, the Artisan"] = "mala",
+  ["a darkened soul"] = "soul",
+  ["a mass of deadly trap spiders"] = "spider",
+  ["a darkling"] = "darkling",
+  ["Broondac, the vampire strategist"] = "broondac",
+  ["a radiant lumore"] = "lumore",
+  ["an irritable, rabid zebra"] = "zebra",
+  ["a snowy armadilleon"] = "armadilleon",
+  ["a lithe buckawn"] = "buckawn",
+  ["a furry coatimundi"] = "coatimundi",
+  ["Gunder, a retired sailor"] = "gunder",
+  ["Fermian, excavation foreman"] = "fermian",
+  ["a poisonous water moccasin"] = "moccasin",
+  ["a serpentine blademistress"] = "blademistress",
+  ["a shadow ray"] = "ray",
+  ["a rotund, white ptarmigan"] = "ptarmigan",
+  ["a mutilated humanoid"] = "humanoid",
+  ["a grizzly foreman"] = "foreman",
+  ["a razor nahuac"] = "nahuac",
+  ["a young foal"] = "foal",
+  ["a school of shadowy minnows"] = "minnows",
+  ["a striped sea krait"] = "krait",
+  ["a tiny aurivv bug"] = "bug",
+  ["a shivering jackrabbit"] = "jackrabbit",
+  ["a soulmaster"] = "soulmaster",
+  ["a vampiric overseer"] = "overseer",
+  ["a carnivorous weed"] = "weed",
+  ["a scarlet macaw"] = "macaw",
+  ["a great white stag"] = "stag",
+  ["a lithe black panther"] = "panther",
+  ["an orange-and-yellow stripped starfish"] = "starfish",
+  ["an oversized tortoise"] = "tortoise",
+  ["a bound shade"] = "shade",
+  ["a small ocelot"] = "ocelot",
+  ["a suspicious Xorani patrol"] = "xorani",
+  ["a slime-encrusted spitter"] = "spitter",
+  ["an ecru axolotl"] = "axolotl",
+  ["a serpentine jawsnapper"] = "jawsnapper",
+  ["a foul spiderling"] = "spiderling",
+  ["a slender synicant"] = "synicant",
+  ["a giant mosquito"] = "mosquito",
+  ["a katydid"] = "katydid",
+  ["a malformed beast"] = "beast",
+  ["a nightmare shadow"] = "shadow",
+  ["a white gyrfalcon"] = "gyrfalcon",
+  ["a dervish"] = "dervish",
+  ["Tirahl the Necromancer"] = "tirahl",
+  ["a savage shade"] = "shade",
+  ["a scheming terramancer"] = "terramancer",
+  ["a plump duck"] = "duck",
+  ["a nimble sentinel"] = "sentinel",
+  ["a massive argobole"] = "argobole",
+  ["Shanea, a village elder"] = "shanea",
+  ["a withered crone"] = "crone",
+  ["an elderly Dwarven gardener"] = "gardener",
+  ["a slender mud adder"] = "adder",
+  ["a white tailed doe"] = "doe",
+  ["a disgustingly warped missionary"] = "missionary",
+  ["a speckled tinyok"] = "tinyok",
+  ["a misty apparition"] = "apparition",
+  ["a wild-eyed scientist"] = "scientist",
+  ["a slender forager"] = "forager",
+  ["a green slime toad"] = "toad",
+  ["a small, ruddy turnstone"] = "turnstone",
+  ["a shadow"] = "shadow",
+  ["Mayor Thurgil Redstein"] = "thurgil",
+  ["an oversized earthworm"] = "earthworm",
+  ["a warden of the Hlugnic clans"] = "warden",
+  ["an enormous Troll bandit"] = "bandit",
+  ["Nysaac"] = "nysaac",
+
+}
+
+snd.generic_bashing_table_duplicate_names = {
+  "keeper",
+  "eld",
+  "snake",
+  "bandit",
+  "syll",
+  "coyote",
+  "kobold",
+  "xorani",
+  "gnome",
+  "angel",
+  "wildcat",
+  "entity",
+  "lion",
+  "cragling",
+  "woman",
+  "centipede",
+  "leper",
+  "dwarf",
+  "snail",
+  "sheep",
+  "dog",
+  "sapling",
+  "ghast",
+  "priest",
+  "priestess",
+  "leopard",
+  "blob",
+  "slaver",
+  "hound",
+  "viper",
+  "hunter",
+  "scholar",
+  "indorani",
+  "experiment",
+  "gremlin",
+  "sycophant",
+  "teshen",
+  "wolf",
+  "direwolf",
+  "girl",
+  "tiger",
+  "hound",
+  "bloodhound",
+  "child",
+  "officer",
+  "spirit",
+  "spellshaper",
+  "warrior",
+  "miner",
+  "mhun",
+  "kelki",
+  "villager",
+  "worm",
+  "nazetu",
+  "lich",
+  "goblin",
+  "fly",
+  "dragonfly",
+  "guard",
+  "boru",
+  "skeleton",
+  "scorpion",
+  "sentry",
+  "capybara",
+  "elemental",
+  "snatcher",
+  "tree",
+  "eel",
+  "boar",
+  "shark",
+  "bear",
+  "buffalo", 
+  "raccoon",
+  "fish",
+  "ghoul",
+  "jellyfish",
+  "lizard",
+  "spider",
+  "rattlesnake",
+  "wolverine",
+  "chiav",
+  "squirrel",
+  "trog",
+  "catfish",
+  "golem",
+  "hare",
+  "grub",
+  "mit'olk",
+  "harpy",
+  "bat",
+  "nalas",
+  "mage",
+  "mugyik",
+
+  "troll",
+  "rat",
+  "bush",
+  "farmer",
+  "oak",
+  "serpent",
+  "minion",
+  "crocodile",
+  "bobcat",
+  "servant",
+  "blood-fiend",
+  "elephant",
+  "rojalli",
+  "aberration",
+  "goose",
+  "turtle",
+  "crab",
+  "icewyrm",
+  "man",
+  "rabbit",
+  "wraith",
+  "elk",
+  }</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -9722,7 +10676,7 @@ function demonnic.chat:create()
   end
   if demonnic.chat.config.Maptab and demonnic.chat.config.Maptab ~= "" then
     demonnic.chat.mapWindow = Geyser.Mapper:new({
-      x = 0,
+      x = 15,
       y = 0,
       height = "100%",
       width = "100%",
@@ -9813,8 +10767,8 @@ function demonnic.chat:topright()
     fontSize = demonnic.chat.config.fontSize,
     x=string.format("-%sc",demonnic.chat.config.width + 2),
     y=0,
-    width="-1px",
-    height=string.format("%ic", demonnic.chat.config.lines + 2),
+    width= "-1px",
+    height=string.format("%ic", demonnic.chat.config.lines + 1),
   }
 end
 
@@ -10008,7 +10962,8 @@ function snd.do_special(current)
 	 return
 	else
    if snd.defenses[current].state == "down" then
-    snd.send(snd.defenses[current].balance.special)
+    if current == "def_fangbarrier" then snd.send("outc paste"); snd.send(snd.defenses[current].balance.special) 
+    else snd.send(snd.defenses[current].balance.special) end
     echo("("..snd.defenses[current].balance.special..")")
     snd.last_type = "special"
     snd.last_item = snd.defenses[current].balance.special
@@ -10045,7 +11000,16 @@ function snd.do_balance_equilibrium_need(current)
  if snd.can_cast() then
   if snd.defenses[current] ~= nil then
    if snd.defenses[current].state == "down" and snd.defenses[current].needit then
-    snd.send(snd.defenses[current].balance.balanceequilibrium)
+    if current:find("chameleon") then
+      local chameleon_table = {}
+      for k, v in pairs(sndNDB.players) do
+        table.insert(chameleon_table, k)
+      end
+      local cham_check = chameleon_table[math.random(#chameleon_table)]
+      snd.send(snd.defenses[current].balance.balanceequilibrium..cham_check..snd.sep.."chameleon "..cham_check)
+    else
+      snd.send(snd.defenses[current].balance.balanceequilibrium)
+    end
     echo("("..snd.defenses[current].balance.balanceequilibrium..")")
     snd.last_type = "balanceequilibrium"
     snd.last_item = snd.defenses[current].balance.balanceequilibrium
@@ -13031,7 +13995,7 @@ carnifex = {"Savagery", "Deathlore", "Warhounds"},
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
-						<name>tracking</name>
+						<name>tracking functions</name>
 						<packageName></packageName>
 						<script>snd.shadow_targets = {}
 snd.spirit_targets = {}
@@ -13039,65 +14003,61 @@ snd.are_we_checking_ql = false
 
 function snd.get_new_target()
   if snd.toggles.calling then
-		snd.new_target = "none"
-		snd.set_faction()
-		local check = {}
-		if snd.faction == "shadow" then
-			check = snd.spirit_targets
-		else
-			check = snd.shadow_targets
-		end
-
-    for k, v in ipairs(snd.enemies) do
-      if table.contains(check, v) then
-      	if snd.new_target == "none" then
-        	snd.new_target = v
-  				if v ~= snd.target then 
-						expandAlias("t " .. snd.new_target, false)
-  				else
-						if not snd.are_we_checking_ql then
-							snd.are_we_checking_ql = true
-							send("ql")
-						end
-					end
+    local new_target = "nil"
+    if #snd.players_here ~= 0 and (not table.contains(snd.players_here, snd.target:title()) or snd.targeting.skip) then
+    	for _, tar in ipairs(snd.targeting.list) do
+    		if table.contains(snd.players_here, tar) and snd.target:title() ~= tar then
+          new_target = tar
+    			expandAlias("t " .. tar) 
+    			break
         end
-      end
-    end
-		
-    if snd.new_target == "none" and not snd.toggles.fasthunt then
-      expandAlias("stap", false)
+    	end
+      if new_target == "nil" then
+        if sndNDB.players[gmcp.Char.Status.name].tether == "Shadow" then check = snd.spirit_targets else check = snd.shadow_targets end
+        for _, tar in ipairs(check) do
+      		if table.contains(snd.players_here, tar) then
+            new_target = tar
+      			expandAlias("t " .. tar) 
+      			break
+          end
+        end
+    	end
     end
   end
+   if  snd.targeting.skip then snd.targeting.skip = false end
 end
 
 function snd.took_limb_dmg(limb, amount)
-  snd.limb_dmg[limb] = snd.limb_dmg[limb] + amount
-  if snd.limb_dmg[limb] &lt; 0 then
-    snd.limb_dmg[limb] = 0
-  end
-  cecho("&lt;green&gt; " .. limb .. ": " .. snd.limb_dmg[limb])
-  if limb == snd.resto_limb and amount == -30 then
-    snd.resto_limb = "none"
-    if snd.limb_status[limb] ~= "healed" then
-      if snd.limb_dmg[limb] &gt;= 66.66 then
-        snd.limb_status[limb] = "mangled"
-      elseif snd.limb_dmg[limb] &gt;= 33.33 then
-        snd.limb_status[limb] = "broken"
-        snd.limb_status[limb] = "damaged"
-      else
-        snd.limb_status[limb] = "healed"
+  if limb and amount then
+    snd.limb_dmg[limb] = snd.limb_dmg[limb] + amount
+    if snd.limb_dmg[limb] &lt; 0 then
+      snd.limb_dmg[limb] = 0
+    end
+    cecho("&lt;green&gt; " .. limb .. ": " .. snd.limb_dmg[limb])
+    if limb == snd.resto_limb and amount == -30 then
+      snd.resto_limb = "none"
+      if snd.limb_status[limb] ~= "healed" then
+        if snd.limb_dmg[limb] &gt;= 66.66 then
+          snd.limb_status[limb] = "mangled"
+        elseif snd.limb_dmg[limb] &gt;= 33.33 then
+          snd.limb_status[limb] = "broken"
+        else
+          snd.limb_status[limb] = "healed"
+        end
       end
     end
-  end
-  local totaldmg = 0
-	snd.limb_dmg.total = 0
-  for k, v in pairs(snd.limb_dmg) do
-		if v ~= "total" then
-	    totaldmg = totaldmg + v
+    local totaldmg = 0
+  	snd.limb_dmg.total = 0
+    for k, v in pairs(snd.limb_dmg) do
+  		if v ~= "total" then
+  	    totaldmg = totaldmg + v
+    	end
   	end
-	end
-  snd.limb_dmg.total = totaldmg
-  color_enemy_limbs()
+    snd.limb_dmg.total = totaldmg
+    if snd.gui_loaded then
+      color_enemy_limbs()
+    end
+  end
 end
 
 function snd.target_got(affliction)
@@ -13107,6 +14067,15 @@ function snd.target_got(affliction)
   end
   if snd.defended then
     return
+  end
+  
+  if affliction == "cold" then
+    if not snd.checkAff("no_caloric") then affliction = "no_caloric"
+    elseif not snd.checkAff("shivering") then affliction = "shivering"
+    elseif not snd.checkAff("frozen") then affliction = "frozen"
+    elseif not snd.checkAff("ice_encased") and snd.checkAff("frostbrand") then affliction = "ice_encased"
+    else return
+    end
   end
   
   if affliction == "a broken leg" and snd.checkAff("a broken leg") then
@@ -13139,26 +14108,35 @@ function snd.target_got(affliction)
   
   table.insert(snd.target_has, affliction)
   -- add affliction before displaying in pane, used to be below the gui update
-  if snd.gui_loaded then
-    if snd.target_prone and not table.contains(snd.target_has, "prone") then
-      table.insert(snd.target_has, "prone")
-    end
-    if #snd.target_has &gt;= 1 then
-      for _, v in ipairs(snd.target_has) do
-        if v:find("broken") then
-          v = v:gsub("a ", "")
-          v = v:gsub("left", "L")
-          v = v:gsub("right", "R")
-        end
-        table.insert(target_display_table, "&lt;center&gt;" .. v .. "&lt;/center&gt;")
-      end
-      eaffs:echo(table.concat(target_display_table))
-      color_enemy_affs()
-      color_enemy_limbs()
-    else
-      eaffs:echo("&lt;center&gt;enemy affs&lt;/center&gt;")
-    end
+  if snd.target_prone and not table.contains(snd.target_has, "prone") then
+    table.insert(snd.target_has, "prone")
   end
+    if snd.gui_loaded then
+      if #snd.target_has &gt;= 1 then
+        for _, v in ipairs(snd.target_has) do
+          if v:find("broken") then
+            v = v:gsub("a ", "")
+            v = v:gsub("left", "L")
+            v = v:gsub("right", "R")
+          end
+          table.insert(target_display_table, "&lt;center&gt;" .. v .. "&lt;/center&gt;")
+        end
+        eaffs:echo(table.concat(target_display_table))
+        color_enemy_affs()
+        color_enemy_limbs()
+      else
+        eaffs:echo("&lt;center&gt;enemy affs&lt;/center&gt;")
+      end
+    end
+  -- if table.contains(entangleaffs, affliction) then
+  -- snd.target_impaled = false
+  --	snd.jawlocked = false
+  -- for entangle in pairs(entangleaffs) do
+  -- if snd.checkAff(entangleaffs[entangle]) then
+  --  snd.target_cured(entangleaffs[entangle])
+  -- end
+  --end
+  --end
   cecho("&lt;green&gt; " .. affliction)
   snd.waiting.queue = false
 end
@@ -13199,20 +14177,22 @@ function snd.target_cured(affliction)
       table.remove(snd.target_has, i)
     end
   end
-  if #snd.target_has &gt;= 1 then
-    for _, i in ipairs(snd.target_has) do
-      table.insert(target_display_table, "&lt;center&gt;" .. i .. "&lt;/center&gt;")
+  if snd.gui_loaded then
+    if #snd.target_has &gt;= 1 then
+      for _, i in ipairs(snd.target_has) do
+        table.insert(target_display_table, "&lt;center&gt;" .. i .. "&lt;/center&gt;")
+      end
+      eaffs:echo(table.concat(target_display_table))
+      color_enemy_affs()
+    else
+      eaffs:echo("&lt;center&gt;enemy affs&lt;/center&gt;")
+      color_enemy_limbs()
     end
-    eaffs:echo(table.concat(target_display_table))
-    color_enemy_affs()
-  else
-    eaffs:echo("&lt;center&gt;enemy affs&lt;/center&gt;")
-    color_enemy_limbs()
   end
   if not snd.target_gone then
     snd.waiting.queue = false
   end
-  
+  -- table.remove(snd.target_has, affliction)
 end
 
 function snd.target_used(curative)
@@ -13221,39 +14201,16 @@ function snd.target_used(curative)
     for affliction in pairs(snd.cures[curative]) do
       for i in pairs(snd.target_has) do
         if snd.target_has[i] == snd.cures[curative][affliction] and not aff_found then
-          if curative == "caloric" and snd.cures[curative][affliction] == "no_caloric" then
-            snd.target_cured(snd.cures[curative][affliction])
-            aff_found = true
-          elseif curative == "panacea" then
-						if table.contains(gmcp.Room.Info.details, "darkness") then
-            	if snd.cures[curative][affliction] == "shaderot_body" then
-              	snd.target_cured("shaderot_body")
-            	elseif snd.cures[curative][affliction] == "shaderot_wither" then
-              	snd.target_cured("shaderot_wither")
-            	elseif snd.cures[curative][affliction] == "shaderot_heat" then
-              	snd.target_cured("shaderot_heat")
-            	elseif snd.cures[curative][affliction] == "shaderot_spirit" then
-								snd.target_cured("shaderot_spirit")
-							elseif snd.cures[curative][affliction] == "shaderot_benign" then
-              	snd.target_cured("shaderot_benign")
-            	end
-						else
-							if snd.cures[curative][affliction] == "shaderot_body" then
-              	snd.target_cured("shaderot_body")
-								snd.target_cured("shaderot_wither")
-            	elseif snd.cures[curative][affliction] == "shaderot_wither" then
-              	snd.target_cured("shaderot_wither")
-								snd.target_cured("shaderot_heat")
-            	elseif snd.cures[curative][affliction] == "shaderot_heat" then
-              	snd.target_cured("shaderot_heat")
-								snd.target_cured("shaderot_spirit")
-            	elseif snd.cures[curative][affliction] == "shaderot_spirit" then
-								snd.target_cured("shaderot_spirit")
-								snd.target_cured("shaderot_benign")
-							elseif snd.cures[curative][affliction] == "shaderot_benign" then
-              	snd.target_cured("shaderot_benign")
-            	end
-						end
+          if curative == "panacea" then
+            if snd.cures[curative][affliction] == "shaderot_body" then
+              snd.target_cured("shaderot_wither")
+            elseif snd.cures[curative][affliction] == "shaderot_wither" then
+              snd.target_cured("shaderot_heat")
+            elseif snd.cures[curative][affliction] == "shaderot_heat" then
+              snd.target_cured("shaderot_spirit")
+            elseif snd.cures[curative][affliction] == "shaderot_spirit" then
+              snd.target_cured("shaderot_benign")
+            end
             snd.target_cured(snd.cures[curative][affliction])
             aff_found = true
 					elseif snd.target_has[i] == "blighted" or snd.target_has[i] == "infested" then
@@ -13261,7 +14218,7 @@ function snd.target_used(curative)
             	snd.target_cured(snd.cures[curative][affliction])
            		aff_found = true
 						end					
-          elseif snd.target_has[i] ~= "hypothermia" then
+          else
             snd.target_cured(snd.cures[curative][affliction])
             aff_found = true
           end
@@ -13316,6 +14273,7 @@ function snd.onHit()
     snd.message(snd.hitting .. " hit: " .. snd.getting_hit .. ".")
   end
   snd.last_affs = {}
+  
   if #snd.maybe_affs &gt;= 1 and (snd.getting_hit == snd.target) then
     if snd.maybe_affs[1] == "blaze" then
       snd.used.rebounding = false
@@ -13382,7 +14340,9 @@ function snd.checksomeAffs(afflictions, number)
     -- if the count of how many returned true didn't meet or exceed the number given, return false
     return false
   end
-end</script>
+end
+
+</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
@@ -13394,6 +14354,7 @@ function snd.attack_function()
 end
 
 function snd.attack(attack)
+
   local string = ""
   if snd.can_fitness() and snd.need_fitness then
  	 string = "fitness"
@@ -13402,10 +14363,11 @@ function snd.attack(attack)
   else
  	 string = attack
   end
- 	string = "stand"..snd.sep.."g body"..snd.sep.."g husk"..snd.sep..string
+ 	 string = "stand"..snd.sep.."g body"..snd.sep.."g husk"..snd.sep..string
   if snd.toggles.parrying and snd.toparry ~= "none" and snd.toparry ~= snd.parrying then
  	 string = "parry "..snd.toparry..snd.sep..string
   end
+
   if snd.emptypipe ~= "none" then
  	 string = "outc "..snd.emptypipe..snd.sep.."put "..snd.emptypipe.." in emptypipe"..snd.sep..string
   end
@@ -13413,7 +14375,7 @@ function snd.attack(attack)
  	 string = "light pipes"..snd.sep..string
   end
 	if string:find("slaughter") then
-		snd.send("qeb")
+    snd.send("qeb")
 		snd.send("queue axes "..string)
 	else
 		snd.send("queue axes")
@@ -13422,13 +14384,13 @@ function snd.attack(attack)
 end
 
 function snd.starting_attack()
-  snd.send("target nothing with left"..snd.sep.."target nothing with right")
-  snd.send("leading off")
-  snd.toggles.attacking = true
-  snd.class_hitting = "none"
-  snd.person_hitting = "none"
-  snd.active_hound = "none"
-  snd.implant = "none"
+ snd.send("target nothing with left"..snd.sep.."target nothing with right")
+ snd.send("leading off")
+ snd.toggles.attacking = true
+ snd.class_hitting = "none"
+ snd.person_hitting = "none"
+ snd.active_hound = "none"
+ snd.implant = "none"
 end
 
 function snd.handle_hounds()
@@ -13496,6 +14458,7 @@ end</script>
 "Bormulf",
 "Taaroshi",
 "Gorvex",
+"Sarita",
 "Dantae",
 "Oriana",
 "Anka",
@@ -14001,6 +14964,7 @@ end</script>
 						<name>misc</name>
 						<packageName></packageName>
 						<script>
+
 function snd.reset_target()
  snd.target_has = {}
  for limb in pairs(snd.limb_dmg) do
@@ -14015,7 +14979,8 @@ function snd.reset_target()
  snd.hypno = "none"
  snd.hyp = 0
  snd.last_hypno = 0
- snd.broken_limbs = 0
+ if restoration_timer then killTimer(restoration_timer) end
+ snd.current_restoration_aff = ""
  snd.resto_limb = "none"
  snd.used.rebounding = true
  snd.used.shield = false
@@ -14033,29 +14998,11 @@ function snd.reset_target()
  snd.need_leech_aura = true
  snd.flamewreathed_limb = ""
  snd.gorged = ""
- snd.swagger = 0
  snd.gravity = 0
- color_enemy_affs()
- color_enemy_limbs()
- snd.squareseal = false
- snd.triangleseal = false
- snd.circleseal = false
- snd.firefly_down = false
- snd.my_mutagen = false
-end
-
-function snd.set_faction()
-
- if snd.city == "Spinesreach" or snd.city == "Bloodloch" then
-  snd.faction = "shadow"
-	snd.allies = snd.shadow
-	snd.enemies = snd.spirit
- elseif snd.city == "Enorian" or snd.city == "Duiran" then
-  snd.faction = "spirit"
-	snd.allies = snd.spirit
-	snd.enemies = snd.shadow
- end
-
+  if snd.gui_loaded then 
+    color_enemy_affs()
+    color_enemy_limbs()
+  end
 end
 
 function snd.target_locked()
@@ -14108,6 +15055,7 @@ function snd.no_parry()
  "asleep",
  "webbed",
  "transfixed",
+ "ropes",
  }
  for aff in pairs(noparryaffs) do
   if snd.checkAff(noparryaffs[aff]) then
@@ -14121,26 +15069,27 @@ function snd.no_parry()
 end
 
 function snd.proned()
-  prone = false
-  if snd.target_prone then
-    prone = true
-  end
-  proneaffs = {
-    "frozen",
-	  "paralysis",
-	  "transfixed",
-	  "webbed",
-	  "impaled",
-	  "thighlock",
-	  "armpitlock",
-	  "necklock"
-  }
-  for aff in pairs(proneaffs) do
-    if snd.checkAff(proneaffs[aff]) then
-	     prone = true
-	  end
-  end
-  return prone
+ prone = false
+ if snd.target_prone then
+  prone = true
+ end
+ proneaffs = {
+  "frozen",
+--	"paralysis",
+	"transfixed",
+	"webbed",
+	"impaled",
+	"thighlock",
+	"armpitlock",
+	"necklock",
+  "ropes",
+ }
+ for aff in pairs(proneaffs) do
+  if snd.checkAff(proneaffs[aff]) then
+	 prone = true
+	end
+ end
+ return prone
 end
 
 function snd.venomEffect(venom)
@@ -14176,10 +15125,10 @@ function snd.venomEffect(venom)
 			aff = "crippled"
 		end
 	elseif venom == "disrupt" then
-		if snd.checkAff("mental_disruption") then
+		if snd.checkAff("mental disruption") then
 			aff = "physical disruption"
 		else
-			aff = "mental_disruption"
+			aff = "mental disruption"
 		end
 	else
 		for i in pairs(snd.effects) do
@@ -14205,44 +15154,87 @@ end</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
-						<name>chat_start</name>
+						<name>gmcp_communication</name>
 						<packageName></packageName>
-						<script>function chat_start()
+						<script>function gmcp_communication()
 --work in progress
+
 	local channel = gmcp.Comm.Channel.Start
-	local talker = gmcp.Comm.Channel.Text.talker
+	local talker =  gmcp.Comm.Channel.Text.talker
 	local text = gmcp.Comm.Channel.Text.text
+  
+  --You can choose whether you want it to match only names that are in the database (excluding divine)
+  --Or if you want it to just match any one word name. Some NPCs might slip through.
+  
+ --[[ if sndNDB.players[talker] == nil then
+    if not table.isMember(sndNDB.divine, talker) then 
+      return 
+    end
+  end]]
+  
+  if string.match(talker, "%W") then return end
+  
+  local mobs_to_ignore = {
+    "Nysaac",
+    "Tayiv",
+    "Huemotl",
+    "Damari",
+    "Jinjin",
+    "Micotetotl",
+    "Hob",
+    "Saaik",}
+  if table.isMember(mobs_to_ignore, talker) then return end
+  
+  if channel:find("clt") then channel = "clt" end
+  
+  snd.who_is_talking = talker or ""
+  snd.we_saw_a_thot = false
+  snd.last_channel = "Misc"
+  snd.channel_ignores = {
+	hints = true,
+}
 
 --will maybe be useful at some point but not used right now. Not sure how to append a specific set of text that isn't gotten through the append func.
---text = string.gsub (text, string.char (27) .. "%[(.-)m", "")
+--text = string.gsub (text, string.char (27) .. "%[(.-)m", "") &lt;- removes extraneous data from raw gmcp data
 --demonnic.chat:append(snd.channel_list[channel], text)
+
 	snd.channel_list = {
 	["newbie"] = "Misc",
 	["market"] = "Misc",
 	["web"] = "Web",
 	["ct"] = "City",
-	["cnt"] = "Org",
+	["cnt"] = "City",
+  ["emotes"] = "Local",
 	["gt"] = "Guild",
 	["gts"] = "Guild",
-	["clt"] = "Misc",
+	["clt"] = "Clans",
 	["tell"] = "Tells",
 	["says"] = "Local",
-	["ot"] = "Misc",
+	["ot"] = "Order",
+  ["cot"] = "Order",
+
 }
 
 	if channel == "web" and snd.toggles.listening and table.contains(snd.callers, talker) then
-    if text:find("Target") then
-       local check = string.match(text, "Target: (%w+)%.")
-       snd.set_faction()
-       if table.contains(snd.allies, check) then
-       else
-          if check:lower()~= snd.target:lower() then
-             expandAlias("t " .. check)
-          end
-       end
-     end
-  end
-
+      text = text:lower()
+			if text:find("target:") and not text:find("list") and not text:find("calling") and not text:find("priority") and not text:find("removed") and not text:find("next") then
+				local check = string.match(text, "target: (%w+)%.")
+				if check:lower()~= snd.target:lower() then
+					expandAlias("t " .. check)
+				end
+			end
+	end
+  
+  for c, t in pairs(snd.channel_list) do
+		if channel == c then
+			snd.last_channel = t
+			break
+		end
+	end
+  
+  if snd.channel_ignores[channel] then return false end
+  enableTrigger("generic capture")
+  
 end</script>
 						<eventHandlerList>
 							<string>gmcp.Comm.Channel.Start</string>
@@ -14634,6 +15626,148 @@ spearRight = false,
 jab = false
 }
 cometKick = false
+end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Target calling</name>
+						<packageName></packageName>
+						<script>
+snd.targeting = {
+	auto = false,
+	list = {},
+  burst = false,
+  skip = false
+}
+
+snd.e = {
+	echo	= function (str, lnb, lna)
+		if lnb then echo("\n") end
+		cecho(string.format("%s", "&lt;aquamarine&gt;Target Update: &lt;grey&gt;") .. str:title())
+		if lna then echo("\n") end
+	end,
+
+	warn	= function (str, lnb, lna)
+		if lnb then echo("\n") end
+		cecho(string.format("%s", "&lt;orange_red&gt;Warning:&lt;navajo_white&gt; ") .. str:title())
+		if lna then echo("\n") end
+	end,
+	}</script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Functions for calling</name>
+							<packageName></packageName>
+							<script>function snd.removeTarget(tar)
+
+	local who = tar:title()
+
+	for k, v in pairs(snd.targeting.list) do
+		if v == who then
+			table.remove(snd.targeting.list, k)
+			snd.e.echo("Removed " .. who .. " from targeting list!", true, true)
+			break
+		end
+	end
+
+end
+
+
+function snd.addTargetList(str)
+
+	local targets = string.split(str, ", ")
+	
+	for _, v in ipairs(targets) do
+		if table.contains(snd.targeting.list, v) then
+		else
+			v = v:title()
+			table.insert(snd.targeting.list, v)
+		end
+	end
+
+	snd.displayTargetList()
+
+end
+
+
+function snd.addSingleTarget(tar, pos)
+
+	if not pos then pos = 1 end
+	
+	tar = tar:title()
+	
+	if table.contains(snd.targeting.list, tar) then --! just tidying so we don't end up with the same name in a bunch of places
+		for k, v in pairs(snd.targeting.list) do
+			if v == tar then
+				table.remove(snd.targeting.list, k)
+				break
+			end
+		end
+	end
+	table.insert(snd.targeting.list, pos, tar)
+
+	snd.displayTargetList()
+
+end
+
+
+function snd.displayTargetList()
+
+	local string = "Targeting order is "
+	
+	if #snd.targeting.list == 0 then
+		string = "Targeting list is empty!"
+	else
+		for k,v in ipairs(snd.targeting.list) do
+			if k &lt; #snd.targeting.list then
+				string = string .. v .. ", "
+			elseif #snd.targeting.list == 1 then
+				string = string .. v .. "."
+			else
+				string = string .. v .. "."
+			end
+		end
+	end
+
+	snd.e.echo(string, true, true)
+
+end
+
+
+function snd.callTargetList()
+
+	if not snd.toggles.calling then return end 
+                                          
+	local string = "Target list: "
+	
+	if #snd.targeting.list == 0 then
+		string = "Out of targets!"
+	else
+		for k,v in ipairs(snd.targeting.list) do
+			if k &lt; #snd.targeting.list then
+				string = string .. v .. ", "
+			elseif #snd.targeting.list == 1 then
+				string = string .. v .. "."
+			else
+				string = string .. v .. "."
+			end
+		end
+	end
+	
+	send("wt " .. string)
+
+end
+
+
+function snd.clearTargetList()
+
+	snd.targeting.list = {}
+	snd.e.echo("Target list cleared!", true, true)
+	
+	if snd.toggles.calling and snd.toggles.calling then 
+		send("wt Target list cleared.")
+	end
+
 end</script>
 							<eventHandlerList />
 						</Script>
