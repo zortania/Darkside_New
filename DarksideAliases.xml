@@ -673,12 +673,12 @@ end
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
 						<name>Auto Chameleon</name>
-						<script>local cham = math.random(#snd.shadow)
-
-if snd.toggles.cham then
-    snd.send("chameleon " ..snd.shadow[cham], false)
-    snd.send("touch chameleon " ..sndshadow[cham], false)
-end</script>
+						<script>local chameleon_table = {}
+for k, v in pairs(sndNDB.players) do
+  table.insert(chameleon_table, k)
+end
+local cham_check = chameleon_table[math.random(#chameleon_table)]
+snd.send("chameleon "..cham_check)</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^rcham$</regex>
@@ -1586,7 +1586,7 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex></regex>
-								<Alias isActive="yes" isFolder="no">
+								<Alias isActive="no" isFolder="no">
 									<name>Limbs</name>
 									<script>if snd.class == "Monk" then
 
@@ -3257,9 +3257,6 @@ function snd.attack_function()
 	if snd.used.shield then
 	 string = "touch hammer "..snd.target
 	-- check if we can jawlock now!
-	elseif theyran then
-		string = "neckdrag "..snd.target..snd.neckdragdir
-	
   elseif snd.proned() and mangled ~= "nothing" and not snd.jawlocked then
 	 if string.find(mangled, "leg") then
 	  string = "jawlock thigh of "..snd.target
@@ -3721,11 +3718,16 @@ end</script>
 								<regex></regex>
 								<Alias isActive="yes" isFolder="no">
 									<name>Manually reset glimpse</name>
-									<script>snd.glimpse = "none"
-snd.glimpsing = false</script>
+									<script>if matches[2] == "none" then
+  snd.glimpse = "none"
+  snd.glimpsing = false
+else
+  snd.glimpse = matches[2]
+  snd.glimpsing = true
+end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^glimpse none$</regex>
+									<regex>^glimpse (\w+)$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>order loyals aggro</name>
@@ -3789,15 +3791,14 @@ snd.glimpsing = false</script>
         string = "fulcrum glimpse water"
       elseif snd.glimpse == "none" and snd.checkAff("frostbrand") then
         string = "fulcrum catalyst " .. snd.target .. " frost"
-      elseif snd.used.shield == true then
-        string = "cast windlance " .. snd.target
+      elseif snd.used.shield == true or 
+			((snd.checksomeAffs({"a broken left leg", "a broken right leg"},1) or snd.limb_status["left leg"] ~= "healed" or snd.limb_status["right leg"] ~= "healed") and not snd.target_prone) then
+				string = "cast windlance " .. snd.target
       elseif snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
         if gmcp.Char.Vitals.ability_bal == "1" then
           string = "fulcrum flare " .. snd.target
         end
-        if snd.checkAff("frozen") and snd.checkAff("impaled") then
-          string = string .. snd.sep .. "cast shatter " .. snd.target
-        elseif gmcp.Char.Vitals.resonance == "water" then
+        if gmcp.Char.Vitals.resonance == "water" then
           if not stalled then
             if snd.limb_dmg.torso == 0 and snd.parried_limb ~= "torso" then
               string = string .. snd.sep .. "fulcrum stall 3 firelash " .. snd.target .. " torso"
@@ -3885,30 +3886,28 @@ function snd.attack_function()
 
 	if snd.checkAff("stormtouched") and not snd.used.shield then
 		string = string..snd.sep.."cast lightning "..snd.target
+  elseif snd.used.shield == true or 
+			((snd.checksomeAffs({"a broken left leg", "a broken right leg"},1) or snd.limb_status["left leg"] ~= "healed" or snd.limb_status["right leg"] ~= "healed") and not snd.target_prone) then
+				string = "cast windlance " .. snd.target
+	else
+  	if snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
+  	
+  		if gmcp.Char.Vitals.ability_bal == "1" then
+  			string = "fulcrum flare "..snd.target
+  		end
+  		
+  		if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "water" then
+  			string = string..snd.sep.."fulcrum enrich fire"
+  		end
+  
+  		if gmcp.Char.Vitals.resonance == "fire" then
+  			string = string..snd.sep.."cast windlance "..snd.target
+  		end
+  
+  		if gmcp.Char.Vitals.resonance == "air" then
+  			string = string..snd.sep.."cast fireball "..snd.target
+  		end
 	end
-	
-	if snd.used.shield then
-		string = string..snd.sep.."cast windlance "..snd.target
-	end
-
-	if snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
-	
-		if gmcp.Char.Vitals.ability_bal == "1" then
-			string = "fulcrum flare "..snd.target
-		end
-		
-		if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "water" then
-			string = string..snd.sep.."fulcrum enrich fire"
-		end
-
-		if gmcp.Char.Vitals.resonance == "fire" then
-			string = string..snd.sep.."cast windlance "..snd.target
-		end
-
-		if gmcp.Char.Vitals.resonance == "air" then
-			string = string..snd.sep.."cast fireball "..snd.target
-		end
-
 end
 
 	if string ~= snd.last_attack and not snd.waiting.queue then
@@ -3964,9 +3963,7 @@ end</script>
         if gmcp.Char.Vitals.ability_bal == "1" then
           string = "fulcrum flare " .. snd.target
         end
-        if snd.checkAff("frozen") and snd.checkAff("impaled") then
-          string = string .. snd.sep .. "cast shatter " .. snd.target
-        elseif gmcp.Char.Vitals.resonance == "water" then
+        if gmcp.Char.Vitals.resonance == "water" then
           if not stalled then
             if snd.limb_dmg.torso == 0 and snd.parried_limb ~= "torso" then
               string = string .. snd.sep .. "fulcrum stall 3 firelash " .. snd.target .. " torso"
@@ -4431,19 +4428,9 @@ end</script>
 									<name>Group Affs - Used to lock someone in place</name>
 									<script>-- The purpose of this is to lock someone down with disrupt so they cannot use lock-breakers to escape.
 if snd.class == "Luminary" then
-  snd.giving_shield = {"sight", "confusion", "weariness", "transfixed", "paresis", "asthma"}
+  snd.giving_shield = {"sight", "paresis", "weariness", "confusion", "transfixed", "asthma", "berserking"}
   snd.giving_battle = {"impatience", "stupidity", "sensitivity", "self_pity", "vertigo"}
-  snd.giving_chasten =
-    {
-      "hypochondria",
-      "stupidity",
-      "recklessness",
-      "lethargy",
-      "masochism",
-      "dementia",
-      "paranoia",
-      "anorexia",
-    }
+  snd.giving_chasten = {"hypochondria", "stupidity", "recklessness", "lethargy", "masochism", "dementia", "paranoia", "anorexia",}
   snd.starting_attack()
 
   function snd.attack_function()
@@ -4504,9 +4491,9 @@ if snd.class == "Luminary" then
           shield = "shield crash"
         end
       end
-      --Dazzle can hit through rebounding, check if they have confusion first.
+      --Dazzle can hit through rebounding, check if they have confusion first and a few affs
       if snd.used.rebounding then
-        if snd.checkAff("confusion") then
+        if snd.checkAff("confusion") or total_aff_count &lt; 3 then
           shield = "shield raze"
         else
           shield = "perform dazzle"
@@ -4532,7 +4519,7 @@ if snd.class == "Luminary" then
       --Add shield/evoke/perform attacks
       string = string .. shield .. " " .. snd.target .. snd.sep
       --Add chasten choice
-      if shield ~= "slam" then
+      if not shield:find("slam") or shield:find("transfix") or shield:find("dazzle") or shield:find("crash") then
         if chasten == "none" then
           string = string .. "chasten " .. snd.target
         else
@@ -4668,7 +4655,7 @@ if snd.class == "Luminary" then
         total_aff_count = total_aff_count + 1
       end
     end
- local string = "quickassess "..snd.target..snd.sep
+ local string = "contemplate "..snd.target..snd.sep
  	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
 	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
 
@@ -4750,6 +4737,92 @@ if snd.class == "Luminary" then
     end
     --We have an instakill at 40% mana, let's make sure we keep track of mana.
 
+    if string ~= snd.last_attack and not snd.waiting.queue then
+      snd.last_attack = string
+      snd.attack(snd.last_attack)
+      snd.waiting.queue = true
+      tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+  end
+
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^git$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Smite - Straight damage</name>
+									<script>if snd.class == "Luminary" then
+  snd.giving_battle = {"sensitivity", "stupidity", "vertigo", "self-pity", "migraine", "impatience"}
+  snd.giving_chasten =
+    {
+      "dementia",
+      "loneliness",
+      "stupidity",
+      "hypochondria",
+      "recklessness",
+      "masochism",
+      "paranoia",
+      "lethargy",
+    }
+  snd.starting_attack()
+
+  function snd.attack_function()
+  local string = "contemplate "..snd.target..snd.sep
+ 	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
+	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
+  
+  local battle = "none"
+  local chasten = "none"
+  
+  for i in pairs(snd.giving_chasten) do
+    if
+      not snd.checkAff(snd.giving_chasten[i]) and
+      chasten == "none" and
+      snd.giving_chasten[i] ~= battle
+    then
+      chasten = snd.giving_chasten[i]
+    end
+  end
+  
+  if snd.balance.battle then
+    for i in pairs(snd.giving_battle) do
+      if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
+        battle = snd.giving_battle[i]
+      end
+    end
+  end
+  
+  for aff in pairs(snd.entangleaffs) do
+    if snd.checkAff(aff) then
+      overwhelm = true
+    end
+  end
+  
+  if snd.balance.battle then
+    string = string..snd.sep.."angel battle "..battle.." "..snd.target..snd.sep
+    if snd.toggles.affcalling and not snd.target_gone then
+      string = "wt Battle " .. snd.target .. ": " .. battle .. snd.sep .. string
+    end
+  end
+
+
+  if snd.mana_percent &lt; 40 and not snd.used.shield then
+    string = "angel absolve " .. snd.target
+  elseif snd.mana_percent &lt; 40 and snd.used.shield then
+    string = "shield raze " .. snd.target .. snd.sep
+  elseif overwhelm then
+    string = "overwhelm "..snd.target..snd.sep
+  else
+    string = string.."smite " .. snd.target ..snd.sep
+  end
+  
+  if snd.toggles.affcalling and not snd.target_gone then
+    string = string .. "wt Chasten " .. snd.target .. ": " .. chasten .. snd.sep
+  end
+  string = string .. " chasten " .. snd.target .. " " .. chasten
+		
     if string ~= snd.last_attack and not snd.waiting.queue then
       snd.last_attack = string
       snd.attack(snd.last_attack)
@@ -4860,37 +4933,18 @@ snd.starting_attack()
 function snd.attack_function()
 
 		if not snd.waiting.queue then
-		if snd.target_locked() then
-			snd.giving = {
-			"impairment",
-			"stupidity",
-			"confusion",
-			"a broken left leg",
-			"a broken right leg",
-			"weariness",
-			"dizziness",
-			"hearing",
-			"sensitivity",}
-		else
-			snd.giving = {
-			"paresis",
-		--"clumsiness",
-		  "impatience",
-		--"lethargy",
+    snd.giving = {
+		  "clumsiness",
 			"asthma",
 			"slickness",
-			"stupidity",
-		--"anorexia",
 			"confusion",
 			"a broken left leg",
 			"a broken right leg",
-			"stupidity",
 			"vomiting",
 			"dizziness",
 			"sight",
 			"hearing",
 			"sensitivity",}
-		end
 
 	call = ""
 	left = "none"
@@ -4901,7 +4955,7 @@ function snd.attack_function()
 		if left  == "none" then left  = "epseth" end
 		if right == "none" then right = "epseth" end
 	
-		if snd.checksomeAffs({"paralysis", "paresis"},1) or left == "paresis" then 
+		if snd.no_parry() then 
 			second_attack = "thrust"
 		else
 			second_attack = "stab"
@@ -4945,7 +4999,7 @@ function snd.attack_function()
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg", "prone"}, 4) then
+		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
@@ -4954,6 +5008,7 @@ function snd.attack_function()
 		end
 
 		string = call..string
+    
 		if string ~= snd.last_attack and not snd.waiting.queue then
 			snd.last_attack = string
 			snd.attack(snd.last_attack)
@@ -4972,26 +5027,34 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Transfix + Sensitivity</name>
 									<script>if snd.class == "Sentinel" then
-snd.giving = {
-
-"sight",
-"hearing",
-"sensitivity",
-"vomiting",
-"paresis",
-"asthma",
-"impatience",
-"slickness",
-"confusion",
-"a broken left leg",
-"a broken right leg",
-"anorexia",
-"stupidity",
-"dizziness",
-"heartflutter",
-"shyness",
-}
-
+snd.current_offense = "SentLumiSupport"
+if snd.target_locked() then
+			snd.giving = {
+			"a broken left leg",
+			"a broken right leg",
+      "confusion",
+      "impairment",
+			"weariness",
+			"dizziness",
+			"hearing",
+			"sensitivity",}
+		else
+      snd.giving = {
+      "clumsiness",
+      "hearing",
+      "sight",
+      "asthma",
+      "slickness",
+      "anorexia",
+      "a broken left leg",
+      "a broken right leg",
+      "confusion",
+      "weariness",
+      "vomiting",
+      "shyness",
+      "dizziness",
+      }
+		end
 
 local second_attack = ""
 
@@ -5009,7 +5072,7 @@ function snd.attack_function()
 		if left  == "none" then left  = "epseth" end
 		if right == "none" then right = "epseth" end
 	
-		if snd.checksomeAffs({"paralysis", "paresis"},1) or left == "paresis" then 
+		if snd.no_parry() then 
 			second_attack = "thrust"
 		else
 			second_attack = "stab"
@@ -5053,7 +5116,7 @@ function snd.attack_function()
 			end
 		end
 
-		if  snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg", "prone"}, 4) then
+		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
 			string = "dhuriv spinecut "..snd.target
 		end
 
@@ -5061,7 +5124,7 @@ function snd.attack_function()
 			call = ""
 		end
 
-		string = call..string
+		string = call..snd.sep.."order loyals attack "..snd.target..snd.sep..string
 		if string ~= snd.last_attack and not snd.waiting.queue then
 			snd.last_attack = string
 			snd.attack(snd.last_attack)
@@ -5116,7 +5179,7 @@ snd.giving = {
 		if left  == "none" then left  = "epseth" end
 		if right == "none" then right = "epseth" end
 	
-		if snd.checksomeAffs({"paralysis", "paresis"},1) or left == "paresis" then 
+		if snd.no_parry() then 
 			second_attack = "thrust"
 		else
 			second_attack = "stab"
@@ -5159,7 +5222,7 @@ snd.giving = {
 			end
 		end
 
-		if  snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg", "prone"}, 4) then
+		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
 			string = "dhuriv spinecut "..snd.target
 		end
 			
@@ -5187,27 +5250,6 @@ end</script>
 									<name>Salves</name>
 									<script>if snd.class == "Sentinel" then -- Requires Raloth and Icewyrm
 snd.current_offense = "SentSalve"
-snd.giving = {
-
-"frozen",
-"a broken left leg",
-"a broken right leg",
-"a broken left arm",
-"a broken right arm",
-"anorexia",
-"slickness",
-"asthma",
-"paresis",
-"impatience",
-"confusion",
-"anorexia",
-"stupidity",
-"vomiting",
-"dizziness",
-"sight",
-"hearing",
-"sensitivity",
-}
 
 local second_attack = ""
 
@@ -5216,6 +5258,43 @@ function snd.attack_function()
 
 	if not snd.waiting.queue then
 
+    if snd.checkAff("destroyed_throat") then
+    snd.giving = {
+    "slickness",
+    "asthma",
+    "a broken left leg",
+    "a broken right leg",
+    "paresis",
+    "confusion",
+    "vomiting",
+    "dizziness",
+    "sight",
+    "hearing",
+    "sensitivity",
+    }
+    else
+    snd.giving = {
+    
+    "frozen",
+    "a broken left leg",
+    "a broken right leg",
+    "a broken left arm",
+    "a broken right arm",
+    "anorexia",
+    "stupidity",
+    "asthma",
+    "slickness",
+    "paresis",
+    "confusion",
+    "vomiting",
+    "dizziness",
+    "sight",
+    "hearing",
+    "sensitivity",
+    }
+    end	
+
+	string = ""
 	call = ""
 	left = "none"
 	right = "none"
@@ -5225,7 +5304,7 @@ function snd.attack_function()
 		if left  == "none" then left  = "epseth" end
 		if right == "none" then right = "epseth" end
 	
-		if snd.checksomeAffs({"paralysis", "paresis"},1) or left == "paresis" then 
+		if snd.no_parry() then 
 			second_attack = "thrust"
 		else
 			second_attack = "stab"
@@ -5236,12 +5315,20 @@ function snd.attack_function()
 			
 		elseif left == "destroyed_throat" then
 			string = "dhuriv throatcrush "..snd.target
-			
+
+		elseif not snd.used.rebounding and not snd.used.shield and snd.checkAff("a broken left leg") 
+			and snd.limb_status["left leg"] == "healed" and (snd.parried_limb ~= "left leg" or snd.no_parry()) and snd.limb_status["right leg"] == "healed" then
+				string = "dhuriv pierce "..snd.target.." left"
+		
+		elseif not snd.used.rebounding and not snd.used.shield and snd.checkAff("a broken right leg") 
+			and snd.limb_status["right leg"] == "healed" and (snd.parried_limb ~= "right leg" or snd.no_parry()) and snd.limb_status["left leg"] == "healed" then
+				string = "dhuriv pierce "..snd.target.." right"
+
 		elseif snd.dhuriv_attacks[left] == "daunt" or snd.dhuriv_attacks[left] == "icewyrm" then
 			left = snd.daunt_animals[left]
 			string = left..snd.target..snd.sep.."dhuriv flourish "..snd.target.." "..snd.effects[right]
 			
-		elseif snd.target_prone then
+		elseif snd.target_prone and not snd.checksomeAffs({"a broken left leg", "a broken left arm", "a broken right arm", "a broken right leg"}, 2) then
 			string = "qdmount"..snd.sep.."qmount "..snd.my_raloth..snd.sep.."order "..snd.my_raloth.." trample "..snd.target
 
 		else
@@ -5271,11 +5358,11 @@ function snd.attack_function()
 			end
 		end
 		
-		if  snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg", "prone"}, 4) then
+		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
-		if string:find("impale") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") then
+		if string:find("impale") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") or string:find("pierce") then
 			call = ""
 		end
 
@@ -5306,14 +5393,10 @@ snd.giving = {
 "a broken right leg",
 "a broken left arm",
 "a broken right arm",
-"anorexia",
-"slickness",
 "asthma",
+"slickness",
 "paresis",
-"impatience",
 "confusion",
-"anorexia",
-"stupidity",
 "vomiting",
 "dizziness",
 "sight",
@@ -5328,6 +5411,7 @@ function snd.attack_function()
 
 	if not snd.waiting.queue then
 
+	string = ""
 	call = ""
 	left = "none"
 	right = "none"
@@ -5337,7 +5421,7 @@ function snd.attack_function()
 		if left  == "none" then left  = "epseth" end
 		if right == "none" then right = "epseth" end
 	
-		if snd.checksomeAffs({"paralysis", "paresis"},1) or left == "paresis" then 
+		if snd.no_parry() then 
 			second_attack = "thrust"
 		else
 			second_attack = "stab"
@@ -5352,7 +5436,13 @@ function snd.attack_function()
 		elseif snd.target_impaled then
 			string = "dhuriv gorge "..snd.target
 			
-		elseif snd.proned() then         
+		elseif not snd.used.rebounding and not snd.used.shield and snd.checkAff("a broken left leg") and snd.limb_status["left leg"] == "healed" and (snd.parried_limb ~= "left leg" or snd.no_parry()) then
+			string = "dhuriv pierce "..snd.target.." left"
+		
+		elseif not snd.used.rebounding and not snd.used.shield and snd.checkAff("a broken right leg") and snd.limb_status["right leg"] == "healed" and (snd.parried_limb ~= "right leg" or snd.no_parry()) then
+			string = "dhuriv pierce "..snd.target.." right"
+
+  	elseif snd.proned() then         
       if not snd.checkAff("impaled") then
       	string = "dhuriv impale "..snd.target
        else
@@ -5390,7 +5480,107 @@ function snd.attack_function()
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg", "prone"}, 4) then
+		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
+			string = "dhuriv spinecut "..snd.target
+		end
+		
+		if string:find("impale") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") or string:find("pierce") then
+			call = ""
+		end
+
+		string = call..string
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = string
+			snd.attack(snd.last_attack)
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
+	end
+end
+	snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^gimp$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Bleeding</name>
+									<script>if snd.class == "Sentinel" then
+snd.current_offense = "bleed"
+
+snd.starting_attack()
+function snd.attack_function()
+
+		if not snd.waiting.queue then
+		if snd.target_locked() then
+			snd.giving = {
+			"impairment",
+			"confusion",
+			"a broken left leg",
+			"a broken right leg",
+			"weariness",
+			"dizziness",
+      }
+		else
+			snd.giving = {
+			"paresis",
+		  "clumsiness",
+			"haemophilia",
+			"hearing",
+			"sensitivity",
+      "asthma",
+      "weariness",
+      "slickness",
+
+      }
+		end
+
+	call = ""
+	left = "none"
+	right = "none"
+
+	 left, right = Sentinel_Attack_Choice(snd.giving, left, right) -- we send our aff list to a function to get our attacks.
+
+		if left  == "none" then left  = "epseth" end
+		if right == "none" then right = "epseth" end
+	
+    local second_attack = "slice"
+
+		if snd.used.rebounding and snd.used.shield then
+			string = "dhuriv dualraze "..snd.target
+			
+		elseif left == "destroyed_throat" then
+			string = "dhuriv throatcrush "..snd.target
+			
+		else
+			if table.contains(snd.dhuriv_affs, left) then
+				if not table.contains(snd.effects, right) then
+					string = snd.dhuriv_attacks[left].." "..snd.dhuriv_attacks[right]
+				else
+					string = snd.dhuriv_attacks[left].." "..second_attack.." "..snd.effects[right]
+				end
+			elseif table.contains(snd.dhuriv_affs, right) then
+				string = "slash "..snd.dhuriv_attacks[right].." "..snd.effects[left]
+			else
+				string = "slash "..second_attack.." "..snd.effects[left].." "..snd.effects[right]
+			end
+			
+			string = "dhuriv combo "..snd.target.." "..string
+		end
+		
+		if snd.toggles.affcalling and not snd.target_gone then
+			if table.contains(snd.effects, left) then 
+				call = "wt Afflicting "..snd.target..": "..snd.effects[left]
+				if table.contains(snd.effects, right) then 
+					call = call..", "..snd.effects[right]
+				end
+				call = call..snd.sep
+			elseif table.contains(snd.effects, right) then 
+				call = "wt Afflicting "..snd.target..": "..snd.effects[right]..snd.sep
+			end
+		end
+
+		if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
@@ -5398,7 +5588,8 @@ function snd.attack_function()
 			call = ""
 		end
 
-		string = call..string
+		string = call..snd.sep.."order loyals attack "..snd.target..snd.sep..string
+    
 		if string ~= snd.last_attack and not snd.waiting.queue then
 			snd.last_attack = string
 			snd.attack(snd.last_attack)
@@ -5412,7 +5603,125 @@ end
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^gimp$</regex>
+									<regex>^bleed$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Group spinecut</name>
+									<script>if snd.class == "Sentinel" then
+snd.current_offense = "SentGroup"
+ 
+local second_attack = ""
+ 
+snd.starting_attack()
+function snd.attack_function()
+ 
+        if not snd.waiting.queue then
+        if snd.checksomeAffs({"asthma", "clumsiness", "hypochondria", "weariness", "impatience", "slickness"}, 2) then
+            snd.giving = {
+            "asthma",
+            "slickness",
+            "confusion",
+            "a broken left leg",
+            "a broken right leg",
+            "weariness",
+            "dizziness",
+            "hearing",
+            "sensitivity",}
+        else
+            snd.giving = {
+            "paresis",
+            "clumsiness",
+            "asthma",
+            "slickness",
+            "anorexia",
+            "confusion",
+            "a broken left leg",
+            "a broken right leg",
+            "stupidity",
+            "vomiting",
+            "dizziness",
+            "sight",
+            "hearing",
+            "sensitivity",}
+        end
+ 
+    call = ""
+    left = "none"
+    right = "none"
+ 
+     left, right = Sentinel_Attack_Choice(snd.giving, left, right) -- we send our aff list to a function to get our attacks.
+ 
+        if left  == "none" then left  = "epseth" end
+        if right == "none" then right = "epseth" end
+   
+        if snd.no_parry() then
+            second_attack = "thrust"
+        else
+            second_attack = "stab"
+        end
+ 
+        if snd.used.rebounding and snd.used.shield then
+            string = "dhuriv dualraze "..snd.target
+           
+        elseif left == "destroyed_throat" then
+            string = "dhuriv throatcrush "..snd.target
+           
+        elseif snd.dhuriv_attacks[left] == "daunt" or snd.dhuriv_attacks[left] == "icewyrm" then
+            left = snd.daunt_animals[left]
+            string = left..snd.target..snd.sep.."dhuriv flourish "..snd.target.." "..snd.effects[right]
+           
+        else
+            if table.contains(snd.dhuriv_affs, left) then
+                if not table.contains(snd.effects, right) then
+                    string = snd.dhuriv_attacks[left].." "..snd.dhuriv_attacks[right]
+                else
+                    string = snd.dhuriv_attacks[left].." "..second_attack.." "..snd.effects[right]
+                end
+            elseif table.contains(snd.dhuriv_affs, right) then
+                string = "slash "..snd.dhuriv_attacks[right].." "..snd.effects[left]
+            else
+                string = "slash "..second_attack.." "..snd.effects[left].." "..snd.effects[right]
+            end
+           
+            string = "dhuriv combo "..snd.target.." "..string
+        end
+       
+        if snd.toggles.affcalling and not snd.target_gone then
+            if table.contains(snd.effects, left) then
+                call = "wt Afflicting "..snd.target..": "..snd.effects[left]
+                if table.contains(snd.effects, right) then
+                    call = call..", "..snd.effects[right]
+                end
+                call = call..snd.sep
+            elseif table.contains(snd.effects, right) then
+                call = "wt Afflicting "..snd.target..": "..snd.effects[right]..snd.sep
+            end
+        end
+ 
+        if snd.checksomeAffs({"confusion", "a broken left leg", "a broken right leg"}, 3) and snd.target_prone then
+            string = "dhuriv spinecut "..snd.target
+        end
+       
+        if string:find("impale") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") then
+            call = ""
+        end
+ 
+        string = call..string
+   
+        if string ~= snd.last_attack and not snd.waiting.queue then
+            snd.last_attack = string
+            snd.attack(snd.last_attack)
+            snd.waiting.queue = true
+            tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+        end
+    end
+end
+ 
+    snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^gsc$</regex>
 								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
@@ -5826,7 +6135,7 @@ end</script>
 									<packageName></packageName>
 									<regex>^ns (.*)$</regex>
 								</Alias>
-								<Alias isActive="no" isFolder="no">
+								<Alias isActive="yes" isFolder="no">
 									<name>Pull</name>
 									<script>if snd.class == "Shaman" then
 if matches[2] == "" then
@@ -5870,7 +6179,7 @@ end</script>
 									<packageName></packageName>
 									<regex>^scr$</regex>
 								</Alias>
-								<Alias isActive="no" isFolder="no">
+								<Alias isActive="yes" isFolder="no">
 									<name>Flow</name>
 									<script>if snd.class == "Shaman" then
 if matches[2] == "" then
@@ -7678,27 +7987,29 @@ end
     -- Flow Handling
     -- Consider writing a check for different combos on firefist?
     if not snd.waiting.queue then
-      if snd.used.shield then
-        string = "touch hammer " .. snd.target
-      --elseif not snd.checkAff("indifference") and not snd.used.shield and tonumber(gmcp.Char.Vitals.psi) &gt; 50 then
-        --string = "psi dull "..snd.target
+      if theytumbling then
+			  string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
+      elseif snd.used.shield then
+        string = "order loyals kill "..snd.target..snd.sep .. "touch hammer " .. snd.target
+      elseif not snd.checkAff("indifference") and not snd.used.shield and tonumber(gmcp.Char.Vitals.psi) &gt; 50 then
+        string = "order loyals kill "..snd.target..snd.sep .. "psi dull "..snd.target
       elseif snd.parried_limb ~= "torso" then
-        string = "flow " .. snd.target .. " clawtwist clawtwist"
+        string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " clawtwist clawtwist"
       elseif snd.parried_limb ~= "head" then
         if not snd.checkAff("crippled_throat") then
-          string = "flow " .. snd.target .. " edgekick heelrush head"
+          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " edgekick heelrush head"
         else
-          string = "flow " .. snd.target .. " sunkick heelrush head"
+          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " sunkick heelrush head"
         end
       elseif snd.parried_limb ~= "left leg" or snd.parried_limb ~= "right leg" then
-        string = "flow " .. snd.target .. " wanekick left wanekick right"
+        string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " wanekick left wanekick right"
       elseif snd.parried_limb ~= "left leg" and snd.parried_limb == "right leg" then
-        string = "flow " .. snd.target .. " wanekick left wanekick left"
+        string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " wanekick left wanekick left"
       elseif snd.parried_limb ~= "right leg" and snd.parried_limb == "left leg" then
-        string = "flow " .. snd.target .. " wanekick right wanekick right"
+        string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " wanekick right wanekick right"
       else
         if snd.parried_limb ~= "left arm" then
-          string = "flow " .. snd.target .. " pummel left pummel left"
+          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " pummel left pummel left"
         end
       end
       -- Hackles handling
@@ -7721,11 +8032,11 @@ end
       -- check if immolate not possible ... if not, quicken or scorch
       if snd.zenith then
         if not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
-          string = string .. snd.sep .. "enact heatspear " .. snd.target
+          string = string .. snd.sep .. "order loyals kill "..snd.target..snd.sep .. "enact heatspear " .. snd.target
         elseif snd.checkAff("ablaze") then
-          string = string .. snd.sep .. "enact quicken " .. snd.target
+          string = string .. snd.sep .. "order loyals kill "..snd.target..snd.sep .. "enact quicken " .. snd.target
         else
-          string = string .. snd.sep .. "enact scorch " .. snd.target
+          string = string .. snd.sep .. "order loyals kill "..snd.target..snd.sep .. "enact scorch " .. snd.target
         end
       end
       if not snd.zenith then
@@ -7763,6 +8074,173 @@ end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^dmg$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>1v1</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Combo Attack</name>
+									<script>if snd.class == "Zealot" then
+  snd.starting_attack()
+
+  function snd.attack_function()
+   
+-- Zeal Attacks Table
+    local zeal_attacks = {
+    ["left arm"] = "pummel left ",
+    ["right arm"] = "pummel right ",
+    ["left leg"] = "wanekick left ",
+    ["right leg"] = "wanekick right ",
+    torso = "clawtwist",
+    head = "sunkick" }
+
+    if snd.checkAff("crispy") then
+      if not snd.checkaff("ablaze") then
+        snd.target_cured("crispy")
+      end
+    end
+    
+    local immolation_ready = false
+    if snd.checkAff("ablaze") then
+      if snd.checkAff("crispy") then
+        immolation_ready = true
+      end
+    end
+ 
+    local limbs = {"torso", "left leg", "right leg", "left arm", "right arm"}
+    local left = "nothing"
+    local right = "nothing"
+    local string = ""
+    if snd.target_prone then -- Go for legs on a prone.
+      if snd.parried_limb == "right leg" then
+        right = "left leg"
+      elseif snd.parried_limb == "left leg" then
+        right = "right leg"
+      else
+        right = "right leg"
+        left = "left leg"
+      end
+    else -- Target isn't prone...
+      for limb in pairs(limbs) do
+        if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
+          if (limbs[limb] == "left leg" or limbs[limb] == "right leg") and (snd.limb_dmg[limbs[limb]]+snd.limb_dmg_done &gt;= 33.3) then
+            if snd.snd.zenith and not snd.used.shield and snd.resto_limb ~= "none" then
+              if right == "nothing" then
+                right = limbs[limb]
+              elseif left == "nothing" then
+                left = limbs[limb]
+              end
+            end
+          elseif right == "nothing" then
+            right = limbs[limb]
+          elseif left == "nothing" and limbs[limb] ~= right then
+            left = limbs[limb]
+          end
+        end
+      end
+    end
+    
+    if left == "nothing" then -- We only found one limb to hit!
+      left = right -- double up!
+    end
+ 
+    if not snd.waiting.queue then
+      if snd.used.shield then
+        string = "touch hammer "..snd.target
+      elseif snd.zenith and snd.resto_limb ~="none" and (snd.limb_dmg["torso"]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg["torso"] &lt;= 33.33 and string.find(left, "torso") and snd.resto_limb ~= "left leg" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt;= 33.33 and string.find(left, "leg") then
+        string = "flow "..snd.target.." wanekick left direblow"
+      elseif snd.zenith and snd.resto_limb ~="none" and (snd.limb_dmg["torso"]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg["torso"] &lt; 33.33 and string.find(left, "torso") and snd.resto_limb ~= "right leg" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
+        string = "flow "..snd.target.." wanekick right direblow"
+      elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
+        string = "flow "..snd.target.." wanekick left twinpress"
+      elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
+        string = "flow "..snd.target.." wanekick right twinpress"
+      elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
+        string = "flow "..snd.target.." wanekick left dislocate left leg"
+      elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
+        string = "flow "..snd.target.." wanekick right dislocate right leg"
+      else
+        string = "flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]
+      end
+ 
+      if gmcp.Char.Vitals.ability_bal == "1" and not snd.used.shield then
+        if snd.zenith and string.find(snd.welt_ready, "arm") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore wrist") then
+          string = "hackles "..snd.target.." wristlash "..snd.sep..string
+        elseif snd.zenith and string.find(snd.welt_ready, "leg") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore ankle") then    
+          string = "hackles "..snd.target.." anklepin "..snd.sep..string
+        elseif not snd.checkAff("blurry vision") then
+          string = "hackles "..snd.target.." jawcrack "..snd.sep..string
+        elseif snd.checkAff("heatspear") then
+          string = "hackles "..snd.target.." whipburst "..snd.sep..string
+        elseif not snd.checkAff("sore ankle") then
+          string = "hackles "..snd.target.." anklepin "..snd.sep..string
+        elseif not snd.checkAff("sore wrist") then
+          string = "hackles "..snd.target.." wristlash "..snd.sep..string
+        else
+          string = "hackles "..snd.target.." whipburst "..snd.sep..string
+        end
+      end
+ 
+      if not snd.zenith then
+        if not rising_sun then
+          if not snd.zenith_coming then
+            string = "enact zenith"
+          end
+        end
+      end
+      
+      if not snd.firefist then
+        if snd.checksomeAffs({"ablaze", "heatspear"}, 2) then
+          if snd.firefist_cooldown then
+            if snd.zenith or snd.zenith_coming then
+              string = "enact firefist"
+            else
+              string = "enact zenith" .. snd.sep .. string
+            end
+          end
+        end
+      end
+      
+      if immolation_ready then
+        string = "enact immolation " .. snd.target
+      end 
+ 
+      if snd.zenith then
+        if snd.checkAff("heatspear") then
+          string = string..snd.sep.."enact quicken "..snd.target
+        elseif not snd.checkAff("heatspear") and not snd.checkAff("ablaze") and snd.firefist then
+          string = string..snd.sep.."enact heatspear "..snd.target
+        elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
+          string = string..snd.sep.."enact heatspear "..snd.target
+        elseif snd.limb_status["torso"] ~= "healed" and snd.checkAff("ablaze") then
+          string = string..snd.sep.."enact quicken "..snd.target
+        else
+          string = string..snd.sep.."enact scorch "..snd.target
+        end
+      end
+       
+      if not snd.checkAff("indifference") and not snd.zenith and not snd.checkAff("heatspear") and not snd.used.shield then
+        string = "psi dull "..snd.target
+      end
+    
+      if string ~= snd.last_attack and not snd.waiting.queue then
+        snd.last_attack = string
+        snd.attack(snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
+    end
+  end
+
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^kll$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>
@@ -10380,12 +10858,10 @@ send("probe "..matches[2])</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>who groups</name>
-						<script>enableTrigger("who groups")
-send("who")
-tempTimer(1, [[disableTrigger'who groups']])</script>
+						<script>snd.parse_who()</script>
 						<command></command>
 						<packageName></packageName>
-						<regex>^whos$</regex>
+						<regex>^who groups$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Name database help file</name>
@@ -10489,11 +10965,11 @@ cecho("\n&lt;ForestGreen&gt;We get it! Every time you see that daily/weekly/mont
 cecho("\n")
 cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
 cecho("\n&lt;MediumSeaGreen&gt;-------------")
-cecho("\n&lt;ForestGreen&gt;First, you will want to make sure you are wielding whatever you need to kill the vermin. After you are ready to start your quest of ridding a city of its vermin, you just &lt;DeepSkyBlue&gt;PATH TRACK &lt;ForestGreen&gt;to any city &lt;LimeGreen&gt;(make sure you are not an enemy!) &lt;ForestGreen&gt;and then type &lt;DeepSkyBlue&gt;toggle vermin &lt;ForestGreen&gt;to start! This will work similar to &lt;DeepSkyBlue&gt;gogo &lt;ForestGreen&gt;in that it will just begin bashing from where you are currently. No matter which city you begin your vermin bashing in, it will end at the vermin mob and will automatically sell your vermin! So no more accidental offerings of vermin to your gods! Should you need to finish early, just type &lt;DeepSkyBlue&gt;toggle vermin &lt;ForestGreen&gt;again and an echo will pop up to remind you to go sell your vermin!")
+cecho("\n&lt;ForestGreen&gt;First, you will want to make sure you are wielding whatever you need to kill the vermin. After you are ready to start your quest of ridding a city of its vermin, you just &lt;DeepSkyBlue&gt;PATH TRACK &lt;ForestGreen&gt;to any city &lt;LimeGreen&gt;(make sure you are not an enemy!) &lt;ForestGreen&gt;and then type &lt;DeepSkyBlue&gt;vermon &lt;ForestGreen&gt;to start! This will work similar to &lt;DeepSkyBlue&gt;gogo &lt;ForestGreen&gt;in that it will just begin bashing from where you are currently. No matter which city you begin your vermin bashing in, it will end at the vermin mob and will automatically sell your vermin! So no more accidental offerings of vermin to your gods! Should you need to finish early, just type &lt;DeepSkyBlue&gt;vermon &lt;ForestGreen&gt;again and an echo will pop up to remind you to go sell your vermin!")
 cecho("\n")
 cecho("\n&lt;CadetBlue&gt;ALIASES")
 cecho("\n&lt;MediumSeaGreen&gt;-------")
-cecho("\n&lt;DeepSkyBlue&gt;toggle vermin         &lt;ForestGreen&gt;Toggles the vermin autobasher on/off")
+cecho("\n&lt;DeepSkyBlue&gt;vermon         &lt;ForestGreen&gt;Toggles the vermin autobasher on/off")
 cecho("\n&lt;MediumSeaGreen&gt;-----------------------------------------")</script>
 						<command></command>
 						<packageName></packageName>
@@ -10667,147 +11143,6 @@ end</script>
 						<regex>^afish$</regex>
 					</Alias>
 				</AliasGroup>
-				<Alias isActive="yes" isFolder="no">
-					<name>firstaidstart</name>
-					<script>send("firstaid on")
-send("firstaid reporting on")
-send("firstaid health 85")  
-send("firstaid mana 90")
-send("firstaid forcehealth 40")
-send("firstaid forcemana 60")
-send("firstaid anabiotic health 80")
-send("firstaid anabiotic mana 80")
-send("firstaid vitals priority health")
-send("firstaid stop mana below 45")
-send("firstaid curing on")
-send("firstaid defence on")
-send("firstaid priority defence rebounding 1")
-send("firstaid heal health on")
-send("firstaid heal mana on") 
-send("firstaid use anabiotic on") 
-send("firstaid auto stand on")
-send("firstaid auto wake on")
-send("firstaid use tree on")
-send("firstaid use focus on")
-send("firstaid use endgame on")
-send("firstaid use insomnia on")
-send("firstaid use clot on")
-send("firstaid clot at 30")  
-send("firstaid clot above 60") 
-send("firstaid stupidity double on")
-send("firstaid adder 3")
-send("firstaid precache 3")
-send("firstaid prerestore on")
-send("firstaid halt for channel on")
-send("FIRSTAID PRIORITY PRESTORE LEFT LEG 15% 8")
-send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 15% 8")
-send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 15% 8")
-send("FIRSTAID PRIORITY PRESTORE LEFT ARM 15% 8")
-send("FIRSTAID PRIORITY PRESTORE torso 15% 8")
-send("FIRSTAID PRIORITY PRESTORE head 15% 8")
-send("firstaid priority reset")
-send("firstaid priority left_arm_bruised_critical 2")
-send("firstaid priority right_arm_bruised_critical 2")
-send("firstaid priority left_leg_bruised_critical 2")
-send("firstaid priority right_leg_bruised_critical 2")
-send("firstaid priority torso_bruised_critical 2")
-send("firstaid priority left_arm_bruised_moderate 2")
-send("firstaid priority right_arm_bruised_moderate 2")
-send("firstaid priority left_leg_bruised_moderate 2")
-send("firstaid priority right_leg_bruised_moderate 2")
-send("firstaid priority torso_bruised_moderate 2")
-send("firstaid priority head_bruised_moderate 2")
-send("firstaid priority defence insulation 8")
-send("firstaid priority defence density 1")
-send("firstaid priority defence temperance 2")
-send("firstaid priority defence levitation 1")
-send("firstaid priority defence speed 1")
-send("firstaid priority defence venom_resistance 4")
-send("firstaid priority defence fangbarrier 1")
-send("firstaid priority defence insomnia 1")
-send("firstaid priority defence instawake 2")
-send("firstaid priority defence waterbreathing 3")
-send("firstaid priority defence deafness 4")
-send("firstaid priority defence blindness 3")	
-send("firstaid priority crippled_body 1")
-send("firstaid priority paralysis 1")
-send("firstaid priority paralysis 2")
-send("firstaid priority anorexia 1")
-send("firstaid priority ringing_ears 2")
-send("firstaid priority clumsiness 2")
-send("firstaid priority paresis 3")
-send("firstaid priority sandrot 3")
-send("firstaid priority thin_blood 3")
-send("firstaid priority soulfire 3")
-send("firstaid priority frozen 3")
-send("firstaid priority nyctophobia 3")
-send("firstaid priority baldness 4")
-send("firstaid priority hypochondria 4")
-send("firstaid priority impatience 4")
-send("firstaid priority infested 4")
-send("firstaid priority mirroring 4")
-send("firstaid priority pacifism 4")
-send("firstaid priority patterns 4")
-send("firstaid priority recklessness 4")
-send("firstaid priority weariness 4")
-send("firstaid priority shivering 4")
-send("firstaid priority blighted 5")
-send("firstaid priority blood_curse 5")
-send("firstaid priority blood_poison 5")
-send("firstaid priority confusion 5")
-send("firstaid priority idiocy 5")
-send("firstaid priority mental_disruption 5")
-send("firstaid priority merciful 5")
-send("firstaid priority physical_disruption 5")
-send("firstaid priority plodding 5")
-send("firstaid priority allergies 6")
-send("firstaid priority crippled 6")
-send("firstaid priority epilepsy 6")
-send("firstaid priority haemophilia 6")
-send("firstaid priority impairment 6")
-send("firstaid priority lethargy 6")
-send("firstaid priority loneliness 6")
-send("firstaid priority masochism 6")
-send("firstaid priority rend 6")
-send("firstaid priority sensitivity 6")
-send("firstaid priority vomiting 6")
-send("firstaid priority heatspear 6")
-send("firstaid priority berserking 7")
-send("firstaid priority egocentric 7")
-send("firstaid priority exhausted 7")
-send("firstaid priority hallucinations 7")
-send("firstaid priority hatred 7")
-send("firstaid priority heartflutter 7")
-send("firstaid priority hypersomnia 7")
-send("firstaid priority hypothermia 7")
-send("firstaid priority justice 7")
-send("firstaid priority laxity 7")
-send("firstaid priority lovers_effect 7")
-send("firstaid priority peace 7")
-send("firstaid priority stupidity 7")
-send("firstaid priority agoraphobia 8")
-send("firstaid priority claustrophobia 8")
-send("firstaid priority dementia 8")
-send("firstaid priority dissonance 8")
-send("firstaid priority dizziness 8")
-send("firstaid priority faintness 8")
-send("firstaid priority paranoia 8")
-send("firstaid priority shyness 8")
-send("firstaid priority vertigo 8")
-send("firstaid priority addiction 9")
-send("firstaid priority body_odor 9")
-send("firstaid priority commitment_fear 9")
-send("firstaid priority hubris 9")
-send("firstaid priority magnanimity 9")
-send("firstaid priority sadness 9")
-send("firstaid priority self-pity 9")
-send("firstaid priority blisters 10")
-send("firstaid priority generosity 10")
-send("firstaid priority superstition 10")</script>
-					<command></command>
-					<packageName></packageName>
-					<regex>^firstaidstart$</regex>
-				</Alias>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Sunder Ndb Aliases</name>
 					<script></script>
@@ -11378,6 +11713,1263 @@ end</script>
 					<packageName></packageName>
 					<regex>^version$</regex>
 				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>firstaidstart</name>
+					<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid priority defence rebounding 1")
+send("firstaid heal health on")
+send("firstaid heal mana on") 
+send("firstaid use anabiotic on") 
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60") 
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE torso 15% 8")
+send("FIRSTAID PRIORITY PRESTORE head 15% 8")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")	
+send("firstaid priority crippled_body 1")
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 1")
+send("firstaid priority ringing_ears 2")
+send("firstaid priority clumsiness 2")
+send("firstaid priority paresis 3")
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3")
+send("firstaid priority soulfire 3")
+send("firstaid priority frozen 3")
+send("firstaid priority nyctophobia 3")
+send("firstaid priority baldness 4")
+send("firstaid priority hypochondria 4")
+send("firstaid priority impatience 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4")
+send("firstaid priority weariness 4")
+send("firstaid priority shivering 4")
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority mental_disruption 5")
+send("firstaid priority merciful 5")
+send("firstaid priority physical_disruption 5")
+send("firstaid priority plodding 5")
+send("firstaid priority allergies 6")
+send("firstaid priority crippled 6")
+send("firstaid priority epilepsy 6")
+send("firstaid priority haemophilia 6")
+send("firstaid priority impairment 6")
+send("firstaid priority lethargy 6")
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority rend 6")
+send("firstaid priority sensitivity 6")
+send("firstaid priority vomiting 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority berserking 7")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7")
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority stupidity 7")
+send("firstaid priority agoraphobia 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dementia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority dizziness 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+send("firstaid priority blisters 10")
+send("firstaid priority generosity 10")
+send("firstaid priority superstition 10")</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^firstaidstart$</regex>
+				</Alias>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Cureset Configs</name>
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>Lycan Cureset(shifter)</name>
+						<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 20% 2")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 20% 2")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 20% 6")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 20% 6")
+send("FIRSTAID PRIORITY PRESTORE TORSO 20% 4")
+send("FIRSTAID PRIORITY PRESTORE HEAD 20% 6")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+send("firstaid priority crippled_body 1")
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 1")
+send("firstaid priority ringing_ears 2")
+send("firstaid priority clumsiness 2")
+send("firstaid priority impairment 2") -- Potential howl. Affects RENEW. Pill (decongestant)
+send("firstaid priority paresis 3")
+send("firstaid priority plodding 3") -- Potential howl, increases pill recovery
+send("firstaid priority blurry_vision 3") -- Potential howl/claw - Sets up Facemaul and salve balance.
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3")
+send("firstaid priority soulfire 3")
+send("firstaid priority frozen 3")
+send("firstaid priority stupidity 3")
+send("firstaid priority nyctophobia 3")
+send("firstaid priority rend 4") -- Can stack bleeding pretty bad.
+send("firstaid priority weariness 4")
+send("firstaid priority lethargy 4")
+send("firstaid priority dementia 4")
+send("firstaid priority baldness 4")
+send("firstaid priority hypochondria 4")
+send("firstaid priority impatience 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4")
+send("firstaid priority shivering 4")
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority mental_disruption 5")
+send("firstaid priority merciful 5")
+send("firstaid priority physical_disruption 5")
+send("firstaid priority allergies 6")
+send("firstaid priority crippled 6")
+send("firstaid priority epilepsy 6")
+send("firstaid priority haemophilia 6")
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority sensitivity 6")
+send("firstaid priority vomiting 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority berserking 7")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7")
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority mauled_face 8") -- Face ouchie. Causes disfigurement (Not really a big deal, so should ignore lower.)
+send("firstaid priority agoraphobia 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority dizziness 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+send("firstaid priority blisters 10")
+send("firstaid priority generosity 10")
+send("firstaid priority superstition 10")
+send("firstaid priority shaderot_benign 10") -- SCIO AFF
+send("firstaid priority shaderot_body 10")-- SCIO AFF
+send("firstaid priority shaderot_wither 10")-- SCIO AFF
+send("firstaid priority shaderot_spirit 10") -- SCIO AFF
+send("firstaid priority gloom 10")-- SCIO AFF
+send("firstaid priority voidgaze 10")-- SCIO AFF
+send("firstaid priority shaderot_heat 10") -- SCIO AFF</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^lycup$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Scio Cureset (sciomancer)</name>
+						<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE torso 15% 8")
+send("FIRSTAID PRIORITY PRESTORE head 15% 8")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 3") -- Higher Vs. Scio for Shadeling
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+send("firstaid priority crippled_body 1")
+send("firstaid priority paralysis 1")
+send("firstaid priority shaderot_body 1")-- SCIO AFF
+send("firstaid priority shaderot_wither 1")-- SCIO AFF
+send("firstaid priority gloom 1")-- SCIO AFF
+send("firstaid priority voidgaze 1")-- SCIO AFF
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 1")
+send("firstaid priority ringing_ears 2")
+send("firstaid priority clumsiness 2")-- SCIO AFF
+send("firstaid priority weariness 3")-- SCIO AFF
+send("firstaid priority paresis 3")
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3")
+send("firstaid priority frozen 3")-- SCIO AFF
+send("firstaid priority nyctophobia 3")
+send("firstaid priority lethargy 4")-- SCIO AFF
+send("firstaid priority dementia 4") -- SCIO AFF
+send("firstaid priority baldness 4")
+send("firstaid priority hypochondria 4")
+send("firstaid priority impatience 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4")
+send("firstaid priority shaderot_heat 4") -- SCIO AFF
+send("firstaid priority shivering 4") -- SCIO AFF
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority mental_disruption 5")
+send("firstaid priority merciful 5")
+send("firstaid priority physical_disruption 5")
+send("firstaid priority plodding 5")
+send("firstaid priority allergies 6")
+send("firstaid priority crippled 6")
+send("firstaid priority epilepsy 6")
+send("firstaid priority haemophilia 6")
+send("firstaid priority impairment 6")
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority rend 6")
+send("firstaid priority sensitivity 6")
+send("firstaid priority vomiting 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority berserking 7")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7")
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority stupidity 7")
+send("firstaid priority shaderot_spirit 8") -- SCIO AFF
+send("firstaid priority agoraphobia 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority dizziness 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority shaderot_benign 9") -- SCIO AFF
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+send("firstaid priority blisters 10")
+send("firstaid priority generosity 10")
+send("firstaid priority superstition 10")
+
+send("firstaid priority soulfire 10") -- Luminary Aff</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^scioup$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Carnifex Cureset (carnifex)</name>
+						<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 19% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 19% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 19% 8")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 19% 8")
+send("FIRSTAID PRIORITY PRESTORE TORSO 19% 8")
+send("FIRSTAID PRIORITY PRESTORE HEAD 19% 8")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence rebounding 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+send("firstaid priority crippled_body 1"). -- Opiate tree. Lowers the damage YOU deal.
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 2") -- Vlock. Anti Pill.
+send("firstaid priority slickness 2")  -- Vlock. Anti-Salve.
+send("firstaid priority asthma 2")  -- Vlock. Anti Smoking.
+send("firstaid priority ringing_ears 2")
+send("firstaid priority clumsiness 2") -- Carni route can stack Decongestant tree very easily.
+send("firstaid priority crushed_chest 3") -- Carni (gives Asthma). Resto cure.
+send("firstaid priority weariness 3") -- Carni route can stack Decongestant tree very easily.
+send("firstaid priority impairment 3") -- Carni Hound aff. Decongestant Tree.
+send("firstaid priority hypochondria 3") -- Decongestant Tree.
+send("firstaid priority paresis 3")
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3")
+send("firstaid priority soulfire 3")
+send("firstaid priority frozen 3")
+send("firstaid priority stupidity 3")
+send("firstaid priority nyctophobia 3")
+send("firstaid priority sensitivity 4") -- Carni would use this with Hammer for extra ow. Decongestant tree.
+send("firstaid priority crippled 4") -- Carni Aff. Opiate Tree
+send("firstaid priority plodding 4")
+send("firstaid priority lethargy 4")
+send("firstaid priority dementia 4")
+send("firstaid priority baldness 4")
+send("firstaid priority impatience 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4") -- Not fun to get to stick. Depressant tree.
+send("firstaid priority shivering 4") -- Tundralhowl Carni (also enfrost from hammer). Caloric Salve.
+send("firstaid priority blisters 5") -- Hound aff. Afflicts if you have rend.
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority mental_disruption 5")
+send("firstaid priority merciful 5")
+send("firstaid priority physical_disruption 5")
+send("firstaid priority berserking 6") -- Hound aff. 
+send("firstaid priority rend 6") -- Carni give this through hounds. Coagulation Tree.
+send("firstaid priority dizziness 6") -- Carni Aff. Hound or venom.
+send("firstaid priority allergies 6")
+send("firstaid priority epilepsy 6") -- Hound aff.
+send("firstaid priority haemophilia 6")
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority vomiting 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7") -- Hound aff, given if you have epilepsy
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority agoraphobia 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+
+send("firstaid priority generosity 10")
+send("firstaid priority superstition 10")
+send("firstaid priority shaderot_benign 10") -- SCIO AFF
+send("firstaid priority shaderot_body 10")-- SCIO AFF
+send("firstaid priority shaderot_wither 10")-- SCIO AFF
+send("firstaid priority shaderot_spirit 10") -- SCIO AFF
+send("firstaid priority gloom 10")-- SCIO AFF
+send("firstaid priority voidgaze 10")-- SCIO AFF
+send("firstaid priority shaderot_heat 10") -- SCIO AFF</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^carniup$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Monk Cureset (monk)</name>
+						<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 20% 4")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 20% 4")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 20% 6")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 20% 6")
+send("FIRSTAID PRIORITY PRESTORE TORSO 20% 4")
+send("FIRSTAID PRIORITY PRESTORE HEAD 20% 3")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+send("firstaid priority crippled_body 1")
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 1") -- Salve Aff.
+send("firstaid priority ringing_ears 2")
+send("firstaid priority clumsiness 2")
+send("firstaid priority whiplash 2") -- Salve (soothing).
+send("firstaid priority impairment 2")
+send("firstaid priority paresis 3")
+send("firstaid priority deadening 3") -- Smoked.
+send("firstaid priority blurry_vision 3") 
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3")
+send("firstaid priority soulfire 3")
+send("firstaid priority frozen 3")
+send("firstaid priority stupidity 3")
+send("firstaid priority nyctophobia 3")
+send("firstaid priority epilepsy 4") -- Telepathy. Can prone.
+send("firstaid priority weariness 4")
+send("firstaid priority lethargy 4")
+send("firstaid priority dementia 4")
+send("firstaid priority baldness 4")
+send("firstaid priority hypochondria 4")
+send("firstaid priority impatience 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4")
+send("firstaid priority shivering 4")
+send("firstaid priority plodding 5")
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority mental_disruption 5")
+send("firstaid priority merciful 5")
+send("firstaid priority physical_disruption 5")
+send("firstaid priority allergies 6")
+send("firstaid priority crippled 6")
+send("firstaid priority rend 6")
+send("firstaid priority haemophilia 6")
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority sensitivity 6")
+send("firstaid priority vomiting 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority berserking 7")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7")
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority mauled_face 8") -- Face ouchie. Causes disfigurement (Not really a big deal, so should ignore lower.)
+send("firstaid priority agoraphobia 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority dizziness 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+send("firstaid priority blisters 10")
+send("firstaid priority generosity 10")
+send("firstaid priority superstition 10")
+send("firstaid priority shaderot_benign 10") -- SCIO AFF
+send("firstaid priority shaderot_body 10")-- SCIO AFF
+send("firstaid priority shaderot_wither 10")-- SCIO AFF
+send("firstaid priority shaderot_spirit 10") -- SCIO AFF
+send("firstaid priority gloom 10")-- SCIO AFF
+send("firstaid priority voidgaze 10")-- SCIO AFF
+send("firstaid priority shaderot_heat 10") -- SCIO AFF</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^monkup$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Templar Cureset (templar)</name>
+						<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 19% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 19% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 19% 8")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 19% 8")
+send("FIRSTAID PRIORITY PRESTORE TORSO 19% 8")
+send("FIRSTAID PRIORITY PRESTORE HEAD 19% 8")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 1") -- Increased vs Blunt Templars (Rupture)
+send("firstaid priority right_arm_bruised_critical 1") -- Increased vs Blunt Templars (Rupture)
+send("firstaid priority left_leg_bruised_critical 1") -- Increased vs Blunt Templars (Rupture)
+send("firstaid priority right_leg_bruised_critical 1") -- Increased vs Blunt Templars (Rupture)
+send("firstaid priority torso_bruised_critical 1") -- Increased vs Blunt Templars (Rupture)
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence rebounding 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+send("firstaid priority crippled_body 1"). -- Opiate tree. Lowers the damage YOU deal.
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 2") -- Vlock. Anti Pill.
+send("firstaid priority slickness 2")  -- Vlock. Anti-Salve.
+send("firstaid priority asthma 2")  -- Vlock. Anti Smoking.
+send("firstaid priority mental_disruption 2") -- Retri Aff.
+send("firstaid priority physical_disruption 2") -- Retri Aff.
+send("firstaid priority sensitivity 3") -- Hemo Route, major ouch.
+send("firstaid priority clumsiness 3") -- Soft Lock route can stack Decongestant tree very easily.
+send("firstaid priority weariness 3") -- -- Soft Lock route can stack Decongestant tree very easily.
+send("firstaid priority hypochondria 3") -- Soft Lock route can stack Decongestant tree very easily.
+send("firstaid priority paresis 3")
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3")
+send("firstaid priority soulfire 3")
+send("firstaid priority frozen 3")
+send("firstaid priority stupidity 3")
+send("firstaid priority nyctophobia 3")
+send("firstaid priority crippled 4")
+send("firstaid priority plodding 4")
+send("firstaid priority lethargy 4")
+send("firstaid priority dementia 4")
+send("firstaid priority baldness 4")
+send("firstaid priority impatience 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4") -- Not fun to get to stick. Depressant tree.
+send("firstaid priority shivering 4") -- Iceblast
+send("firstaid priority rend 5") -- Bleed ouchie. (Hemo Route)
+send("firstaid priority blisters 5") 
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority merciful 5")
+send("firstaid priority impairment 6")
+send("firstaid priority berserking 6")
+send("firstaid priority dizziness 6") 
+send("firstaid priority allergies 6")
+send("firstaid priority haemophilia 6")
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority vomiting 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7")
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority ringing_ears 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority crushed_chest 8") -- Carni (gives Asthma). Resto cure.
+send("firstaid priority agoraphobia 8")
+send("firstaid priority epilepsy 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+send("firstaid priority generosity 10")
+send("firstaid priority superstition 10")
+send("firstaid priority shaderot_benign 10") -- SCIO AFF
+send("firstaid priority shaderot_body 10")-- SCIO AFF
+send("firstaid priority shaderot_wither 10")-- SCIO AFF
+send("firstaid priority shaderot_spirit 10") -- SCIO AFF
+send("firstaid priority gloom 10")-- SCIO AFF
+send("firstaid priority voidgaze 10")-- SCIO AFF
+send("firstaid priority shaderot_heat 10") -- SCIO AFF</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tempup$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Syssin Cureset (syssin)</name>
+						<script>send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE TORSO 15% 8")
+send("FIRSTAID PRIORITY PRESTORE HEAD 15% 8")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence rebounding 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+send("firstaid priority crippled_body 1"). -- Opiate tree. Lowers the damage YOU deal.
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+send("firstaid priority anorexia 2") -- Vlock. Anti Pill.
+send("firstaid priority slickness 2")  -- Vlock. Anti-Salve.
+send("firstaid priority asthma 2")  -- Vlock. Anti Smoking.
+send("firstaid priority allergies 2") -- To Hide Thin Blood/Haemo.
+send("firstaid priority clumsiness 2") -- Soft lock - Decongestant.
+send("firstaid priority impatience 2") -- Focus block (Euphoriant) Helps stall vlock curing.
+send("firstaid priority weariness 3") -- -- Soft lock - Decongestant.
+send("firstaid priority impairment 3") -- Soft Lock Decongestant Tree.
+send("firstaid priority hypochondria 3") -- Soft lock - Decongestant.
+send("firstaid priority haemophilia 3") -- Baddie at the end, massive bleed. (Coag)
+send("firstaid priority paresis 3")
+send("firstaid priority sandrot 3")
+send("firstaid priority thin_blood 3") -- Big bleeds for slit.
+send("firstaid priority frozen 3")
+send("firstaid priority stupidity 3")
+send("firstaid priority nyctophobia 3")
+send("firstaid priority vomiting 4") -- To Hide Thin Blood/Haemo.
+send("firstaid priority sensitivity 4") -- Soft lock - Decongestant. Ouch time.
+send("firstaid priority crippled 4")
+send("firstaid priority plodding 4")
+send("firstaid priority lethargy 4")
+send("firstaid priority baldness 4")
+send("firstaid priority infested 4")
+send("firstaid priority mirroring 4")
+send("firstaid priority pacifism 4")
+send("firstaid priority patterns 4")
+send("firstaid priority recklessness 4") 
+send("firstaid priority shivering 4") 
+send("firstaid priority dementia 5")
+send("firstaid priority blisters 5") 
+send("firstaid priority blighted 5")
+send("firstaid priority blood_curse 5")
+send("firstaid priority blood_poison 5")
+send("firstaid priority confusion 5")
+send("firstaid priority idiocy 5")
+send("firstaid priority mental_disruption 5")
+send("firstaid priority merciful 5")
+send("firstaid priority physical_disruption 5")
+send("firstaid priority berserking 6") 
+send("firstaid priority rend 6") 
+send("firstaid priority dizziness 6") 
+send("firstaid priority epilepsy 6") .
+send("firstaid priority loneliness 6")
+send("firstaid priority masochism 6")
+send("firstaid priority ringing_ears 6")
+send("firstaid priority heatspear 6")
+send("firstaid priority egocentric 7")
+send("firstaid priority exhausted 7")
+send("firstaid priority hallucinations 7") -- Hound aff, given if you have epilepsy
+send("firstaid priority hatred 7")
+send("firstaid priority heartflutter 7")
+send("firstaid priority hypersomnia 7")
+send("firstaid priority hypothermia 7")
+send("firstaid priority justice 7")
+send("firstaid priority laxity 7")
+send("firstaid priority lovers_effect 7")
+send("firstaid priority peace 7")
+send("firstaid priority agoraphobia 8")
+send("firstaid priority claustrophobia 8")
+send("firstaid priority dissonance 8")
+send("firstaid priority faintness 8")
+send("firstaid priority paranoia 8")
+send("firstaid priority shyness 8")
+send("firstaid priority vertigo 8")
+send("firstaid priority addiction 9")
+send("firstaid priority body_odor 9")
+send("firstaid priority commitment_fear 9")
+send("firstaid priority hubris 9")
+send("firstaid priority magnanimity 9")
+send("firstaid priority sadness 9")
+send("firstaid priority self-pity 9")
+send("firstaid priority generosity 10")
+send("firstaid priority crushed_chest 10") -- Carni (gives Asthma). Resto cure.
+send("firstaid priority superstition 10")
+send("firstaid priority soulfire 10") -- Luminary ability.
+send("firstaid priority shaderot_benign 10") -- SCIO AFF
+send("firstaid priority shaderot_body 10")-- SCIO AFF
+send("firstaid priority shaderot_wither 10")-- SCIO AFF
+send("firstaid priority shaderot_spirit 10") -- SCIO AFF
+send("firstaid priority gloom 10")-- SCIO AFF
+send("firstaid priority voidgaze 10")-- SCIO AFF
+send("firstaid priority shaderot_heat 10") -- SCIO AFF</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^syssinup$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Archivist Cureset (archivist)</name>
+						<script>-- Unravel requires 3 Physical Affs, 3 Mental affs, + 1 mutagen.
+
+send("firstaid on")
+send("firstaid reporting on")
+send("firstaid health 85")  
+send("firstaid mana 90")
+send("firstaid forcehealth 40")
+send("firstaid forcemana 60")
+send("firstaid anabiotic health 80")
+send("firstaid anabiotic mana 80")
+send("firstaid vitals priority health")
+send("firstaid stop mana below 45")
+send("firstaid curing on")
+send("firstaid defence on")
+send("firstaid heal health on")
+send("firstaid heal mana on")
+send("firstaid use anabiotic on")
+send("firstaid auto stand on")
+send("firstaid auto wake on")
+send("firstaid use tree on")
+send("firstaid use focus on")
+send("firstaid use endgame on")
+send("firstaid use insomnia on")
+send("firstaid use clot on")
+send("firstaid clot at 30")  
+send("firstaid clot above 60")
+send("firstaid stupidity double on")
+send("firstaid adder 3")
+send("firstaid precache 3")
+send("firstaid prerestore on")
+send("firstaid halt for channel on")
+send("FIRSTAID PRIORITY PRESTORE LEFT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT LEG 15% 8")
+send("FIRSTAID PRIORITY PRESTORE RIGHT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE LEFT ARM 15% 8")
+send("FIRSTAID PRIORITY PRESTORE torso 15% 8")
+send("FIRSTAID PRIORITY PRESTORE head 15% 8")
+send("firstaid priority reset")
+send("firstaid priority left_arm_bruised_critical 2")
+send("firstaid priority right_arm_bruised_critical 2")
+send("firstaid priority left_leg_bruised_critical 2")
+send("firstaid priority right_leg_bruised_critical 2")
+send("firstaid priority torso_bruised_critical 2")
+send("firstaid priority left_arm_bruised_moderate 2")
+send("firstaid priority right_arm_bruised_moderate 2")
+send("firstaid priority left_leg_bruised_moderate 2")
+send("firstaid priority right_leg_bruised_moderate 2")
+send("firstaid priority torso_bruised_moderate 2")
+send("firstaid priority head_bruised_moderate 2")
+send("firstaid priority defence insulation 8")
+send("firstaid priority defence density 1")
+send("firstaid priority defence rebounding 1")
+send("firstaid priority defence temperance 2")
+send("firstaid priority defence levitation 1")
+send("firstaid priority defence speed 1")
+send("firstaid priority defence venom_resistance 4")
+send("firstaid priority defence fangbarrier 1")
+send("firstaid priority defence insomnia 1")
+send("firstaid priority defence instawake 2")
+send("firstaid priority defence waterbreathing 3")
+send("firstaid priority defence deafness 4")
+send("firstaid priority defence blindness 3")  
+
+----- Curing Priority
+send("firstaid priority crippled_body 1")-- Still need Crippled Body decent high, as it halves damage done.
+send("firstaid priority paralysis 1")
+send("firstaid priority paralysis 2")
+
+-- Mutagens (have to leave the room!)
+send("firstaid priority lethargy 2") -- Physical Aff. (Coag)  Mutagen 
+send("firstaid priority blisters 2")  -- Vlock. Anti Smoking. Mutagen  (Opiate)
+send("firstaid priority allergies 2") -- Mutagen (Coagulation). Phys aff. 
+send("firstaid priority addiction 2")  --  Phys aff. Mutagen (antipsychotic)
+
+-- Coagulation Physicals
+send("firstaid priority vomiting 3") -- Phys Aff. -- (Coag) 
+send("firstaid priority haemophilia 3") -- Phys Aff. (Coag)
+send("firstaid priority rend 4") -- Phys Aff. (coag)
+send("firstaid priority exhausted 4") -- Phys Aff. (coag)
+send("firstaid priority physical_disruption 4") -- Physical Aff. (Coagulation)
+
+-- Decongestant Physicals
+send("firstaid priority asthma 2")  -- Vlock. Anti Smoking. Phys Aff. (Decongestant)
+send("firstaid priority sensitivity 3") -- Physical (Decongestant)-- Phys Aff.
+send("firstaid priority impairment 3") -- Phys Aff. (Decongestant)
+send("firstaid priority clumsiness 3") -- Phys Aff. (Decongestant)
+send("firstaid priority ringing_ears 4")-- Phys Aff. (decongestant)
+send("firstaid priority blood_poison 4") -- Phys Aff.(decongestant)
+
+-- Opiate Physicals
+send("firstaid priority sandrot 3") -- Phys Aff. (opiate)
+send("firstaid priority heartflutter 4") -- Phys Aff. (opiate)
+
+-- Salve Physicals
+send("firstaid priority magic_fire 3")  -- Phys Aff. (Salve)
+send("firstaid priority lightwound 3")  -- Phys Aff. (salve)
+send("firstaid priority frozen 3") -- Phys Aff. (salve)
+send("firstaid priority ablaze 3") -- ON FIRE. Physical aff. (Salve)
+send("firstaid priority shivering 4") -- Phys Aff. (salve)
+send("firstaid priority hypothermia 5") -- Phys Aff. (salve)
+send("firstaid priority crippled_throat 5")   -- Phys Aff. (Salve)
+send("firstaid priority whiplash 5")  -- Phys Aff. (salve)
+send("firstaid priority backstrain 5") -- Phys Aff. (salve)
+send("firstaid priority sore_wrist 5") -- Phys Aff. (salve)
+send("firstaid priority sore_ankle 5") -- Phys Aff. (salve)
+send("firstaid priority burnt_eyes 5") -- Phys Aff. (salve)
+send("firstaid priority blurry_vision 5") -- Phys Aff. (salve)
+
+-- Steroid Physical
+send("firstaid priority limp_veins 3")  -- Phys Aff. (steroid)
+
+-- Antipsychotic Physical
+send("firstaid priority blood_curse 3")  -- Phys Aff. (antipsychotic)
+send("firstaid priority hypersomnia 4") -- Phys Aff. (Antipsychotic)
+
+-- Smoked Physical
+send("firstaid priority migraine 3") -- Phys Aff. (smoked)
+send("firstaid priority deadening 3") -- Phys Aff. (smoked)
+send("firstaid priority disfigurement 4") -- Phys Aff. (smoked)
+send("firstaid priority slickness 5") -- NON -Phys Aff. But stops salves (smoked)
+
+
+-- Mental Affs (Should be lower Prio than Physical) Set at 5 and below
+
+--- Depressent Mental
+send("firstaid priority recklessness 5") -- Mental Aff (Depressant)
+send("firstaid priority berserking 6") -- Mental Aff (depressant)
+send("firstaid priority nyctophobia 6") -- Mental Aff (Depressant)
+send("firstaid priority egocentric 7") -- Mental Aff (depressant)
+send("firstaid priority loneliness 7") -- Mental Aff (depressant)
+send("firstaid priority agoraphobia 8") -- Mental Aff (depressant)
+send("firstaid priority masochism 8") -- Mental Aff (Depressant)
+send("firstaid priority claustrophobia 8") -- Mental Aff (Depressant)
+send("firstaid priority vertigo 8") -- Mental Aff (Depressant)
+
+-- Decongestant Mental
+send("firstaid priority weariness 5") -- Mental Aff (Decongestant)
+
+
+-- Euphoriant Mental
+send("firstaid priority impatience 5") -- Mental Aff (Euphoriant) (should be higher than most)
+send("firstaid priority stupidity 5") -- Mental Aff (Euphoriant)
+send("firstaid priority epilepsy 6") -- Mental Aff (Euphoriant)
+send("firstaid priority dizziness 7") -- Mental Aff (Euphoriant)
+send("firstaid priority faintness 7") -- Mental Aff (Euphoriant)
+
+-- Salve Mental
+send("firstaid priority anorexia 5") -- Mental Aff (Salve)
+send("firstaid priority indifference 6") -- Mental Aff (Salve)
+
+-- Opiate Mental
+send("firstaid priority mirroring 7") -- Mental Aff (Opiate)
+
+-- Coagulation Mental
+send("firstaid priority mental_disruption 6")  -- Mental Aff (Coagulation)
+
+-- Antipsychotic Mental
+send("firstaid priority confusion 5") -- Mental Aff (Antipsychotic)
+send("firstaid priority hallucinations 6") -- Mental Aff (Antipsychotic)
+send("firstaid priority hatred 7") -- Mental Aff (Antipsychotic)
+send("firstaid priority paranoia 7") -- Mental Aff (Antipsychotic)
+send("firstaid priority dementia 7") -- Mental Aff (Antipsychotic)
+
+-- Steroid Mental
+send("firstaid priority pacifism 7") -- Mental Aff (Steroid)
+send("firstaid priority peace 7") -- Mental Aff (Steroid)
+send("firstaid priority lovers_effect 7") -- Mental Aff (Steroid)
+send("firstaid priority laxity 7") -- Mental Aff (Steroid)
+send("firstaid priority generosity 8") -- Mental Aff (Steroid)
+
+
+-- Focus Mental
+send("firstaid priority premonition 5") -- Mental Aff(Focus)
+
+
+-- Still have to Prio Paresis
+send("firstaid priority paresis 3")
+
+-- Rest of Affs 7 or below.
+send("firstaid priority plodding 7")
+send("firstaid priority baldness 8")
+send("firstaid priority thin_blood 8")
+send("firstaid priority hypochondria 8")
+send("firstaid priority infested 8")
+send("firstaid priority patterns 8")
+send("firstaid priority blighted 9")
+send("firstaid priority idiocy 9")
+send("firstaid priority crippled 8")
+send("firstaid priority heatspear 8")
+send("firstaid priority justice 9")
+send("firstaid priority dissonance 9")
+send("firstaid priority merciful 10")
+send("firstaid priority shyness 10")
+send("firstaid priority body_odor 10")
+send("firstaid priority commitment_fear 10")
+send("firstaid priority hubris 10")
+send("firstaid priority magnanimity 10")
+send("firstaid priority sadness 10")
+send("firstaid priority self-pity 10")
+send("firstaid priority superstition 10")
+send("firstaid priority soulfire 10") -- Only a Luminary skill, no biggy vs. Archi.</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^archiup$</regex>
+					</Alias>
+				</AliasGroup>
 			</AliasGroup>
 		</AliasGroup>
 	</AliasPackage>

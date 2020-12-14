@@ -295,7 +295,7 @@ nimbleness = true,
 momentum = true,
 absorb = true,
 earthenwill = true,
-morph =  true,
+morph = true,
 furor = true,
 vitality = true,
 mindcleanse = false,
@@ -305,6 +305,9 @@ regenerate = true,
 mindcommand = true,
 kaistrike = true,
 seize = true,
+madness = true,
+backstab = true,
+rage = true,
 }
 
 snd.waiting = {
@@ -614,7 +617,6 @@ snd.weapon_types = {
 "scythe",
 "codex",
 "staff",
-
 "banded",
 "buckler",
 "cavalry",
@@ -3601,18 +3603,6 @@ end</script>
 							</Script>
 						</ScriptGroup>
 					</ScriptGroup>
-					<Script isActive="yes" isFolder="no">
-						<name>Rounding</name>
-						<packageName></packageName>
-						<script>function roundUp(number, places)
-   return math.ceil(number * math.pow(10,places)) / math.pow(10,places)
-end
-
-function roundDown(number, places)
-   return math.floor(number * math.pow(10,places)) / math.pow(10,places)
-end</script>
-						<eventHandlerList />
-					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Sunder NDB</name>
 						<packageName></packageName>
@@ -4480,6 +4470,101 @@ function showColours(num)
 		end
 	end
 end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+					<Script isActive="yes" isFolder="no">
+						<name>Rounding</name>
+						<packageName></packageName>
+						<script>function roundUp(number, places)
+   return math.ceil(number * math.pow(10,places)) / math.pow(10,places)
+end
+
+function roundDown(number, places)
+   return math.floor(number * math.pow(10,places)) / math.pow(10,places)
+end</script>
+						<eventHandlerList />
+					</Script>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Sunder Toggles</name>
+						<packageName></packageName>
+						<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Toggles load + save</name>
+							<packageName></packageName>
+							<script>function snd_toggleSave(disp)
+	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
+	local save_loc = getMudletHomeDir() .. separator .. "sunderToggles"
+  
+	table.save(save_loc, snd.toggles)
+	
+	if disp then
+		snd.message("Current toggle configuration saved.")
+	end	
+end
+
+function snd_toggleLoad()
+	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
+	local load_loc = getMudletHomeDir() .. separator .. "sunderToggles"
+ 
+	if not io.exists(load_loc) then 
+		snd.message("Toggle save file not found; will save when you next disconnect/QQ.")
+		return
+	end
+	
+	table.load(load_loc, snd.toggles)
+	snd.message("Toggles found; we loaded them in just fine.")
+  snd.goggle_update()
+	snd_toggleSave(false)
+end
+
+registerAnonymousEventHandler("sysDisconnectionEvent", "snd_toggleSave", true)
+registerAnonymousEventHandler("sysLoadEvent", "snd_toggleLoad")
+
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>toggle info</name>
+							<packageName></packageName>
+							<script>snd.toggle_info = {
+active = {info = "System full stop of on/off.", command = "sndon and sndoff"},
+parrying = {info = "Basic parry set-up.", command = "tpry or toggle parry"},
+defenses = {info = "Maintain defenses automatically.", command = "defup"},
+calling = {info = "Call targets over web.", command = "tcl"},
+listening = {info = "Accept targets over web.", command = "ls &lt;name name name&gt;"},
+affcalling = {info = "Call affs over web.", command = "acl"},
+chameleon = {info = "Use chameleon tattoo/racial.", command = "tcm"},
+bashing = {info = "Kill NPCs in your room.", command = "aa"},
+fasthunt = {info = "Toggle on to clear rooms as you walk around.", command = "ff"},
+generics = {info = "Uses name instead of number while bashing.", command = "toggle generic"}, 
+gathering = {info = "Pick up items while bashing.", command = "On when fasthunt is active"}, 
+lighting = {info = "Toggle lighting pipes.", command = "lgt or toggle (lighting|pipes)"},
+attacking = {info = "Turns on/off based on aliases for PvP.", command = "See Sunder Help PK"},
+balecho = {info = "Replaces bal/eq with colorful echoes.", command = "automatic"}, 
+atkecho = {info = "Replaces attack lines with shorthand.", command = "tatk or toggle attack echo"},
+newbie = {info = "Newbie bashing attacks only.", command = "tnewb or toggle newbie"},
+cobra = {info = "Toggle cobra bashing for monks.", command = "toggle cobra"}, 
+lightning = {info = "Toggle luminary lightning to bash.", command = "tlgt or toggle lightning"},
+gallop = {info = "Use gallop while pathing around.", command = "tgl or toggle gallop"},
+dash =  {info = "Use of dash while pathing around.", command = "tds or toggle dash"},
+rockharvest = {info = "Harvest rocks as you walk around.", command = "tr or toggle rockharvest"},
+plants = {info = "Shows plants in the room as you walk.", command = "toggle plants"}, 
+disperse = {info = "Use disperse to remove writhes from allies.", command = "toggle disperse (all|callers|none)"},
+queston = {info = "Toggle questing.", command = "toggle questing"},
+vermon = {info = "Vermin walking/killing/turnin.", command = "toggle vermin"},
+goggles = {info = "Telling Sunder you have antiquated goggles.", command = "toggle goggles"},
+goggle_level = {info = "What level are your goggles?", command = "mygoggles or mygoggles &lt;level&gt;"},
+nontargetgags = {info = "Remove nontarget cures from output.", command = "toggle non target gagging"},
+aegis = {info = "Do you want Sunder to auto aegis for you?", command = "toggle aegis"},
+auto_reject = {info = "Should we auto reject lust attempts?", command = "toggle reject"},
+}</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -8677,15 +8762,15 @@ snd.areas = {
 {area = "the Dramedo Warrens", level = "90-100", targets = {"a vast ochre ooze", "a winged fungal horror","a shambling fungal abomination", "a gigantic fungal strider","a cloud of fungal spores"}}, 
 {area = "the Isle of Despair", level = "90-100", targets = {"a darkened soul", "a severed male head"}},
 {area = "the Shattered Vortex (Low Level)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone"}, items = {}},
-{area = "the Shattered Vortex (Spirit)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob", "a warrior of the Aztob", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
+--{area = "the Shattered Vortex (All)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob", "a warrior of the Aztob", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
+{area = "the Shattered Vortex (Spirit)", level = "90-100", targets = {"a chaos worm", "a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob", "a warrior of the Aztob", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
 {area = "the Shattered Vortex (Shadow)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
 {area = "Arbothia", level = "85-95", targets = {"an enraged female servant", "an enraged male servant", "an enraged female villager", "an enraged male villager"}},
---{area = "the Shattered Vortex (Spirit)", level = "90-100", targets = {"a chaos worm", "a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob", "a warrior of the Aztob", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
 {area = "Tiyen Esityi", level = "95+", targets = {"Commander Marakhi", "Tirahl the Necromancer", "Lieutenant Gharvoi", "a ball of chitinous legs", "insubstantial whispers", "Quartermaster Kuius", "Lieutenant Chiakhi", "a crazed Nazetu cutter", "a mutated Nazetu intercessor", "a Nazetu cook", "a Nazetu halberdier", "a Nazetu provost", "a deformed Nazetu priest", "a Nazetu crossbowman", "a bound shade", "a Nazetu corrupter", "a Nazetu necromancer", "a supply officer", "a victimised intruder", "a Nazetu captain", "a canerous stallion", "a tangible malevolence"}},
 {area = "the Nal'jin Depths", level = "95+", targets = {"an enormous spinelash fish", "a sinewy Nal'jin eel", "a shadow ray", "a serpentine jawsnapper"}},
 {area = "the Forgotten Dome", level = "95+", targets = {"a gibbering kelki reaver", "a deformed kelki ravener", "a mutated kelki ravager", "a vile kelki prowler"}},
 {area = "Luzith's Lair", level = "95+", targets = {"a mass of deadly trap spiders", "a deadly trap spider", "a monstrous arachnid", "a vicious little spider", "a large, crystalline spider", "a flying spider", "a sentinel spider", "a slender, female arachnoid"}},
-{area = "the Bastion of Illdon", level = "95+", targets = {"a rabid plant", "a rabid hound", "a nightmare shadow", "a shadowy, mindless demon", "a mutated experiment", "a trapped soul", "a burly, Dwarven explorer", "a young, Tsol'aa bandit"}},
+{area = "the Bastion of Illdon", level = "95+", targets = {"a rabid plant", "a rabid hound", "a nightmare shadow", "a shadowy, mindless demon", "a mutated experiment", "a trapped soul"}},
 {area = "Spiral of the Corrupt", level = "95+", targets = {"an ethereal, scarred jellyfish", "a rot-infested swordfish", "a five-tentacled octopus of jade", "a taint-infested shark", "a miasma-wreathed electric eel"}},
 {area = "the Shastaan Warrens", level = "95+", targets = {"an aberrant, obscenely deformed Kelki", "a wild-eyed Kelki cultist", "a ragged Kelki cultist"}},
 {area = "the Bloodwood", level = "95+", targets = {"a distressed spirit", "a wailing spirit", "a lingering spirit"},items = {"Spectral essence", "spectral essence", "essence"}},
@@ -9819,6 +9904,280 @@ snd.generic_bashing_table_duplicate_names = {
   }</script>
 						<eventHandlerList />
 					</Script>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Adv bashing route making + using</name>
+						<packageName></packageName>
+						<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Custom Basher Paths</name>
+							<packageName></packageName>
+							<script>function snd_createPather()
+  local n = gmcp.Room.Info.num 
+  sap_List = {}
+  sap_Area = gmcp.Room.Info.area 
+  snd.message("Path creation enabled for "..sap_Area.."; starting from v"..n..".")
+  table.insert(sap_List, n)
+end
+
+function snd_patherAdd()
+  local n = gmcp.Room.Info.num 
+  if not sap_List then
+    snd.message("Can't add rooms if you don't enable pather first. Use 'path create' to begin.")
+  elseif not table.contains(sap_List, n) then
+    table.insert(sap_List, n)
+    snd.message("Added v"..n.." to path list. Total rooms thus far: "..#sap_List..".")
+  else
+    snd.message("Room is already in the list.")
+  end
+end
+
+function snd_patherCompile()
+  if #sap_List &lt; 10 then
+    snd.message("The path size is far too small to be useful. Try making it bigger than 10 rooms, at least.")
+    return
+  end
+  
+  sunder_areaPaths = sunder_areaPaths or {}
+  sunder_areaPaths[sap_Area] = {}
+  
+  local str = ""
+  for x, n in pairs(sap_List) do
+    if x == #sap_List then
+      sunder_areaPaths[sap_Area]["v"..n] = "ptcity"
+    else
+      sunder_areaPaths[sap_Area]["v"..n] = ""..sap_List[x+1]..""
+    end
+  end
+  snd.message("Created path for "..sap_Area..". You can now use it with 'goarea' if you want.")
+  snd_saveAreas(true)
+end
+
+function snd_bashArea()
+  local area = gmcp.Room.Info.area 
+  if not sunder_areaPaths then
+    snd.message("Area table not found.")
+  elseif not sunder_areaPaths[area] then
+    snd.message("Path not found for current area.")
+  else
+    snd.message("Let's bash out "..area.."!")
+    bot.going = true
+    bot.path = sunder_areaPaths[area]
+    if not snd.toggles.fasthunt then
+      expandAlias("ff")
+    end    
+    expandAlias("aa") 
+  end
+end
+
+function snd_saveAreas(disp)
+  sunder_areaPaths = sunder_areaPaths or {}
+
+	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
+	local paths_loc = getMudletHomeDir() .. separator .. "sunderBasherPaths"
+
+	table.save(paths_loc, sunder_areaPaths)
+	
+	if disp then
+		snd.message("Saved autopath information successfully.")
+	end	
+end
+
+function snd_loadAreas()
+	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
+	local paths_loc = getMudletHomeDir() .. separator .. "sunderBasherPaths"
+
+	if not io.exists(paths_loc) then 
+		snd.message("Autopather table not found; will create the next time you try to make a path, or load mudlet.")
+		return
+	end
+
+	sunder_areaPaths = {}
+	table.load(paths_loc, sunder_areaPaths)
+	snd.message("Autopather table found and successfully loaded in.")
+
+end
+
+registerAnonymousEventHandler("sysDisconnectionEvent", "snd_saveAreas", true)
+registerAnonymousEventHandler("sysLoadEvent", "snd_loadAreas")
+
+
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Custom bashing route making</name>
+							<packageName></packageName>
+							<script>-- Used for automatic custom path making
+
+function snd_bashAreas(areas_chosen)
+  local areas = string.split(areas_chosen, ", ")
+  local num_areas = #areas - 1
+  local full_list_of_areas = mmp.deepcopy(sunder_areaPaths)
+  if not sunder_areaPaths then
+    snd.message("Area table not found.")
+  else
+    local path_being_constructed = {}
+    cecho("\n&lt;CadetBlue&gt;We are checking your area request:")
+    for _, v in pairs(areas) do
+      for x, y in pairs(full_list_of_areas) do
+        area_being_checked = x:lower()
+        if area_being_checked:find(v) then
+        cecho("\n&lt;MediumSeaGreen&gt;Found: "..x)
+          local area_to_be_added = full_list_of_areas[x]
+          if #path_being_constructed ~= 0 then
+            for l, m in pairs(path_being_constructed) do
+              local areas_added = 0
+              for a, b in pairs(m) do
+                if b == "ptcity" and areas_added &lt; num_areas then 
+                  path_being_constructed[l][a] = snd.bashing_area_beginning_rooms[x]
+                  areas_added = areas_added + 1
+                end --21
+              end--20
+            end--18
+          end--17
+          table.insert(path_being_constructed, area_to_be_added)
+          break
+        end
+      end
+    end
+    
+    local final_path = {}
+    
+    for myareastobash, roomsinthoseareas in pairs(path_being_constructed) do
+      for first_room, next_room in pairs(roomsinthoseareas) do
+        final_path[first_room] = next_room
+      end
+    end
+  
+    snd.message("If that's right, "..gmcp.Char.Status.name..", head on over to the first area!")
+    bot.going = true
+    bot.path = final_path
+    if not snd.toggles.fasthunt then
+      expandAlias("ff")
+    end    
+    expandAlias("aa") 
+  end
+
+end
+
+snd.bashing_area_beginning_rooms ={
+  ["the Dolbodi Campsite"] = "19323",
+  ["the Khauskin Mines"] = "25408",
+  ["the Feral Caves"] = "16274",
+  ["Spiral of the Corrupt"] = "36271",
+  ["Forsaken Evlasu"] = "53280",
+  ["the Maghuir Fissure"] = "ptmaghuir",
+  ["the Village of Torston"] = "17612",
+  ["the Kalydian Forest"] = "19810",
+  ["the Torturers' Caverns"] = "23202",
+  ["the Forgotten Dome"] = "54770",
+  ["the Tarean Ice Caverns"] = "22226",
+  ["the Eresh Mines"] = "15344",
+  ["Yohanan Village"] = "19802",
+  ["the Salma Settlement"] = "19602",
+  ["Arbothia"] = "15168",
+  ["Mount Heylai"] = "54482",
+  ["Raim Vale"] = "20389",
+  ["Three Widows"] = "58675",
+  ["the Valley of Kalebb"] = "8694",
+  ["Court of the Consortium"] = "27704",
+  ["the Dakhota hills"] = "1155",
+  ["the Augerweald"] = "23791",
+  ["a snake pit"] = "56942",
+  ["Catacombs beneath Djeir"] = "12332",
+  ["Tcanna Island"] = "36824",
+  ["the Mannaseh Swamp"] = "1745",
+  ["the Arurer Haven"] = "19320",
+  [" Dovan Hollow"] = "49286",
+  ["the Mamashi Tunnels"] = "20855",
+  ["the Itzatl Morass"] = "15714",
+  ["Scidve"] = "10813",
+  ["the Bastion of Illdon"] = "4964",
+  ["Rebels' Ridge"] = "18462",
+  ["Mount Hubride"] = "13425",
+  ["Asper"] = "13292",
+  ["the Lich Gardens"] = "22866",
+  ["the Shastaan Warrens"] = "45483",
+  ["the Three Rock Outpost"] = "20281",
+  ["the Shattered Vortex"] = "56731",
+  ["Alaqsii Inlet"] = "22477",
+  ["the lost city of Iviofiyiedu"] = "55190",
+  ["Siha Dylis"] = "3106",
+  ["Rotfang Warren"] = "63763",
+  ["the Ruins of Farsai"] = "17032",
+  ["the Caverns of Telfinne"] = "20932",
+  ["the Valley of Lodi"] = "3883",
+  ["the Ruins of Masilia"] = "20450",
+  ["The Forgotten Mausoleum"] = "59862",
+  ["the Ilhavon Forest"] = "26690",
+  ["the Bloodwood"] = "57521",
+  ["the Isle of Polyargos"] = "36824",
+  ["Mount Humgurd"] = "23128",
+  ["the Teshen Caldera"] = "55276",
+  ["the Nal'jin Depths"] = "38090",
+  ["Drakuum"] = "19854",
+  ["the Fengard Keep"] = "3273",
+  ["the Isle of Ollin"] = "19626",
+  ["Raugol Fissure"] = "49749",
+  ["the village of Bihrkaen"] = "56647",
+  ["the Barony of Dun Valley"] = "5029",
+  ["Luzith's Lair"] = "16282",
+  ["the Morgun Forest"] = "4740",
+  ["the Western Tundra"] = "18082",
+  ["the beaches of Liris"] = "19814",
+  ["Yuzurai village"] = "59609",
+  ["Halls of Tornos"] = "21908",
+  ["the Ayhesa Cliffs"] = "19987",
+  ["the Village of Kornar"] = "21286",
+  ["the Iernian Fracture"] = "10046",
+  ["the Hlugnic Labyrinth"] = "57334",
+  ["Xaanhal"] = "36677",
+  ["the Sparklight Rift"] = "60845",
+  ["a volcano"] = "35217",
+  ["Tainhelm"] = "16437",
+  ["the Dramedo Warrens"] = "58207",
+  ["Dun Fortress"] = "3887",
+  ["the Temple of Sonn"] = "16706",
+  ["Riparium"] = "5599",
+  ["the Azdun dungeon"] = "1773",
+  ["the Festering Wastes"] = "20754",
+  ["Tiyen Esityi"] = "38894",
+  ["the Siroccian Tunnels"] = "26820",
+  ["the Centipede Cave"] = "22824",
+  ["the Holy Impire of Sehal"] = "24475",
+  ["the Isle of Despair"] = "2030",
+  ["the Tarean Caverns"] = "22305",
+  ["Chapel Garden"] = "26920",
+  ["the Vilimo Fields"] = "24628",
+  ["the Crags"] = "19311",
+  ["the village of Rahveir"] = "18968",
+  ["the Caverns of Mor"] = "19344",
+  ["the village of Gorshire"] = "66078",
+  ["the Undercity of Djeir"] = "11994",
+  ["the Cathedral of Gloaming"] = "22702",
+  ["Three Widows"] = "58675",
+  ["Court of the Consortium"] = "ptcourt",
+  ["the Siroccian Mountains"] = "4354",
+  ["the Central Wilderness"] = "11326",
+  ["the Western Itzatl Rainforest"] = "9853",
+  ["the Fractal Bloom"] = "ptfractal",
+  ["Saliltul Swamp"] = "62102",
+  ["the Ia'shal Barrow"] = "ptis'shal",
+  ["the Isle of Despair"] = "ptdespair",
+  ["Trapped within a mirror"] = "n/a",
+  ["Perilaus"] = "11962",
+  ["Dovan Hollow"] = "49286",
+  ["the Squal"] = "14926",
+}</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>GUI</name>
@@ -13924,11 +14283,11 @@ function snd.parry()
 		end
 	end
 	if snd.toparry ~= "none" and snd.toparry ~= snd.parrying and snd.full_balance() and not snd.waiting.parry then
-		if snd.class == "Zealot" then
+		if snd.class == "Zealot" and hasSkill("Fending") then
 			snd.send("fend "..snd.toparry)
-		elseif snd.class == "Monk" then
+		elseif snd.class == "Monk" and hasSkill("Guarding") then
 			snd.send("guard "..snd.toparry)
-		else
+		elseif hasSkill("Parrying") then
 			snd.send("parry "..snd.toparry)
 		end
 		snd.waiting.parry = true
@@ -13956,6 +14315,7 @@ snd.offense_loaded = true
 snd.enemies = {}
 snd.allies = {}
 snd.hitting = "none"
+
 snd.firstaidchangecure = false
 snd.firstaidprioritylistset()
 snd.firstaidclassset = false
@@ -14003,7 +14363,8 @@ snd.stunrecheck = false
 snd.enemycansalve = true
 snd.kipup = false
 
-snd.templar_weapon_type = "shortsword" -- used for Templar offenses
+snd.templar_weapon_one = "flyssa" -- used for Templar offenses
+snd.templar_weapon_two = "rapier" -- used for Templar offenses
 
 snd.current_offense = ""
 
@@ -14051,6 +14412,9 @@ snd.enraged = false
 --Indorani
 snd.adder_attached = false
 snd.adder_ready = false
+snd.target_has_aura = true
+snd.need_leech_aura = true
+
 
 --Monk
 snd.target_numbed = false
@@ -14128,7 +14492,8 @@ snd.parried_limb = "none"
 snd.last_hit_limb = "none"
 snd.last_limb_dmg = 0
 snd.resto_limb = "none"
-snd.targeting = {
+snd.current_restoration_aff = ""
+snd.limb_targeting = {
 left = "none",
 right = "none"
 }
@@ -14219,6 +14584,7 @@ weariness = "shield punch",
 asthma = "shield slam",
 haemophilia = "shield slam",
 confusion = "perform dazzle",
+transfixed = "evoke transfixion",
 }
 
 snd.hound_attacks = {
@@ -14877,462 +15243,6 @@ function snd.handle_hounds()
 	end
  end
 end</script>
-						<eventHandlerList />
-					</Script>
-					<Script isActive="no" isFolder="no">
-						<name>shadow</name>
-						<packageName></packageName>
-						<script>snd.shadow = {
--- Supports
-"Rurthina",
-"Jomar",
-"Irish",
-"Mjoll",
-"Ameleia",
-"Menelaus",
-"Vonarnis",
-"Tlacahua",
-"Nisavi",
-"Tetchta",
-"Asmund",
-"Doron",
-"Ardent",
-"Ahlysaaria",
-"Kylae",
-"Cyra",
-"Vharen",
-"Vahlen",
-"Oemeria",
-"Mephistoles",
-"Qelres",
-"Miroslav",
-"Xeniothalus",
-"Varant",
-"Azelie",
-"Evoran",
-"Bormulf",
-"Taaroshi",
-"Gorvex",
-"Sarita",
-"Dantae",
-"Oriana",
-"Anka",
-"Ain",
-"Iofila",
-"Yedan",
-"Justus",
-"Talomae",
-"Veris",
-"Zelroth",
-"Cai",
-"Robyn",
-"Taj",
-"Blodwyn",
-"Nebula",
-"Gyana",
-"Demidicus",
-"Fezzix", --very mobile, high HP pool
-"Savas",
-"Seurimas",
-"Borminchia",
-"Marin",
-"Rainaka",
-"Desidora",
-"Aniko",
-"Ishmar",
-"Azarae",
-"Ensis",
-"Blaze",
-"Azami",
-"Aren",
-"Kraz",
-"Ephi",
-"Galilei",
-"Theth",
-"Teflin",
-"Laera",
-"Naos",
-"Grake",
-"Runk",
-"Akarn",
-"Aridas",
-"Choep",
-"Eagan",
-"Sivekui",
-"Dowbrow",
-"Aethir",
-"Tillian",
-"Zubayr",
-"Saidenn",
-"Gavramel",
-"Zileigh",
-"Nonatea",
-"Kolikor",
-"Vizzer",
-"Lilein",
-"Madyx",
-"Aros",
-"Bhrigu",
-"Cameryn",
-"Jiri",
-"Cullin",
-"Rebra",
-"Ayastia",
-"Swara",
-"Ayuna",
-"Vorlus",
-"Tryvellian",
-"Zacheus",
-"Reily",
-"Vasilissa",
-"Awol",
-"Chup",
-"Skiva",
-"Elene",
-"Feichin",
-"Asugazio",
-"Deandra",
-"Agron",
-"Tatia",
-"Nerakh",
-"Cayn",
-"Naro",
-"Zyphen",
-"Aouri",
-"Tybereus",
-"Danuja",
-"Iayera",
-"Ansidia",
-"Hitzuguya",
-"Zuleika",
-"Jenxlyn",
-"Jhin",
-"Neoma",
-"Zaila",
-"Corvo",
-"Bulrok",
-"Raynia",
-"Ipz",
-"Quentus",
-"Cardie",
-"Iazamat",
-"Meltas", --has a defend ring, consider moving him around if he uses it often
-"Rijetta",
-"Zenobia",
-"Rystil",
-"Nirian",
-"Macavity",
-"Kadal",
-"Briar",
-"Louse",
-"Arbre",
-"Annabeth",
-"Xenia",
-"Alathesia",
-"Kamui",
-"Zarni",
-"Tekias",
-"Ehtias",
-"Haverly",
-"Ciarcadh",
-"Qayon",
-"Eolo",
-"Ileria",
-"Tina",
-"Sohma",
-"Marharet",
-"Prucilla",
-"Teani",
-"Dagun",
-"Zhukov",
-"Tsuga",
-"Tsyra",
-"Murad",
-"Kaldaka",
-"Zruak",
-"Azalie",
-"Marjax",
-"Anari",
-"Cariv", --damage threat
-"Varel", -- 1v1 specialist but can do groups fine
-"Trikal", --general annoyance
-"Lleminara",
-"Sarisa",
-"Kelliara",
-"Canasius",
-"Ensidia",
-"Garn",
-"Phlickerwart",
-"Mileta",
-"Naida",
-"Ellenia",
-"Casni",
-"Lenina",
-"Xarian",
-"Fyrren",
-"Borgun",
-"Callidora",
-"Dourif",
-"Tryss",
-"Diancecht",
-"Rashinza",
-"Uktoro",
-"Vorlus",
-"Louse",
-"Tirria",
-"Sarissa",
-"Zhyth",
-"Hexes",
-"Kodaza",
-"Kanivara",
-"Nenelos",
-"Satomi",
-"Alyssn",
-"Nahira",
-"Ferrik",
-"Jensen",
-"Tolas",
-"Tzaarhashet",
-"Zhrkraal",
-"Akaryuterra",
-"Jasline",
-"Khodie",
-"Ayala",
-"Epiales",
-"Avaeda",
-"Axius",
-"Yana",
-"Beltsa",
-"Eydis",
-"Colren",
-"Mazzion", -- uses cloudburst often, high HP pool
-"Rhyot",
-}</script>
-						<eventHandlerList />
-					</Script>
-					<Script isActive="no" isFolder="no">
-						<name>spirit</name>
-						<packageName></packageName>
-						<script>snd.spirit = {
---The most spirit
-"Yeras",
---Luminaries:
-"Stine",
---Callers:
-"Benedicto",
-"Iesid",
-"Valingar",
-"Drystin",
-"Eaku",
-"Arcannia",
-"Ameliah",
-"Amedeus",
-"Lin",
-"Minette",
-"Ellbryan",
-"Nuovis",
-"Aolin",
-"Taiyang",
-"Hallis",
-"Falinzin",
-"Tristram",
-"Sanir",
-"Varrilix",
-"Adelina",
-"Gaelric",
-"Izraken",
-"Kilmoner",
-"Willoughby",
-"Silvanar",
-"Oonagh",
-"Printiel",
-"Wendell",
-"Rufra",
-"Aithinne",
-"Sibatti",
-"Rynkhia",
-"Iakut",
-"Galadriel",
-"Alyx",
-"Phoenecia",
-"Renia",
-"Saerward",
-"Zephon",
-"Talonnb",
-"Miralla",
-"Sryaen",
-"Nymma",
-"Sessizlik",
-"Alystrine",
-"Tamarja",
-"Shugawata",
-"Evelyn",
-"Noon",
-"Validan",
-"Kayt",
-"Arbre",
-"Rinata",
-"Lirael",
-"Agothine",
-"Effrosyni",
-"Bastian",
-"Ashel",
-"Kitza",
-"Ayanala",
-"Hodral",
-"Zillow",
-"Haydyn",
-"Tesetta",
-"Daoin",
-"Anahera",
-"Escelika",
-"Jourik",
-"Sanella",
-"Darim",
-"Aeryx",
-"Alyia",
-"Velheima",
-"Yvi",
-"Aloa",
-"Aoide",
-"Roux",
-"Mepoki",
-"Sekeres",
-"Czcibor",
-"Senalla",
-"Iadra",
-"Valorie",
-"Kylan",
-"Lynni",
-"Zantiln",
-"Karhast",
-"Velana",
-"Talyarra",
-"Eoros",
-"Aired",
-"Hawa",
-"Shambunath",
-"Lyric",
-"Aisling",
-"Zion",
-"Yrthyra",
-"Rosdes",
-"Saybre",
-"Charica",
-"Elidyr",
-"Faeden",
-"Kalena",
-"Belgarion",
-"Zynti",
-"Giliand",
-"Aisei",
-"Saltz",
-"Kvothe",
-"Kjell",
-"Isia",
-"Ander",
-"Church",
-"Rasani",
-"Lexen",
-"Lya",
-"Eliadon",
-"Ferrovax",
-"Serrice",
-"Aishia",
-"Tenshyo",
-"Aloli",
-"Jami",
-"Haven",
-"Mosu",
-"Piari",
-"Tairan",
-"Valeria",
-"Ayegor",
-"Rihrin",
-"Tekias",
-"Amarita",
-"Zea",
-"Tressa",
-"Xai",
-"Iatan",
-"Urial",
-"Rhine",
-"Ainete",
-"Ronon",
-"Ateslemek",
-"Vahn",
-"Jeromy",
-"Jakir",
-"Aymah",
-"Asmund",
-"Vaeldren",
-"Tyson",
-"Norasi",
-"Arista",
-"Ranae",
-"Melantha",
-"Kyn",
-"Aisar",
-"Ysabelon",
-"Adesse",
-"Aeheli",
-"Aelea",
-"Aeylis",
-"Alamura",
-"Aldan",
-"Aldradh",
-"Alexsandor",
-"Miroslav",
-"Aodhan",
-"Arataziel",
-"Arindalia",
-"Bayla",
-"Carthenian",
-"Dantae",
-"Demortes",
-"Driga",
-"Ecikoria",
-"Eidas",
-"Eratian",
-"Eschar",
-"Ianthe",
-"Innuros",
-"Illidan",
-"Alinthrice",
-"Jhura",
-"Katie",
-"Laithe",
-"Lycia",
-"Melantha",
-"Miroslav",
-"Moxie",
-"Mykellah",
-"Rak",
-"Uisor",
-"Urial", 
-"Zaila",
-"Reilly",
---Raw Duiran data from CITIZENS ALL to try and fill in the file. Feel free to move the targetting order around.
- "Amisi", 
- "Brae",
- "Dannon", 
- "Dennah", 
- "Elly", 
- "Evadnu", 
- "Jessie", 
- "Kaiara", 
- "Madali", 
- "Nava",	 
- "Tythos",
- "Ipz",
- "Relandroc",
- "Courene",
- "Wylliam",
- "Seraphina",
- "Xavin",
- "Elwyn",
- "Callaia",
-	}</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
