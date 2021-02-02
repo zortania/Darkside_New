@@ -5325,7 +5325,7 @@ snd.passfunction = multimatches[2][2]
 if not table.isMember(snd.have_aff, multimatches[2][2]) and multimatches[2][2] ~= "stun" and multimatches[2][2] ~= "vitalbane" then 
 	snd.unknownquantity = snd.unknownquantity - 1
 	if tonumber(snd.unknownquantity) &lt; 1 then
-		delitem(snd.afflictions, "unknown")
+		snd.aff_remove("unknown")
 		snd.unknownquantity = 0
 	end
 	snd.aff_remove(snd.passfunction) 
@@ -5540,19 +5540,25 @@ snd.firstaidchangecure = true</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Firstaid priority pre-restore</name>
-									<script>if matches[2] == "torso" or matches[2] == "head" then
+									<script>if matches[2] == "torso" then
 	snd.firstaidcuretrack[matches[2]] = matches[4]
+  snd.firstaidcuretrack.pretorso = matches[3]
+elseif matches[2] == "head" then
+  snd.firstaidcuretrack[matches[2]] = matches[4]
+  snd.firstaidcuretrack.prehead = matches[3]
 elseif matches[2] == "left leg" then
 	snd.firstaidcuretrack.leftleg = matches[4]	
-elseif matches[2] == "rightt leg" then
+  snd.firstaidcuretrack.preleftleg = matches[3]
+elseif matches[2] == "right leg" then
 	snd.firstaidcuretrack.rightleg = matches[4]
+  snd.firstaidcuretrack.prerightleg = matches[3]
 elseif matches[2] == "left arm" then
-	snd.firstaidcuretrack.leftarm = matches[4]		
+	snd.firstaidcuretrack.leftarm = matches[4]	
+  snd.firstaidcuretrack.preleftarm = matches[3]	
 elseif matches[2] == "right arm" then
 	snd.firstaidcuretrack.rightarm = matches[4]	
-end
-echo(snd.firstaidcuretrack.torso)
-</script>
+  snd.firstaidcuretrack.prerightarm = matches[3]
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -5650,6 +5656,27 @@ echo(snd.firstaidcuretrack.torso)
 										<integer>3</integer>
 									</regexCodePropertyList>
 								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Defence set - firstaid</name>
+									<script>snd.firstaidcuretrack[matches[2]] = matches[3]
+snd.firstaidchangecure = true</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^You have set the \'(.*)\' defence to the (\d+) priority.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
 							</TriggerGroup>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>diag start</name>
@@ -5710,6 +5737,7 @@ end</script>
 									<script>snd.aff_diag(matches[2])
 if not snd.have_aff("hypochondria") then 
 	snd.unknownquantity = 0
+  snd.aff_remove("unknown")
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -5986,7 +6014,13 @@ snd.firstaidsalve()</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>wounds start</name>
-									<script></script>
+									<script>snd.limblist_leftleg = 0
+snd.limblist_rightleg = 0
+snd.limblist_rightarm = 0
+snd.limblist_leftarm = 0
+snd.limblist_torso = 0
+snd.limblist_head = 0
+</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>200</mStayOpen>
@@ -5998,15 +6032,40 @@ snd.firstaidsalve()</script>
 									<colorTriggerFgColor>#000000</colorTriggerFgColor>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
-										<string>You take a moment to assess how damaged your limbs are:</string>
+										<string>^You take a moment to assess how damaged your limbs are:$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
-										<integer>3</integer>
+										<integer>1</integer>
 									</regexCodePropertyList>
 									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 										<name>wounds line</name>
 										<script>snd.limb_damage[string.lower(matches[2])] = tonumber(matches[3])
-</script>
+
+if string.lower(matches[2]) == "head" then
+  snd.limblist_head = tonumber(matches[3])
+  if tonumber(snd.limblist_head) &gt; 6 then snd.parry() end
+  if tonumber(snd.limblist_head) &lt; 1 then snd.aff_remove("headprerestore") end
+elseif string.lower(matches[2]) == "torso" then
+  snd.limblist_torso = tonumber(matches[3])
+  if tonumber(snd.limblist_torso) &gt; 6 then snd.parry() end
+  if tonumber(snd.limblist_torso) &lt; 1 then snd.aff_remove("torsoprerestore") end
+elseif string.lower(matches[2]) == "left arm" then
+  snd.limblist_leftarm = tonumber(matches[3])
+  if tonumber(snd.limblist_leftarm) &gt; 6 then snd.parry() end
+  if tonumber(snd.limblist_leftarm) &lt; 1 then snd.aff_remove("leftarmprerestore") end
+elseif string.lower(matches[2]) == "left leg" then
+  snd.limblist_leftleg = tonumber(matches[3])
+  if tonumber(snd.limblist_leftleg) &gt; 6 then snd.parry() end
+  if tonumber(snd.limblist_leftleg) &lt; 1 then snd.aff_remove("leftlegprerestore") end
+elseif string.lower(matches[2]) == "right arm" then
+  snd.limblist_rightarm = tonumber(matches[3])
+  if tonumber(snd.limblist_rightarm) &gt; 6 then snd.parry() end
+  if tonumber(snd.limblist_rightarm) &lt; 1 then snd.aff_remove("rightarmprerestore") end
+elseif string.lower(matches[2]) == "right leg" then
+  snd.limblist_rightleg = tonumber(matches[3])
+  if tonumber(snd.limblist_rightleg) &gt; 6 then snd.parry() end
+  if tonumber(snd.limblist_rightleg) &lt; 1 then snd.aff_remove("rightlegprerestore") end
+end</script>
 										<triggerType>0</triggerType>
 										<conditonLineDelta>0</conditonLineDelta>
 										<mStayOpen>0</mStayOpen>
@@ -6761,21 +6820,33 @@ snd.parry.heelrush = "none"
 
 if limb == "left leg" then
 	snd.lleghit = snd.lleghit + 1
+	snd.limblist_leftleg = snd.limblist_leftleg + damage
+	cecho("&lt;cyan&gt;  TOTAL LEFT LEG DAMAGE: &lt;red&gt;" ..snd.limblist_leftleg) 
 	
 elseif limb == "right leg" then 
 	snd.rleghit = snd.rleghit + 1
+	snd.limblist_rightleg = snd.limblist_rightleg + damage
+	cecho("&lt;cyan&gt;  TOTAL RIGHT LEG DAMAGE: &lt;red&gt;" ..snd.limblist_rightleg)
 	
 elseif limb == "torso" then
 	snd.torsohit = snd.torsohit + 1
+	snd.limblist_torso = snd.limblist_torso + damage
+	cecho("&lt;cyan&gt;  TOTAL TORSO DAMAGE: &lt;red&gt;" ..snd.limblist_torso)
 	
 elseif limb == "head" then
 	snd.headhit = snd.headhit + 1
+	snd.limblist_head = snd.limblist_head + damage
+	cecho("&lt;cyan&gt;  TOTAL HEAD DAMAGE: &lt;red&gt;" ..snd.limblist_head)
 
 elseif limb == "left arm" then 
 	snd.larmhit = snd.larmhit + 1
+	snd.limblist_leftarm = snd.limblist_leftarm + damage
+	cecho("&lt;cyan&gt;  TOTAL LEFT ARM DAMAGE: &lt;red&gt;" ..snd.limblist_leftarm)
 	
 elseif limb == "right arm" then
 	snd.rarmhit = snd.rarmhit + 1
+	snd.limblist_rightarm = snd.limblist_rightarm + damage
+	cecho("&lt;cyan&gt;  TOTAL RIGHT ARM DAMAGE: &lt;red&gt;" ..snd.limblist_rightarm)
 	
 end
 snd.parry()
@@ -6863,6 +6934,158 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>^\w+ uses Purification Pendulum ((\w+)) on you.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Limb Damage Restored</name>
+									<script>local limb = matches[2]
+if limb == "left leg" then
+	snd.aff_remove("leftlegprerestore")
+	snd.aff_remove("left_leg_amputated")
+	snd.aff_remove("left_leg_mangled")
+	snd.aff_remove("left_leg_damaged")
+	snd.limblist_leftleg = 0
+elseif limb == "right leg" then 
+	snd.aff_remove("rightlegprerestore")
+	snd.aff_remove("right_leg_amputated")
+	snd.aff_remove("right_leg_mangled")
+	snd.aff_remove("right_leg_damaged")
+	snd.limblist_rightleg = 0
+elseif limb == "left arm" then
+	snd.aff_remove("leftarmprerestore")
+	snd.aff_remove("left_arm_amputated")
+	snd.aff_remove("left_arm_mangled")
+	snd.aff_remove("left_arm_damaged")
+	snd.limblist_leftarm = 0
+elseif limb == "right arm" then
+	snd.aff_remove("right_arm_mangled")
+	snd.aff_remove("right_arm_damaged")
+	snd.aff_remove("right_arm_amputated")
+	snd.aff_remove("rightarmprerestore")
+	snd.limblist_rightarm = 0
+elseif limb == "torso" then
+	snd.limblist_torso = 0
+	snd.aff_remove("torsoprerestore")
+	snd.aff_remove("crushed_chest")
+	snd.aff_remove("spinal_rip")
+	snd.aff_remove("torso_mangled")
+	snd.aff_remove("torso_damaged")
+elseif limb == "head" then 
+	snd.limblist_head = 0
+	snd.aff_remove("headprerestore")
+	snd.aff_remove("head_mangled")
+	snd.aff_remove("head_damaged")
+	snd.aff_remove("smashed_throat")
+	snd.aff_remove("mauled_face")
+end
+snd.parry()
+snd.firstaidsalve()
+</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^You have restored your (.*) as best as you can!$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Limb damage recovered</name>
+									<script>local limb = matches[2]
+local damage = matches[3]
+if limb == "left leg" then
+	 snd.limblist_leftleg = snd.limblist_leftleg - damage
+	 cecho("&lt;cyan&gt;  TOTAL LEFT LEG DAMAGE: &lt;red&gt;" ..snd.limblist_leftleg) 
+elseif limb == "right leg" then 
+	snd.limblist_rightleg =  snd.limblist_rightleg - damage
+	cecho("&lt;cyan&gt;  TOTAL RIGHT LEG DAMAGE: &lt;red&gt;" ..snd.limblist_rightleg) 
+elseif limb == "torso" then
+	snd.limblist_torso = snd.limblist_torso - damage
+	cecho("&lt;cyan&gt;  TOTAL TORSO DAMAGE: &lt;red&gt;" ..snd.limblist_torso) 
+elseif limb == "head" then
+	snd.limblist_head = snd.limblist_head - damage
+	cecho("&lt;cyan&gt;  TOTAL HEAD DAMAGE: &lt;red&gt;" ..snd.limblist_head) 
+elseif limb == "left arm" then 
+	snd.limblist_leftarm = snd.limblist_leftarm - damage
+	cecho("&lt;cyan&gt;  TOTAL LEFT ARM DAMAGE: &lt;red&gt;" ..snd.limblist_leftarm) 
+elseif limb == "right arm" then
+	snd.limblist_rightarm = snd.limblist_rightarm - damage
+	cecho("&lt;cyan&gt;  TOTAL RIGHT ARM DAMAGE: &lt;red&gt;" ..snd.limblist_rightarm) 
+end
+
+snd.firstaidsalve()
+
+</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^Your (.*) has recovered (\d+)\% damage.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Bruising cure</name>
+									<script>local limb = matches[2]
+
+if limb == "head" then 
+	snd.aff_remove("head_bruised_critical")
+	snd.aff_remove("head_bruised_moderate")
+	snd.aff_remove("head_bruised")
+elseif limb == "left leg" then 
+	snd.aff_remove("left_leg_bruised_critical")
+	snd.aff_remove("left_leg_bruised_moderate")
+	snd.aff_remove("left_leg_bruised")
+elseif limb == "right leg" then 
+	snd.aff_remove("right_leg_bruised_critical")
+	snd.aff_remove("right_leg_bruised_moderate")
+	snd.aff_remove("right_leg_bruised")
+elseif limb == "torso" then 
+	snd.aff_remove("torso_bruised_critical")
+	snd.aff_remove("torso_bruised_moderate")
+	snd.aff_remove("torso_bruised")
+elseif limb == "right arm" then 
+	snd.aff_remove("right_arm_bruised_critical")
+	snd.aff_remove("right_arm_bruised_moderate")
+	snd.aff_remove("right_arm_bruised")
+elseif matches[2] == "left arm" then 
+	snd.aff_remove("left_arm_bruised_critical")
+	snd.aff_remove("left_arm_bruised_moderate")
+	snd.aff_remove("left_arm_bruised")
+end</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^You have completely cured the bruising on your (.*).$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -7947,12 +8170,13 @@ end</script>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>Hidden</name>
+									<name>Unknown afflict</name>
 									<script>snd.unknownquantity = snd.unknownquantity + 1
-if snd.toggles.active then
-	snd.hiddencheckfunc()
-end
-</script>
+	if not snd.have_aff("unknown") then
+		snd.have_aff("unknown")
+	end
+
+enableTrigger("Check after unknown")</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -7969,6 +8193,30 @@ end
 									<regexCodePropertyList>
 										<integer>3</integer>
 									</regexCodePropertyList>
+									<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+										<name>Check after unknown</name>
+										<script>
+if snd.toggles.active then
+	snd.hiddencheckfunc()
+end
+disableTrigger("Check after unknown")</script>
+										<triggerType>0</triggerType>
+										<conditonLineDelta>0</conditonLineDelta>
+										<mStayOpen>0</mStayOpen>
+										<mCommand></mCommand>
+										<packageName></packageName>
+										<mFgColor>#ff0000</mFgColor>
+										<mBgColor>#ffff00</mBgColor>
+										<mSoundFile></mSoundFile>
+										<colorTriggerFgColor>#000000</colorTriggerFgColor>
+										<colorTriggerBgColor>#000000</colorTriggerBgColor>
+										<regexCodeList>
+											<string></string>
+										</regexCodeList>
+										<regexCodePropertyList>
+											<integer>7</integer>
+										</regexCodePropertyList>
+									</Trigger>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Ascendril Hidden</name>
@@ -10363,6 +10611,7 @@ deleteLine()                            -- delete the previous line now
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Focus</name>
 							<script>snd.focus = false
+snd.focusrecheck = false
 snd.nextcurecheck = false
 if focusnextcuretimer_timer then killTimer(focusnextcuretimer_timer) end
 focusnextcuretimer_timer = tempTimer(1.4,[[snd.nextcurecheck = true]])
@@ -10370,7 +10619,9 @@ focusnextcuretimer_timer = tempTimer(1.4,[[snd.nextcurecheck = true]])
 snd.percentestmana = snd.percentestmana - 250
 if tonumber(snd.percentestmana) &lt;  0 then 
 	snd.percentestmana = 0
-end</script>
+end
+focusStopWatch = createStopWatch()
+</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -10387,6 +10638,42 @@ end</script>
 							<regexCodePropertyList>
 								<integer>1</integer>
 							</regexCodePropertyList>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>After focus</name>
+								<script>snd.healingcall = matches[2]
+if not table.isMember(snd.have_aff, snd.healingcall) and snd.aff_remove("unknown") then 
+	Msys.unknownquantity = Msys.unknownquantity - 1
+end
+if tonumber(snd.unknownquantity) &lt; 1 then
+	snd.aff_remove("unknown")
+end
+if string.find(snd.healingcall, "H:") then 
+	if tonumber(#snd.have_aff) &gt;= 1 then
+
+	for i = 1, tonumber(#snd.have_aff) do
+		if table.isMember(snd.focusaffs, snd.healingcall) then
+		 table.remove(snd.have_aff, i) 
+	end
+	end
+end
+end-- for matching prompt</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^(.*)$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Firstaid enabled</name>
@@ -10928,6 +11215,10 @@ send("config prettynumbers off", false)
 send("config color deathsight 11 1", false) -- this is if you want deathsight to actually go to the UI window for tracking
 send("config color shouts 4 6", false)
 enableTrigger("Hourglass Check Open", false)
+disableTimer("Stayconnected")
+disableTimer("Firstaidstatustimer")
+sndfirstaidstart()
+
 snd.class = gmcp.Char.Status.class
 snd.spectype = gmcp.Char.Status.spec
 snd.city = gmcp.Char.Status.city
@@ -20711,8 +21002,8 @@ end</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Welt cooldown tracking</name>
 									<script>if matches[2] == snd.target then
-	snd.welt_ready = false
-  tempTimer(5, [[snd.welt_ready = true]])
+	snd.welt_ready = matches[3]
+  tempTimer(5, [[snd.welt_ready = "none"]])
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -20726,6 +21017,30 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>A throbbing welt forms on (\w+)'s (.+).</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Welt Proc</name>
+									<script>if matches[2] == snd.target then
+  snd.last_hit_limb = matches[4]
+ 	snd.last_limb_dmg = 6.49
+	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+ end</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^(\w+) winces as (her|his) (.+) throbs from duress.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
