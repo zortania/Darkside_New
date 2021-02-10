@@ -321,6 +321,7 @@ rage = true,
 lycberserk = true,
 shed = true,
 pendulum = true,
+reset_cures = true,
 
 }
 
@@ -2037,30 +2038,38 @@ end</script>
 							<script>
 function snd.core()
 if not snd.channeling then
- if snd.toggles.active and snd.have_aff("asthma") and snd.have_aff("slickness") then
-  snd.need_fitness = true
- else
-  snd.need_fitness = false
- end
- if snd.toggles.active and snd.toggles.parrying and snd.offense_loaded then
-  snd.parry()
- end
- if snd.toggles.active and snd.emptypipe ~= "none" and not snd.waiting.lighting and snd.can_cast() then
-  snd.send("outc "..snd.emptypipe..snd.sep.."put "..snd.emptypipe.." in emptypipe")
-	snd.waiting.lighting = true
-	tempTimer(snd.delay(), [[snd.waiting.lighting = false]])
- end
- snd.def_check()
- snd.aff_check()
- if snd.toggles.active and snd.healing_loaded then
-  if snd.have_aff("asleep") and snd.toggles.standing then
-   snd.send("wake")
+ if snd.toggles.active then
+    if snd.have_aff("asthma") and snd.have_aff("slickness") then
+      snd.need_fitness = true
+    else
+      snd.need_fitness = false
+    end
+    if snd.toggles.parrying and snd.offense_loaded then
+      snd.parry()
+    end
+    if snd.emptypipe ~= "none" and not snd.waiting.lighting and snd.can_cast() then
+      snd.send("outc "..snd.emptypipe..snd.sep.."put "..snd.emptypipe.." in emptypipe")
+	    snd.waiting.lighting = true
+	    tempTimer(snd.delay(), [[snd.waiting.lighting = false]])
+    end
+    snd.def_check()
+    snd.aff_check()
+    if snd.update_priority &gt; 0 then
+      if snd.setting_priority == "burnt_skin 1" then
+        snd.update_priority = 0
+      end
+      snd.firstaidresetlistnone()
+    end
+    if snd.healing_loaded then
+      if snd.have_aff("asleep") and snd.toggles.standing then
+        snd.send("wake")
+      end
+    end
+    if snd.functional() then
+      snd.do_queue()
+      snd.do_stuff()
+    end
   end
- end
- if snd.functional() then
-  snd.do_queue()
-  snd.do_stuff()
- end
 end
 end</script>
 							<eventHandlerList />
@@ -2083,6 +2092,7 @@ snd.priorities = {
 "scour",
 "rage",
 "aegis",
+"reset_cures",
  
 "attack",
  
@@ -2539,6 +2549,12 @@ function snd.do_queue()
       if snd.queued ~= nil then
         table.insert(snd.queue, "queue")
       end
+      if snd.update_priority &gt; 0 then
+        if snd.setting_priority == "burnt_skin 1" then
+          snd.update_priority = 0
+        end
+        snd.firstaidresetlistnone()
+      end
       if snd.bashing_loaded then
         if #snd.gathering &gt;= 1 then
           table.insert(snd.queue, "loot")
@@ -2613,6 +2629,13 @@ function snd.do_stuff()
     snd.do_rage()
    elseif i == "panacea" then
     snd.do_panacea()
+   elseif i == "reset_cures" then
+    if snd.update_priority &gt; 0 then
+      if snd.setting_priority == "burnt_skin 1" then
+        snd.update_priority = 0
+      end
+      snd.firstaidresetlistnone()
+    end
    else
     for _,z in pairs(snd.method_priority) do
      if snd.afflictions[i] ~= nil then
@@ -12158,14 +12181,14 @@ function snd.do_eat(current)
      snd.eat(current)
      return
     elseif snd.not_entangled() then
-     snd.send("outr "..snd.cur.herb)
+     snd.send("outc "..snd.cur.herb)
      return
     else
      return
     end
    elseif snd.not_entangled() then
     if snd.defenses[current] ~= nil then
-     snd.send("outr "..snd.cur.herb)
+     snd.send("outc "..snd.cur.herb)
      snd.eat(current)
     end
    else
@@ -12486,7 +12509,7 @@ function snd.do_tree(current)
    limb = true
   end
  end
- if not limb and snd.afflictions[current].state == "afflicted" and gmcp.Char.Vitals.tree == "1" and not snd.waiting.tree and snd.can_tattoo() then
+ if not limb and snd.afflictions[current].state == "afflicted" and gmcp.Char.Vitals.tree == "1" and not snd.waiting.tree and snd.can_tattoo() and not snd.have_aff("frostbrand") then
   snd.send("touch tree tattoo")
   echo("(touch tree tattoo)")
   snd.last_type = "tree"
@@ -14163,12 +14186,12 @@ function snd.firstaidresetlistnone()
     if snd.update_priority &gt; 0 then
       snd.send("firstaid priority " ..snd.setting_priority)
       snd.firstaid_go = false
-      tempTimer(snd.delay(), [[snd.firstaid_go = true]])
+      enableTimer("reset check")
+      tempTimer(.1, [[snd.firstaid_go = true]])
     end
   end 
   
 	snd.firstaidchangecure = false -- keep last
-  enableTimer("check status of firstaid reset")
 end</script>
 									<eventHandlerList />
 								</Script>
