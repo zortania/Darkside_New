@@ -211,7 +211,7 @@ atkecho = true, -- replace attack lines with shorthand
 newbie = false, -- use newbie bashing attacks
 scepter = false,
 torc = false, -- if you have the torc artifact
-zeal = false, -- use Templar zeal for bashing
+zeal = false, -- use Templar or Revenant-type zeal for bashing
 cobra = false, -- use of tekura cobra stance
 lightning = false, -- use Luminary lightning for bashing
 gallop = false, -- use gallop while pathing around
@@ -724,6 +724,14 @@ snd.landmarks = {
   
    if snd.class == "Indorani" then
     snd.defenses.def_shroud = snd.alternative_class_defenses.Indorani_shroud
+  end
+  
+  if snd.class == "Templar" then
+   snd.defenses.def_maingauche = snd.alternative_class_defenses.Templar_maingauche
+  end
+  
+  if snd.class == "Revenant" then
+   snd.defenses.def_maingauche = snd.alternative_class_defenses.Revenant_maingauche
   end
 
 
@@ -1582,7 +1590,8 @@ function snd.can_fitness()
  fitness_classes = {
   "Templar",
 	"Carnifex",
-	"Monk"
+	"Monk",
+  "Revenant"
  }
  if snd.not_aff("destroyed_throat") and
     hasSkill("Fitness") and
@@ -1605,7 +1614,7 @@ function snd.can_shrug()
 end
 
 function snd.can_rage()
- if snd.class == "Templar" and
+ if snd.class == "Templar" or snd.class == "Revenant" and
     hasSkill("Rage") and
 		snd.balance.rage then
 		return true
@@ -3562,8 +3571,8 @@ Luminary_constitution = {defense = "constitution", type = "normal", effect = "Pr
 Indorani_shroud = { defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "shroud"}, state = "down", needit = false, timer = createStopWatch(), skill = "Shroud" },
 Carnifex_shroud = {defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "soul shroud"}, state = "down", needit = false, timer = createStopWatch(), skill = "Shroud" },
 Syssin_shroud = { defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "conjure cloak"}, state = "down", needit = false, timer = createStopWatch(), skill = "Cloak" },
-
-
+Revenant_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "riving maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
+Templar_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "battlefury maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
 }
 
 
@@ -4145,12 +4154,12 @@ registerAnonymousEventHandler("sndNDB Check Highlight", "sndNDB_addHighlight")
 	local classList = {
 		"Ascendril", "Luminary", "Sentinel", "Shaman", "Zealot", "Templar",
 		"Monk", "Shapeshifter", "Syssin", "Wayfarer",
-		"Archivist", "Carnifex", "Indorani", "Praenomen", "Sciomancer", "Teradrim",
+		"Archivist", "Carnifex", "Indorani", "Praenomen", "Sciomancer", "Teradrim", "Revenant",
 	}
 	local classes = {
 		Ascendril = {}, Luminary = {}, Sentinel = {}, Shaman = {}, Zealot = {}, Templar = {},
 		Monk = {}, Shapeshifter = {}, Syssin = {}, Wayfarer = {}, 
-		Archivist = {}, Carnifex = {}, Indorani = {}, Praenomen = {}, Sciomancer = {}, Teradrim = {}, 
+		Archivist = {}, Carnifex = {}, Indorani = {}, Praenomen = {}, Sciomancer = {}, Teradrim = {}, Revenant = {},
 	}
 
 	for _, player in pairs(players) do
@@ -9279,6 +9288,7 @@ end</script>
 						<script>
 snd.class_list = {
 {class = "Templar", func = function(current) snd.templar_bash() end},
+{class = "Revenant", func = function(current) snd.revenant_bash() end},
 {class = "Luminary", func = function(current) snd.luminary_bash() end}, 
 {class = "Ascendril", func = function(current) snd.ascendril_bash() end},
 {class = "Zealot", func = function(current) snd.zealot_bash() end}, 
@@ -9354,6 +9364,29 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	     battack = "battlefury dsk "..snd.bashing.target.." sacrifice sacrifice"
 	  else
       battack = "battlefire cleanse left"..snd.sep.."battlefire cleanse right"..snd.sep.."battlefury dsk "..snd.bashing.target
+	  end
+  end
+ 
+end
+
+function snd.revenant_bash()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  if snd.toggles.zeal then
+    battack = "chirography empower left with duskosa"..snd.sep.."chirography empower left with duskosa"..snd.sep.."chirography empower left with duskosa"..snd.sep.."chirography empower left with duskosa"..snd.sep.."riving harrow "..snd.bashing.target
+  elseif snd.toggles.newbie then
+    battack = "riving rive "..snd.bashing.target
+  elseif snd.have_aff("blackout") and snd.shield_check() then
+		battack = "touch shield"
+	elseif snd.bashcounterattack and snd.shield_check() then
+			battack = "touch shield"
+	elseif snd.pushattack then
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
+  else
+    if hp &gt;= 65 then
+	     battack = "riving dsk "..snd.bashing.target.." duskosa duskosa"
+	  else
+      battack = "chirography cleanse left"..snd.sep.."chirography cleanse right"..snd.sep.."riving dsk "..snd.bashing.target
 	  end
   end
  
@@ -13314,7 +13347,10 @@ if snd.toggles.active then
 		snd.firstaidassShaman()			
 		
 	elseif snd.class_hitting == "syssin" and #snd.class_hitting &lt; 2 then
-		snd.firstaidassSyssin()	
+		snd.firstaidassSyssin()				
+		
+	elseif snd.class_hitting == "revenant" and #snd.class_hitting &lt; 2 then
+		snd.firstaidassRevenant()	
 		
 	end
 
@@ -15000,9 +15036,43 @@ def_levitation = "on",
 def_speed = "on",
 def_caloric = "on",
 def_nightsight = "on",
-def_lifevision = "on",
-def_overwatch = "on",
-def_insight = "on",
+--def_lifevision = "on",
+--def_overwatch = "on",
+--def_insight = "on",
+def_deafness = "on",
+def_blindness = "on",
+def_clarity = "on",
+def_warmth = "on",
+def_divert_melee = "on",
+def_dodge_melee = "on",
+def_clarity = "on",
+def_waterbreathing = "on",
+def_gripping = "on",
+def_fitness = "once",
+def_maingauche = "once",
+def_dodge_melee = "on",
+def_waterbreathing = "on"
+},
+
+
+
+revenant = {
+def_fangbarrier = "on",
+def_thirdeye = "on",
+def_mindseye_tattoo = "on",
+def_cloak_tattoo = "on",
+def_kola = "on",
+def_deathsight = "on",
+def_insomnia = "on",
+def_frost = "on",
+def_venom = "on",
+def_levitation = "on",
+def_speed = "on",
+def_caloric = "on",
+def_nightsight = "on",
+--def_lifevision = "on",
+--def_overwatch = "on",
+--def_insight = "on",
 def_deafness = "on",
 def_blindness = "on",
 def_clarity = "on",
@@ -15568,7 +15638,7 @@ function snd.parry()
         else
           snd.toparry = "head"
         end
-      elseif (snd.class_hitting == "teradrim" or snd.class_hitting == "templar") then
+      elseif (snd.class_hitting == "teradrim" or snd.class_hitting == "templar"or snd.class_hitting == "revenant") then
         if (snd.have_aff("left_leg_bruised") or snd.have_aff("left_leg_bruised_moderate") or snd.have_aff("left_leg_bruised_critical")) then
           snd.toparry = "left leg"
         elseif (snd.have_aff("right_leg_bruised") or snd.have_aff("right_leg_bruised_moderate") or snd.have_aff("right_leg_bruised_critical")) then
@@ -16185,6 +16255,7 @@ shifter = {"Ferality", "Shapeshifting", "Vocalizing"},
 wayfarer = {"Tenacity", "Wayfaring", "Fury"},
 templar = {"Battlefury", "Righteousness", "Bladefire"},
 carnifex = {"Savagery", "Deathlore", "Warhounds"},
+revenant = {"Riving", "Manifestation", "Chirography"},
 }</script>
 						<eventHandlerList />
 					</Script>
@@ -16699,6 +16770,9 @@ function snd.run_alerts()
 	 end
 	 if snd.class == "Templar" then
 	  snd.send("undefend")
+	 end
+	 if snd.class == "Revenant" then
+	  snd.send("unjuxtapose")
 	 end
   end
  else
