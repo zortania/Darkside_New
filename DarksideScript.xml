@@ -42,6 +42,14 @@
 --Starting work on merging more of Mazzsys curing into the system.
 --Welt tracking for Zealots.
 --Avoidance switching added.
+--Updated all limb broken affs to Sunder's new format to match the game better.
+--Added in Revenant/Warden defs.
+--Added in Revenant aliases converted from Templar ones.
+--Updated all writhe affs, too. Might have broken the old Skiva aliases.
+--Indorani cards updated to match Sunder
+--Updated parry/no_parry for new writhe and stuff.
+--Updated deffing up to new Sunder version, more slimlined.
+--Pondering updating to more slim-lined approach Bulrok/Stine started, script is in but no triggers yet.
 
 --5.07
 --Tracking for pendelum on both Zealot side and curing side.
@@ -1619,7 +1627,7 @@ end
 
 
 function snd.not_entangled()
- if snd.have_aff("grappled") or
+ if snd.have_aff("writhe_grappled") or
     snd.have_aff("writhe_web") or
     snd.have_aff("writhe_impaled") or
     snd.have_aff("writhe_grappled") then
@@ -10846,37 +10854,29 @@ snd.bashing_area_beginning_rooms ={
 					<Script isActive="yes" isFolder="no">
 						<name>setup</name>
 						<packageName></packageName>
-						<script>
-snd.gui_loaded = true
+						<script>local windowwidth, windowheight = getMainWindowSize()
+alteredwindowwidth = math.ceil(windowwidth*.08)
 
-if snd.gui_loaded then
-
-  local width, height = getMainWindowSize()
-  
-  snd.height = height
-  
-  snd.width_left = math.ceil(width*.08)--AKA 8% of the Mudlet screen size
-  snd.width_right = 400
-  
-  if snd.gui_loaded then
-    setBorderLeft(snd.width_left);
-    setBorderRight(snd.width_right); 
+snd.gui = {
+  enabled = true,
+  height = windowheight,
+  width_right = 400,
+  width_left = alteredwindowwidth,
+ 
+}
+    setBorderLeft(snd.gui.width_left);
+    setBorderRight(snd.gui.width_right); 
     
     rightContainer = Geyser.Container:new({
-        name = "rightContainer", x = -snd.width_right, y = 0,
-        width = snd.width_right, height = "100%",
+        name = "rightContainer", x = -snd.gui.width_right, y = 0,
+        width = snd.gui.width_right, height = "100%",
     });
-    
+
     leftContainer = Geyser.Container:new({
     		name = "leftContainer", x = 1, y = 0,
-    		width = snd.width_left-5, height = "100%",
+    		width = snd.gui.width_left-5, height = "100%",
     });
-  end
-
-else
-  setBorderLeft(0);
-  setBorderRight(0);
-end</script>
+</script>
 						<eventHandlerList />
 					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
@@ -10892,23 +10892,20 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>vitals</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
-  vitals = Geyser.Label:new({
+							<script>  vitals = Geyser.Label:new({
    name = "vitals",
    x = 0, y = 0,
    width = "100%", height = "5%",
    fgColor = "white",
   }, leftContainer);
   vitals:setFontSize(11)
-
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>wielding</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
-  wielding = Geyser.Label:new({
+							<script>  wielding = Geyser.Label:new({
    name = "wielding",
    x = 0, y = "5%",
    width = "100%", height = "3%",
@@ -10916,15 +10913,13 @@ end</script>
    message = [[wielding]],
   }, leftContainer);
   wielding:setFontSize(9)
-
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>time_update</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
-  time = Geyser.Label:new({
+							<script>  time = Geyser.Label:new({
    name = "time",
    x = 0, y = "8%",
    width = "100%", height = "1.75%",
@@ -10932,9 +10927,9 @@ end</script>
    message = [[time]],
   }, leftContainer);
   time:setFontSize(7.45)
-end
+
 function time_update()
-  if snd.gui_loaded then
+  if snd.gui.enabled then
     sendGMCP("IRE.Time.Request")
     
     local d = gmcp.IRE.Time.List.day
@@ -10985,7 +10980,7 @@ function time_update()
     		t = "Early evening"
     		time:setFontSize(7.45)
     	else 
-    		display(t)
+    		--This should only come about if they add a new time to the cycle.
     	end
     
     time:echo("&lt;center&gt;"..t.." "..m.."/"..d.."/"..y.."&lt;/center&gt;")
@@ -10998,7 +10993,7 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>my status</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   mystatus = Geyser.Label:new({
    name = "mystatus",
    x = 0, y = "10%",
@@ -11014,14 +11009,13 @@ end</script>
   		
   	]])
   mystatus:echo("&lt;center&gt;".."PASN".."&lt;/center&gt;\n&lt;center&gt;prone&lt;/center&gt;")
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>my limbs</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
-  mylimbs = Geyser.Label:new({
+							<script>  mylimbs = Geyser.Label:new({
    name = "mylimbs",
    x = 0, y = "20%",
    width = "35%", height = "10%",
@@ -11036,13 +11030,13 @@ end</script>
   		
   	]])
   mylimbs:echo("&lt;center&gt;0&lt;/center&gt;\n&lt;center&gt;/|\\&lt;/center&gt;\n&lt;center&gt;/\\&lt;/center&gt;")
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>my affs</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   myaffs = Geyser.Label:new({
    name = "myaffs",
    x = "35%", y = "10%",
@@ -11056,7 +11050,7 @@ end</script>
   border-style: solid;
   border-color: DarkCyan;
   ]])
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -11076,7 +11070,7 @@ enemy:echo("&lt;center&gt;Target:&lt;/center&gt;")</script>
 						<Script isActive="yes" isFolder="no">
 							<name>enemy status</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   estatus = Geyser.Label:new({
    name = "estatus",
    x = 0, y = "33%",
@@ -11092,13 +11086,13 @@ enemy:echo("&lt;center&gt;Target:&lt;/center&gt;")</script>
   		
   	]])
   estatus:echo("&lt;center&gt;".."PASN".."&lt;/center&gt;\n&lt;center&gt;prone&lt;/center&gt;")
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>enemy limbs</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   elimbs = Geyser.Label:new({
    name = "elimbs",
    x = 0, y = "44.5%",
@@ -11115,14 +11109,13 @@ end</script>
   	]])
   --border-radius: 10px;
   elimbs:echo("&lt;center&gt;0&lt;/center&gt;\n&lt;center&gt;/|\\&lt;/center&gt;\n&lt;center&gt;/\\&lt;/center&gt;")
-end
 </script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>enemy affs</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   eaffs = Geyser.Label:new({
    name = "eaffs",
    x = "35%", y = "33%",
@@ -11136,13 +11129,13 @@ end
   border-style: solid;
   border-color: DarkSlateBlue;
   ]])
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>toggles</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   toggles = Geyser.MiniConsole:new({
    name = "toggles",
    x = 0, y = "57.5%",
@@ -11159,13 +11152,13 @@ end</script>
   toggles:echo("\ndispersing")
 
   --toggles:echo("attacking\n&lt;center&gt;&lt;/center&gt;bashing\n&lt;center&gt;&lt;/center&gt;fasthunt")
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>toggles2</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   toggles2 = Geyser.MiniConsole:new({
    name = "toggles2",
    x = "50%", y = "57.5%",
@@ -11180,7 +11173,7 @@ end</script>
   toggles2:echo("\nlistening")
   toggles2:echo("\nchameleon")
   --toggles2:echo("affcalling\n&lt;center&gt;&lt;/center&gt;calling\n&lt;center&gt;&lt;/center&gt;listening")
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -11201,7 +11194,7 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>exits</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   exits = Geyser.Label:new({
    name = "exits",
    x = 0, y = "72%",
@@ -11209,21 +11202,25 @@ end</script>
    color = "midnight_blue", fgColor = "white",
    message = [[exits]],
   }, leftContainer);
-
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>spirit in room</name>
 							<packageName></packageName>
 							<script>
-spirit_people = Geyser.Label:new({
- name = "spirit_people",
- x = 0, y = "80%",
- width = "50%", height = "18%",
- color = "steel_blue", fgColor = "black",
- message = [[Spirit]],
-}, leftContainer);
+  spirit_people = Geyser.Label:new({
+   name = "spirit_people",
+   x = 0, y = "75%",
+   width = "50%", height = "25%",
+   color = "SlateGray", fgColor = "DeepSkyBlue",
+   message = [[&lt;center&gt;Spirit&lt;\center&gt;]],
+  }, leftContainer);
+      spirit_people:setStyleSheet([[
+  border-width: 3px;
+  border-style: solid;
+  border-color: SlateGray;
+  ]])
 </script>
 							<eventHandlerList />
 						</Script>
@@ -11231,8 +11228,6 @@ spirit_people = Geyser.Label:new({
 							<name>shadow in room</name>
 							<packageName></packageName>
 							<script>
-
-if snd.gui_loaded then
   shadow_people = Geyser.Label:new({
    name = "shadow_people",
    x = "-50%", y = "75%",
@@ -11245,7 +11240,7 @@ if snd.gui_loaded then
   border-style: solid;
   border-color: SlateGray;
   ]])
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -11395,7 +11390,7 @@ for _, v in ipairs(snd.entangleaffs) do
 	end
 end
 
-if snd.target_prone or snd.checkAff("prone") then 
+if snd.checkAff("fallen") then 
 	snd.display.enemy_prone_color = "red" 
 elseif pseudo_check then
 	snd.display.enemy_prone_color = "yellow" 
@@ -11428,7 +11423,7 @@ if snd.limb_status["left leg"] == "mangled" then
 	snd.display.enemy_leftleg_color = "red" 
 elseif snd.limb_status["left leg"] == "broken" then 
 	snd.display.enemy_leftleg_color = "gold" 
-elseif snd.checkAff("a broken left leg") then
+elseif snd.checkAff("left_leg_broken") then
 	snd.display.enemy_leftleg_color = "green" 
 else
 	snd.display.enemy_leftleg_color = "white"
@@ -11438,7 +11433,7 @@ if snd.limb_status["right leg"] == "mangled" then
 	snd.display.enemy_rightleg_color = "red" 
 elseif snd.limb_status["right leg"] == "broken" then 
 	snd.display.enemy_rightleg_color = "gold" 
-elseif snd.checkAff("a broken right leg") then
+elseif snd.checkAff("right_leg_broken") then
 	snd.display.enemy_rightleg_color = "green" 
 else
 	snd.display.enemy_rightleg_color = "white"
@@ -11448,7 +11443,7 @@ if snd.limb_status["left arm"] == "mangled" then
 	snd.display.enemy_leftarm_color = "red" 
 elseif snd.limb_status["left arm"] == "broken" then 
 	snd.display.enemy_leftarm_color = "gold" 
-elseif snd.checkAff("a broken left arm") then
+elseif snd.checkAff("left_arm_broken") then
 	snd.display.enemy_leftarm_color = "green" 
 else
 	snd.display.enemy_leftarm_color = "white"
@@ -11458,7 +11453,7 @@ if snd.limb_status["right arm"] == "mangled" then
 	snd.display.enemy_rightarm_color = "red" 
 elseif snd.limb_status["right arm"] == "broken" then 
 	snd.display.enemy_rightarm_color = "gold" 
-elseif snd.checkAff("a broken right arm") then
+elseif snd.checkAff("right_arm_broken") then
 	snd.display.enemy_rightarm_color = "green" 
 else
 	snd.display.enemy_rightarm_color = "white"
@@ -11573,7 +11568,9 @@ end</script>
 				aff_check = aff_check:gsub("_", " ")
 				aff_check = aff_check:gsub("left", "L")
 				aff_check = aff_check:gsub("right", "R")
-				if snd.afflictions[aff]["cures"]["herb"] ~= nil or snd.afflictions[aff]["cures"]["salve"] ~= nil or snd.afflictions[aff]["cures"]["smoke"] ~= nil then
+				if snd.afflictions[aff]["cures"]["herb"] ~= nil or 
+        snd.afflictions[aff]["cures"]["salve"] ~= nil or 
+        snd.afflictions[aff]["cures"]["smoke"] ~= nil then
      			table.insert(self_display_table, "&lt;center&gt;"..aff_check.."&lt;/center&gt;")
 				end
 			end
@@ -11620,11 +11617,7 @@ If you change one of the values to something it shouldn't be, you could break it
 ]]
 
 --This is where you tell it to use tabbed chat.
-if snd.gui_loaded then
   demonnic.chat.use = true
-else
-  demonnic.chat.use = false
-end
 --[[
 This is where you put what container to put the tabbed chat stuff into. Make it
 equal to the actual container object you want it in, or false for none. Defaults to false
@@ -11764,7 +11757,8 @@ Number of lines of chat visible at once.
 Will determine how tall the window for the chats is.
 ]]
 
-demonnic.chat.config.lines = ((snd.height/2) / 17)
+local x, y = getMainWindowSize()
+demonnic.chat.config.lines = ((y/2) / 17)
 
 --[[
 Number of characters to wrap the chatlines at.
@@ -12248,13 +12242,12 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>map window</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
-  mapper = Geyser.Mapper:new({
+							<script>  mapper = Geyser.Mapper:new({
   name = "mapper",
   x = 0, y = "50%",
   width = "100%", height = "50%",
   }, rightContainer);
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -12265,9 +12258,50 @@ end</script>
 function snd.set_vitals()
  local class = snd.assumed_class or gmcp.Char.Status.class
  local string = "&lt;center&gt;"..gmcp.Char.Status.name.."&lt;/center&gt;\n&lt;center&gt;"..class.."&lt;/center&gt;"
- if snd.gui_loaded then 
+ if snd.gui.enabled then 
   vitals:echo(string)
  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Toggles</name>
+						<packageName></packageName>
+						<script>function snd.updateToggles()
+
+  toggles:clear()
+  toggles2:clear()
+  
+  local tgs = {"attacking", "bashing", "fasthunt", "questing",  "dispersing"}
+  
+  for tog in pairs(tgs) do
+    if snd.toggles[tgs[tog]] then
+      if tgs[tog] == "dispersing" then
+        if snd.disperse == "callers" then
+    			toggles:cecho("\n&lt;yellow&gt;dispersing")
+    		elseif snd.disperse == "all" then
+    			toggles:cecho("\n&lt;green&gt;dispersing")
+        else
+          toggles:cecho("\n&lt;red&gt;dispersing")
+        end
+      else
+        toggles:cecho("\n&lt;green&gt;" .. tgs[tog])
+      end
+    else
+      toggles:cecho("\n&lt;red&gt;" .. tgs[tog])
+    end
+  end
+  
+  tgs = {"affcalling", "calling", "listening", "chameleon"}
+  
+  for tog in pairs(tgs) do
+    if snd.toggles[tgs[tog]] then
+      toggles2:cecho("\n&lt;green&gt;" .. tgs[tog])
+    else
+      toggles2:cecho("\n&lt;red&gt;" .. tgs[tog])
+    end
+  end
+  
 end</script>
 						<eventHandlerList />
 					</Script>
@@ -15905,10 +15939,10 @@ squelched = "selarnia",
 disfigurement = "monkshood",
 
 thin_blood = "scytherus",
-["a broken left leg"] = "epseth",
-["a broken right leg"] = "epseth",
-["a broken left arm"] = "epteth",
-["a broken right arm"] = "epteth",
+left_leg_broken = "epseth",
+right_leg_broken = "epseth",
+left_arm_broken = "epteth",
+right_arm_broken = "epteth",
 
 rend = "rend",
 
@@ -16140,12 +16174,12 @@ focus = {
 
 snd.entangleaffs = {
   "transfixed",
-	"impaled",
+	"writhe_impaled",
 	"webbed",
-	"thighlock",
-	"armpitlock",
-	"necklock",
-	"feed",
+	"writhe_thighlock",
+	"writhe_armpitlock",
+	"writhe_necklock",
+	"writhe_feed",
  }
 
 
@@ -16253,6 +16287,8 @@ end
 
 function snd.target_got(affliction)
   local target_display_table = {}
+  affliction = snd.affNameCheck(affliction)
+
   if snd.checkAff(affliction) and affliction ~= "a broken leg" and affliction ~= "a broken arm" then
     return
   end
@@ -16271,30 +16307,34 @@ function snd.target_got(affliction)
   
   if affliction == "a broken leg" and snd.checkAff("a broken leg") then
     snd.target_cured("a broken leg")
-    affliction = "a broken right leg"
-    snd.target_got("a broken left leg")
+    affliction = "right_leg_broken"
+    snd.target_got("left_leg_broken")
   end
   
-  if affliction == "a broken leg" and snd.checksomeAffs({"a broken left leg", "a broken right leg"},1) then
-    if snd.checkAff("a broken right leg") then
-      affliction = "a broken left leg"
+  if affliction == "a broken leg" and snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1) then
+    if snd.checkAff("right_leg_broken") then
+      affliction = "left_leg_broken"
     else
-      affliction = "a broken right leg"
+      affliction = "right_leg_broken"
     end
   end
   
   if affliction == "a broken arm" and snd.checkAff("a broken arm") then
     snd.target_cured("a broken arm")
-    affliction = "a broken right arm"
-    snd.target_got("a broken left arm")
+    affliction = "right_arm_broken"
+    snd.target_got("left_arm_broken")
   end
   
-    if affliction == "a broken arm" and snd.checksomeAffs({"a broken left arm", "a broken right arm"},1) then
-    if snd.checkAff("a broken right arm") then
-      affliction = "a broken left arm"
+  if affliction == "a broken arm" and snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},1) then
+    if snd.checkAff("right_arm_broken") then
+      affliction = "left_arm_broken"
     else
-      affliction = "a broken right arm"
+      affliction = "right_arm_broken"
     end
+  end
+
+  if affliction == "crippled_body" then
+    snd.target_cured("crippled")
   end
   
   table.insert(snd.target_has, affliction)
@@ -16321,14 +16361,18 @@ function snd.target_got(affliction)
 end
 
 function snd.target_cured(affliction)
+
   local target_display_table = {}
   local target_aff_check = {}
+  
+  affliction = snd.affNameCheck(affliction)
+
   if affliction == "paralysis" then
     snd.target_cured("paresis")
   end
-  if affliction == "anorexia" then
-    snd.target_cured("voyria")
-  end
+  --if affliction == "anorexia" then
+  --  snd.target_cured("voyria")
+  --end
   if affliction == "shivering" then
     snd.target_cured("frozen")
   end
@@ -16336,10 +16380,18 @@ function snd.target_cured(affliction)
     snd.target_cured("soulburn")
   end
   
-	if snd.checkAff("a broken arm") and (affliction == "a broken right arm" or affliction == "a broken left arm") and not snd.checkAff(affliction) then
+  if affliction == "cold" then
+    if snd.checkAff("ice_encased") then snd.target_cured("ice_encased")
+    elseif snd.checkAff("frozen") then snd.target_cured("frozen")
+    elseif snd.checkAff("shivering") then snd.target_cured("shivering")
+    elseif snd.checkAff("no_caloric") then snd.target_cured("no_caloric")
+    end
+  end 
+  
+	if snd.checkAff("a broken arm") and (affliction == "right_arm_broken" or affliction == "left_arm_broken") and not snd.checkAff(affliction) then
 		affliction = "a broken arm"
 	end
-	if snd.checkAff("a broken leg") and (affliction == "a broken right leg" or affliction == "a broken left leg") and not snd.checkAff(affliction) then
+	if snd.checkAff("a broken leg") and (affliction == "right_leg_broken" or affliction == "left_leg_broken") and not snd.checkAff(affliction) then
 		affliction = "a broken leg"
 	end
   
@@ -16874,26 +16926,26 @@ function snd.missingAff(list, separator)
 end
 
 function snd.no_parry()
- no_parry = false
- noparryaffs = {
+ local no_parry = false
+ local noparryaffs = {
   "distortion",
   "frozen",
   "punished_arms",
   "paresis",
   "paralysis",
   "asleep",
-  "webbed",
-	"impaled",
-	"thighlock",
-	"armpitlock",
-	"necklock",
-  "ropes",
+	"writhe_transfix",
+	"writhe_web",
+  "writhe_feed",
+	"writhe_impaled",
+	"writhe_thighlock",
+	"writhe_armpitlock",
+	"writhe_necklock",
+  "writhe_ropes",
+  "writhe_vines",
  }
- for aff in pairs(noparryaffs) do
-  if snd.checkAff(noparryaffs[aff]) then
-	 no_parry = true
-	end
- end
+ if not snd.checksomeAffs(noparryaffs, 1) then no_parry = true end
+ 
  if (snd.limb_dmg["left arm"] &gt;= 33.33) and (snd.limb_dmg["right arm"] &gt;= 33.33) then
   no_parry = true
  end
@@ -16901,44 +16953,40 @@ function snd.no_parry()
 end
 
 function snd.proned()
- prone = false
- if snd.target_prone then
-  prone = true
- end
- proneaffs = {
+ local prone = false
+ local proneaffs = {
   "frozen",
   "indifference",
+  "paralysis",
+	"writhe_transfix",
+	"writhe_web",
+  "writhe_feed",
+	"writhe_impaled",
+	"writhe_thighlock",
+	"writhe_armpitlock",
+	"writhe_necklock",
+  "writhe_ropes",
+  "writhe_vines",
+  "fallen",
   "asleep",
-	"paralysis",
-	"transfixed",
-	"webbed",
-	"impaled",
-	"thighlock",
-	"armpitlock",
-	"necklock",
-  "ropes",
  }
- for aff in pairs(proneaffs) do
-  if snd.checkAff(proneaffs[aff]) then
-	 prone = true
-	end
- end
+ if snd.checksomeAffs(proneaffs, 1) then prone = true end
  return prone
 end
 
 function snd.venomEffect(venom)
 	local aff = ""
 	if venom == "epseth" then
-		if snd.checkAff("a broken left leg") then
-			aff = "a broken right leg"
+		if snd.checkAff("left_leg_broken") then
+			aff = "right_leg_broken"
 		else
-			aff = "a broken left leg"
+			aff = "left_leg_broken"
 		end
 	elseif venom == "epteth" then
-		if snd.checkAff("a broken left arm") then
-			aff = "a broken right arm"
+		if snd.checkAff("left_arm_broken") then
+			aff = "right_arm_broken"
 		else
-			aff = "a broken left arm"
+			aff = "left_arm_broken"
 		end
 	elseif venom == "prefarar" then
 		if snd.checkAff("hearing") then
@@ -19266,6 +19314,7 @@ snd.impress_attacks = {
 		"berserking",
 		"frozen",
 		"shivering",
+    "ambush",
 }
 
 snd.dhuriv_first = {
@@ -19279,6 +19328,7 @@ snd.dhuriv_first = {
 		"throatcrush",
 		"daunt",
 		"icewyrm",
+    "ambush",
 }
 
 snd.dhuriv_second = {
@@ -19305,10 +19355,11 @@ snd.dhuriv_attacks = {
 		berserking = "daunt",
 		frozen = "icewyrm",
 		shivering = "icewyrm",
+    ambush = "ambush",
 }
 
 snd.daunt_animals = {
-		["claustrophobia"] = "order bear daunt ",
+		["claustrophobia"] = "order direwolf daunt ",
 		["agoraphobia"] = "order raloth daunt ",
 		["loneliness"] = "order crocodile daunt ",
 		["berserking"] = "order cockatrice daunt ",
@@ -19323,19 +19374,47 @@ function Sentinel_Attack_Choice(giving, left, right) -- requires to be sent a li
 	  if snd.parried_limb == "left leg" then snd.dhuriv_attacks["lethargy"] = "weaken right leg" end --check if parrying
 
 		local right_venom_only = false -- used for when we choose a daunt aff
-
-		local missing = snd.missingAff("paresis/asthma/slickness", "/")
 		
-----------An example of how you might change your aff list. If current offense mode is mentals(sentinel), we want to make sure
+----------An example of how you might change your aff list. If current offense mode is mental affs, we want to make sure
 ----------they have impatience, so check if they have impatience and paresis. If no to both, add paresis to top of stack.
 	
 		if not snd.checksomeAffs({"paresis", "impatience"}, 1) and snd.current_offense == "SentMental" then
 			table.insert(giving, 1, "paresis")
 		end
 		
-		if #missing == 0 and snd.current_offense == "SentVLock" then --and (snd.checkAff("clumsiness") or snd.checkAff("weariness"))
-			table.insert(giving, 1, "destroyed_throat")
+		if snd.current_offense == "SentVLock" then
+		
+			local missing = snd.missingAff("asthma/slickness", "/")
+		
+  		if #missing == 0 and snd.no_parry() and snd.checksomeAffs({"weariness", "clumsiness", "hypochondria"}, 1) then
+  			table.insert(giving, 1, "destroyed_throat")
+  		end
+			
+			if not snd.checkAff("destroyed_throat") and snd.checkAff("anorexia") then
+				table.insert(giving, 1, "impatience")
+				table.insert(giving, 1, "stupidity")
+			end
+	
 		end
+		
+		if snd.current_offense == "SentImpale" or snd.current_offense == "SentSalve" then
+				
+			if not snd.enemy_restoration_balance and snd.no_parry() then
+				table.insert(giving, 1, "destroyed_throat")
+			end
+		
+		end
+    
+    if snd.current_offense == "SentLumiSupport" then
+			if not snd.checkAff("destroyed_throat") and snd.checkAff("anorexia") then
+				table.insert(giving, 1, "impatience")
+				table.insert(giving, 1, "stupidity")
+			end   
+
+		end
+    
+    
+
 		
 		
 ----------Below here the function picks affs for you based on your aff list sent over and any changes made by checks above.
@@ -19345,7 +19424,6 @@ function Sentinel_Attack_Choice(giving, left, right) -- requires to be sent a li
 				if left == "none" then
 					if snd.used.shield or snd.used.rebounding then
 						left = "reave"
-
 					elseif table.contains(snd.dhuriv_first, snd.dhuriv_attacks[v]) then
 			  			left = v
 							if left == "destroyed_throat" then right = nil end
@@ -19388,26 +19466,41 @@ function Sentinel_Attack_Choice(giving, left, right) -- requires to be sent a li
 						<Script isActive="yes" isFolder="no">
 							<name>Indorani card table</name>
 							<packageName></packageName>
-							<script>snd.indorani_cards = { 
-	stupidity = "moon",
-	confusion = "moon",
-	epilepsy = "moon",
-	anorexia = "moon",
-	berserking = "moon",
-	weariness = "moon",
-	impatience = "moon",
-	recklessness = "moon",
+							<script>--Nested tables incase someone wants to add a devil y/n field to cards and change picking based on it, though so few use it that it may not come to fruition.
 
-	paresis = "sun",
-	asthma = "sun",
-	clumsiness = "sun",
-	vomiting = "sun",
-	lethargy = "sun",
-	sensitivity = "sun",
-	hearing = "sun",
-	hypersomnia = "sun",
-	superstition = "sun",
+snd.indorani_cards = { 
+	stupidity = {card = "moon"},
+	confusion = {card = "moon"},
+	epilepsy = {card = "moon"},
+	anorexia = {card = "moon"},
+	berserking = {card = "moon"},
+	weariness = {card = "moon"},
+	impatience = {card = "moon"},
+	recklessness = {card = "moon"},
+
+	paresis = {card = "sun"},
+	asthma = {card = "sun"},
+	clumsiness = {card = "sun"},
+	vomiting = {card = "sun"},
+	lethargy = {card = "sun"},
+	sensitivity = {card = "sun"},
+	hearing = {card = "sun"},
+	hypersomnia = {card = "sun"},
+	superstition = {card = "sun"},
+  
+  prone = {card = "hangedman"},
+  writhe_ropes = {card = "hangedman"},
 	
+  justice = {card = "justice"},
+  
+  lovers_effect = {card = "lovers"},
+  
+  wheel = {card = "wheel"},
+  
+  slickness = {card = "adder"},
+  haemophilia = {card = "adder"},
+  
+  aeon = {card = "aeon"},
 }</script>
 							<eventHandlerList />
 						</Script>
@@ -19579,6 +19672,7 @@ snd.empower_attacks = {
 		["crippled"] = "cripple",
 		["crippled body"] = "cripple",
     ["paresis"] = "curare",
+    ["hemorrhage"] = "hemorrhage",
 }
 </script>
 							<eventHandlerList />
@@ -19601,6 +19695,8 @@ snd.actuate_attacks = {
 		["crippled"] = "azu",
 		["crippled body"] = "azu",
     ["paresis"] = "curare",
+    ["hemorrhage"] = "wilave",
+    ["wilave"] = "wilave",
 }
 </script>
 							<eventHandlerList />
