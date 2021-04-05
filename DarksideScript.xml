@@ -233,10 +233,11 @@ rockharvest = false, -- are you harvesting rocks?
 roe = false, -- harvesting fishroe
 cham = false, -- chameleon system
 support = false, -- if you want to use a support system or not
+disperse = false, -- use disperse to remove writhes from allies
 questing = false, -- questing turns on or off, prevents the auto-questing spam from before
-dison = false, -- dispersing toggle
 farm = false, -- farming
-goggle_level = 9,
+goggle_level = 0,
+gauntlet_level = 0,
 nontargetgags = true, -- spam filter for removing non-target curing
 aegis = false,
 auto_reject = false,
@@ -801,7 +802,7 @@ function gmcp_room()
 	for ex in pairs(gmcp.Room.Info.exits) do
 	 table.insert(snd.my.room_exits, ex)
 	end
-	if snd.gui_loaded then
+	if snd.gui.enabled then
 	 if #snd.my.room_exits &gt;= 1 then
 	  exits:echo("&lt;center&gt;"..table.concat(snd.my.room_exits, ", ").."&lt;/center&gt;")
 	 else
@@ -835,12 +836,6 @@ function gmcp_room()
    if snd.my.room == 16949 then
     snd.send("pull lever")
    end
-  -- if snd.my.room == 51224 then
-  --  snd.send("qeb fly")
-  -- end
-  -- if snd.my.room == 53828 then
-  --  snd.sned("qeb land")
-  -- end
 	end
 	if snd.offense_loaded then
 	 snd.class_hitting = "none"
@@ -1152,14 +1147,14 @@ end</script>
 	end
 	
 	if #spiritpeoplehere &gt;= 1 then
-   if snd.gui_loaded then
+   if snd.gui.enabled then
 	  spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
    end
 	 snd.spirit_targets = spiritpeoplehere
   end
 	
 	if #shadowpeoplehere &gt;= 1 then
-	 if snd.gui_loaded then
+	 if snd.gui.enabled then
     shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
    end
 	 snd.shadow_targets = shadowpeoplehere
@@ -1263,7 +1258,10 @@ end
     "Jinjin",
     "Micotetotl",
     "Hob",
-    "Saaik",}
+    "Saaik",
+    "Eddan",
+    "Gorwin",
+    "Trudd",}
   if table.isMember(mobs_to_ignore, talker) then return end
   
   if channel:find("clt") then channel = "clt" end
@@ -1275,7 +1273,7 @@ end
 	hints = true,
 }
 
---will maybe be useful at some point but not used right now. Not sure how to append a specific set of text that isn't gotten through the append func.
+--will maybe be useful at some point but not used right now.
 --text = string.gsub (text, string.char (27) .. "%[(.-)m", "") &lt;- removes extraneous data from raw gmcp data
 --demonnic.chat:append(snd.channel_list[channel], text)
 
@@ -1293,7 +1291,7 @@ end
 	["says"] = "Local",
 	["ot"] = "Order",
   ["cot"] = "Order",
-
+  ["congregation"] = "Order",
 }
 
 	if channel == "web" and snd.toggles.listening and table.contains(snd.callers, talker) then
@@ -1409,34 +1407,36 @@ end</script>
 							<packageName></packageName>
 							<script>
 function snd.message(string, type)
- if type == "atk" then
-  color = "magenta"
- elseif type == "death" then
-  color = "red"
- elseif type == "q" then
-  color = "brown"
- elseif type == "balance" then
-  color = "orange"
- elseif type == "level" then
-  color = "yellow"
- elseif type == "reset" then
-  color = "brown"
- elseif type == "affliction" then
-  color = "blue"
-elseif type == "dendara" then
-  color = "green"
- else
-  color = "white"
- end
- if type == "toggle" or type == "echo" then
-  line = ""
- else
-  line = "\n"
- end
- cecho(line.."&lt;green&gt;[&lt;white&gt;SND&lt;green&gt;]&lt;"..color.."&gt; "..string)
- if type == "reset" then
-  send(" ")
- end
+  if snd.gui.enabled then
+    if type == "atk" then
+      color = "magenta"
+    elseif type == "death" then
+      color = "red"
+    elseif type == "q" then
+      color = "brown"
+    elseif type == "balance" then
+      color = "orange"
+    elseif type == "level" then
+      color = "yellow"
+    elseif type == "reset" then
+      color = "brown"
+    elseif type == "affliction" then
+      color = "blue"
+    elseif type == "dendara" then
+      color = "green"
+    else
+      color = "white"
+    end
+    if type == "toggle" or type == "echo" then
+      line = ""
+    else
+      line = "\n"
+    end
+    cecho(line.."&lt;green&gt;[&lt;white&gt;SND&lt;green&gt;]&lt;"..color.."&gt; "..string)
+    if type == "reset" then
+      send(" ")
+    end
+  end
 end
 
 function snd.attack_hit(attack, target)
@@ -1879,40 +1879,43 @@ function snd.changeClass()
  elseif snd.city == "Enorian" or snd.city == "Duiran" then
   snd.faction = "spirit"
  end
- if snd.gui_loaded then
+ if snd.gui.enabled then
   snd.set_vitals()
  end
  expandAlias("ldd none", false)
 end
 
-function snd.updateItems()
+function snd.updateMonolith()
  if snd.items["a monolith sigil"] ~= nil then
   snd.monolith = true
  else
   snd.monolith = false
  end
- if snd.gui_loaded then
-  if snd.monolith then
-	 monolith:setColor("medium_sea_green")
-	else
-	 monolith:setColor("firebrick")
-	end
-	if snd.wielded.left.name == "" and snd.wielded.right.name == "" then
-	 wielding:echo("&lt;center&gt;empty hands&lt;/center&gt;")
-	else
-	 local string = ""
-	 if snd.wielded.left.name ~= "" then
-	  string = string.."&lt;center&gt;"..snd.weaponType(snd.wielded.left.name).."&lt;/center&gt;"
-	 end
-	 if snd.wielded.right.name ~= "" then
-	  string = string.."\n&lt;center&gt;"..snd.weaponType(snd.wielded.right.name).."&lt;/center&gt;"
-	 end
-	 wielding:echo(string)
-	end
- end
- if snd.questing_loaded then
-  snd.runQuests()
- end
+end
+
+function snd.updateItems()
+  if snd.gui.enabled then
+    if snd.monolith then
+      monolith:setColor("medium_sea_green")
+    else
+      monolith:setColor("firebrick")
+    end
+    if snd.wielded.left.name == "" and snd.wielded.right.name == "" then
+      wielding:echo("&lt;center&gt;empty hands&lt;/center&gt;")
+    else
+      local string = ""
+      if snd.wielded.left.name ~= "" then
+        string = string.."&lt;center&gt;"..snd.weaponType(snd.wielded.left.name).."&lt;/center&gt;"
+      end
+      if snd.wielded.right.name ~= "" then
+        string = string.."\n&lt;center&gt;"..snd.weaponType(snd.wielded.right.name).."&lt;/center&gt;"
+      end
+      wielding:echo(string)
+    end
+  end
+  if snd.questing_loaded then
+    snd.runQuests()
+  end
 end
 
 function snd.weaponType(weapon)
@@ -3090,7 +3093,7 @@ aff_writhe_stasis = {state = "healed", effect = "can't move, can attack", cures 
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>give/take</name>
+								<name>give/take afflictions</name>
 								<packageName></packageName>
 								<script>
 function snd.aff_check()
@@ -3104,6 +3107,7 @@ function snd.aff_check()
   end
  end
 end
+
 function snd.aff_timeout(affliction)
  snd.afflictions[affliction].state = "afflicted"
  snd.message("[Resetting: &lt;white&gt;"..affliction.."&lt;brown&gt;]", "reset")
@@ -3130,7 +3134,7 @@ function snd.aff_gain(affliction)
   if snd.allergyTimer then killTimer(snd.allergyTimer) end
 	snd.allergyTimer = tempTimer(18, [[if snd.have_aff("allergies") then snd.send("firstaid elevate allergies") end]])
  end
- if snd.gui_loaded then 
+ if snd.gui.enabled then 
   display_my_affs()
   color_self_limbs()
  end
@@ -3177,7 +3181,7 @@ function snd.aff_have(affliction)
  end
  if snd.afflictions[affliction].state == "healed" then
   snd.afflictions[affliction].state = "afflicted"
-	if snd.gui_loaded then 
+	if snd.gui.enabled then 
     display_my_affs()
 	  color_self_limbs()
   end
@@ -3189,7 +3193,9 @@ function snd.aff_diag(affliction)
   affliction = "aff_"..affliction
  end
  snd.aff_have(affliction)
- deleteLine()
+ if snd.gui.enabled then 
+  deleteLine()
+ end
  if snd.afflictions[affliction].cures.herb ~= nil then
   if string.find(snd.afflictions[affliction].cures.herb, "eat") then
    snd.aff_color = "&lt;red&gt;"
@@ -3205,7 +3211,7 @@ function snd.aff_diag(affliction)
   affliction = "aff_"..affliction
  end
  echo(" "..snd.afflictions[affliction].effect)
- if snd.gui_loaded then 
+ if snd.gui.enabled then 
   display_my_affs()
   color_self_limbs()
  end
@@ -3214,7 +3220,7 @@ end
 function snd.aff_cure(affliction)
  snd.message("You: &lt;green&gt;HEAL&lt;blue&gt; "..affliction..".", "affliction")
  snd.aff_remove(affliction)
- if snd.gui_loaded then 
+ if snd.gui.enabled then 
   display_my_affs()
   color_self_limbs()
  end
@@ -3228,7 +3234,7 @@ function snd.aff_remove(affliction)
 --  snd.status.writhing = false
  end
  snd.afflictions[affliction].state = "healed"
- if snd.gui_loaded then 
+ if snd.gui.enabled then 
   display_my_affs()
   color_self_limbs()
  end
@@ -3621,7 +3627,7 @@ Warden_fearless = {defense = "fearless", type = "normal", effect = "Protects aga
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>give/take</name>
+								<name>give/take defenses</name>
 								<packageName></packageName>
 								<script>
 function snd.def_check()
@@ -3669,7 +3675,9 @@ function snd.def_have(defense)
 end
 
 function snd.def_def(defense)
- deleteLine()
+ if snd.gui.enabled then 
+  deleteLine()
+ end
  if snd.defenses["def_"..defense].type == "normal" then
   cecho("&lt;white&gt;\n"..defense)
  else
@@ -4658,8 +4666,8 @@ dash =  {info = "Use of dash while pathing around.", command = "tds or toggle da
 rockharvest = {info = "Harvest rocks as you walk around.", command = "tr or toggle rockharvest"},
 plants = {info = "Shows plants in the room as you walk.", command = "toggle plants"}, 
 disperse = {info = "Use disperse to remove writhes from allies.", command = "toggle disperse (all|callers|none)"},
-queston = {info = "Toggle questing.", command = "toggle questing"},
-vermon = {info = "Vermin walking/killing/turnin.", command = "toggle vermin"},
+questing = {info = "Toggle questing.", command = "queston"},
+vermin = {info = "Vermin walking/killing/turnin.", command = "vermon"},
 goggles = {info = "Telling Sunder you have antiquated goggles.", command = "toggle goggles"},
 goggle_level = {info = "What level are your goggles?", command = "mygoggles or mygoggles &lt;level&gt;"},
 nontargetgags = {info = "Remove nontarget cures from output.", command = "toggle non target gagging"},
@@ -11179,7 +11187,7 @@ enemy:echo("&lt;center&gt;Target:&lt;/center&gt;")</script>
 						<Script isActive="yes" isFolder="no">
 							<name>monolith</name>
 							<packageName></packageName>
-							<script>if snd.gui_loaded then
+							<script>
   monolith = Geyser.Label:new({
    name = "monolith",
    x = 0, y = "70%",
@@ -11188,7 +11196,7 @@ enemy:echo("&lt;center&gt;Target:&lt;/center&gt;")</script>
   }, leftContainer);
   monolith:setFontSize(12)
   monolith:echo("&lt;center&gt;monolith&lt;/center&gt;")
-end</script>
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -15672,6 +15680,7 @@ snd.offense_loaded = true
 snd.enemies = {}
 snd.allies = {}
 snd.hitting = "none"
+snd.aff_list = {}
 
 snd.firstaidchangecure = false
 snd.firstaidprioritylistset()
@@ -15862,6 +15871,7 @@ snd.theyrandir = "none"
 snd.neckdragdir = "none"
 snd.enemy_restoration_balance = true
 snd.enemy_used_regenerate = false
+snd.disperse = "none" -- Can be set to none, callers or all.
 
 snd.limbs = {}
 snd.parried_limb = "none"
@@ -15951,12 +15961,12 @@ rend = "rend",
 snd.spirituality_attacks = {
 paresis = "shield strike",
 sight = "shield brilliance",
-berserk = "shield facesmash",
+berserking = "shield facesmash",
 weariness = "shield punch",
 asthma = "shield slam",
 haemophilia = "shield slam",
 confusion = "perform dazzle",
-transfixed = "evoke transfixion",
+writhe_transfix = "evoke transfixion",
 }
 
 snd.hound_attacks = {
@@ -16173,13 +16183,14 @@ focus = {
 }
 
 snd.entangleaffs = {
-  "transfixed",
+  "writhe_transfix",
 	"writhe_impaled",
-	"webbed",
+	"writhe_web",
 	"writhe_thighlock",
 	"writhe_armpitlock",
 	"writhe_necklock",
-	"writhe_feed",
+  "writhe_ropes",
+  "writhe_vines",
  }
 
 
@@ -16480,9 +16491,13 @@ function snd.alertnessHit(dir, name, type)
   if snd.alertnessDir ~= "none" and snd.alertnessDir ~= dir then
     snd.alertness = {}
   end
-  table.insert(snd.alertness, name)
-  snd.alertnessDir = dir
-  snd.alertType = type
+  if sndNDB.players[gmcp.Char.Status.name].tether ~= nil and sndNDB.players[name].tether ~= nil then
+    if sndNDB.players[gmcp.Char.Status.name].tether ~= sndNDB.players[name].tether then
+      table.insert(snd.alertness, name)
+      snd.alertnessDir = dir
+      snd.alertType = type
+    end
+  end
 end
 
 function Reverse(arr)
@@ -16502,7 +16517,7 @@ function snd.onHit()
   snd.last_affs = {}
 
   if #snd.maybe_affs &gt;= 1 and (snd.getting_hit == snd.target) then
-    if snd.maybe_affs[1] == "blaze" or snd.maybe_affs[1] == "waze" then
+    if snd.maybe_affs[1] == "blaze" then
       snd.used.rebounding = false
       table.remove(snd.maybe_affs, 1)
     else
@@ -16613,25 +16628,23 @@ function snd.onHit2(checks, conditional)
   end
 end
 
+
 function snd.checkAff(affliction)
+
   if affliction == "paresis" then
-    if
-      table.contains(snd.target_has, affliction) or table.contains(snd.target_has, "paralysis")
-    then
+    if table.contains(snd.target_has, affliction) or table.contains(snd.target_has, "paralysis") then
       return true
     else
       return false
     end
   elseif affliction == "anorexia" then
-    if
-      table.contains(snd.target_has, affliction) or
-      table.contains(snd.target_has, "destroyed_throat")
-    then
+    if table.contains(snd.target_has, affliction) or table.contains(snd.target_has, "destroyed_throat") then
       return true
     else
       return false
     end
   else
+    affliction = snd.affNameCheck(affliction)
     if table.contains(snd.target_has, affliction) then
       return true
     else
@@ -16665,7 +16678,7 @@ function snd.checksomeAffs(afflictions, number)
 end
 
 function cantBeParried()
-  if (snd.checkAff("a broken right arm") and snd.checkAff("a broken left arm")) or snd.checkAff("numb_arms") or snd.checkAff("paresis") or snd.checkAff("paralysis") then
+  if (snd.checkAff("right_arm_broken") and snd.checkAff("left_arm_broken")) or snd.checkAff("numb_arms") or snd.checkAff("paresis") or snd.checkAff("paralysis") then
 		return true
 		else
 		return false
@@ -16863,7 +16876,7 @@ function snd.reset_target()
  if restoration_timer then killTimer(restoration_timer) end
  snd.current_restoration_aff = ""
  snd.resto_limb = "none"
- snd.used.rebounding = true
+ --snd.used.rebounding = false
  snd.used.shield = false
  snd.used.paste = true
  snd.target_prone = false
@@ -16880,7 +16893,7 @@ function snd.reset_target()
  snd.flamewreathed_limb = ""
  snd.gorged = ""
  snd.gravity = 0
-  if snd.gui_loaded then 
+  if snd.gui.enabled then 
     color_enemy_affs()
     color_enemy_limbs()
   end
@@ -16996,7 +17009,7 @@ function snd.venomEffect(venom)
 		end
 	elseif venom == "oculus" then
 		if snd.checkAff("sight") then
-			aff = "blurry vision"
+			aff = "blurry_vision"
 		else
 			aff = "sight"
 		end
@@ -17048,6 +17061,58 @@ function snd.check_aegis()
 		return false
 	end
 
+end
+
+function snd.affNameCheck(x)
+
+local aff = x
+local affs_to_change = {
+  ["limp veins"] = "limp_veins",
+  ["thin blood"] = "thin_blood",
+  ["heart flutter"] = "heartflutter",
+  ["self-pity"] = "self_pity",
+  ["mental disruption"] = "mental_disruption",
+  ["physical disruption"] = "physical_disruption",
+  ["blurry vision"] = "blurry_vision",
+  ["destroyed throat"] = "destroyed_throat",
+}
+  
+  if affs_to_change[aff] then
+    return affs_to_change[aff]
+  else
+    return aff:gsub(" ", "_")
+  end
+
+end
+
+function snd.removeProneStates(all) -- Reset a target back to standing w/no writhes or other affs
+  local writhe_table = {
+  	"writhe_transfix",
+  	"writhe_web",
+  	"writhe_impaled",
+  	"writhe_thighlock",
+  	"writhe_armpitlock",
+  	"writhe_necklock",
+    "writhe_ropes",
+    "writhe_vines",
+   }
+   
+   local other_prones = {
+    "frozen",
+    "indifference",
+    "asleep",
+    "paralysis",
+    }
+    
+    local removals = {}
+    if all then removals = table.n_union(writhe_table, other_prones)
+    else removals = writhe_table
+    end
+  for _, v in pairs(removals) do snd.target_cured(v) end
+  
+  snd.target_proned = false
+  snd.jawlocked = false
+  snd.target_impaled = false
 end</script>
 						<eventHandlerList />
 					</Script>
