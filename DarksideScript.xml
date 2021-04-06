@@ -9233,7 +9233,7 @@ snd.areas = {
 {area = "the forgotten depths of Mount Helba", level = "99", targets = {"a towering fungal abomination", "a withered fungal abomination"}},
 {area = "a basilisk lair", level = "100+", targets = {"the basilisk queen", "a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
 {area = "the Bakal Chasm", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
-{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an Utari warrior", "an Ursal swordsman", "a Caentoi rogue", "a Tarpen bombardier", "a Golba brute", "a skulking Golban scout", "a fleet-footed Caentoi scout", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi" }},
+{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi" }},
 }
 
 </script>
@@ -10400,16 +10400,8 @@ snd.generic_bashing_table_specific_names = {
   ["an enormous Troll bandit"] = "bandit",
   ["Nysaac"] = "nysaac",
   ["a cave basilisk"] = "basilisk",
-  ["an Ursal elite guard"] = "ursal",
-  ["a blindfolded Utari"] = "utari",
   ["an agitated basilisk"] = "basilisk",
   ["an Utari warrior"] = "utari",
-  ["an Ursal swordsman"] = "swordsman",
-  ["a Caentoi rogue"] = "rogue",
-  ["a Tarpen bombardier"] = "bombardier", 
-  ["a Golba brute"] = "brute",
-  ["a skulking Golban scout"] = "scout",
-  ["a fleet-footed Caentoi scout"] = "scout", 
   ["an oversized, grey basilisk"] = "basilisk", 
   ["an armored, brown basilisk"] = "basilisk", 
   ["a spiked basilisk"] = "basilisk", 
@@ -16962,7 +16954,10 @@ function snd.proned()
   "fallen",
   "asleep",
  }
- if snd.checksomeAffs(proneaffs, 1) then prone = true end
+ if snd.checksomeAffs(proneaffs, 1) then 
+  prone = true
+  snd.target_prone = true
+ end
  return prone
 end
 
@@ -17095,11 +17090,10 @@ function snd.removeProneStates(all) -- Reset a target back to standing w/no writ
 end</script>
 						<eventHandlerList />
 					</Script>
-					<Script isActive="no" isFolder="no">
+					<Script isActive="yes" isFolder="no">
 						<name>All attacks</name>
 						<packageName></packageName>
-						<script>-- This is new from Sunder. I'm adding for future development plans, but unsure if I want to do this yet or not.
--- In an effort to help cut down on the amount of triggers, we will transition to using a table of attacks/effects.
+						<script>-- In an effort to help cut down on the amount of triggers, we will transition to using a table of attacks/effects.
 -- Let's just blame Bulrok if it turns out worse, yes? We won't even call this one a tie.
 -- Sending the target of the ability to each isn't necessary but may be utilized later on if we changed the aff giving function.
 
@@ -19194,7 +19188,7 @@ snd.all_class_attacks = {
               end,
     Attune = function(target)
                 enableTrigger("Ancestor Attune give")
-                snd.target_got("ancetsor_implant")
+                snd.target_got("ancestor_implant")
               end,
     Elude = function(target)
                    snd.target_got("eluded")
@@ -19884,6 +19878,75 @@ function snd.clearTargetList()
 		send("wt Target list cleared.")
 	end
 
+end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Special Cures</name>
+						<packageName></packageName>
+						<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Expunge</name>
+							<packageName></packageName>
+							<script>function snd.handleExpunge()
+  for aff in pairs(snd.physical_affs) do
+    if snd.checkAff(snd.physical_affs[aff]) then
+      if string.find(snd.physical_affs[aff], "_broken") then
+        local string = string.gsub(snd.physical_affs[aff], "_broken", "")
+        string = string:gsub("_", " ")
+        if snd.limb_status[string] == "healed" then
+          snd.target_cured(snd.physical_affs[aff])
+          break
+        end
+      else
+        snd.target_cured(snd.physical_affs[aff])
+        break
+      end
+    end
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Rage</name>
+							<packageName></packageName>
+							<script>function snd.handleRage()
+  for _,aff in pairs(snd.cures.steroid) do
+    if snd.checkAff(aff) then
+      snd.target_cured(aff)
+      break
+    end
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Fitness</name>
+							<packageName></packageName>
+							<script>function snd.handleFitness()
+ snd.target_cured("asthma")
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Restore</name>
+							<packageName></packageName>
+							<script>function snd.handleRestore()
+  local limbs = {"right arm", "left arm", "left leg", "right leg"}
+ 
+  for _, v in pairs(limbs) do
+
+    if snd.checkAff(v:gsub(" ", "_").."_broken") and snd.limb_status[v] == "healed" then
+		  snd.target_cured(v:gsub(" ", "_").."_broken")
+    end
+  end
 end</script>
 							<eventHandlerList />
 						</Script>
