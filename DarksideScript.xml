@@ -1018,6 +1018,7 @@ function gmcp_item_remove()
 		end
 	 end
 	end
+  snd.updateMonolith()
  elseif gmcp.Char.Items.List ~= nil then
   if gmcp.Char.Items.List.location == "inv" then
     if gmcp.Char.Vitals.wield_left ~= "empty" then
@@ -1819,32 +1820,15 @@ end
 function snd.untarget()
  snd.bashing.engaged = false
  snd.bashing.targeted = false
- snd.affstoclear = {
- "paresis",
- "paralysis",
- "crippled",
- "mental disruption",
- "physical disruption",
- "crippled body",
- }
- for aff in pairs(snd.affstoclear) do
-  snd.target_cured(snd.affstoclear[aff])
- end
- for limb in pairs(snd.limb_bruising) do
-  snd.limb_bruising[limb] = 0
- end
- 
- for i in pairs(snd.used) do
-  snd.used[i] = false
- end
- snd.used.rebounding = true
- snd.target_prone = false
+
  snd.last_attack = "none"
+ 
  if snd.bashing.stopping then
   snd.message("Bashing OFF!")
   snd.toggles.bashing = false
   snd.bashing.stopping = false
  end
+ 
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -2024,7 +2008,19 @@ function snd.goggle_update()
       snd.defenses["def_"..k].skill = goggle_defenses[k].non_goggle_skill
     end
   end
-end</script>
+end 
+
+function snd.are_we_with_grouped()
+    local good2go = true
+
+    for _, name in pairs(snd.players_here) do
+      if not table.contains(snd.group, name) and name ~= gmcp.Char.Status.name then
+        good2go = false
+      end
+    end
+    return good2go
+ end   
+ </script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -9428,7 +9424,7 @@ snd.global_targets = {
           if snd.toggles.generics then
             snd.bashing.target = generic_bashing_name(snd.possible_targets[targ])
             if snd.bashing.target ~= snd.bashing.old_target then
-             if snd.toggles.calling then snd.send("wt target: "..snd.bashing.target) end
+              if snd.toggles.calling then snd.send("wt target: "..snd.bashing.target) end
               snd.bashing.old_target = snd.bashing.target
             end
           else
@@ -9453,6 +9449,7 @@ snd.global_targets = {
     snd.toggles.bashing = false
     if bot.going then
       expandAlias("move", false)
+      --  tempTimer(1.5, [[expandAlias("move")]])
     end
   else
     snd.bashcounterattack = false
@@ -9501,27 +9498,22 @@ function snd.bashing_function()
   if not snd.bashing.targeted then
 	 snd.runBasher()
 	else
-   --battack = "none"
+   battack = "none"
 --   snd.waiting.balance = true
 --   tempTimer(0.5, [[snd.waiting.balance = false]])
-   if snd.toggles.scepter then
-	 	if snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
-	  else
-			battack = "point scepter "..snd.bashing.target
-		end
-	 else
-    for k,v in pairs(snd.class_list) do
-     if snd.class_list[k].class == snd.class then
-      v.func()
-     end
-		end
-   end
-   if battack ~= snd.last_attack and snd.last_attack ~= "absorb ylem" then
-    snd.last_attack = battack
-    snd.send("qeb stand"..snd.sep..snd.last_attack)
-    snd.waiting.queue = true
-    tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    if not snd.bashcounterattack then
+      for k,v in pairs(snd.class_list) do
+        if snd.class_list[k].class == snd.class then
+          v.func()
+        end
+      end
+    end
+    if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep.."absorb ylem" end
+    if battack ~= snd.last_attack and snd.ylem_check == false then
+      snd.last_attack = battack
+      snd.send("qeb stand"..snd.sep..snd.last_attack)
+      snd.waiting.queue = true
+      tempTimer(snd.delay(), [[snd.waiting.queue = false]])
    end
   end
  end
@@ -16804,10 +16796,10 @@ function snd.run_alerts()
 	 if snd.have_aff("sensitivity") then
 	  snd.send("firstaid elevate sensitivity")
 	 end
-   table.insert(snd.alerts, "\n&lt;brown&gt;      YOUR HEALTH IS LOW NEWB")
+   table.insert(snd.alerts, "\n&lt;brown&gt;      YOUR HEALTH IS LOW")
   end
 	if (100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)) &lt;= 40 then
-	 table.insert(snd.alerts, "\n&lt;brown&gt;       YOUR MANA IS LOW NEWB")
+	 table.insert(snd.alerts, "\n&lt;brown&gt;       YOUR MANA IS LOW")
 	end
 	if tonumber(gmcp.Char.Vitals.madness) &gt;= 60 then
 	 table.insert(snd.alerts, "\n&lt;red&gt;      THE MADNESS IS COMING, EAT UP")
@@ -16834,22 +16826,9 @@ function snd.run_alerts()
 		 tempTimer(5, [[snd.waiting.melting = false]])
 		end
 	 end
-	 if snd.class == "Templar" then
-	  snd.send("undefend")
-	 end
-	 if snd.class == "Revenant" then
-	  snd.send("unjuxtapose")
-	 end
   end
  else
   snd.alert_tick = snd.alert_tick + 1
- end
-end
-
-function snd.insta(caster, attack, target)
- snd.set_faction()
- if table.contains(snd.allies, target) then
-  
  end
 end</script>
 						<eventHandlerList />

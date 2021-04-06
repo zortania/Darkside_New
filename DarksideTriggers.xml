@@ -115,7 +115,7 @@
       return
     end
 
-    if snd.toggles.fasthunt then
+    if snd.toggles.fasthunt and snd.are_we_with_grouped() then
       snd.toggles.bashing = true
       snd.waiting.balance = false
       snd.room_clear = true
@@ -124,7 +124,7 @@
     elseif bot.going then
       expandAlias("move")
     end    
-    send("who here", false)
+    --send("who here", false)
   end
 end
 
@@ -12048,20 +12048,18 @@ if do_we_update then people_update() end
 						<name>survey</name>
 						<script>snd.bashing.target_type = "long"
 if gmcp.Room.Info.area == "the Shattered Vortex" then
- x, y = string.match(gmcp.Char.Status.level, "(.*) (.*)")
- level = tonumber(x)
- if gmcp.Char.Status.name == "Rihrin" then
-    area = "the Shattered Vortex (Spirit)"
- elseif level &lt; 90 then
-  area = "the Shattered Vortex (Low Level)" 
- elseif snd.faction == "spirit" then
-  area = "the Shattered Vortex (Spirit)"
- elseif snd.faction == "shadow" then
-  area = "the Shattered Vortex (Shadow)"
- end
- snd.load_targets(area)
+  x, y = string.match(gmcp.Char.Status.level, "(.*) (.*)")
+  level = tonumber(x)
+  if level &lt; 90 then
+    area = "the Shattered Vortex (Low Level)"
+  elseif snd.faction == "spirit" then
+    area = "the Shattered Vortex (Shadow)"
+  elseif snd.faction == "shadow" then
+    area = "the Shattered Vortex (Shadow)"
+  end
+  snd.load_targets(area)
 else
- snd.load_targets(matches[2])
+  snd.load_targets(matches[2])
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -12165,26 +12163,29 @@ end</script>
 							<name>ih end</name>
 							<script>setTriggerStayOpen("ih start", 0)
 snd.have_items = true
-
 if #snd.gathering &gt; 0 then
  snd.need_loot = true
 end
-
 snd.waiting.ih = false
 snd.waiting.balance = false
 if snd.bashing.targeted and snd.toggles.calling then
  if not snd.last_target then
   snd.last_target = snd.bashing.target
  end
+-- if snd.bashing.target ~= snd.last_target then
+--  snd.send("wt Target: "..snd.bashing.target)
+--  snd.last_target = snd.bashing.target
+-- end
 end
-
 if not snd.bashing.targeted then
  snd.toggles.bashing = false
  if bot.going then
   expandAlias("move", false)
+--  tempTimer(1.5, [[expandAlias("move")]])
  end
  snd.core()
 end
+
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -12572,23 +12573,17 @@ snd.toggles.bashing = true</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>who here</name>
-						<script>local good = true
-for name in string.gmatch(multimatches[3][2], '([^, ]+)') do
- if not table.contains(snd.group, name) then
-  good = false
- end
-end
-if snd.toggles.fasthunt and good then
+						<script>if snd.toggles.fasthunt and snd.are_we_with_grouped() then
  snd.toggles.bashing = true
  snd.waiting.balance = false
  snd.room_clear = true
  snd.runBasher()
  snd.core()
  snd.vermhit = true
-elseif snd.vermin_on and good then
+elseif snd.vermin_on and snd.are_we_with_grouped() then
   enableTimer("moveroom")
   snd.vermhit = true
-elseif snd.vermin_on and not good then
+elseif snd.vermin_on and not snd.are_we_with_grouped() then
   snd.vermhit = false
   if bot.going then
     tempTimer(1.5, [[expandAlias("move")]])
@@ -13187,6 +13182,33 @@ echo("\nPUNISHER PUNISHER PUNISHER")</script>
 							<string>^.+ charges suddenly into you, painfully shattering your defenses!$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Got the mist</name>
+						<script>snd.ylem_check = false
+if snd.toggles.bashing or snd.toggles.fasthunt then
+  snd.runBasher()
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You raise your gauntlet, extending your fingers and allowing the latent ylem around you to absorb into the reserve chambers\.$</string>
+							<string>^The light around you slowly ceases to refract as the ylem energy dissipates into your surroundings\.$</string>
+							<string>^With a deliberate motion, \w+ extends \w+ gauntlet into the air, causing a ripple of distortionas the ylem energy surrounding you is harnessed\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
 						</regexCodePropertyList>
@@ -36149,7 +36171,7 @@ end</script>
 								<script>if snd.toggles.bashing then snd.no_target() end
 snd.target_gone = true
 
---if not snd.toggles.calling then return end
+if not snd.toggles.calling then return end
 
 local who = matches[2]:title()
 
