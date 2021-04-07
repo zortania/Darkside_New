@@ -882,7 +882,7 @@ end
   else
     snd.aff_remove("bleeding")
   end
-  hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
+  hp = (100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)) or 100
   if hp &lt; 10 then
     snd.aff_have("health_10")
   elseif hp &lt; 35 then
@@ -959,6 +959,7 @@ function gmcp_items()
    if not snd.items[v.name] then snd.items[v.name] = {} end
    table.insert(snd.items[v.name], v.id)
   end
+  snd.updateMonolith()
  elseif gmcp.Char.Items.List.location == "inv" then
   snd.wielded = {left =  {name="", id=""}, right = {name="", id=""}}
   if gmcp.Char.Vitals.wield_left ~= "empty" then
@@ -985,6 +986,7 @@ function gmcp_item_add()
  if gmcp.Char.Items.Add.location == "room" then
   if not snd.items[v.name] then snd.items[v.name] = {} end
   table.insert(snd.items[v.name], v.id)
+  snd.updateMonolith()
  elseif gmcp.Char.Items.List ~= nil then
   if gmcp.Char.Vitals.wield_left ~= "empty" then
     snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
@@ -1101,7 +1103,7 @@ local removePlayer = gmcp.Room.RemovePlayer
   if table.contains(snd.players_here, removePlayer) then
       table.remove(snd.players_here, table.index_of(snd.players_here, removePlayer))   
   end
-	people_update()
+    people_update()
 end
 
 
@@ -1163,72 +1165,6 @@ end</script>
   end
 	
 end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="no" isFolder="no">
-							<name>Query API to check City</name>
-							<packageName></packageName>
-							<script>snd.player_names_to_check = {}
-snd.are_we_downloading = false
-
-function OnlineCharacters()
-  if snd.are_we_downloading == false then
-		downloadFile(getMudletHomeDir() .. "/city_check","http://api.Aetolia.com/characters/" .. snd.player_names_to_check[1] .. ".json")
-		snd.are_we_downloading = true
-	end
-end
-
-registerAnonymousEventHandler("sysDownloadDone", "FindTheirCity")
-
-function FindTheirCity(_, filename)
-	if filename:find("city_check") then
-    snd.are_we_downloading = false
-  	local f, s, webpage = io.open(getMudletHomeDir() .. "/city_check")
-    
-  	if f then
-      webpage = f:read("*a")
-      io.close(f)
-    end
-    
-  	local stats = yajl.to_value(webpage)
-  	local name = ""
-  	local do_we_update = false
-  	
-  	for k, v in pairs(stats) do
-  		if k == "name" then name = v end
-      if k == "city" and snd.player_names_to_check[1]:lower() == name:lower() then
-        if (v == "Bloodloch" or v == "Spinesreach") and not table.isMember(snd.shadow, name) then
-  				table.insert(snd.randomshadow, name)
-  				do_we_update = true
-  			elseif (v == "Enorian" or v == "Duiran") and not table.isMember(snd.spirit, name) then
-  				table.insert(snd.randomspirit, name)
-  				do_we_update = true
-  			end
-      end
-  	end
-  	if do_we_update then 
-  		people_update() 
-  		random_people:setFgColor("green")
-  		random_people:echo("&lt;center&gt;New people to sort!&lt;\center&gt;")
-  	end
-  	
-  	table.remove(snd.player_names_to_check, table.index_of(snd.player_names_to_check, name))
-  	
-  	local check = tablelength(snd.player_names_to_check)
-  	
-  	if tablelength(snd.player_names_to_check) ~= 0 then
-  		display("I have sorted "..name..". I have "..check.." left to check.")
-  		OnlineCharacters(snd.player_names_to_check[1])
-  	end
-		os.remove(filename)
-	end
-end
-
-	function tablelength(T)
-    local count = 0
-    for _ in pairs(T) do count = count + 1 end
-    return count
-	end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -1335,17 +1271,28 @@ end</script>
 						<ScriptGroup isActive="yes" isFolder="yes">
 							<name>Skill Checking</name>
 							<packageName></packageName>
-							<script>	snd.skills = {}
+							<script>	snd.skills = snd.skills or {}
   snd.skills.tattoos_on_me = snd.skills.tattoos_on_me or {}
   snd.skills.raceskills = snd.skills.raceskills or {}</script>
-							<eventHandlerList>
-								<string>gmcp.Comm.Channel.Start</string>
-							</eventHandlerList>
+							<eventHandlerList />
 							<Script isActive="yes" isFolder="no">
 								<name>parse_skillsets</name>
 								<packageName></packageName>
 								<script>function parse_skillsets()
+  local tattoos = {}
+  local racials = {}
+  if snd.skills.tattoos_on_me ~= nil then
+    tattoos = snd.skills.tattoos_on_me
+  end
+  if snd.skills.raceskills ~= nil then
+    racials = snd.skills.raceskills
+  end
+
 	snd.skills = {}
+  
+  snd.skills.raceskills = racials
+  snd.skills.tattoos_on_me = tattoos
+
 	for _, set in ipairs(gmcp.Char.Skills.Groups) do
 		local skills = string.format("Char.Skills.Get %s", yajl.to_string({ group = set.name }))
 		sendGMCP(skills)
@@ -1360,6 +1307,7 @@ end</script>
 								<name>populate_skills</name>
 								<packageName></packageName>
 								<script>function populate_skills()
+
 	local group = gmcp.Char.Skills.List.group
 	local list = gmcp.Char.Skills.List.list
 	local newlist = {}
@@ -1939,7 +1887,15 @@ end
 						<Script isActive="yes" isFolder="no">
 							<name>random functions</name>
 							<packageName></packageName>
-							<script>function round(num, idp)
+							<script>function roundUp(number, places)
+   return math.ceil(number * math.pow(10,places)) / math.pow(10,places)
+end
+
+function roundDown(number, places)
+   return math.floor(number * math.pow(10,places)) / math.pow(10,places)
+end
+
+function round(num, idp)
   local mult = 10 ^ (idp or 0)
   return math.floor(num * mult + 0.5) / mult
 end
@@ -3966,7 +3922,7 @@ function sndNDB_isCitizenOf(city, name)
 	if sndNDB_Exists(name) then
 		return (sndNDB.players[name:title()].city == city:title() and true or false)
 	else
-		snd.message("That person's information has not yet been gathered.")
+		snd.message("The information for "..name.." has not yet been gathered.")
 		return false
 	end
 end
@@ -3998,44 +3954,55 @@ function sndNDB_Remove(name)
 	end
 end
 
-function sndNDB_SortOnline(filepath)
-	local f, s = io.open(filepath)
+function sndNDB_SortOnline(name_group)
+
+  local player_list = {}
+  if type(name_group) ~= "table" then
+
+  	local f, s = io.open(name_group)
     if f then s = f:read("*l"); io.close(f) end
 
-	-- didn't get JSON data? 
-	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
-		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
-		return 
-	end
-
-	local t = yajl.to_value(s)
-
-	apiOnlineFound = {}
-	apiNeedUpdate = {}
-	for ind, tab in pairs(t.characters) do
-		if not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
-			table.insert(apiOnlineFound, tab.name)
-		end
-	end
-
-	for ind, tab in pairs(gmcp.Comm.Channel.Players) do
-		if not table.contains(apiOnlineFound, tab.name) and not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
-			table.insert(apiOnlineFound, tab.name)
-		end
-	end
-
-	os.remove(filepath)
-	table.sort(apiOnlineFound)
+  	-- didn't get JSON data? 
+  	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
+  		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
+  		return 
+  	end
+  
+  	local t = yajl.to_value(s)
+  
+  	apiOnlineFound = {}
+  	apiNeedUpdate = {}
+  	for ind, tab in pairs(t.characters) do
+  		if not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
+  			table.insert(apiOnlineFound, tab.name)
+  		end
+  	end
+  
+  	for ind, tab in pairs(gmcp.Comm.Channel.Players) do
+  		if not table.contains(apiOnlineFound, tab.name) and not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
+  			table.insert(apiOnlineFound, tab.name)
+  		end
+  	end
+  
+  	os.remove(name_group)
+  	table.sort(apiOnlineFound)
+    player_list = apiOnlineFound
+    
+  else
+    apiNeedUpdate = {}
+    player_list = name_group
+  
+  end
 
 	--Parse the list to see who needs to be added.
 	local count = 0
-	for index, name in pairs(apiOnlineFound) do
+  
+	for index, name in pairs(player_list) do
 		if not sndNDB_Exists(name) and not table.contains(sndNDB.divine, name) then
 			count = count + 1
 			table.insert(apiNeedUpdate, name)
 		end
-	end
-
+	end 
 	if count &gt; 0 then
 		snd.message(count.." new names identified, grabbing their info.")
 		cecho("\n&lt;a_darkgrey&gt; - "..table.concat(apiNeedUpdate, ", ")..".")
@@ -4043,12 +4010,12 @@ function sndNDB_SortOnline(filepath)
 	else
 		if parsingCity then
 			if parsingCity:lower() == "classes" then
-				sndNDB_displayOnlineClass(apiOnlineFound)
+				sndNDB_displayOnlineClass(player_list)
 			else
-				sndNDB_displayOnlineCity(apiOnlineFound)
+				sndNDB_displayOnlineCity(player_list)
 			end
 		else
-			sndNDB_displayOnline(apiOnlineFound)
+			sndNDB_displayOnline(player_list)
 		end
 	end
 end</script>
@@ -4196,7 +4163,7 @@ registerAnonymousEventHandler("sndNDB Check Highlight", "sndNDB_addHighlight")
 							<packageName></packageName>
 							<script>function sndNDB_displayOnlineClass(players)
 	local classList = {
-		"Ascendril", "Luminary", "Sentinel", "Shaman", "Zealot", "Templar", "Warden",
+		"Ascendril", "Luminary", "Sentinel", "Shaman", "Zealot", "Templar", "Warden", 
 		"Monk", "Shapeshifter", "Syssin", "Wayfarer",
 		"Archivist", "Carnifex", "Indorani", "Praenomen", "Sciomancer", "Teradrim", "Revenant",
 	}
@@ -4249,9 +4216,9 @@ function sndNDB_displayOnline(players)
 		end
 	end
 
-	snd.message("Data acquisition completed and analysed. List of players online:")
-	echo("\n"..table.concat(apiOnlineFound, ", ")..".\nTotal players visible to us: "..#apiOnlineFound..".\n")
-
+	--snd.message("Data acquisition completed and analysed. List of players online:")
+	--echo("\n"..table.concat(players, ", ")..".\nTotal players visible to us: "..#players..".\n")
+  echo("\n")
 	snd.message(" City affiliations of currently online people:")
 	cecho(string.format("\n&lt;%s&gt;[Bloodloch]   :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Bloodloch, #onlinePeople.Bloodloch, sndNDB.highlighting.Bloodloch, table.concat(onlinePeople.Bloodloch, ", ")))
 	cecho(string.format("\n&lt;%s&gt;[Duiran]      :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Duiran, #onlinePeople.Duiran, sndNDB.highlighting.Duiran, table.concat(onlinePeople.Duiran, ", ")))
@@ -4579,18 +4546,6 @@ end</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
-					<Script isActive="yes" isFolder="no">
-						<name>Rounding</name>
-						<packageName></packageName>
-						<script>function roundUp(number, places)
-   return math.ceil(number * math.pow(10,places)) / math.pow(10,places)
-end
-
-function roundDown(number, places)
-   return math.floor(number * math.pow(10,places)) / math.pow(10,places)
-end</script>
-						<eventHandlerList />
-					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Sunder Toggles</name>
 						<packageName></packageName>
@@ -10600,7 +10555,7 @@ function snd_patherCompile()
   local str = ""
   for x, n in pairs(sap_List) do
     if x == #sap_List then
-      sunder_areaPaths[sap_Area]["v"..n] = "ptcity"
+      sunder_areaPaths[sap_Area]["v"..n] = "pthcity"
     else
       sunder_areaPaths[sap_Area]["v"..n] = ""..sap_List[x+1]..""
     end
@@ -10685,7 +10640,7 @@ function snd_bashAreas(areas_chosen)
             for l, m in pairs(path_being_constructed) do
               local areas_added = 0
               for a, b in pairs(m) do
-                if b == "ptcity" and areas_added &lt; num_areas then 
+                if b == "pthcity" and areas_added &lt; num_areas then 
                   path_being_constructed[l][a] = snd.bashing_area_beginning_rooms[x]
                   areas_added = areas_added + 1
                 end --21
@@ -16120,6 +16075,7 @@ snd.avoidanceset = "none"
 snd.limb_dmg_done = 0
 snd.firstaid_go = true
 snd.update_priority = 0
+snd.unknownquantity = 0
 
 snd.templar_weapon_one = "shortsword" -- used for Templar offenses
 snd.templar_weapon_two = "shortsword" -- used for Templar offenses
@@ -19944,143 +19900,6 @@ snd.indorani_cards = {
 		"dementia",
 		"faintness",
 }</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Monk Limb Tracking</name>
-							<packageName></packageName>
-							<script>
-function monkLimbDamageTracking()
-
-if snd.stance == "tiger" or snd.stance == "cobra" then
-		if kicks.side then
-			snd.last_hit_limb = "torso"
- 			snd.last_limb_dmg = 10.79
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.snapLeft then			
-			snd.last_hit_limb = "left leg"
- 			snd.last_limb_dmg = 10.79
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-  	elseif kicks.snapRight then			
-			snd.last_hit_limb = "right leg"
- 			snd.last_limb_dmg = 10.79
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.moonLeft then			
-			snd.last_hit_limb = "left arm"
- 			snd.last_limb_dmg = 10.79
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.moonRight then			
-			snd.last_hit_limb = "right arm"
- 			snd.last_limb_dmg = 10.79
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.axe or kicks.wwk then			
-			snd.last_hit_limb = "head"
- 			snd.last_limb_dmg = 10.79
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.hook then			
-			snd.last_hit_limb = "torso"
- 			snd.last_limb_dmg = 6.60
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-  	elseif punches.ucp then			
-			snd.last_hit_limb = "head"
- 			snd.last_limb_dmg = 6.60
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.hammerLeft then			
-			snd.last_hit_limb = "left leg"
- 			snd.last_limb_dmg = 6.60
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.hammerRight then			
-			snd.last_hit_limb = "right leg"
- 			snd.last_limb_dmg = 6.60
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.spearLeft then			
-			snd.last_hit_limb = "left arm"
- 			snd.last_limb_dmg = 6.60
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.spearRight then			
-			snd.last_hit_limb = "right arm"
- 			snd.last_limb_dmg = 6.60
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.jab then			
-			snd.last_hit_limb = snd.target_limb
- 			snd.last_limb_dmg = 5.99
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-	  end
-else
-	  if kicks.side then
-		  snd.last_hit_limb = "torso"
-		  snd.last_limb_dmg = 9.00
-  	  snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-	  elseif kicks.snapLeft then			
-		  snd.last_hit_limb = "left leg"
- 			snd.last_limb_dmg = 9.00
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-  	elseif kicks.snapRight then		
-			snd.last_hit_limb = "right leg"
- 			snd.last_limb_dmg = 9.00
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.moonLeft then		
-			snd.last_hit_limb = "left arm"
- 			snd.last_limb_dmg = 9.00
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.moonRight then		
-			snd.last_hit_limb = "right arm"
- 			snd.last_limb_dmg = 9.00
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif kicks.axe or kicks.wwk then		
-			snd.last_hit_limb = "head"
- 			snd.last_limb_dmg = 9.00
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.hook then
-			snd.last_hit_limb = "torso"
- 			snd.last_limb_dmg = 5.50
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-  	elseif punches.ucp then		
-			snd.last_hit_limb = "head"
- 			snd.last_limb_dmg = 5.50
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.hammerLeft then			
-			snd.last_hit_limb = "left leg"
- 		  snd.last_limb_dmg = 5.50
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.hammerRight then			
-			snd.last_hit_limb = "right leg"
- 			snd.last_limb_dmg = 5.49
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.spearLeft then			
-			snd.last_hit_limb = "left arm"
- 			snd.last_limb_dmg = 5.50
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-   	elseif punches.spearRight then			
-			snd.last_hit_limb = "right arm"
- 			snd.last_limb_dmg = 5.50
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-		elseif punches.jab then		
-			snd.last_hit_limb = snd.target_limb
- 			snd.last_limb_dmg = 4.99
-			snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-  	end
-end
-kicks = {
-side = false,
-snapLeft = false,
-snapRight = false,
-moonLeft = false,
-moonRight = false,
-axe = false,
-wwk = false
-}
-punches = {
-hook = false,
-ucp = false,
-hammerLeft = false,
-hammerRight = false,
-spearLeft = false,
-spearRight = false,
-jab = false
-}
-cometKick = false
-end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
