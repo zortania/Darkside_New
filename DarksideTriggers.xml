@@ -3466,7 +3466,11 @@ snd.def_def("endurance")</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Swagger</name>
-									<script>snd.def_def("swagger")</script>
+									<script>snd.def_def("swagger")
+if not snd.swaggered then
+   snd.swaggered = true
+    tempTimer(3,[[snd.swaggered = false]])
+  end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -4228,6 +4232,8 @@ elseif snd.swagger == 2 then
 elseif snd.swagger == 3 then
 	snd.swagger = 4
 end
+      snd.swaggered = true
+      tempTimer(3,[[snd.swaggered = false]])
 
 cecho("&lt;red&gt;Swagger Total: &lt;white&gt;"..snd.swagger)
 </script>
@@ -4243,9 +4249,11 @@ cecho("&lt;red&gt;Swagger Total: &lt;white&gt;"..snd.swagger)
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>You use Zeal Swagger.</string>
+										<string>^You use Zeal Swagger.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>3</integer>
+										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -5564,18 +5572,16 @@ snd.delete_prompt = true</script>
 							</TriggerGroup>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>affline got</name>
-								<script>if snd.gui.enabled then
-  deleteLine()
-end
-snd.aff_gain(matches[2])
-afftest = multimatches[2][2]
+								<script>snd.aff_gain(matches[2])
 
-if afftest == "paresis" then
+if matches[2] == "paresis" then
   if not snd.queuesent and not snd.waiting.queue then
     send("queue clear")
-  elseif snd.class == "Zealot" then
+  elseif snd.class == "Zealot" and not snd.swaggered then
     if snd.swagger &lt; 2 then
       snd.send("qeb swagger")
+      snd.swaggered = true
+      tempTimer(3,[[snd.swaggered = false]])
     end
   end
 end
@@ -5598,19 +5604,17 @@ end</script>
 								<colorTriggerFgColor>#008080</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>FG14BG2</string>
 									<string>^You are afflicted with (.+)\.$</string>
+									<string>^You have discovered (.*)\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
-									<integer>6</integer>
+									<integer>1</integer>
 									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>affline cure</name>
-								<script>  if snd.gui.enabled then
-    deleteLine()
-  end
+								<script>
 snd.aff_cure(multimatches[2][2])
 
 if multimatches[2][2] == "left_arm_broken" then
@@ -8596,11 +8600,13 @@ snd.treerecheck = false</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>Paresis</name>
 								<script>snd.have_aff("paresis")
-if snd.class == "Zealot" then
-  if snd.swagger &lt; 2 then
-    snd.send("qeb swagger")
-  end
-end</script>
+if snd.class == "Zealot" and not snd.swaggered then
+    if snd.swagger &lt; 2 then
+      snd.send("qeb swagger")
+      snd.swaggered = true
+      tempTimer(3,[[snd.swaggered = false]])
+    end
+  end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -11380,7 +11386,7 @@ snd.updateToggles()
 
 send("config separator", false)
 enableTrigger("Separator Check/Update")
-send("config affliction_view on", false)
+send("config affliction_view full", false)
 send("config simple_diag on", false)
 send("config pagelength 250", false)
 send("config grabcorpses on", false)
@@ -19550,28 +19556,6 @@ end
 									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
-							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-								<name>Swagger</name>
-								<script>if matches[2] == snd.target then
-  snd.target_cured("paresis")
-end</script>
-								<triggerType>0</triggerType>
-								<conditonLineDelta>0</conditonLineDelta>
-								<mStayOpen>0</mStayOpen>
-								<mCommand></mCommand>
-								<packageName></packageName>
-								<mFgColor>#ff0000</mFgColor>
-								<mBgColor>#ffff00</mBgColor>
-								<mSoundFile></mSoundFile>
-								<colorTriggerFgColor>#000000</colorTriggerFgColor>
-								<colorTriggerBgColor>#000000</colorTriggerBgColor>
-								<regexCodeList>
-									<string>^(\w+) uses Zeal Swagger\.$</string>
-								</regexCodeList>
-								<regexCodePropertyList>
-									<integer>1</integer>
-								</regexCodePropertyList>
-							</Trigger>
 						</TriggerGroup>
 						<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Resists/Undos</name>
@@ -20585,30 +20569,6 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>^The force of the heated air unbalances (\w+) and (she|he) falls.$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>Quicken</name>
-									<script>if matches[2] == snd.target then
-  snd.target_got("ablaze")
-  snd.flamestack = snd.flamestack + 3
-  becho(""..target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^You use Purification Quicken on (\w+).$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -30142,7 +30102,7 @@ end</script>
 											</regexCodePropertyList>
 										</Trigger>
 									</TriggerGroup>
-									<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 										<name>Maul Hit Confirmation</name>
 										<script>-- The actual limb damage values may fluctuate. Using 7.5% as it is average.
 snd.last_hit_limb = matches[3]
@@ -34530,7 +34490,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>stop attacking</name>
-							<script>snd.toggles.attacking = false
+							<script>if snd.toggles.attacking then
+
+snd.toggles.attacking = false
 
 if snd.geotrace == true then
 		snd.empowerready = true
@@ -34549,7 +34511,9 @@ end
   
 snd.class_hitting = "none"
 snd.firstaidresetlistnone()
-snd.firstaidclassset = false</script>
+snd.firstaidclassset = false
+
+end</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -34603,50 +34567,53 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>got hit</name>
-							<script>if snd.toggles.attacking then
+							<script> 
+ 
  skill = multimatches[2][3]
  found_set = "none"
  for set in pairs(snd.cureset_skills) do
   if table.contains(snd.cureset_skills[set], skill) then
 	 found_set = set
    cecho("\nFound set: "..found_set)
+   snd.class_hitting = found_set
 	end
  end
- if snd.class_hitting == "none" then --haven't seen anyone hit yet
-  if found_set == "none" then --skill isn't in class list
-   echo("\nNo curing set.")
+  if snd.class_hitting == "none" then --haven't seen anyone hit yet
+    if found_set == "none" then --skill isn't in class list
+      echo("\nNo curing set.")
+    end
 	elseif found_set == "archivist" then
-   snd.firstaidassArchivist = true
+   snd.firstaidassArchivist()
 	 snd.class_hitting = found_set --note what class is hitting
    snd.send("qeb dodge upset")
 	 echo("\nCuring set flagged Archivist.")
 	elseif found_set == "indorani" then
-   snd.firstaidassIndorani = true
+   snd.firstaidassIndorani()
 	 snd.class_hitting = found_set --note what class is hitting
    snd.send("qeb dodge upset")
 	 echo("\nCuring set flagged Indorani.")
 	elseif found_set == "luminary" then
-   snd.firstaidassLuminary = true
+   snd.firstaidassLuminary()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Luminary.")
 	elseif found_set == "zealot" then
-   snd.firstaidassZealot = true
+   snd.firstaidassZealot()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Zealot.")
 	elseif found_set == "sentinel" then
-   snd.firstaidassSentinel = true
+   snd.firstaidassSentinel()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Sentinel.")
 	elseif found_set == "ascendril" then
-   snd.firstaidassAscendril = true
+   snd.firstaidassAscendril()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Ascendril.")
 	elseif found_set == "teradrim" then
-   snd.firstaidassTeradrim = true
+   snd.firstaidassTeradrim()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Teradrim.")
 	elseif found_set == "shifter" then
-   snd.firstaidassShifter = true
+   snd.firstaidassShifter()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Shifter.")
 	elseif found_set == "carnifex" then
@@ -34654,52 +34621,50 @@ end</script>
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Carnifex.")
 	elseif found_set == "warden" then
-   snd.firstaidassWarden = true
+   snd.firstaidassWarden()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Warden.")
 	elseif found_set == "templar" then
-   snd.firstaidassTemplar = true
+   snd.firstaidassTemplar()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Templar.")
 	elseif found_set == "revenant" then
-   snd.firstaidassRevenant = true
+   snd.firstaidassRevenant()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Revenant.")
 	elseif found_set == "praenomen" then
-   snd.firstaidassPraenomen = true
+   snd.firstaidassPraenomen()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Praenomen.")
 	elseif found_set == "sciomancer" then
-   snd.firstaidassSciomancer = true
+   snd.firstaidassSciomancer()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Sciomancer.")
 	elseif found_set == "shaman" then
-   snd.firstaidassShaman = true
+   snd.firstaidassShaman()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Shaman.")
 	elseif found_set == "wayfarer" then
-   snd.firstaidassWayfarer = true
+   snd.firstaidassWayfarer()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Wayfarer.")
 	elseif found_set == "syssin" then
-   snd.firstaidassSyssin = true
+   snd.firstaidassSyssin()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Syssin.")
 	elseif found_set == "monk" then
-   snd.firstaidassMonk = true
+   snd.firstaidassMonk()
 	 snd.class_hitting = found_set --note what class is hitting
 	 echo("\nCuring set flagged Monk.")
    if snd.class == "Zealot" then
     snd.send("qeb rebuke left leg")
    end
+  elseif snd.class_hitting ~= found_set then --this is a secondary class hitting
+    snd.class_hitting = found_set
   else
    snd.class_hitting = found_set 
 	end
- elseif snd.class_hitting ~= found_set then --this is a secondary class hitting
-  snd.class_hitting = found_set
- end
   snd.person_hitting = multimatches[2][2]
-end
 
 cecho("\nClass hitting you: "..snd.class_hitting)
 
@@ -34719,7 +34684,7 @@ end</script>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
 								<string>FG3BG2</string>
-								<string>^(.+) uses (\w+) .+ on you\.$</string>
+								<string>^(.+) uses? (\w+) .+ on you\.$</string>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>6</integer>
@@ -35862,8 +35827,7 @@ if snd.target == matches[5] and snd.all_class_attacks[matches[3]] ~= nil then
     snd.all_class_attacks[matches[3]][matches[4]](matches[5])
     snd.getting_hit = matches[5]
   end
-end
-</script>
+end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -35892,8 +35856,7 @@ end
       snd.all_class_attacks[matches[3]][matches[4]](matches[6], matches[5])
   end
   snd.getting_hit = matches[6]
-end
-</script>
+end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -35945,7 +35908,8 @@ end
     snd.getting_hit = matches[6]
   end
 end
--- This might be only Hew and if so it's a pain in the ass.</script>
+-- This might be only Hew and if so it's a pain in the ass.
+</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
