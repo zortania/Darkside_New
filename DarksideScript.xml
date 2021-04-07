@@ -196,16 +196,30 @@ setConsoleBufferSize("main", 100000, 1000)</script>
 						<Script isActive="yes" isFolder="no">
 							<name>options</name>
 							<packageName></packageName>
-							<script>
+							<script>snd.sep = snd.sep or "\\" -- important! CONFIG SEPARATOR value
+snd.mount = snd.mount or "247249" -- your horse's ID number
+
+
+snd.faction = "" -- your faction, spirit or shadow
+snd.class = snd.class or "" -- your class, used for bashing
+snd.limb_dmg_done = 8.41 -- really only for Templars
+
+snd.stats = { 
+  xp = 0,
+  last_xp = 0,
+  max_xp = 0,
+}
+
+
 snd.toggles = {
 active = true, -- is the system running?
-channeling = false, -- this is if you need to use channeling abilities
 healing = false, -- keep off, incomplete
 parrying = true, -- parry most-damaged limb
 defenses = true, -- maintain defenses like cloak and density
 calling = false, -- call targets on web chat
-listening = false,
-affcalling = true, -- announce afflictions as you hit
+listening = false, -- listening to targets on web chat
+affcalling = false, -- announce afflictions as you hit
+chameleon = false, -- use chameleon to change name on qw/who
 standing = true, -- like healing, also incomplete
 clotting = true, -- incomplete
 bashing = false, -- bashing! Woo!
@@ -217,25 +231,26 @@ attacking = false, -- attacking with a PvP function
 balecho = true, -- replace balance lines with shorthand
 atkecho = true, -- replace attack lines with shorthand
 newbie = false, -- use newbie bashing attacks
-scepter = false,
-torc = false, -- if you have the torc artifact
-zeal = false, -- use Templar or Revenant-type zeal for bashing
 cobra = false, -- use of tekura cobra stance
 lightning = false, -- use Luminary lightning for bashing
 gallop = false, -- use gallop while pathing around
 dash = false, -- use of dash while pathing around
+rockharvest = false, -- are you harvesting rocks?
+disperse = false, -- use disperse to remove writhes from allies
+questing = false, -- Used to stop you from randomly questing while doing other stuff
+channeling = false, -- this is if you need to use channeling abilities
+scepter = false,
+torc = false, -- if you have the torc artifact
+zeal = false, -- use Templar or Revenant-type zeal for bashing
 fitness = true, -- have access to the fitness ability
 shrug = false, -- have access to shrug
 purge = false, -- have access to Carnifex purge
 purify = false, -- have access to Praenomen purify
 scour = false, -- have access to Teradrim scour
-rockharvest = false, -- are you harvesting rocks?
 roe = false, -- harvesting fishroe
-cham = false, -- chameleon system
 support = false, -- if you want to use a support system or not
-disperse = false, -- use disperse to remove writhes from allies
-questing = false, -- questing turns on or off, prevents the auto-questing spam from before
 farm = false, -- farming
+goggles = false,
 goggle_level = 9,
 gauntlet_level = 15,
 nontargetgags = true, -- spam filter for removing non-target curing
@@ -250,22 +265,7 @@ if gmcp.Char.Name.name == "Rihrin" then
 elseif gmcp.Char.Name.name == "Arukne" then
   snd.mount = "332093" -- your horse's ID number
 end
-snd.version = "5.08"
-snd.hounds = {
-mark = "",
-contagion = "",
-growl = "",
-stare = "",
-acidspit = "",
-tundralhowl = "",
-firebreath = ""
-}
-
-snd.stats = { 
-  xp = 0,
-  last_xp = 0,
-  max_xp = 0,
-}</script>
+snd.version = "5.08"</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -286,6 +286,9 @@ snd.stats = {
       snd.defenses["def_chameleon"].needit = true
     end
   end
+  
+  snd.updateToggles()
+
   send(" ")
 end
 
@@ -2086,6 +2089,7 @@ snd.priorities = {
 "aff_mana_55",
 "aff_mana_low",
 "aff_mana_75",
+"def_chameleon",
 "loot",
 "def_gripping",
 "def_vigor",
@@ -3336,11 +3340,12 @@ def_divine_speed = {defense = "divine_speed", type = "normal", effect = "Faster 
 def_hypersight = {defense = "hypersight", type = "normal", effect = "see through shenanigans", balance = {needyequilibriumtake = "hypersight on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 
 --Ylem
-def_amber_orb = {defense= "amber_orb", type = "light_yellow", effect = "5% increase in experience", balance = {special = "activate amber orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_amber_orb = {defense= "amber_orb", type = "ansi_light_yellow", effect = "5% increase in experience", balance = {special = "activate amber orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_green_orb = {defense= "green_orb", type = "lawn_green", effect = "25% increase in vigour healing", balance = {special = "activate green orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_crimson_orb = {defense= "crimson_orb", type = "firebrick", effect = "more damage to and less from denizens", balance = {special = "activate crimson orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
-def_cerulean_orb = {defense= "cerulean_orb", type = "light_blue", effect = "protection from damage", balance = {special = "activate cerulean orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_cerulean_orb = {defense= "cerulean_orb", type = "ansiLightBlue", effect = "protection from damage", balance = {special = "activate cerulean orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_white_orb = {defense= "white_orb", type = "ghost_white", effect = "increased ylem gain from eld", balance = {special = "activate white orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+
 
 --Generic endgame
 def_safeguard = {defense = "safeguard", type = "normal", effect = "Increased resistances", balance = {special = "safeguard"}, state = "down", needit = false, timer = createStopWatch(), skill = "Instill"},
@@ -3357,10 +3362,9 @@ def_firefly_tattoo = {defense = "firefly", type = "green", effect = "Protects yo
 def_flame_tattoo = {defense = "flame", type = "green", effect = "Helps protect against writhe affs", balance = {tattoo = "flame"},state = "down", needit = false, timer = createStopWatch(), skill = "FlameTattoo"},
 def_shield_tattoo = {defense = "shielded", type = "green", effect = "Magical shield to stop attacks", balance = {tattoo = "shield"},state = "down", needit = false, timer = createStopWatch(), skill = "ShieldTattoo"},
 --balance = {needyequilibriumtake = "heatsight"}
-def_nimbleness = {defense = "nimbleness", type = "red", effect = "Light on your feet", balance = {needybalancetake = "nimbleness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Nimbleness"},
 
 --Templar
-def_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
+def_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "battlefury maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
 
 --Carnifex
 def_fearless = {defense = "fearless", type = "normal", effect = "Protects against fear affliction.", balance = {special = "fearless"}, state = "down", needit = false, timer = createStopWatch(), skill = "Fearless"},
@@ -4618,8 +4622,8 @@ dash =  {info = "Use of dash while pathing around.", command = "tds or toggle da
 rockharvest = {info = "Harvest rocks as you walk around.", command = "tr or toggle rockharvest"},
 plants = {info = "Shows plants in the room as you walk.", command = "toggle plants"}, 
 disperse = {info = "Use disperse to remove writhes from allies.", command = "toggle disperse (all|callers|none)"},
-questing = {info = "Toggle questing.", command = "queston"},
-vermin = {info = "Vermin walking/killing/turnin.", command = "vermon"},
+questing = {info = "Toggle questing.", command = "toggle questing"},
+vermin = {info = "Vermin walking/killing/turnin.", command = "toggle vermin"},
 goggles = {info = "Telling Sunder you have antiquated goggles.", command = "toggle goggles"},
 goggle_level = {info = "What level are your goggles?", command = "mygoggles or mygoggles &lt;level&gt;"},
 nontargetgags = {info = "Remove nontarget cures from output.", command = "toggle non target gagging"},
@@ -12388,16 +12392,16 @@ function snd.do_equilibrium_take(current)
 end
 
 function snd.do_needy_balance_take(current)
- if snd.can_cast() and snd.defenses[current].state == "down" and snd.defenses[current].needit then
-  snd.send(snd.defenses[current].balance.needybalancetake)
-  echo("("..snd.defenses[current].balance.needybalancetake..")")
-  snd.last_type = "needybalancetake"
-  snd.last_item = snd.defenses[current].balance.needybalancetake
-  snd.defenses[current].state = "waiting"
-  startStopWatch(snd.defenses[current].timer)
-  snd.waiting.balance = true
-  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
- end
+  if snd.can_cast() and snd.defenses[current].state == "down" and snd.defenses[current].needit then
+    snd.send(snd.defenses[current].balance.needybalancetake)
+    echo("("..snd.defenses[current].balance.needybalancetake..")")
+    snd.last_type = "needybalancetake"
+    snd.last_item = snd.defenses[current].balance.needybalancetake
+    snd.defenses[current].state = "waiting"
+    startStopWatch(snd.defenses[current].timer)
+    snd.waiting.balance = true
+    tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+  end
 end
 
 function snd.do_needy_equilibrium_take(current)
@@ -12414,18 +12418,29 @@ function snd.do_needy_equilibrium_take(current)
 end
 
 function snd.do_balance_equilibrium_take(current)
- if snd.can_cast() and snd.defenses[current].state == "down" and snd.defenses[current].needit then
-  snd.send(snd.defenses[current].balance.balanceequilibriumtake)
-  echo("("..snd.defenses[current].balance.balanceequilibriumtake..")")
-  snd.last_type = "balanceequilibriumtake"
-  snd.last_item = snd.defenses[current].balance.balanceequilibriumtake
-  snd.defenses[current].state = "waiting"
-  startStopWatch(snd.defenses[current].timer)
-  snd.waiting.balance = true
-  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
-  snd.waiting.equilibrium = true
-  tempTimer(snd.delay(), [[snd.waiting.equilibrium = false]])
- end
+  if snd.can_cast() and snd.defenses[current].state == "down" and snd.defenses[current].needit then
+    
+    if snd.class == "Teradrim" and current:find("swelter") then
+      if not table.isMember(gmcp.Room.Info.details, "sandy") then
+        snd.send("sand flood")
+        snd.waiting.balance = true
+        tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+        snd.waiting.equilibrium = true
+        tempTimer(snd.delay(), [[snd.waiting.equilibrium = false]])
+      end
+    end
+        
+    snd.send(snd.defenses[current].balance.balanceequilibriumtake)
+    echo("("..snd.defenses[current].balance.balanceequilibriumtake..")")
+    snd.last_type = "balanceequilibriumtake"
+    snd.last_item = snd.defenses[current].balance.balanceequilibriumtake
+    snd.defenses[current].state = "waiting"
+    startStopWatch(snd.defenses[current].timer)
+    snd.waiting.balance = true
+    tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+    snd.waiting.equilibrium = true
+    tempTimer(snd.delay(), [[snd.waiting.equilibrium = false]])
+  end
 end</script>
 							<eventHandlerList />
 						</Script>
