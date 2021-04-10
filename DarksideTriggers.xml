@@ -134,13 +134,29 @@ end
 
 snd.new.room = false
 
-if snd.gui_enabled then
+if snd.gui_loaded then
   local tally_check = snd.aff_tally()
+	local aff_check = ""
   if tally_check &gt; 0 then
-    display_my_affs()
+		for aff in pairs(snd.afflictions) do
+  		if snd.have_aff(aff) then
+				aff_check = aff
+				aff_check = aff_check:gsub("aff_", "")
+				aff_check = aff_check:gsub("_", " ")
+				aff_check = aff_check:gsub("left", "L")
+				aff_check = aff_check:gsub("right", "R")
+				if snd.afflictions[aff]["cures"]["herb"] ~= nil or 
+        snd.afflictions[aff]["cures"]["salve"] ~= nil or 
+        snd.afflictions[aff]["cures"]["smoke"] ~= nil then
+     			table.insert(self_display_table, "&lt;center&gt;"..aff_check.."&lt;/center&gt;")
+				end
+			end
+		end
+
+    myaffs:echo(table.concat(self_display_table))
   else
-    myaffs:echo("&lt;center&gt;" .. "my affs" .. "&lt;/center&gt;")
-  end
+ 		myaffs:echo("&lt;center&gt;my affs&lt;/center&gt;")
+	end
 end
 
 	if not snd.have_aff("recklessness") and not snd.have_aff("blackout") then 
@@ -274,7 +290,7 @@ else
   end
 end</script>
 						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
+						<conditonLineDelta>1</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
 						<mCommand></mCommand>
 						<packageName></packageName>
@@ -284,10 +300,12 @@ end</script>
 						<colorTriggerFgColor>#00b300</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string></string>
+							<string>return isPrompt()</string>
+							<string>^.+</string>
 						</regexCodeList>
 						<regexCodePropertyList>
-							<integer>7</integer>
+							<integer>4</integer>
+							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -5570,9 +5588,12 @@ snd.delete_prompt = true</script>
 									</regexCodePropertyList>
 								</Trigger>
 							</TriggerGroup>
-							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>affline got</name>
-								<script>snd.aff_gain(matches[2])
+								<script>  if snd.gui.enabled then
+    deleteLine()
+  end
+snd.aff_gain(matches[2])
 
 if matches[2] == "paresis" then
   if not snd.queuesent and not snd.waiting.queue then
@@ -5605,53 +5626,34 @@ end</script>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>^You are afflicted with (.+)\.$</string>
-									<string>^You have discovered (.*)\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
-									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
-							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>affline cure</name>
-								<script>
-snd.aff_cure(multimatches[2][2])
-
-if multimatches[2][2] == "left_arm_broken" then
-	snd.aff_remove("broken_arm")
-	if snd.limbbrokencount &gt; 0 then
-		snd.limbbrokencount = snd.limbbrokencount - 1
-	end
-elseif multimatches[2][2] == "right_arm_broken" then
- 	snd.aff_remove("broken_arm")
-	if snd.limbbrokencount &gt; 0 then
-		snd.limbbrokencount = snd.limbbrokencount - 1
-	end
+								<script>  if snd.gui.enabled then
+    deleteLine()
+  end
+snd.aff_cure(matches[2])
+if matches[2] == "left_arm_broken" or matches[2] == "right_arm_broken" then
+ snd.aff_cure("broken_arm")
 end
-if multimatches[2][2] == "left_leg_broken" then
- snd.aff_remove("broken_leg")
-	if snd.limbbrokencount &gt; 0 then
-		snd.limbbrokencount = snd.limbbrokencount - 1
-	end
-elseif multimatches[2][2] == "right_leg_broken" then
- snd.aff_remove("broken_leg")
-	if snd.limbbrokencount &gt; 0 then
-		snd.limbbrokencount = snd.limbbrokencount - 1
-	end
+if matches[2] == "left_leg_broken" or matches[2] == "right_leg_broken" then
+ snd.aff_cure("broken_leg")
 end
 
-local multiaffliction = multimatches[2][2]
-snd.passfunction = multimatches[2][2]
 
-if not table.isMember(snd.have_aff, multimatches[2][2]) and multimatches[2][2] ~= "stun" and multimatches[2][2] ~= "vitalbane" then 
+local multiaffliction = matches[2]
+snd.passfunction = matches[2]
+
+if not table.isMember(snd.have_aff, matches[2]) and matches[2] ~= "stun" and matches[2] ~= "vitalbane" then 
 	snd.unknownquantity = snd.unknownquantity - 1
 	if tonumber(snd.unknownquantity) &lt; 1 then
-		snd.aff_remove("unknown")
+		snd.aff_cure("unknown")
 		snd.unknownquantity = 0
 	end
-	snd.aff_remove(snd.passfunction) 
-else
-	snd.aff_remove(snd.passfunction) 	
 end
 
 if "writhe_grappled" == multiaffliction then 
@@ -5718,11 +5720,9 @@ end</script>
 								<colorTriggerFgColor>#008080</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>FG14BG2</string>
 									<string>^You have cured (.*).$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
-									<integer>6</integer>
 									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
@@ -6062,10 +6062,8 @@ end</script>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>You are:</string>
-									<string>You sense that you are:</string>
 								</regexCodeList>
 								<regexCodePropertyList>
-									<integer>3</integer>
 									<integer>3</integer>
 								</regexCodePropertyList>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -7504,7 +7502,7 @@ end</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Blackout Done</name>
 									<script>snd.aff_cure("blackout")
-snd.qllook()</script>
+send("ql")</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -8798,6 +8796,50 @@ tempTimer(1, [[snd.diag_sent = false]])</script>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>3</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Discovered</name>
+								<script>  if snd.gui.enabled then
+    deleteLine()
+  end
+
+snd.aff_gain(matches[2])
+
+if matches[2] == "paresis" then
+  if not snd.queuesent and not snd.waiting.queue then
+    send("queue clear")
+  elseif snd.class == "Zealot" and not snd.swaggered then
+    if snd.swagger &lt; 2 then
+      snd.send("qeb swagger")
+      snd.swaggered = true
+      tempTimer(3,[[snd.swaggered = false]])
+    end
+  end
+end
+
+if snd.have_aff("blackout") and snd.have_aff("recklessness") then
+	enableTimer("recklessblackouttimer")
+elseif snd.have_aff("blackout") then
+	enableTimer("blackout")
+elseif snd.have_aff("recklessness") then
+	enableTimer("recklessblackouttimer")
+end</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^You have discovered (.*)\.$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
 						</TriggerGroup>
@@ -11619,37 +11661,6 @@ snd.sep = matches[2]</script>
 							</regexCodePropertyList>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>People updating via following</name>
-							<script>
-local do_we_update = false
-for name in string.gmatch(matches[2], '[^,%s]+') do
-  if name ~= "and" then
-		if not table.isMember(snd.players_here, name) then
-	    table.insert(snd.players_here, name)
-			do_we_update = true
-		end
-  end
-end
-if do_we_update then people_update() end
-</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand></mCommand>
-							<packageName></packageName>
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile></mSoundFile>
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>^(.+) follows? you to the (?:the )?\w+.$</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>1</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Gags</name>
 							<script>selectCurrentLine()
 deleteLine()</script>
@@ -12875,7 +12886,7 @@ expandAlias("mnt")</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Enable looking</name>
 						<script>deleteLine()
-snd.message("DEATH: "..matches[2], "death")
+
 if snd.bashcounterattack then
   snd.bashcounterattack = false
 end
@@ -13567,10 +13578,10 @@ snd.class_hitting = "indorani"</script>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Not Prone</name>
+						<name>Not Prone (Me)</name>
 						<script>snd.aff_remove("prone")
 snd.aff_remove("fallen")
-snd.waiting.queue = false</script>
+--snd.waiting.queue = false</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -14292,9 +14303,11 @@ end</script>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>^A reflection of (\w+) blinks out of existence\.$</string>
+									<string>One of your reflections has been destroyed!</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
+									<integer>2</integer>
 								</regexCodePropertyList>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -33252,11 +33265,10 @@ end</script>
 							<regexCodePropertyList />
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>web invite</name>
-								<script>if snd.toggles.affcalling then
+								<script>
   if (sndNDB.players[gmcp.Char.Status.name].tether == sndNDB.players[matches[2]].tether) then
    snd.send("web accept")
-	end
-end</script>
+	end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -35038,7 +35050,7 @@ end</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>death prompt</name>
-									<script>setTriggerStayOpen("Deaths", 0)
+									<script>setTriggerStayOpen("Deathsm", 0)
 
 if snd.toggles.calling and not snd.targeting.burst then
   if table.contains(snd.players_here, snd.targeting.who) then
@@ -35462,7 +35474,8 @@ end</script>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>No reflections left</name>
-								<script>snd.reflection_charge = 0</script>
+								<script>snd.reflection_charge = 0
+</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
