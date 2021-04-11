@@ -9442,6 +9442,453 @@ end</script>
 							<command></command>
 							<packageName></packageName>
 							<regex></regex>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Affliction Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>venoms only</name>
+									<script>if snd.class == "Warden" then
+snd.giving = {
+"paresis",
+"clumsiness",
+"asthma",
+"slickness",
+"stupidity",
+"anorexia",
+"allergies",
+--"weariness",
+--"haemophilia",
+--"sensitivity",
+--"vomiting",
+--"recklessness",
+--"dizziness",
+--"voyria",
+}
+snd.starting_attack()
+function snd.attack_function()
+ if not snd.waiting.queue then
+  local string = ""
+  local left = "none"
+  local right = "none"
+  for i in pairs(snd.giving) do
+   if not table.contains(snd.target_has, snd.giving[i]) then
+    if right == "none" then
+     right = snd.effects[snd.giving[i]]
+    elseif left == "none" then
+     left = snd.effects[snd.giving[i]]
+    end
+   end
+  end
+  if left == "none" then left = "epteth" end
+  if right == "none" then right = "epseth" end
+  
+	x = ""
+  
+  if snd.used.rebounding and snd.used.shield then
+   string = "warden raze "..snd.target
+  elseif snd.used.rebounding or snd.used.shield then
+   string = "warden bypass "..snd.target.." "..right
+	 if snd.toggles.affcalling and not snd.target_gone then
+	  x = "wt Afflicting "..snd.target..": "..right..snd.sep
+	 end
+  else
+   string = "warden lacerate "..snd.target.." "..left.." "..right
+	 if snd.toggles.affcalling and not snd.target_gone then
+	  x = "wt Afflicting "..snd.target..": "..left..", "..right..snd.sep
+	 end
+	end
+  
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end
+
+</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^vn$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>affs</name>
+									<script>if snd.class == "Warden" then
+  snd.giving = {
+  "paresis",
+  "asthma",
+  "clumsiness",
+  "slickness",
+  "stupidity",
+  "anorexia",
+  "dizziness",
+  --"weariness",
+  --"sensitivity",
+  --"haemophilia",
+  --"vomiting",
+  --"allergies",
+  --"recklessness",
+  --"voyria",
+  }
+  snd.hound_queue = {
+  "dizziness",
+  "berserking",
+  "weariness",
+  "impairment",
+  }
+  snd.starting_attack()
+  function snd.attack_function()
+   snd.handle_hounds()
+   if not snd.waiting.queue then
+    local string = ""
+    local left = "none"
+    local right = "none"
+  
+    for i in pairs(snd.giving) do
+     if not snd.checkAff(snd.giving[i]) and snd.giving[i] ~= snd.implant then
+      if right == "none" then
+       right = snd.effects[snd.giving[i]]
+      elseif left == "none" then
+       left = snd.effects[snd.giving[i]]
+      end
+     end
+    end
+    
+    if left == "none" then left = "epseth" end
+    if right == "none" then right = "epseth" end
+  	x = ""
+    
+    if snd.used.rebounding and snd.used.shield then
+     string = "warden raze "..snd.target
+    elseif snd.used.rebounding or snd.used.shield then
+     string = "warden bypass "..snd.target.." "..right
+  	 if snd.toggles.affcalling and not snd.target_gone then
+  	  x = "wt Afflicting "..snd.target..": "..right..snd.sep
+  	 end
+    else
+  	 if snd.checkAff("fallen") and snd.target_locked() then
+  	  if table.contains(snd.target_has, "crushed_chest") then
+  		 string = "warden decimate "..snd.target
+  		else
+  	   string = "warden pummel "..snd.target.." chest"
+  		end
+  	 else
+      string = "warden lacerate "..snd.target.." "..left.." "..right
+  	  if snd.toggles.affcalling and not snd.target_gone then
+  	   x = "wt Afflicting "..snd.target..": "..left..", "..right..snd.sep
+  	  end
+  	 end
+  	end
+    
+  	if snd.soul &lt;= 80 and not table.contains(snd.target_has, "ancestral_portent") then
+  	 string = string..snd.sep.."ancest portent "..snd.target
+  	elseif snd.soul &lt;= 90 and not table.contains(snd.target_has, "inhibited") then
+  	 string = string..snd.sep.."ancest inhibit "..snd.target
+  	elseif #snd.target_has &gt;= 12 and snd.balance.soulpoison then
+  	 string = string..snd.sep.."ancest ambush "..snd.target
+  	elseif snd.soul &lt;= 75 and snd.balance.implant and not table.contains(snd.target_has, "soul_implant") then
+  	 if snd.target_locked() then
+  	  string = string..snd.sep.."ancest attune "..snd.target.." aconite slike"
+  	 end
+  	end
+    
+  	string = x..string..snd.sep.."warden release "..snd.target
+    if string ~= snd.last_attack and not snd.waiting.queue then
+     snd.last_attack = string
+     snd.attack(snd.last_attack)
+     snd.waiting.queue = true
+     tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+   end
+  end
+  snd.attack_function()
+end
+</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^aff$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>legs</name>
+									<script>if snd.class == "Warden" then
+snd.hound_queue = {
+"frozen",
+}
+snd.starting_attack()
+function snd.attack_function()
+ snd.handle_hounds()
+ if not snd.waiting.queue then
+  if snd.used.rebounding or snd.used.shield then
+   string = "warden raze "..snd.target
+   
+  elseif snd.proned() then
+   if table.contains(snd.target_has, "crushed_chest") then
+	  string = "warden decimate "..snd.target
+	 else
+	  string = "warden pummel "..snd.target.." chest"
+	 end
+   
+  else
+   string = "warden lacerate "..snd.target.." epseth epseth"
+  end
+  
+	if snd.soul &lt;= 90 then
+	 string = string..snd.sep.."ancest elude "..snd.target
+	end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+	end
+ end
+end
+snd.attack_function()
+end
+</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^lgs$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Damage Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>damage</name>
+									<script>if snd.class == "Warden" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ if not snd.waiting.queue then
+  if snd.used.shield then
+		string = "ancest carve "..snd.target
+  else
+   	string = "warden maul "..snd.target
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end
+</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^dmg$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Limb Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>limbs</name>
+									<script>if snd.class == "Warden" then
+  snd.hound_queue = {
+  "frozen",
+  }
+  snd.starting_attack()
+  function snd.attack_function()
+   snd.handle_hounds()
+   if not snd.waiting.queue then
+    -- list what limbs to hit
+    limbs = {"left leg", "right leg", "left arm", "right arm"}
+  
+    if table.contains(snd.target_has, "crushed_chest") and snd.proned() then	-- check if we can pulverize now!
+     string = "warden decimate "..snd.target
+  
+  	elseif snd.proned() and snd.resto_limb ~= "none" then	-- or if we should set up pulverize...
+  	 string = "warden pummel "..snd.target.." chest"
+    else -- can't pulverize, needs logic 	 -- pick what limbs to hit
+  
+  	 left = "nothing"
+  	 right = "nothing"
+     
+  	 if snd.proned() then -- focus legs hard on prone
+  	  if snd.parried_limb == "right leg" then
+  	   right = "left leg"
+  	  elseif snd.parried_limb == "left leg" then
+  	   right = "right leg"
+  	  else
+  	   right = "right leg"
+  		 left = "left leg"
+  	  end
+      
+  	 -- are the legs prepped?
+  	 elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.limb_dmg["right leg"] + 7.41 &gt;= 33.33) and snd.limb_dmg["left leg"] &lt; 33.33 and (snd.limb_dmg["left leg"] + 7.41 &gt;= 33.33) and not snd.used.shield and not snd.used.rebounding then
+  		 string = "target left leg with left"..snd.sep.."target right leg with right"..snd.sep.."warden maul "..snd.target
+       
+  	 else -- target not prone, legs not prepped
+  	  for limb in pairs(limbs) do
+  		 -- ignore last parried, last hit, and any limbs being resto'd
+  	   if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
+  		  -- if it's a leg that's about to break
+  	    if (limbs[limb] == "left leg" or limbs[limb] == "right leg") and (snd.limb_dmg[limbs[limb]]+snd.limb_dmg_done &gt;= 33.3) then
+  		   -- don't do anything!
+  			 -- if it's not a leg about to break, go for it
+  		  elseif right == "nothing" then
+  		   right = limbs[limb]
+  	    elseif left == "nothing" and limbs[limb] ~= right then
+  	     left = limbs[limb]
+  		  end
+  	   end
+  	  end
+      
+  	  if left == "nothing" then -- we only found one limb to hit
+  	   left = right -- double up!
+  	  end
+      
+  	  -- end limb picking logic
+  	  -- on to attacking logic!
+      
+  	  if snd.used.shield or snd.used.rebounding then -- baddie is turtling
+       string = "warden raze "..snd.target -- raze has static balance cost
+  	  else
+  	   string = "warden maul "..snd.target.." "..left.." "..right
+  		 if snd.soul &lt;= 80 and not table.contains(snd.target_has, "debilitated") then
+  		  string = string..snd.sep.."ancest debilitate "..snd.target
+  		 end
+      end
+  	 end
+  	end
+    
+    if string ~= snd.last_attack and not snd.waiting.queue then
+     snd.last_attack = string
+     snd.attack(snd.last_attack)
+     snd.waiting.queue = true
+     tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+   end
+  end
+  snd.attack_function()
+end
+</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limbs$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>legs</name>
+									<script>if snd.class == "Warden" then
+  snd.hound_queue = {
+  "frozen",
+  }
+  snd.starting_attack()
+  function snd.attack_function()
+   snd.handle_hounds()
+   if not snd.waiting.queue then
+    -- list what limbs to hit
+    limbs = {"left leg", "right leg", "left arm", "right arm"}
+  
+    if snd.checkAff("crushed_chest") and snd.proned() then	-- check if we can pulverize now!
+     string = "warden decimate "..snd.target
+  
+  	elseif snd.proned() and ((snd.limb_dmg["left leg"] &gt;= 33.33 and snd.limb_dmg["right leg"] &gt;= 33.33)  	-- or if they're prone and staying that way
+    or snd.limb_dmg["left leg"] &gt;= 66.66 or snd.limb_dmg["right leg"] &gt;= 66.66) then
+  
+  	 if table.contains(snd.target_has, "distortion") and snd.soul &lt;= 70 then 	 -- are they distorted?
+  	  string = "warden pummel "..snd.target.." chest"	 
+  	 elseif snd.used.shield or snd.used.rebounding then -- do we need to raze?
+  	  string = "warden raze "..snd.target
+  	
+  	 else 
+  	  string = "warden pummel "..snd.target.." chest"
+  	 end
+  	elseif snd.proned() then -- at least they're prone
+  	 if (snd.used.shield or snd.used.rebounding) and not table.contains(snd.target_has, "distortion") then -- bleh!
+  	  string = "warden raze "..snd.target
+  	 else -- make sure they stay down
+  	  if table.contains(snd.target_has, "frozen") or table.contains(snd.target_has, "distortion") then
+  		 string = "warden maul "..snd.target.." left leg right leg"
+  	  elseif snd.parried_limb == "left leg" then
+  		 string = "warden maul "..snd.target.."right leg right leg"
+  		elseif snd.parried_limb == "right leg" then
+  		 string = "warden maul "..snd.target.."left leg left leg"
+  		else
+  	   string = "warden maul "..snd.target.." left leg right leg"
+  		end
+  	 end
+  	-- did they apply resto?
+  	--elseif not snd.used.shield and not snd.used.rebounding and snd.resto_limb ~= "none" then
+  	-- string = "target nothing with left"..snd.sep.."target nothing with right"..snd.sep.."warden lacerate "..snd.target.." epseth epseth"
+    else -- can't pulverize, needs logic
+  	 -- pick what limbs to hit
+  	 left = "nothing"
+  	 right = "nothing"
+  	 if snd.proned() then -- focus legs hard on prone
+  	  if snd.parried_limb == "right leg" then
+  	   right = "left leg"
+  	  elseif snd.parried_limb == "left leg" then
+  	   right = "right leg"
+  	  else
+  	   right = "right leg"
+  		 left = "left leg"
+  	  end
+  	 -- are the legs prepped?
+  	 elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.limb_dmg["right leg"] + 7.41 &gt;= 33.33) and snd.limb_dmg["left leg"] &lt; 33.33 and (snd.limb_dmg["left leg"] + 7.41 &gt;= 33.33) and not snd.used.shield and not snd.used.rebounding then
+      string = "target left leg with left"..snd.sep.."target right leg with right"..snd.sep.."warden maul "..snd.target
+  	 else -- target not prone, legs not prepped
+  	  for limb in pairs(limbs) do
+  		 -- ignore last parried, last hit, and any limbs being resto'd
+  	   if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
+  		  if right == "nothing" then
+  		   right = limbs[limb]
+  	    elseif left == "nothing" and limbs[limb] ~= right then
+  	     left = limbs[limb]
+  		  end
+  	   end
+  	  end
+  	  if left == "nothing" then -- we only found one limb to hit
+  	   left = right -- double up!
+  	  end
+  	  -- end limb picking logic
+  	  -- on to attacking logic!
+  	  if snd.used.shield or snd.used.rebounding then -- baddie is turtling
+       string = "warden raze "..snd.target -- raze has static balance cost
+  	  else
+  	   string = "warden maul "..snd.target.." "..left.." "..right
+      end
+  	 end
+  	end
+  	if snd.soul &lt;= 90 and not snd.checkAff("inhibited") then
+  	 string = string..snd.sep.."ancest inhibit "..snd.target
+  	elseif snd.soul &lt;= 90 and not snd.checkAff("eluded") then
+  	 string = string..snd.sep.."ancest elude "..snd.target
+    elseif snd.soul &lt;= 80 and not snd.checkAff("debilitated") then
+     string = string..snd.sep.."ancest debilitate "..snd.target
+    end
+    if string ~= snd.last_attack and not snd.waiting.queue then
+     snd.last_attack = string
+     snd.attack(snd.last_attack)
+     snd.waiting.queue = true
+     tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+   end
+  end
+  snd.attack_function()
+end
+</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^legs$</regex>
+								</Alias>
+							</AliasGroup>
 						</AliasGroup>
 					</AliasGroup>
 					<AliasGroup isActive="yes" isFolder="yes">
