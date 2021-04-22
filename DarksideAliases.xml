@@ -2161,6 +2161,8 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>afflictions</name>
 									<script>if snd.class == "Monk" then
+snd.starting_attack()
+
 snd.giving = {
 "paresis",
 "stupidity",
@@ -2177,69 +2179,69 @@ snd.giving = {
         mymental_aff_count = mymental_aff_count + 1
       end
     end
-		
-		local mentcount = 0 
-    for aff in pairs(snd.mental_affs) do
-      if table.contains(snd.target_has, snd.mental_affs[aff]) then
-    	  mentcount = mentcount + 1
+    
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
       end
-    end
 
-snd.starting_attack()
 function snd.attack_function()
- if not snd.waiting.queue then
-  if snd.used.shield then
-   	string = "combo "..snd.target.." sck ucp ucp"
-	elseif snd.checkAff("blackout") and not snd.checkAff("disrupted") and mentcount &gt; 2 then
-		string = "mind disrupt"
-	elseif snd.proned and not snd.checkAff("writhe_impaled") then
-	 	if snd.parried_limb == "left leg" then
-	  	string = "combo "..snd.target.." wrt right leg hfp right hfp right"
-	 	elseif snd.parried_limb == "right leg" then
-	  	string = "combo "..snd.target.." wrt left leg hfp left hfp left"
-		elseif (snd.limb_dmg["head"] &gt;= 56) and snd.no_parry() and snd.stance == "tiger" then
-			string = "combo "..snd.target.." axk ucp ucp"
-	 	end
-	elseif snd.target_impaled then
-		string = "combo "..snd.target.." axk ucp ucp"
-	elseif #snd.aff_list &gt; 4 and (snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon") or snd.have_aff("ablaze") or snd.have_aff("heatspread")) and snd.balance.mindpush then
-		string = "mind push "..snd.target
-	elseif mymental_aff_count &gt;= 2 and snd.balance.mindcleanse then 
-		string = "mind cleanse me"
-  else
-	 one = "none"
-	 two = "none"
-	 three = "none"
-   for i in pairs(snd.giving) do
-   	 if not snd.checkAff(snd.giving[i]) then
-    	 	if one == "none" then
-      		one = snd.giving[i]
-		 		elseif two == "none" then
-		  		two = snd.giving[i]
-		 		elseif three == "none" then
-		  		three = snd.giving[i]
-     		end
-    	end
-   end
-	 	if three ~= "none" then
-    	string = "mind batter "..snd.target.." "..one.." "..two.." "..three
-	 	else
-    	if snd.parried_limb == "head" then
-     		string = "combo "..snd.target.." sdk hkp hkp"
-			else
-	   		string = "combo "..snd.target.." wwk ucp ucp"
-			end
-	 	end
+  if not snd.waiting.queue then
+    if snd.used.shield then
+   	  string = "combo "..snd.target.." sck ucp ucp"
+	  elseif snd.checkAff("blackout") and not snd.checkAff("disrupted") and mentcount &gt; 2 then
+		  string = "mind disrupt"
+	  elseif snd.proned and not snd.checkAff("writhe_impaled") then
+	 	   if snd.parried_limb == "left leg" then
+	  	    string = "combo "..snd.target.." wrt right leg hfp right hfp right"
+	 	   elseif snd.parried_limb == "right leg" then
+	  	    string = "combo "..snd.target.." wrt left leg hfp left hfp left"
+		   elseif (snd.limb_dmg["head"] &gt;= 56) and snd.no_parry() and snd.stance == "tiger" then
+			    string = "combo "..snd.target.." axk ucp ucp"
+	 	   end
+	  elseif snd.target_impaled then
+		  string = "combo "..snd.target.." axk ucp ucp"
+	  elseif #snd.aff_list &gt; 4 and (snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon") or snd.have_aff("ablaze") or snd.have_aff("heatspread")) and snd.balance.mindpush then
+		  string = "mind push "..snd.target
+	  elseif mymental_aff_count &gt;= 2 and snd.balance.mindcleanse then 
+		  string = "mind cleanse me"
+    else
+	    one = "none"
+	    two = "none"
+	    three = "none"
+      for i in pairs(snd.giving) do
+   	    if not snd.checkAff(snd.giving[i]) then
+    	    if one == "none" then
+      		  one = snd.giving[i]
+		 		  elseif two == "none" then
+		  		  two = snd.giving[i]
+		 		  elseif three == "none" then
+		  		  three = snd.giving[i]
+     		  end
+    	  end
+      end
+	 	  if three ~= "none" then
+    	   string = "mind batter "..snd.target.." "..one.." "..two.." "..three
+	 	  else
+    	   if snd.parried_limb == "head" then
+     		   string = "combo "..snd.target.." sdk hkp hkp"
+			   else
+	   		  string = "combo "..snd.target.." wwk ucp ucp"
+			   end
+	 	  end
+    end
+    if string ~= snd.last_attack and not snd.waiting.queue then
+      snd.last_attack = string
+      snd.attack(snd.last_attack)
+      snd.waiting.queue = true
+      tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
   end
-  if string ~= snd.last_attack and not snd.waiting.queue then
-   snd.last_attack = string
-   snd.attack(snd.last_attack)
-   snd.waiting.queue = true
-   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-  end
- end
 end
-snd.attack_function()
+
+  snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
