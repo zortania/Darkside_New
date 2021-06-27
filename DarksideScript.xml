@@ -18606,12 +18606,10 @@ function snd.bashing_function()
       --  end
       if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep.."absorb ylem" end
       if battack ~= snd.last_attack and snd.ylem_check == false then
-        snd.last_attack = battack
-        snd.send("qeb stand"..snd.sep..snd.last_attack)
-        snd.waiting.queue = true
-        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      elseif snd.ylem_check then
-        battack = "absorb ylem"
+      snd.last_attack = battack
+      snd.send("qeb stand"..snd.sep..snd.last_attack)
+      snd.waiting.queue = true
+      tempTimer(snd.delay(), [[snd.waiting.queue = false]])
       end
     end
   end
@@ -18623,8 +18621,12 @@ function snd.templar_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   if snd.have_aff("blackout") and snd.shield_check() then
 		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+	elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
@@ -18650,8 +18652,12 @@ function snd.revenant_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   if snd.have_aff("blackout") and snd.shield_check() then
 		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+	elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
@@ -18678,7 +18684,11 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 then
   	battack = "angel aura me"
 	elseif snd.bashcounterattack then
-		battack = "angel aura me"
+		if snd.punisher then
+      battack = "jig"
+    else
+      battack = "angel aura me"
+    end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
@@ -18708,6 +18718,7 @@ function snd.monk_bash()
       end
     end
 	elseif snd.bashcounterattack then
+    if gmcp.Char.Status.name == "Rihrin" then
 		if snd.punisher then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
 			  battack = "point wand at me"
@@ -18717,16 +18728,33 @@ function snd.monk_bash()
     else
       battack = "touch shield"
     end
+    else
+      if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
+    end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
   elseif snd.have_aff("blackout") then
+		if gmcp.Char.Status.name == "Rihrin" then
 		if snd.punisher then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
-			 battack = "point wand at me"
+			  battack = "point wand at me"
+      else
+        battack = "strum lyre"
       end
     else
       battack = "touch shield"
+    end
+    else
+      if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
     end
   elseif snd.stance ~= "scorpion" and not snd.toggles.cobra then
     battack = "scs"
@@ -18772,15 +18800,27 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
       end
 	  elseif snd.bashcounterattack then
       if snd.balance.morph then
-        if snd.shamanpet == "bear" then
-          battack = "familiar morph spider"..snd.sep.."touch shield"
-        elseif snd.shamanpet == "spider" then
-      	  battack = "familiar morph bear"..snd.sep.."touch shield"
-        elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
-      	  battack = "familiar morph bear"..snd.sep.."touch shield"
+        if snd.punisher then
+          if snd.shamanpet == "bear" then
+            battack = "familiar morph spider"..snd.sep.."jig"
+          elseif snd.shamanpet == "spider" then
+            battack = "familiar morph bear"..snd.sep.."jig"
+          elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+            battack = "familiar morph bear"..snd.sep.."jig"
+          end
+        else  
+          if snd.shamanpet == "bear" then
+            battack = "familiar morph spider"..snd.sep.."touch shield"
+          elseif snd.shamanpet == "spider" then
+        	  battack = "familiar morph bear"..snd.sep.."touch shield"
+          elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+        	  battack = "familiar morph bear"..snd.sep.."touch shield"
+          end
         end
       else
-        if snd.shield_check() then
+        if snd.punisher then
+          battack = "jig"
+        else
           battack = "touch shield"
         end
       end
@@ -18835,13 +18875,21 @@ function snd.sentinel_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-		battack = "touch shield"
+	elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.toggles.newbie then
   	battack = "dhuriv combo "..snd.bashing.target.." slash stab"
  	else
@@ -18853,13 +18901,21 @@ function snd.wayfarer_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+	elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
     battack = "axe chop "..snd.bashing.target
 	end
@@ -18869,13 +18925,21 @@ function snd.syssin_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif not snd.toggles.newbie then
  		if snd.defenses.def_hiding.state == "deffed" then
 	 		battack = "backstab "..snd.bashing.target
@@ -18903,13 +18967,21 @@ function snd.shapeshifter_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
     battack = "combo "..snd.bashing.target.." slash slash"
 	end
@@ -18919,13 +18991,21 @@ function snd.indorani_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
     battack = "flick bonedagger at "..snd.bashing.target
 	end
@@ -18935,13 +19015,21 @@ function snd.carnifex_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
     battack = "hammer doublebash "..snd.bashing.target
 	end
@@ -18951,13 +19039,21 @@ function snd.warden_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt;= 60 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
     battack = "warden maul "..snd.bashing.target
 	end
@@ -18989,13 +19085,21 @@ bioessence = tonumber(gmcp.Char.Vitals.bio)
 		end
 	elseif hp &lt;= 70 and snd.shield_check() then
   	battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack then
-		battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
     battack = "incite crux "..snd.bashing.target
 	end
@@ -19066,13 +19170,21 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 		end
 	elseif hp &lt;= 60 and snd.shield_check() then
     battack = "touch shield"
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	else
 		battack = "frenzy "..snd.bashing.target
 	end
@@ -19084,10 +19196,20 @@ endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
     if hp &lt;= 60 then
     	battack = "sand shield me"
     elseif snd.bashcounterattack then
-      battack = "sand shield me"
-	  elseif snd.pushattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "sand shield me"
+      end
+	 elseif snd.pushattack then
 		  battack = "push "..snd.bashing.target
 		  snd.pushattack = false
+    elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "sand shield me"
+      end
     elseif snd.balance.momentum and endur&gt;=45 then
       battack = "earth momentum "..snd.sep.."earth skullbash "..snd.bashing.target..snd.sep.."golem recover"
     elseif snd.balance.momentum and endur&lt;=45 then
@@ -19111,13 +19233,21 @@ function snd.ascendril_bash()
 			 battack = "touch shield"
       end
 		end
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
-		  battack = "push "..snd.bashing.target
-		  snd.pushattack = false
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
   else
     if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "air"  then
    		battack = "cast frostblade "..snd.bashing.target
@@ -19151,13 +19281,21 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
     	 battack = "touch shield"
       end
 		end
-  elseif snd.have_aff("blackout") and snd.shield_check() then
-		battack = "touch shield"
-	elseif snd.bashcounterattack and snd.shield_check() then
-			battack = "touch shield"
+  elseif snd.bashcounterattack then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.pushattack then
-		  battack = "push "..snd.bashing.target
-		  snd.pushattack = false
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
+  elseif snd.have_aff("blackout") then
+			if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
 	elseif snd.toggles.newbie then
   	  battack = "cast ruin "..snd.bashing.target
  	else
