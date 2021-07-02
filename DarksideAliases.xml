@@ -8907,28 +8907,27 @@ end</script>
       end
     end
     -- This uses crispy to check if they're at the right flame level.
-    local immolation_ready = false
-    if snd.checkAff("ablaze") then
-      if snd.checkAff("crispy") then
-        immolation_ready = true
-      end
+    if snd.checkAff("crispy") or snd.flamestack == 12 then
+        snd.immolation_ready = true
     end
     -- In this mode, we're going to only rely on Purification. It's built to support a quick Immolate.
     if not snd.waiting.queue then
-      if snd.used.shield then
-        string = "touch hammer " .. snd.target
+      if theytumbling then
+			  string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
+      elseif snd.used.shield then
+        string = "order loyals kill "..snd.target..snd.sep .. "touch hammer "..snd.target
         -- OK, so if immolation is ready... we should cast it!	
-      elseif immolation_ready then
-        string = "enact immolation " .. snd.target
+      elseif snd.immolation_ready then
+        string = "order loyals kill "..snd.target..snd.sep .. "enact immolation " .. snd.target
         -- OK, so if immolation isn't ready, what next? Heatspear!
-      elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
-        string = "enact heatspear " .. snd.target
+      elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") and snd.limb_dmg["torso"] &lt;= 66.66 then
+        string = "order loyals kill "..snd.target..snd.sep .. "enact heatspear " .. snd.target
         -- OK, what if they have heatspear? Are they ablaze?! Quicken!
       elseif snd.checkAff("ablaze") then
-        string = "enact quicken "..snd.target
+        string = "order loyals kill "..snd.target..snd.sep .. "enact quicken "..snd.target
         -- OK, so we've done all of this, but they don't have ablaze! Ez fix..
       else
-        string = "enact scorch " .. snd.target
+        string = "order loyals kill "..snd.target..snd.sep .. "enact scorch " .. snd.target
       end
       -- Flow Handling/snd.zenith Handling
       -- In this mode, we only Flow when we have snd.zenith, otherwise we are casting.
@@ -8936,13 +8935,13 @@ end</script>
       -- Our Flow attacks should always be punches to take advantage of Firefist.
       if snd.zenith then
         if snd.used.shield then
-          string = "touch hammer " .. snd.target
+          string = "order loyals kill "..snd.target..snd.sep .. "touch hammer " .. snd.target
         elseif snd.parried_limb ~= "torso" then
-          string = "flow " .. snd.target .. " clawtwist clawtwist" .. snd.sep .. string
+          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " clawtwist clawtwist" .. snd.sep .. string
         elseif snd.parried_limb ~= "left arm" then
-          string = "flow " .. snd.target .. " pummel left pummel left" .. snd.sep .. string
+          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " pummel left pummel left" .. snd.sep .. string
         else
-          string = "flow " .. snd.target .. " pummel right pummel right" .. snd.sep .. string
+          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " pummel right pummel right" .. snd.sep .. string
         end
       end
       -- Hackles handling
@@ -8966,7 +8965,7 @@ end</script>
       end
     end
     -- I am leaving this failsafe in... below checks if we're g2g with the immolate button.
-    if immolation_ready then
+    if snd.immolation_ready then
       string = "enact immolation " .. snd.target
     end
     if string ~= snd.last_attack and not snd.waiting.queue then
@@ -9005,12 +9004,9 @@ head = "sunkick" }
 
 
 -- This uses crispy to check if they're at the right flame level.
-  local immolation_ready = false
-  if snd.checkAff("ablaze") then
-    if snd.checkAff("crispy") then
-      immolation_ready = true
+if snd.checkAff("crispy") or snd.flamestack == 12 then
+        snd.immolation_ready = true
     end
-  end
        
  
  -- This is a list of limbs we'll be hitting.
@@ -9158,7 +9154,7 @@ if not snd.zenith then
     end
 end
  
-if immolation_ready then
+if snd.immolation_ready then
     string = "enact immolation "..snd.target
 end
  
@@ -9193,18 +9189,9 @@ end
   snd.starting_attack()
 
   function snd.attack_function()
-
-    if snd.checkAff("crispy") then
-      if not snd.checkaff("ablaze") then
-        snd.target_cured("crispy")
-      end
-    end
     
-    local immolation_ready = false
-    if snd.checkAff("ablaze") then
-      if snd.checkAff("crispy") then
-        immolation_ready = true
-      end
+    if snd.checkAff("crispy") or snd.flamestack == 12 then
+        snd.immolation_ready = true
     end
     
     -- Flow Handling
@@ -9280,7 +9267,7 @@ end
           end
         end
       end
-      if immolation_ready then
+      if snd.immolation_ready then
         string = "enact immolation " .. snd.target
       end
       if string ~= snd.last_attack and not snd.waiting.queue then
@@ -9325,17 +9312,8 @@ if snd.class == "Zealot" then
     torso = "clawtwist",
     head = "sunkick" }
 
-    if snd.checkAff("crispy") then
-      if not snd.checkaff("ablaze") then
-        snd.target_cured("crispy")
-      end
-    end
-    
-    local immolation_ready = false
-    if snd.checkAff("ablaze") then
-      if snd.checkAff("crispy") then
-        immolation_ready = true
-      end
+  if snd.checkAff("crispy") or snd.flamestack == 12 then
+        snd.immolation_ready = true
     end
  
     local limbs = {"torso", "left leg", "right leg", "left arm", "right arm"}
@@ -9438,7 +9416,7 @@ if snd.class == "Zealot" then
         end
       end
       
-      if immolation_ready then
+      if snd.immolation_ready then
         string = "order loyals kill "..snd.target..snd.sep .. "enact immolation " .. snd.target
       end 
  
