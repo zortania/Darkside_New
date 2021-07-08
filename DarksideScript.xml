@@ -246,6 +246,7 @@ fitness = true, -- have access to the fitness ability
 shrug = false, -- have access to shrug
 purge = false, -- have access to Carnifex purge
 purify = false, -- have access to Praenomen purify
+panacea = true, -- have access to Shaman panacea
 scour = false, -- have access to Teradrim scour
 roe = false, -- harvesting fishroe
 support = false, -- if you want to use a support system or not
@@ -2601,9 +2602,9 @@ function snd.do_queue()
   	    if snd.need_fitness then
   	      table.insert(snd.queue, "fitness")
   	    end
-  	if hasSkill("Purge") and (snd.class == "Carnifex" or snd.class == "Warden") and snd.aff_tally() &gt;= 3 then
-  	 table.insert(snd.queue, "purge")
-  	end
+  	   if hasSkill("Purge") and (snd.class == "Carnifex" or snd.class == "Warden") and snd.aff_tally() &gt;= 3 then
+  	     table.insert(snd.queue, "purge")
+  	   end
         if snd.rage_check() then
           table.insert(snd.queue, "rage")
         end
@@ -18844,11 +18845,11 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
         end
       elseif snd.balance.morph then
         if snd.shamanpet == "bear" then
-          battack = "familiar morph spider"..snd.sep.."touch shield"
+          battack = "order spirit passive"..snd.sep.."familiar morph spider"..snd.sep.."touch shield"
         elseif snd.shamanpet == "spider" then
-      	 battack = "familiar morph bear"..snd.sep.."touch shield"
+      	 battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep.."touch shield"
         elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
-      	 battack = "familiar morph bear"..snd.sep.."touch shield"
+      	 battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep.."touch shield"
         end
       else
         if snd.shield_check() then
@@ -18859,33 +18860,33 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
       if snd.balance.morph then
         if snd.shamanpet == "bear" then
           if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-		        battack = "familiar morph spider"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+		        battack = "order spirit passive"..snd.sep.."familiar morph spider"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
           else
-            battack = "familiar morph spider"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
+            battack = "order spirit passive"..snd.sep.."familiar morph spider"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
           end
         elseif snd.shamanpet == "spider" then
         if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-		        battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+		        battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
           else
-            battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
+            battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
           end
-        elseif snd.shamanpet == ("raven" or "wyvern" or "cougar" or "serpent") then
+        elseif snd.shamanpet ~= "bear" or snd.shamanpet ~= "spider" then
           if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-		        battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+		        battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
           else
-            battack = "familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
+            battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep.."order spirit follow me"..snd.sep.."commune lightning "..snd.bashing.target
           end
         end
       else
         if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-		      battack = "order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+		      battack = "order spirit passive"..snd.sep.."order spirit follow me"..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
         else
           battack = "commune lightning "..snd.bashing.target
         end
       end
 	  end   
   else
-    battack = "familiar recall##order spirit follow me"
+    battack = "familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"
   end
 end
 
@@ -22295,7 +22296,7 @@ function snd.do_purge()
    for aff in pairs(snd.physical_affs) do
 	  if snd.have_aff(snd.physical_affs[aff]) then
 		 if string.find(snd.physical_affs[aff], "_broken") then
-		  local string = string.gsub(physical_affs[aff], "_broken")
+		  local string = string.gsub(snd.physical_affs[aff], "_broken")
 			if snd.afflictions[string.."_damaged"].state == "healed" then
 			 found_aff = true
 			end
@@ -22305,8 +22306,13 @@ function snd.do_purge()
 	  end
 	 end
 	 if found_aff then
-    snd.send("soul purge")
-    echo("(soul purge)")
+    if snd.class == "Carnifex" then
+      snd.send("soul purge")
+      echo("(soul purge)")
+    else
+      snd.send("ancest annul")
+      echo("(ancest annul)")
+    end
     snd.last_type = "purge"
     snd.last_item = "purge"
 	 end
@@ -22348,7 +22354,7 @@ function snd.do_purify()
    for aff in pairs(snd.physical_affs) do
 	  if snd.have_aff(snd.physical_affs[aff]) then
 		 if string.find(snd.physical_affs[aff], "_broken") then
-		  local string = string.gsub(physical_affs[aff], "_broken")
+		  local string = string.gsub(snd.physical_affs[aff], "_broken")
 			if snd.afflictions[string.."_damaged"].state == "healed" then
 			 found_aff = true
 			end
@@ -22385,7 +22391,7 @@ function snd.do_scour()
    for aff in pairs(snd.physical_affs) do
 	  if snd.have_aff(snd.physical_affs[aff]) then
 		 if string.find(snd.physical_affs[aff], "_broken") then
-		  local string = string.gsub(physical_affs[aff], "_broken")
+		  local string = string.gsub(snd.physical_affs[aff], "_broken")
 			if snd.afflictions[string.."_damaged"].state == "healed" then
 			 found_aff = true
 			end
@@ -22440,6 +22446,11 @@ end
 function snd.rage_check()
 
   if not snd.balance.rage then return false end
+  
+  if not gmcp then return false end
+  if hp ~= nil then
+    if hp &lt;= 1 then return false end
+  end
 
   local rage_affs = {
   "aff_hubris",
@@ -22480,7 +22491,7 @@ function snd.do_panacea()
    for aff in pairs(snd.physical_affs) do
 	  if snd.have_aff(snd.physical_affs[aff]) then
 		 if string.find(snd.physical_affs[aff], "_broken") then
-		  local string = string.gsub(physical_affs[aff], "_broken")
+		  local string = string.gsub(snd.physical_affs[aff], "_broken")
 			if snd.afflictions[string.."_damaged"].state == "healed" then
 			 found_aff = true
 			end

@@ -219,6 +219,8 @@ elseif snd.class == "Warden" then
 	snd.toggle("purge")
 elseif snd.class == "Teradrim" then
 	snd.toggle("scour")
+elseif snd.class == "Shaman" then
+	snd.toggle("panacea")
 end</script>
 							<command></command>
 							<packageName></packageName>
@@ -6771,29 +6773,21 @@ function snd.attack_function()
 	 venom = "epseth"
 	end
   if snd.used.shield then
- 	 string = "fetish attune "..snd.target..snd.sep.."commune leafstorm "..snd.target
+ 	 string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune leafstorm "..snd.target
   elseif snd.checkAff("stormtouched") then
  	 if tonumber(gmcp.Char.Vitals.energy) then
-  	string = "fetish attune "..snd.target..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.target
+  	string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.target
  	 else
- 	 	string = "fetish attune "..snd.target..snd.sep.."commune lightning "..snd.target
+ 	 	string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune lightning "..snd.target
   	end
  	else
-  	string = "fetish attune "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+  	string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
   	call = "wt Vinelash "..snd.target..": "..venom..snd.sep
   	if tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
-  		string = "commune boost "..snd.sep..string  
+  		string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost "..snd.sep..string  
   	end
   end
 		
-		
-	if not snd.fetishattuned then
-	 string = "fetish attune "..snd.target..snd.sep..string
-	end
-  
-  if not snd.loyalsattacking then
-    string = "order familiar kill "..snd.target..snd.sep..string
-  end
 	
 	string = call..string
 	
@@ -6811,89 +6805,109 @@ end</script>
 									<packageName></packageName>
 									<regex>^dmg$</regex>
 								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Naturalism Utility</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
 								<Alias isActive="yes" isFolder="no">
-									<name>Aff support</name>
+									<name>Surge</name>
 									<script>if snd.class == "Shaman" then
-snd.giving = {
-
-"clumsiness",
-"asthma",
-"slickness",
-"anorexia",
-"stupidity",
-"weariness",
-"allergies",
-"vomiting",
-"haemophilia",
-"sensitivity",
-"recklessness",
-"dizziness",
-}
-snd.starting_attack()
-function snd.attack_function()
-
-	call = ""
-	
- if not snd.waiting.queue then
-  venom = "none"
-  for i in pairs(snd.giving) do
-   if not table.contains(snd.target_has, snd.giving[i]) then
-    if venom == "none" then
-     venom = snd.effects[snd.giving[i]]
-    end
-   end
-  end
-	if venom == "none" then
-	 venom = "epseth"
+	if matches[2] == "" then
+		snd.attack("nature surge "..snd.target)
+	else
+ 		snd.attack("nature surge "..matches[2])
 	end
-  if snd.used.shield then
-   string = "commune leafstorm "..snd.target
-  elseif not snd.fetishattuned then
-    string = "fetish attune "..snd.target
-  elseif not snd.loyalsattacking then
-    string = "order familiar kill "..snd.target
-    snd.loyalsattacking = true
-  elseif not snd.checkAff("premonition") then
-    if not snd.their_premonition then
-      if not snd.my_premonition then
-        string = "shaman premonition " ..snd.target
-      end
-    end
-  elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
-    string = "commune reclamation " ..snd.target
-	elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-		if not snd.checkAff("impatience") and not snd.checkAff("confusion") then
-			string = "commune sporulation "..snd.target
-		elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") then
-			string = "commune overload "..snd.target
-		else
-			string = "commune vinelash "..snd.target.." "..venom
-	 		call = "wt Vinelash "..snd.target..": "..venom..snd.sep
-		end	
-  else
-   string = "commune vinelash "..snd.target.." "..venom
-	 call = "wt Vinelash "..snd.target..": "..venom..snd.sep
-  end
-	
-	string = call..string
-	
-  if string ~= snd.last_attack and not snd.waiting.queue then
-   snd.last_attack = string
-   snd.attack(snd.last_attack)
-   snd.waiting.queue = true
-   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-  end
- end
-end
-snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^aff$</regex>
+									<regex>^ns (.*)$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
-									<name>Iesid Route</name>
+									<name>Pull</name>
 									<script>if snd.class == "Shaman" then
+if matches[2] == "" then
+ snd.attack("nature pull "..snd.target)
+else
+ snd.attack("nature pull "..matches[2])
+end
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^np(.*)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Displacement</name>
+									<script>if snd.class == "Shaman" then
+if matches[2] == "" then
+ snd.attack("nature displacement "..snd.target)
+else
+ snd.attack("nature displacement "..matches[2])
+end
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^dp(.*)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Canopy</name>
+									<script>if snd.class == "Shaman" then
+ snd.attack("nature canopy")
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^can$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Screen</name>
+									<script>if snd.class == "Shaman" then
+ snd.attack("nature screen")
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^scr$</regex>
+								</Alias>
+								<Alias isActive="no" isFolder="no">
+									<name>Flow</name>
+									<script>if snd.class == "Shaman" then
+if matches[2] == "" then
+ snd.attack("nature flow "..snd.target)
+else
+ snd.attack("nature flow "..matches[2])
+end
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^fl(.*)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Thorncoat</name>
+									<script>if snd.class == "Shaman" then
+if matches[2] == "" then
+ snd.attack("nature thorncoat me")
+else
+ snd.attack("nature thorncoat "..matches[2])
+end
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^tco(.*)$</regex>
+								</Alias>
+							</AliasGroup>
+							<Alias isActive="yes" isFolder="no">
+								<name>Wield bashing</name>
+								<script>if snd.class == "Shaman" then
+  snd.send("quickwield both quarterstaff")
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^wbsh$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Iesid Route</name>
+								<script>if snd.class == "Shaman" then
 snd.giving = {
 
 "clumsiness",
@@ -7065,110 +7079,227 @@ function snd.attack_function()
 end
 snd.attack_function()
 end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll$</regex>
-								</Alias>
-							</AliasGroup>
+								<command></command>
+								<packageName></packageName>
+								<regex>^kll$</regex>
+							</Alias>
 							<AliasGroup isActive="yes" isFolder="yes">
-								<name>Naturalism Utility</name>
-								<script></script>
+								<name>Aff Offenses</name>
+								<script>if snd.class == "Shaman" then
+snd.giving = {
+
+"clumsiness",
+"asthma",
+"slickness",
+"anorexia",
+"stupidity",
+"weariness",
+"allergies",
+"vomiting",
+"haemophilia",
+"sensitivity",
+"recklessness",
+"dizziness",
+}
+snd.starting_attack()
+function snd.attack_function()
+
+	call = ""
+	
+ if not snd.waiting.queue then
+  venom = "none"
+  for i in pairs(snd.giving) do
+   if not table.contains(snd.target_has, snd.giving[i]) then
+    if venom == "none" then
+     venom = snd.effects[snd.giving[i]]
+    end
+   end
+  end
+	if venom == "none" then
+	 venom = "epseth"
+	end
+  if snd.used.shield then
+   string = "commune leafstorm "..snd.target
+  elseif not snd.checkAff("premonition") then
+    if not snd.their_premonition then
+      if not snd.my_premonition then
+        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
+      end
+    end
+  elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
+    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
+	elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		if not snd.checkAff("impatience") and not snd.checkAff("confusion") then
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
+		elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") then
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
+		else
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	 		call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+		end	
+  else
+   string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	 call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+  end
+	
+	string = call..string
+	
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex></regex>
 								<Alias isActive="yes" isFolder="no">
-									<name>Surge</name>
+									<name>Aff support</name>
 									<script>if snd.class == "Shaman" then
-	if matches[2] == "" then
-		snd.attack("nature surge "..snd.target)
-	else
- 		snd.attack("nature surge "..matches[2])
+snd.giving = {
+
+"clumsiness",
+"asthma",
+"slickness",
+"anorexia",
+"stupidity",
+"weariness",
+"allergies",
+"vomiting",
+"haemophilia",
+"sensitivity",
+"recklessness",
+"dizziness",
+}
+snd.starting_attack()
+function snd.attack_function()
+
+	call = ""
+	
+ if not snd.waiting.queue then
+  venom = "none"
+  for i in pairs(snd.giving) do
+   if not table.contains(snd.target_has, snd.giving[i]) then
+    if venom == "none" then
+     venom = snd.effects[snd.giving[i]]
+    end
+   end
+  end
+	if venom == "none" then
+	 venom = "epseth"
 	end
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^ns (.*)$</regex>
-								</Alias>
-								<Alias isActive="yes" isFolder="no">
-									<name>Pull</name>
-									<script>if snd.class == "Shaman" then
-if matches[2] == "" then
- snd.attack("nature pull "..snd.target)
-else
- snd.attack("nature pull "..matches[2])
+  if snd.used.shield then
+   string = "commune leafstorm "..snd.target
+  elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		if not snd.checkAff("impatience") and not snd.checkAff("confusion") then
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
+		elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") then
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
+		else
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	 		call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+		end	
+  else
+   string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	 call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+  end
+	
+	string = call..string
+	
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
 end
+snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^np(.*)$</regex>
+									<regex>^aff$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
-									<name>Displacement</name>
+									<name>Aff 2</name>
 									<script>if snd.class == "Shaman" then
-if matches[2] == "" then
- snd.attack("nature displacement "..snd.target)
-else
- snd.attack("nature displacement "..matches[2])
+snd.giving = {
+
+"clumsiness",
+"asthma",
+"slickness",
+"anorexia",
+"stupidity",
+"weariness",
+"allergies",
+"vomiting",
+"haemophilia",
+"sensitivity",
+"recklessness",
+"dizziness",
+}
+snd.starting_attack()
+function snd.attack_function()
+
+	call = ""
+	
+ if not snd.waiting.queue then
+  venom = "none"
+  for i in pairs(snd.giving) do
+   if not table.contains(snd.target_has, snd.giving[i]) then
+    if venom == "none" then
+     venom = snd.effects[snd.giving[i]]
+    end
+   end
+  end
+	if venom == "none" then
+	 venom = "epseth"
+	end
+  if snd.used.shield then
+   string = "commune leafstorm "..snd.target
+  elseif not snd.checkAff("premonition") then
+    if not snd.their_premonition then
+      if not snd.my_premonition then
+        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
+      end
+    end
+  elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
+    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
+	elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+		if not snd.checkAff("impatience") and not snd.checkAff("confusion") then
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
+		elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") then
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
+		else
+			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	 		call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+		end	
+  else
+   string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	 call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+  end
+	
+	string = call..string
+	
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
 end
+snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^dp(.*)$</regex>
-								</Alias>
-								<Alias isActive="yes" isFolder="no">
-									<name>Canopy</name>
-									<script>if snd.class == "Shaman" then
- snd.attack("nature canopy")
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^can$</regex>
-								</Alias>
-								<Alias isActive="yes" isFolder="no">
-									<name>Screen</name>
-									<script>if snd.class == "Shaman" then
- snd.attack("nature screen")
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^scr$</regex>
-								</Alias>
-								<Alias isActive="no" isFolder="no">
-									<name>Flow</name>
-									<script>if snd.class == "Shaman" then
-if matches[2] == "" then
- snd.attack("nature flow "..snd.target)
-else
- snd.attack("nature flow "..matches[2])
-end
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^fl(.*)$</regex>
-								</Alias>
-								<Alias isActive="yes" isFolder="no">
-									<name>Thorncoat</name>
-									<script>if snd.class == "Shaman" then
-if matches[2] == "" then
- snd.attack("nature thorncoat me")
-else
- snd.attack("nature thorncoat "..matches[2])
-end
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^tco(.*)$</regex>
+									<regex>^aff2$</regex>
 								</Alias>
 							</AliasGroup>
-							<Alias isActive="yes" isFolder="no">
-								<name>Wield bashing</name>
-								<script>if snd.class == "Shaman" then
-  snd.send("quickwield both quarterstaff")
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^wbsh$</regex>
-							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>Templar</name>
