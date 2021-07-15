@@ -15,6 +15,6 @@ Installation: requires you to download most files. The primary files are Darksid
 
 Once installed, read SUNDER HELP for a lot of the information on how things work.
 
-We're in need of contributors! Please feel free to fork and make PRs! If you want to contribute but aren't sure how, get ahold of Delra in the Discord. They're always happy to help you help this project move forward. 
+We're in need of contributors! Please feel free to fork and make PRs! 
 
 There is *no* warranty on this software.
