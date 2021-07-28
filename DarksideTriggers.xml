@@ -4324,10 +4324,12 @@ end</script>
 									<regexCodeList>
 										<string>You use Shamanism Oaths (tranquility).</string>
 										<string>You have enacted the Oath of Tranquility.</string>
+										<string>You have already activated the Oath of Tranquility.</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>3</integer>
 										<integer>3</integer>
+										<integer>0</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -4346,8 +4348,10 @@ end</script>
 									<regexCodeList>
 										<string>You use Shamanism Oaths (the forestwalker).</string>
 										<string>You have enacted the Oath of the Forestwalker.</string>
+										<string>You have already activated the Oath of the Forestwalker.</string>
 									</regexCodeList>
 									<regexCodePropertyList>
+										<integer>3</integer>
 										<integer>3</integer>
 										<integer>3</integer>
 									</regexCodePropertyList>
@@ -4370,12 +4374,14 @@ end</script>
 										<string>You have enacted the Oath of the Elder Shaman.</string>
 										<string>^You use Shamanism Oaths (the elder shaman).$</string>
 										<string>You utter a guttural chant to the spirits of Dendara, enacting the Oath of the Elder Shaman.</string>
+										<string>You have already activated the Oath of the Elder Shaman.</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>3</integer>
 										<integer>3</integer>
 										<integer>1</integer>
 										<integer>3</integer>
+										<integer>0</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -5601,6 +5607,52 @@ end</script>
 									<string>You are not contemplating the correct essence.</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>3</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Barrier</name>
+								<script>snd.balance.barrier = true</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>You use Artifact Strum Lyre.</string>
+									<string>You have gained the barrier defence.</string>
+									<string>You strum an Iosai lyre, and a prismatic barrier forms around you.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>3</integer>
+									<integer>3</integer>
+									<integer>3</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Barrier Gone</name>
+								<script>snd.balance.barrier = false</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>Your prismatic barrier dissolves into nothing.</string>
+									<string>Your barrier defence has been stripped.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>3</integer>
 									<integer>3</integer>
 								</regexCodePropertyList>
 							</Trigger>
@@ -24529,6 +24581,12 @@ end</script>
    elseif matches[4] == "torso" and snd.checkAff("cracked_ribs") then
     snd.target_cured("cracked_ribs")
     table.insert(snd.last_affs, "cracked_ribs")
+   elseif snd.limb_bruising[matches[4]] &gt; 0 then
+    snd.limb_bruising[matches[4]] = snd.limb_bruising[matches[4]]-1
+    table.insert(snd.last_affs, "bruising "..matches[4])
+   elseif snd.checkAff(matches[4].." dislocated") then
+   	snd.target_cured(matches[4].." dislocated")
+    table.insert(snd.last_affs, matches[4].." dislocated")
    elseif matches[4] == "legs" then    
     if snd.limb_bruising["left leg"] &gt;= 3 then
       snd.limb_bruising["left leg"] = snd.limb_bruising["left leg"]-1
@@ -24583,6 +24641,9 @@ end</script>
     elseif snd.limb_bruising["right arm"] &gt;= 2 then
       snd.limb_bruising["right arm"] = snd.limb_bruising["right arm"]-1
       table.insert(snd.last_affs, "bruising right arm")
+    elseif snd.checkAff("cracked_elbows") then
+      snd.target_cured("cracked_elbows")
+      table.insert(snd.last_affs, "cracked_kneecaps")
     elseif snd.limb_bruising["left arm"] &gt; 0 then
       snd.limb_bruising["left arm"] = snd.limb_bruising["left arm"]-1
       table.insert(snd.last_affs, "bruising left arm")
@@ -24596,12 +24657,6 @@ end</script>
       snd.target_cured("right_arm_dislocated")
       table.insert(snd.last_affs, "right_arm_dislocated")
     end
-   elseif snd.limb_bruising[matches[4]] &gt; 0 then
-    snd.limb_bruising[matches[4]] = snd.limb_bruising[matches[4]]-1
-    table.insert(snd.last_affs, "bruising "..matches[4])
-   elseif snd.checkAff(matches[4].." dislocated") then
-   	snd.target_cured(matches[4].." dislocated")
-    table.insert(snd.last_affs, matches[4].." dislocated")
    end
 	end
 elseif snd.toggles.nontargetgags and snd.gui.enabled then
