@@ -38,6 +38,9 @@
 
 --CHANGELOG OF CHANGES
 
+--5.09
+--Removed all sndb parts. Reverted back to old style for snd.shadow and snd.spirit lists.
+
 --5.08
 --Starting work on merging more of Mazzsys curing into the system.
 --Welt tracking for Zealots.
@@ -196,22 +199,7 @@ setConsoleBufferSize("main", 100000, 1000)</script>
 						<Script isActive="yes" isFolder="no">
 							<name>options</name>
 							<packageName></packageName>
-							<script>snd.sep = snd.sep or "\\" -- important! CONFIG SEPARATOR value
-snd.mount = snd.mount or "247249" -- your horse's ID number
-
-
-snd.faction = "" -- your faction, spirit or shadow
-snd.class = snd.class or "" -- your class, used for bashing
-snd.limb_dmg_done = 8.41 -- really only for Templars
-
-snd.stats = { 
-  xp = 0,
-  last_xp = 0,
-  max_xp = 0,
-}
-
-
-snd.toggles = {
+							<script>snd.toggles = {
 active = true, -- is the system running?
 healing = false, -- keep off, incomplete
 parrying = true, -- parry most-damaged limb
@@ -255,8 +243,8 @@ nontargetgags = true, -- spam filter for removing non-target curing
 aegis = false,
 goggles = false,
 auto_reject = false,
-goggle_level = 0,
-gauntlet_level = 0,
+goggle_level = 17,
+gauntlet_level = 15,
 
 }
 
@@ -265,8 +253,20 @@ if gmcp.Char.Name.name == "Rihrin" then
   snd.mount = "93217" -- your horse's ID number
 elseif gmcp.Char.Name.name == "Beivu" then
   snd.mount = "218570" -- your horse's ID number
+else
+  snd.mount = snd.mount or "247249" -- your horse's ID number
 end
-snd.version = "5.08"</script>
+snd.version = "5.08"
+
+snd.sep = snd.sep or "\\" -- important! CONFIG SEPARATOR value
+snd.class = snd.class or "" -- your class, used for bashing
+snd.limb_dmg_done = 8.41 -- really only for Templars
+
+snd.stats = { 
+  xp = 0,
+  last_xp = 0,
+  max_xp = 0,
+}</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -1140,34 +1140,28 @@ end</script>
 							<script>people_update = function()
 	spirit_people:clear()
 	shadow_people:clear()
-	snd.shadow_targets = {}
-	snd.spirit_targets = {}
-	
+
 	local spiritpeoplehere = {}
 	for name, val in pairs(snd.players_here) do
-		if sndNDB.players[val] and sndNDB.players[val].tether == "Spirit" then 
+		if val and (table.isMember(snd.spirit, val) or table.isMember(snd.randomspirit, val)) then 
 			table.insert(spiritpeoplehere, val) 
 		end
 	end
 	
 	local shadowpeoplehere = {}
 	for name, val in pairs(snd.players_here) do
-		if sndNDB.players[val] and sndNDB.players[val].tether == "Shadow" then
+		if val and (table.isMember(snd.shadow, val) or table.isMember(snd.randomshadow, val)) then
 			table.insert(shadowpeoplehere, val) 
 		end
 	end
 	
 	if #spiritpeoplehere &gt;= 1 then
-   if snd.gui.enabled then
-	  spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
-   end
+	 spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
 	 snd.spirit_targets = spiritpeoplehere
   end
 	
 	if #shadowpeoplehere &gt;= 1 then
-	 if snd.gui.enabled then
-    shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
-   end
+	 shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
 	 snd.shadow_targets = shadowpeoplehere
   end
 	
@@ -1187,12 +1181,7 @@ end</script>
   --You can choose whether you want it to match only names that are in the database (excluding divine)
   --Or if you want it to just match any one word name. Some NPCs might slip through.
   
- --[[ if sndNDB.players[talker] == nil then
-    if not table.isMember(sndNDB.divine, talker) then 
-      return 
-    end
-  end]]
-  
+   
   if string.match(talker, "%W") then return end
   
   local mobs_to_ignore = {
@@ -3379,6 +3368,7 @@ def_overwatch = {defense = "overwatch", type = "normal", effect = "See items in 
 def_divine_speed = {defense = "divine_speed", type = "normal", effect = "Faster movement through Divine Grace", balance = {balanceequilibriumtake = "grace"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_hypersight = {defense = "hypersight", type = "normal", effect = "see through shenanigans", balance = {needyequilibriumtake = "hypersight on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_nimbleness = {defense = "nimbleness", type = "normal", effect = "dodge some attacks", balance = {needyequilibriumtake = "nimbleness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Nimbleness"},
+def_thirdeye = {defense = "thirdeye", type = "normal", effect = "Adds locations to WHO", balance = {special = "thirdeye"}, state = "down", needit = false, timer = createStopWatch(), skill = "Thirdeye"},
 
 --Ylem
 def_amber_orb = {defense= "amber_orb", type = "light_yellow", effect = "5% increase in experience", balance = {special = "activate amber orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
@@ -3707,609 +3697,6 @@ end</script>
 								<eventHandlerList />
 							</Script>
 						</ScriptGroup>
-					</ScriptGroup>
-					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>Sunder NDB</name>
-						<packageName></packageName>
-						<script>sndNDB = sndNDB or {}
-
-function sndNDB_Install()
-	--Will only probably be used on initial loading of system.
-	sndNDB = {}
-	sndNDB = {
-		installed = true,
-		players = {},
-		highlightNames = false,
-		highlighting = {
-			Bloodloch = "firebrick",
-			Duiran = "a_green",
-			Enorian = "a_darkcyan",
-			Spinesreach = "a_darkmagenta",
-			Rogues = "a_brown",
-      Enemies = "IndianRed",
-			
-		},
-      divine = {
-			"Keroc", "Razmael", "Tiur", "Varian",
-			"Avareti", "Damariel", "Dhar", "Chakrasul", "Ethne", "Haern", "Iosyne", "Ivoln",
-			"Tanixalthas", "Omei", "Severn", "Slyphe", "Bamathis",
-		
-			"Alecto", "Megaera", "Tisiphone", "Veritas", "Imvra",
-			"Becue", "Ere", "Nalus", "Tsoede",
-		},
-		cityEnemies = {},
-		highlightPriority = "city",
-		enemySettings = {bold = false, italics = false, underline = false},
-	}
-
-	snd.message("Sunder NDB installed perfectly and is ready to go.")
-	sndNDB_Unhighlight()
-	sndNDB_saveSettings(false)
-	--Save on install, as a failsafe.
-end</script>
-						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Saving and Loading</name>
-							<packageName></packageName>
-							<script>function sndNDB_saveSettings(disp)
-	if not sndNDB or not sndNDB.installed then
-		return false
-	end
-
-	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
-	local ndb_loc = getMudletHomeDir() .. separator .. "SunderNDB"
-
-	table.save(ndb_loc, sndNDB)
-	
-	if disp then
-		snd.message("Player information saved safely.")
-	end	
-end
-
-function sndNDB_loadSettings()
-	local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
-	local ndb_loc = getMudletHomeDir() .. separator .. "SunderNDB"
-
-	if not io.exists(ndb_loc) then 
-		snd.message("Name database not found. Use 'sndb install' to fix this.")
-		return
-	end
-
-	sndNDB = {}
-	table.load(ndb_loc, sndNDB)
-	snd.message("Player information found and loaded in.")
-
-	sndNDB_saveSettings(false)
-end
-
-registerAnonymousEventHandler("sysDisconnectionEvent", "sndNDB_saveSettings", true)
-registerAnonymousEventHandler("sysLoadEvent", "sndNDB_loadSettings")
-
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Grab Information</name>
-							<packageName></packageName>
-							<script>function sndNDB_GetOnline()
-	local path = getMudletHomeDir().."/sndndb"
-	
-	if not lfs.attributes(path) then
-		--We'll need a folder to store downloaded data. Don't worry, it won't cause issues.
-		lfs.mkdir(path)
-		snd.message("Created folder to store downloaded data at: "..path)
-	end
-	
-	downloadFile(path .. "/Online.json", "http://api.aetolia.com/characters.json")
-
-	snd.message("Let me find a list of online players really quick...")
-
-	ndbWatcher = ndbWatcher or createStopWatch()
-	startStopWatch(ndbWatcher)
-end
-
-function sndNDB_Acquire(person)
-
-	assert(person)
-	local person = person:title()
-	local path = getMudletHomeDir().."/sndndb"
-
-	if not lfs.attributes(path) then
-		--We'll need a folder to store downloaded data. Don't worry, it won't cause issues.
-		lfs.mkdir(path)
-		snd.message("Created folder to store downloaded data at: "..path)
-	end
-	
-	downloadFile(path .. "/"..person..".json", "http://api.aetolia.com/characters/"..person..".json")
-
-end
-
-function sndNDB_NameList(names)
-	--Parse list to see who isn't tracked.
-	for _, name in pairs(names) do
-		if not table.contains(sndNDB.divine, name) then
-			sndNDB_Acquire(name)
-		end
-	end
-	snd.message("Name database is now up to date.")
-end</script>
-							<eventHandlerList />
-							<Script isActive="yes" isFolder="no">
-								<name>ndb_download_failed</name>
-								<packageName></packageName>
-								<script>function ndb_download_failed(_, filepath)
-	if not filepath:find("sndndb") and not filepath:find("gamefeed") then return end 
-	
-	snd.message("Error downloading information.")
-	if filepath:find("gamefeed") then
-		snd.message("Unknown error while downloading: " .. filepath)
-		os.remove(getMudletHomeDir().."/gamefeed.json")
-	elseif filepath:match("server replied: Not Found") then
-		
-		local person = filepath:match("/(%w+).json")
-		local fpr = getMudletHomeDir().."/sndndb/"..person..".json"
-
-		snd.message("This person does not exist: "..person)
-		sndNDB_Remove(person)
-		os.remove(fpr)
-	else
-		snd.message("Unknown error while downloading: " .. filepath)
-	end
-end</script>
-								<eventHandlerList>
-									<string>sysDownloadError</string>
-								</eventHandlerList>
-							</Script>
-							<Script isActive="yes" isFolder="no">
-								<name>ndb_download_success</name>
-								<packageName></packageName>
-								<script>function ndb_download_success(_, filepath)
-	--Do not mess with if it's not Sunder NDB information.
-	if not filepath:find("sndndb", 1, true) and not filepath:find("gamefeed",1,true) then return end
-
-	if filepath:find("Online",1,true) then
-		sndNDB_SortOnline(filepath)
-		return
-	elseif filepath:find("gamefeed",1,true) then
-		sndNDB_parseFeed(filepath)
-		return
-	end
-
-	local f, s = io.open(filepath)
-	if f then s = f:read("*l"); io.close(f) end
-
-	-- didn't get JSON data? 
-	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
-		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
-		return 
-	end
-	local t = yajl.to_value(s)
-	local cities = {"Bloodloch", "Duiran", "Enorian", "Spinesreach"}
-	local name = t.name
-	local title = t.fullname
-	local guild = t.guild:title()
-	local xp_rank = t["xp rank"]:gsub("th", ""):gsub("nd", ""):gsub("st", ""):gsub("rd", "")
-	if xp_rank == "Unranked" then xp_rank = 0 else local xp_rank = tonumber(xp_rank) end
-	local city = t.city:title()
-  local tether = ""
-    if (city == "Duiran" or city == "Enorian") then 
-      tether = "Spirit"
-    elseif (city == "Spinesreach" or city == "Bloodloch") then 
-      tether = "Shadow" 
-    end
-	local class = t.class:title()
-	local level = tonumber(t.level)
-  local race = t.race
-  
-	sndNDB.players[name] = {
-		name = name,
-		title = title,
-		guild = guild,
-		xp_rank = xp_rank,
-		city = city,
-		level = level,
-		class = class,
-    race = race,
-    tether = tether
-	}
-
-	if guild:find("none") then
-		sndNDB.players[name].guild = "None"
-	else
-		sndNDB.players[name].guild = guild:title()
-	end
-
-	if city:find("none") or city == "" then
-		sndNDB.players[name].city = "None"
-	else
-		sndNDB.players[name].city = city:title()
-	end
-
-  	os.remove(filepath)
-	
-  raiseEvent("sndNDB Check Highlight", t.name)
-
-end</script>
-								<eventHandlerList>
-									<string>sysDownloadDone</string>
-								</eventHandlerList>
-							</Script>
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Ndb API</name>
-							<packageName></packageName>
-							<script>function sndNDB_getColour(name)
-	if not sndNDB_Exists(name) then
-		return "white"
-	else
-		return sndNDB.highlighting[sndNDB_getCitizenship(name)]
-	end
-end
-function sndNDB_getClass(name)
-	if sndNDB.players[name] then
-		return sndNDB.players[name:title()].class
-	else
-		return "Unknown"
-	end
-end
-
-function sndNDB_Exists(name)
-	if not sndNDB.players[name] then
-		return false
-	else
-		return true
-	end
-end
-
-function sndNDB_isCitizenOf(city, name)
-	if sndNDB_Exists(name) then
-		return (sndNDB.players[name:title()].city == city:title() and true or false)
-	else
-		snd.message("The information for "..name.." has not yet been gathered.")
-		return false
-	end
-end
-
-function sndNDB_getCitizenship(name)
-	if sndNDB_Exists(name) then
-		if sndNDB.players[name].city:lower() == "none" or sndNDB.players[name].city:lower() == "(hidden)" then
-			return "Rogues"
-		else
-			return sndNDB.players[name].city
-		end
-	else
-		return "Unknown"
-	end
-end
-
-
-function sndNDB_Remove(name)
-	local person = name:title()
-	if sndNDB_Exists(person) then
-		sndNDB.players[person] = nil
-		--If any highlight available, then clear it.
-		if sndNDB.highlightTriggers and sndNDB.highlightTriggers[person] then
-			killTrigger(sndNDB.highlightTriggers[person])
-		end
-		snd.message(person.." has been removed from the database.")
-	else
-		snd.message(person.." is not in the database, anyway.")
-	end
-end
-
-function sndNDB_SortOnline(name_group)
-
-  local player_list = {}
-  if type(name_group) ~= "table" then
-
-  	local f, s = io.open(name_group)
-    if f then s = f:read("*l"); io.close(f) end
-
-  	-- didn't get JSON data? 
-  	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
-  		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
-  		return 
-  	end
-  
-  	local t = yajl.to_value(s)
-  
-  	apiOnlineFound = {}
-  	apiNeedUpdate = {}
-  	for ind, tab in pairs(t.characters) do
-  		if not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
-  			table.insert(apiOnlineFound, tab.name)
-  		end
-  	end
-  
-  	for ind, tab in pairs(gmcp.Comm.Channel.Players) do
-  		if not table.contains(apiOnlineFound, tab.name) and not tab.name:find("masked") and not table.contains(sndNDB.divine, tab.name) then
-  			table.insert(apiOnlineFound, tab.name)
-  		end
-  	end
-  
-  	os.remove(name_group)
-  	table.sort(apiOnlineFound)
-    player_list = apiOnlineFound
-    
-  else
-    apiNeedUpdate = {}
-    player_list = name_group
-  
-  end
-
-	--Parse the list to see who needs to be added.
-	local count = 0
-  
-	for index, name in pairs(player_list) do
-		if not sndNDB_Exists(name) and not table.contains(sndNDB.divine, name) then
-			count = count + 1
-			table.insert(apiNeedUpdate, name)
-		end
-	end 
-	if count &gt; 0 then
-		snd.message(count.." new names identified, grabbing their info.")
-		cecho("\n&lt;a_darkgrey&gt; - "..table.concat(apiNeedUpdate, ", ")..".")
-		sndNDB_NameList(apiNeedUpdate)
-	else
-		if parsingCity then
-			if parsingCity:lower() == "classes" then
-				sndNDB_displayOnlineClass(player_list)
-			else
-				sndNDB_displayOnlineCity(player_list)
-			end
-		else
-			sndNDB_displayOnline(player_list)
-		end
-	end
-end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Ndb Highlighting</name>
-							<packageName></packageName>
-							<script>function sndNDB_Unhighlight()
-	if not sndNDB.highlightTriggers or not next(sndNDB.highlightTriggers) then return end
-
-  	local killTrigger = killTrigger
-  	for k,v in pairs(sndNDB.highlightTriggers) do
-    		killTrigger(v)
-  	end
-
-  	sndNDB.highlightTriggers = {}
-end
-
-function sndNDB_enemyHighlights()
-	snd.message("Clearing all highlights to prevent errors. One moment, please.")
-	sndNDB_Unhighlight()
-	tempTimer(2, [[ snd.message("Loading new highlights now."); sndNDB_loadHighlights() ]])	
-end
-
-
-local my_names_not_to_color = {
-  "Example",
-  }
-
-function sndNDB_loadHighlights()
-	sndNDB.highlightTriggers = sndNDB.highlightTriggers or {}
-	collectgarbage("stop")
-
-	sndNDB_Unhighlight()
-
-	if sndNDB.highlightNames then
-		for index, person in pairs(sndNDB.players) do
-			 sndNDB_highlightName( person.name, person.city )
-		end
-	end
-
-	collectgarbage()
-end
-
-function sndNDB_addHighlight(_, name)
-
-	if not sndNDB.highlightNames then return end	
-	if not name then return end
-	if not sndNDB.players[name] then return end
-
-	sndNDB_highlightName( sndNDB.players[name].name, sndNDB.players[name].city)
-end
-
-
-function sndNDB_updateHighlights(city, colour)
-
-	sndNDB.highlighting[city] = colour
-	
-  	local killTrigger = killTrigger
-  	for name, trig in pairs(sndNDB.highlightTriggers) do
-  		if sndNDB.players[name].city == city then
-      			killTrigger(trig)
-  			if sndNDB.highlightNames then
-  				sndNDB_highlightName( sndNDB.players[name].name, sndNDB.players[name].city )
-  			end
-  		elseif city == "Rogues" or city == "(hidden)" then
-  			if sndNDB_getCitizenship(name) == "None" then
-  				killTrigger(trig)
-  				if sndNDB.highlightNames then
-  					sndNDB_highlightName( sndNDB.players[name].name, sndNDB.players[name].city )
-  				end
-  			end
-  		end
-  	end
-
-end
-
-
-function sndNDB_highlightName(who, city)
-	--If any highlight available, then clear it.
-	if sndNDB.highlightTriggers and sndNDB.highlightTriggers[who] then
-		killTrigger(sndNDB.highlightTriggers[who])
-	end
-
-	local colour = sndNDB.highlighting.Rogues
-
-	--Get the necessary colour.
-		--Check enemy list first
-	if sndNDB.highlightPriority == "enemies" then
-		if table.contains(sndNDB.cityEnemies, who) then
-			colour = sndNDB.highlighting.Enemies
-		else
-			if city == "None" or city == "(hidden)" then
-				colour = sndNDB.highlighting.Rogues
-			else
-				colour = sndNDB.highlighting[city]
-			end
-		end
-	else
-		if city == "None" or city == "(hidden)" then
-			colour = sndNDB.highlighting.Rogues
-		else
-			colour = sndNDB.highlighting[city]
-		end
-	end
-
-	sndNDB.highlightTriggers = sndNDB.highlightTriggers or {}
-	if not table.isMember(my_names_not_to_color, who) then
-    sndNDB.highlightTriggers[who] = tempTrigger(who, ([[sndNDB_highlight("%s", %s)]]):format(who,
-		(colour and '"' .. colour .. '"' or "false")
-	 ))
-  end
-end
-
-function sndNDB_highlight(name, colour)
-	local c, k = 1, 1
-	while k &gt; 0 do
-		k = line:find(name, k)
-		if k == nil then return end
-		c = c + 1
-
-		if k == line:find("%f[%a]"..name.."%f[%A]", k) then
-			if selectString(name, c-1) &gt; -1 then
-				if colour then fg(colour) end
-				if sndNDB.highlightPriority == "enemies" and table.contains(sndNDB.cityEnemies, name) then
-					if sndNDB.enemySettings.bold then setBold(true) end
-					if sndNDB.enemySettings.underline then setUnderline(true) end
-					if sndNDB.enemySettings.italics then setItalics(true) end
-				end
-				resetFormat()
-			else 
-				return 
-			end
-    		end
-		k = k + 1
-	end
-end
-registerAnonymousEventHandler("sndNDB Check Highlight", "sndNDB_addHighlight")
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Display API</name>
-							<packageName></packageName>
-							<script>function sndNDB_displayOnlineClass(players)
-	local classList = {
-		"Ascendril", "Luminary", "Sentinel", "Shaman", "Zealot", "Templar", "Warden", 
-		"Monk", "Shapeshifter", "Syssin", "Wayfarer",
-		"Archivist", "Carnifex", "Indorani", "Praenomen", "Sciomancer", "Teradrim", "Revenant",
-	}
-	local classes = {
-		Ascendril = {}, Luminary = {}, Sentinel = {}, Shaman = {}, Zealot = {}, Templar = {}, Warden = {},
-		Monk = {}, Shapeshifter = {}, Syssin = {}, Wayfarer = {}, 
-		Archivist = {}, Carnifex = {}, Indorani = {}, Praenomen = {}, Sciomancer = {}, Teradrim = {}, Revenant = {},
-	}
-
-	for _, player in pairs(players) do
-		local class = sndNDB.players[player].class
-		table.insert(classes[class], player)
-	end
-	
-	snd.message("Data acqusition completed and analysed. Showing class count for online players.")
-
-	for _, class in ipairs(classList) do
-		cecho("\n &lt;DimGrey&gt;[&lt;NavajoWhite&gt;"..class:title().."&lt;DimGrey&gt;]"..string.rep(" ", 13-string.len(class)).."- &lt;NavajoWhite&gt;"..#classes[class].." tracked people are "..class..".")
-	end
-	send(" ")
-	parsingCity = nil
-end
-
-function sndNDB_displayOnlineCity(players)
-	local peopleFound = {}
-
-	snd.message("Data acqusition completed and analysed. Showing online players from &lt;"..sndNDB.highlighting[parsingCity:title()].."&gt;"..parsingCity:title()..".")
-
-	for _, person in pairs(players) do
-		if sndNDB_isCitizenOf(parsingCity:title(), person) then
-			cecho("\n &lt;"..sndNDB.highlighting[parsingCity:title()].."&gt;"..person..string.rep(" ", 13-string.len(person)).."- &lt;NavajoWhite&gt;"..sndNDB_getClass(person))
-		end
-	end
-	send(" ")
-	parsingCity = nil
-end
-
-function sndNDB_displayOnline(players)
-	local onlinePeople = {
-		Bloodloch = {}, Duiran = {}, Enorian = {}, Spinesreach = {}, Rogues = {}, Untracked = {},
-	}
-
-	for _, person in pairs(players) do
-		if not sndNDB_Exists(person) then
-			table.insert(onlinePeople.Untracked, person)
-		elseif sndNDB_getCitizenship(person):lower() == "none" or sndNDB_getCitizenship(person) == "(hidden)"  or sndNDB_getCitizenship(person) == "Unknown" then
-			table.insert(onlinePeople.Rogues, person)
-		else
-			table.insert(onlinePeople[sndNDB_getCitizenship(person)], person)
-		end
-	end
-
-	--snd.message("Data acquisition completed and analysed. List of players online:")
-	--echo("\n"..table.concat(players, ", ")..".\nTotal players visible to us: "..#players..".\n")
-  echo("\n")
-	snd.message(" City affiliations of currently online people:")
-	cecho(string.format("\n&lt;%s&gt;[Bloodloch]   :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Bloodloch, #onlinePeople.Bloodloch, sndNDB.highlighting.Bloodloch, table.concat(onlinePeople.Bloodloch, ", ")))
-	cecho(string.format("\n&lt;%s&gt;[Duiran]      :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Duiran, #onlinePeople.Duiran, sndNDB.highlighting.Duiran, table.concat(onlinePeople.Duiran, ", ")))
-	cecho(string.format("\n&lt;%s&gt;[Enorian]     :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Enorian, #onlinePeople.Enorian, sndNDB.highlighting.Enorian, table.concat(onlinePeople.Enorian, ", ")))
-	cecho(string.format("\n&lt;%s&gt;[Spinesreach] :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Spinesreach, #onlinePeople.Spinesreach, sndNDB.highlighting.Spinesreach, table.concat(onlinePeople.Spinesreach, ", ")))
-	cecho(string.format("\n&lt;%s&gt;[Rogues]      :&lt;white&gt;(&lt;orange&gt;%d&lt;white&gt;)&lt;%s&gt; %s.", sndNDB.highlighting.Rogues, #onlinePeople.Rogues, sndNDB.highlighting.Rogues, table.concat(onlinePeople.Rogues, ", ")))
-	echo("\n ")
-	send(" ")
-
-end
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Gamefeed Parser</name>
-							<packageName></packageName>
-							<script>function sndNDB_parseFeed(fp)
-
-	local f, s = io.open(fp)
-	if f then s = f:read("*l"); io.close(f) end
-
-	-- didn't get JSON data? 
-	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
-		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
-		return 
-	end
-	local t = yajl.to_value(s)
-	
-	local colours = {LDN = "a_darkred", LUP = "a_darkgreen",
-		DEA = "tomato",
-	}
-	local gcolour	= false
-	snd.message("Aetolia Game Feed")
-	for _, list in pairs(t) do
-		if table.contains(colours, list.type) then
-			gcolour = colours[list.type]
-		else
-			gcolour = "NavajoWhite"
-		end
-		cecho("\n&lt;NavajoWhite&gt;[&lt;"..gcolour.."&gt;"..list.date.."&lt;NavajoWhite&gt;]:")
-		cecho(string.rep(" ", 23-string.len(list.date)).."&lt;"..gcolour.."&gt;"..string.trim(list.description))
-	end
-	send(" ")
-  os.remove(fp)
-
-end</script>
-							<eventHandlerList />
-						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>Custom Colour Table</name>
 							<packageName></packageName>
@@ -18641,7 +18028,7 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   if hp &lt; 50 then
 		battack = "touch shield"
 	elseif snd.toggles.newbie then
-		battack = "battlefury strike "..snd.bashing.target
+		battack = "strikebash "..snd.bashing.target
   elseif snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
     battack = "battlefury dsw "..snd.bashing.target
   else
@@ -18672,7 +18059,7 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	if hp &lt; 50 then
 		battack = "touch shield"
 	elseif snd.toggles.newbie then
-		battack = "riving rive "..snd.bashing.target
+		battack = "rivebash "..snd.bashing.target
   elseif snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
     battack = "riving fell "..snd.bashing.target
   else
@@ -21715,7 +21102,7 @@ function snd.do_balance_equilibrium_need(current)
    if snd.defenses[current].state == "down" and snd.defenses[current].needit then
     if current:find("chameleon") then
       local chameleon_table = {}
-      for k, v in pairs(sndNDB.players) do
+      for k, v in pairs(snd.shadow) do
         table.insert(chameleon_table, k)
       end
       local cham_check = chameleon_table[math.random(#chameleon_table)]
@@ -22547,7 +21934,7 @@ end</script>
 								<packageName></packageName>
 								<script>function snd.firstaidsalve()
 	if snd.salvebal and not snd.have_aff("slickness") and not snd.have_aff("sandrot") and not snd.have_aff("void") and not snd.have_aff("weakvoid") and not snd.salveaffflag then
-    if sndNDB.players[gmcp.Char.Status.name].tether == "Spirit" then
+    if snd.faction == "spirit" then
 		  if #snd.shadow_targets &lt; 1 then 
   		  if snd.have_aff("pre_restore_torso") then
   			 snd.send("apply restoration to torso")
@@ -26136,7 +25523,7 @@ function snd.get_new_target()
         end
     	end
       if new_target == "nil" then
-        if sndNDB.players[gmcp.Char.Status.name].tether == "Shadow" then check = snd.spirit_targets else check = snd.shadow_targets end
+        if snd.faction == "shadow" then check = snd.spirit_targets else check = snd.shadow_targets end
         for _, tar in ipairs(check) do
       		if table.contains(snd.players_here, tar) then
             new_target = tar
@@ -26383,13 +25770,9 @@ function snd.alertnessHit(dir, name, type)
   if snd.alertnessDir ~= "none" and snd.alertnessDir ~= dir then
     snd.alertness = {}
   end
-  if sndNDB.players[gmcp.Char.Status.name].tether ~= nil and sndNDB.players[name].tether ~= nil then
-    if sndNDB.players[gmcp.Char.Status.name].tether ~= sndNDB.players[name].tether then
-      table.insert(snd.alertness, name)
-      snd.alertnessDir = dir
-      snd.alertType = type
-    end
-  end
+  table.insert(snd.alertness, name)
+  snd.alertnessDir = dir
+  snd.alertType = type
 end
 
 function Reverse(arr)
@@ -26788,6 +26171,20 @@ function snd.reset_target()
     color_enemy_affs()
     color_enemy_limbs()
   end
+end
+
+function snd.set_faction()
+
+ if snd.city == "Spinesreach" or snd.city == "Bloodloch" then
+  snd.faction = "shadow"
+	snd.allies = snd.shadow
+	snd.enemies = snd.spirit
+ elseif snd.city == "Enorian" or snd.city == "Duiran" then
+  snd.faction = "spirit"
+	snd.allies = snd.spirit
+	snd.enemies = snd.shadow
+ end
+
 end
 
 function snd.target_locked()
@@ -29773,6 +29170,1407 @@ end</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
+					<Script isActive="yes" isFolder="no">
+						<name>shadow</name>
+						<packageName></packageName>
+						<script>snd.shadow = {
+"Feichin",
+"Callidora",
+"Pargu",
+"Dierjiano",
+"Lorne",
+"Ultra",
+"Roknar",
+"Safiya",
+"Ensis",
+"Zaene",
+"Araris",
+"Mangor",
+"Chassier",
+"Noctis",
+"Desidora",
+"Malcanthet",
+"Elene",
+"Taelyndara",
+"Asanna",
+"Mathus",
+"Herus",
+"Sarelle",
+"Reno",
+"Xenia",
+"Cruenne",
+"Wilba",
+"Inkh",
+"Nahasa",
+"Orfeo",
+"Neoma",
+"Pietre",
+"Didi",
+"Aliyah",
+"Malachai",
+"Kandara",
+"Binward",
+"Tekias",
+"Mortexia",
+"Diavola",
+"Jett",
+"Kassidy",
+"Korvyr",
+"Naro",
+"Evlentesh",
+"Saervok",
+"Morrinth",
+"Raemi",
+"Magne",
+"Brontes",
+"Kelliara",
+"Nausicaa",
+"Maelia",
+"Naida",
+"Ayuna",
+"Cai",
+"Ildri",
+"Dai",
+"Nerakh",
+"Jomar",
+"Qix",
+"Drystin",
+"Metias",
+"Kauller",
+"Zenthain",
+"Cassomyr",
+"Ensidia",
+"Tyrak",
+"Acino",
+"Blakehanne",
+"Mondeau",
+"Elaz",
+"Aluki",
+"Seriha",
+"Ashenzar",
+"Feirenz",
+"Rezargnesh",
+"Tillian",
+"Ozul",
+"Vinsun",
+"Ryv",
+"Gatny",
+"Rhaghe",
+"Partue",
+"Ezalor",
+"Laikahra",
+"Rhyot",
+"Jergosh",
+"Rexton",
+"Alathesia",
+"Aschwar",
+"Kyassa",
+"Yvo",
+"Ceto",
+"Minesae",
+"Kadal",
+"Angroth",
+"Moxie",
+"Amaro",
+"Tsarra",
+"Xyndrae",
+"Meltas",
+"Denser",
+"Haruki",
+"Grimdale",
+"Catty",
+"Megan",
+"Cilly",
+"Matlal",
+"Vess",
+"Whirran",
+"Asmund",
+"Henge",
+"Esotopes",
+"Laera",
+"Xuzegg",
+"Neis",
+"Entioch",
+"Rijetta",
+"Echo",
+"Rakia",
+"Farean",
+"Lynexia",
+"Panthaal",
+"Ipz",
+"Daelar",
+"Tavor",
+"Vzaaz",
+"Inoj",
+"Eagan",
+"Lightspeed",
+"Ailen",
+"Kesten",
+"Ciarcadh",
+"Legyn",
+"Deva",
+"Illuthias",
+"Keahi",
+"Kagami",
+"Ehtias",
+"Sarethiel",
+"Cymri",
+"Ryryk",
+"Maldoror",
+"Kalrax",
+"Kentigern",
+"Malger",
+"Ouzu",
+"Aenilris",
+"Tianlong",
+"Kaiona",
+"Deandra",
+"Cayn",
+"Ansury",
+"Bhrigu",
+"Alacar",
+"Ison",
+"Remmao",
+"Xelraik",
+"Juha",
+"Gavramel",
+"Rakim",
+"Yettave",
+"Vonandor",
+"Thedoc",
+"Kendi",
+"Nephiliar",
+"Pontius",
+"Huyana",
+"Megami",
+"Isern",
+"Atarah",
+"Kadvar",
+"Rainaka",
+"Hayth",
+"Vinhi",
+"Vaeth",
+"Raskalov",
+"Holbrook",
+"Ishmar",
+"Thrasius",
+"Zhyth",
+"Evelyn",
+"Voncy",
+"Vycious",
+"Nirian",
+"Cilan",
+"Eydis",
+"Dennao",
+"Starla",
+"Evilo",
+"Procell",
+"Harad",
+"Exodus",
+"Eor",
+"Hawa",
+"Azami",
+"Aldin",
+"Sigrun",
+"Epiales",
+"Mythunnar",
+"Xirien",
+"Raidy",
+"Maira",
+"Salveo",
+"Kaldaka",
+"Kismit",
+"Arakeshi",
+"Laurenne",
+"Visix",
+"Tzaarhashet",
+"Estella",
+"Soulaie",
+"Nixia",
+"Taja",
+"Kirill",
+"Zyphen",
+"Sohma",
+"Sarisa",
+"Tarleich",
+"Redriot",
+"Gunther",
+"Beivu",
+"Jadice",
+"Jaegth",
+"Livia",
+"Kylae",
+"Itkovian",
+"Drale",
+"Senaka",
+"Galilei",
+"Darliea",
+"Tykesi",
+"Obediah",
+"Katios",
+"Nisavi",
+"Zixen",
+"Zhunkou",
+"Corvo",
+"Reave",
+"Izzard",
+"Ronka",
+"Rayan",
+"Nebula",
+"Krynst",
+"Akaryuterra",
+"Merick",
+"Diomedes",
+"Alela",
+"Laniara",
+"Axai",
+"Hitzuguya",
+"Korkal",
+"Slinash",
+"Verniy",
+"Lacie",
+"Lleminara",
+"Nemsi",
+"Nonatea",
+"Verrillia",
+"Odment",
+"Zephy",
+"Milvushina",
+"Rebra",
+"Scathus",
+"Aethir",
+"Xanithe",
+"Vrey",
+"Vyxsis",
+"Gorvex",
+"Larion",
+"Chassity",
+"Demidicus",
+"Grake",
+"Fensuhn",
+"Aridas",
+"Akimoto",
+"Skuti",
+"Xeon",
+"Velath",
+"Riane",
+"Trent",
+"Skree",
+"Nissa",
+"Blanche",
+"Lehar",
+"Bormulf",
+"Kaivalya",
+"Siaern",
+"Manelesi",
+"Fezzix",
+"Brin",
+"Skade",
+"Keldrion",
+"Keldrad",
+"Greebs",
+"Shiva",
+"Arath",
+"Venthus",
+"Grimmod",
+"Destan",
+"Umero",
+"Konnorn",
+"Aldera",
+"Eleanor",
+"Ensoi",
+"Aevol",
+"Gennifer",
+"Sulabha",
+"Uthev",
+"Veris",
+"Tila",
+"Kanivara",
+"Illuwen",
+"Lanara",
+"Precius",
+"Nin",
+"Epiden",
+"Cardie",
+"Caelian",
+"Vassago",
+"Romei",
+"Teani",
+"Yaemon",
+"Xyla",
+"Aniko",
+"Liua",
+"Blaze",
+"Anlia",
+"Solaria",
+"Knick",
+"Bulrok",
+"Diggory",
+"Wjoltyr",
+"Dantae",
+"Vjeiraic",
+"Lynomios",
+"Caboose",
+"Zehebim",
+"Asven",
+"Skiva",
+"Lilia",
+"Taradin",
+"Aros",
+"Scytareine",
+"Feyjani",
+"Seraphyna",
+"Haemon",
+"Lilein",
+"Ozgalla",
+"Chase",
+"Feyann",
+"Krogyr",
+"Hawise",
+"Robyn",
+"Winger",
+"Cola",
+"Zarni",
+"Lusidian",
+"Deumos",
+"Karai",
+"Vaytor",
+"Grimnar",
+"Helios",
+"Leana",
+"Memnoch",
+"Abhorash",
+"Diancecht",
+"Lasaya",
+"Kagasha",
+"Lupin",
+"Kiershu",
+"Rolk",
+"Nimueh",
+"Nintar",
+"Irish",
+"Narak",
+"Jazmila",
+"Anat",
+"Zyre",
+"Krik",
+"Prucilla",
+"Ely",
+"Alak",
+"Azrael",
+"Dagan",
+"Glasse",
+"Sylar",
+"Draiman",
+"Nydri",
+"Wedric",
+"Vryolis",
+"Nyasi",
+"Martinaux",
+"Mriste",
+"Riluo",
+"Ladrith",
+"Valie",
+"Sysky",
+"Vonai",
+"Blodwyn",
+"Toz",
+"Linkovitch",
+"Etrigan",
+"Vharen",
+"Dourif",
+"Hexes",
+"Cinuedu",
+"Zelroth",
+"Rinnek",
+"Jineva",
+"Aisec",
+"Zileigh",
+"Noth",
+"Taye",
+"Eolo",
+"Archelaus",
+"Zortania",
+"Dhavar",
+"Candace",
+"Lenoriel",
+"Anasses",
+"Ridd",
+"Talomae",
+"Krow",
+"Kodra",
+"Alynn",
+"Celeun",
+"Deasil",
+"Infin",
+"Alii",
+"Kasen",
+"Uthegen",
+"Ansidia",
+"Mjoll",
+"Iises",
+"Jhaelen",
+"Justus",
+"Irennan",
+"Tina",
+"Kyn",
+"Liev",
+"Rozlic",
+"Keaira",
+"Nindor",
+"Azarae",
+"Lykorn",
+"Alandrol",
+"Odette",
+"Nisha",
+"Eoros",
+"Lij",
+"Gyana",
+"Quillion",
+"Bora",
+"Nicolas",
+"Faerah",
+"Yedan",
+"Eicara",
+"Chala",
+"Xaldrin",
+"Emiko",
+"Dreww",
+"Eliser",
+"Rennie",
+"Liorial",
+"Flighn",
+"Kamui",
+"Oceania",
+"Aliane",
+"Taj",
+"Eternti",
+"Zea",
+"Aouri",
+"Pedra",
+"Awol",
+"Taryn",
+"Mayze",
+"Nhiall",
+"Entildron",
+"Vlaius",
+"Tlacahua",
+"Agron",
+"Leopal",
+"Sanguin",
+"Jarrhn",
+"Sagla",
+"Nymma",
+"Usetta",
+"Kythi",
+"Zachariah",
+"Alice",
+"Kervalin",
+"Asmodia",
+"Tartarus",
+"Lecksi",
+"Sarita",
+"Nahira",
+"Requilem",
+"Taaroshi",
+"Azelie",
+"Xarian",
+"Balzic",
+"Kwanake",
+"Raynia",
+"Shixblix",
+"Kharna",
+"Damion",
+"Kafar",
+"Azu",
+"Selaena",
+"Vahlen",
+"Swara",
+"Calisra",
+"Dref",
+"Adyen",
+"Narcisa",
+"Tirria",
+"Poggers",
+"Cendron",
+"Belzibub",
+"Cariv",
+"Satomi",
+"Koari",
+"Parzival",
+"Ducaulle",
+"Tolas",
+"Vorran",
+"Aliviana",
+"Zaos",
+"Rashinza",
+"Sarojin",
+"Irys",
+"Teflin",
+"Sollimus",
+"Serentius",
+"Raddock",
+"Santino",
+"Aiyana",
+"Strung",
+"Boz",
+"Ilioyd",
+"Caraldor",
+"Octavia",
+"Dafft",
+"Darien",
+"Zarosh",
+"Rorik",
+"Rokujou",
+"Emir",
+"Frankie",
+"Seirsha",
+"Luria",
+"Anita",
+"Mastema",
+"Akara",
+"Astele",
+"Cullin",
+"Alystrine",
+"Xeniothalus",
+"Kodaza",
+"Ameleia",
+"Doron",
+"Bob",
+"Tetchta",
+"Damonicus",
+"Uldyssian",
+"Zinar",
+"Axius",
+"Enlil",
+"Irvaen",
+"Menelaus",
+"Daelares",
+"Syphen",
+"Galena",
+"Charella",
+"Rome",
+"Darragh",
+"Athala",
+"Araseth",
+"Borscin",
+"Naos",
+"Tryss",
+"Desian",
+"Zakkari",
+"Azalie",
+"Marharet",
+"Tybereus",
+"Aramaeus",
+"Clouser",
+"Ruga",
+"Ayala",
+"Pentas",
+"Mosr",
+"Vika",
+"Kadgar",
+"Moody",
+"Trikal",
+"Qelres",
+"Tasryn",
+"Louse",
+"Mephistoles",
+"Era",
+"Niakara",
+"Esan",
+"Aegon",
+"Seurimas",
+"Fyrren",
+"Talfinel",
+"Malok",
+"Ilinorn",
+"Choep",
+"Anka",
+"Lenina",
+"Almol",
+"Arslen",
+"Tasaria",
+"Asugazio",
+"Makya",
+"Anari",
+"Valdas",
+"Theros",
+"Burk",
+"Evoran",
+"Rou",
+"Graffeon",
+"Zubayr",
+"Gub",
+"Dankula",
+"Utansi",
+"Tapester",
+"Malovia",
+"Phoebi",
+"Jeab",
+"Thraze",
+"Saidenn",
+"Dowbrow",
+"Kiralla",
+"Megiddo",
+"Deric",
+"Samos",
+"Ephi",
+"Hayt",
+"Maetrias",
+"Cal",
+"Anavander",
+"Vittorio",
+"Calikura",
+"Iraun",
+"Kraz",
+"Ahlysaaria",
+"Ayukazi",
+"Vorlus",
+"Nik",
+"Vonarnis",
+"Savas",
+"Weylyn",
+"Sylviah",
+"Miroslav",
+"Murmandamus",
+"Maeve",
+"Oriana",
+"Loreli",
+"Lere",
+"Velguin",
+"Zenobia",
+"Lucertola",
+"Yveria",
+"Erzsebet",
+"Rhexx",
+"Canasius",
+"Zrex",
+"Oisynne",
+"Kadyn",
+"Chalenna",
+"Ropp",
+"Rhain",
+"Einette",
+"Zen",
+"Ardent",
+"Ferrik",
+"Zruak",
+"Vizzer",
+"Alita",
+"Aluvi",
+"Ellenia",
+"Volundiel",
+"Macavity",
+"Varant",
+"Aren",
+"Chup",
+"Xai",
+"Ditae",
+"Cadhla",
+"Rurthina",
+"Haverly",
+"Pyxis",
+"Yrthyra",
+"Kylira",
+"Retherian",
+"Phelan",
+"Radne",
+"Cutkya",
+"Nahuaque",
+"Khsar",
+"Hadrel",
+"Arness",
+"Phlickerwart",
+"Nokk",
+"Vanas",
+"Caeoimhe",
+"Calen",
+"Calyziir",
+"Vahellion",
+"Skratt",
+"Ace",
+"Leron",
+"Vanalia",
+"Alissa",
+"Stryxi",
+"Jiri",
+"Korvora",
+"Veruca",
+"Deliria",
+"Josephus",
+"Murad",
+"Piper",
+"Kathgor",
+"Zaila",
+"Arahali",
+"Truan",
+"Ikne",
+"Traexon",
+"Tuisto",
+"Llore",
+"Agidnis",
+"Issac",
+"Eresim",
+"Akarn",
+"Narayan",
+"Sukii",
+"Evangeline",
+"Xereth",
+"Tyriik",
+"Auraro",
+"Amarita",
+"Tatia",
+"Haleigh",
+"Claire",
+"Danuja",
+"Mileta",
+"Aspasia",
+"Rammus",
+"Jenxlyn",
+"Qin",
+"Parnox",
+"Iazamat",
+"Oemeria",
+"Zhukov",
+"Edoi",
+"Iayera",
+"Dannon",
+"Theth",
+"Ixi",
+"Mazzion",
+"Andrus",
+"Mordwyry",
+"Psychorax",
+"Shoimoro",
+"Lim",
+"Nephira",
+"Darrah",
+
+
+}</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>spirit</name>
+						<packageName></packageName>
+						<script>snd.spirit = {
+"Corrina",
+"Tucker",
+"Xashire",
+"Amarylis",
+"Klegane",
+"Edhain",
+"Aralaan",
+"Urzyk",
+"Ayegor",
+"Kilmoner",
+"Amedeus",
+"Seji",
+"Cole",
+"Colt",
+"Jaqul",
+"Kidos",
+"Alaxi",
+"Ianthe",
+"Kaskame",
+"Balrus",
+"Oba",
+"Beveleth",
+"Raodiana",
+"Giliand",
+"Daoin",
+"Iaphia",
+"Rynkhia",
+"Alexein",
+"Talakea",
+"Tala",
+"Sanir",
+"Wynne",
+"Larissa",
+"Trixkya",
+"Tarnoth",
+"Yeni",
+"Renia",
+"Adelina",
+"Flinn",
+"Pieri",
+"Exia",
+"Kerryn",
+"Zoria",
+"Daingean",
+"Caitria",
+"Aban",
+"Zethrie",
+"Missari",
+"Haley",
+"Bayla",
+"Callandri",
+"Guiseppe",
+"Fenfil",
+"Dae",
+"Ermaer",
+"Kylan",
+"Adarni",
+"Uisor",
+"Saarlamen",
+"Citlali",
+"Tratos",
+"Rylan",
+"Madison",
+"Niraya",
+"Macian",
+"Duggin",
+"Viho",
+"Graythe",
+"Aetama",
+"Xzato",
+"Finid",
+"Puck",
+"Remil",
+"Alaric",
+"Ixle",
+"Waren",
+"Borus",
+"Tressa",
+"Selitore",
+"Rinata",
+"Amrynn",
+"Ateslemek",
+"Solrethael",
+"Rum",
+"Jaelle",
+"Trowen",
+"Daren",
+"Ashel",
+"Arastinion",
+"Lise",
+"Tazjatesh",
+"Syrsya",
+"Faren",
+"Merek",
+"Valeria",
+"Wylt",
+"Jessie",
+"Akil",
+"Mensa",
+"Elanoria",
+"Tosh",
+"Etonia",
+"Aynas",
+"Rosdes",
+"Volo",
+"Sofiel",
+"Bori",
+"Bhalkam",
+"Krisha",
+"Piri",
+"Lisura",
+"Lia",
+"Siji",
+"Mhandorallen",
+"Dato",
+"Bruin",
+"Anditesh",
+"Kitza",
+"Mellori",
+"Dennah",
+"Brayden",
+"Kiyotan",
+"Ciri",
+"Zyke",
+"Mielikki",
+"Amaara",
+"Eschar",
+"Tannit",
+"Lucie",
+"Aithene",
+"Nyboe",
+"Illidan",
+"Dwodin",
+"Elanfor",
+"Faerin",
+"Aliod",
+"Ander",
+"Nixi",
+"Einaida",
+"Wirara",
+"Sessizlik",
+"Fierzha",
+"Angwe",
+"Zoe",
+"Mazarin",
+"Zynthraellium",
+"Jaamir",
+"Senalla",
+"Sensari",
+"Aolin",
+"Zephon",
+"Relandroc",
+"Yth",
+"Amishi",
+"Xiuhtonal",
+"Gaelric",
+"Seyka",
+"Sidrel",
+"Rufra",
+"Mosu",
+"Traice",
+"Aden",
+"Jinping",
+"Abra",
+"Nola",
+"Elawyn",
+"Saltorien",
+"Aisei",
+"Evelina",
+"Genocide",
+"Valingar",
+"Lillianna",
+"Pogg",
+"Escelika",
+"Orella",
+"Haven",
+"Moriko",
+"Nera",
+"Sudoxen",
+"Sekeres",
+"Kisme",
+"Pascal",
+"Nozerem",
+"Uske",
+"Iakut",
+"Zillow",
+"Xarnn",
+"Aloli",
+"Lyric",
+"Zantiln",
+"Edi",
+"Kheoss",
+"Valorie",
+"Katie",
+"Yven",
+"Dei",
+"Xiomara",
+"Izarken",
+"Corlin",
+"Aisling",
+"Rak",
+"Jasline",
+"Eaku",
+"Morwin",
+"Xeraziz",
+"Ashram",
+"Larisa",
+"Ario",
+"Eienna",
+"Nava",
+"Jacke",
+"Norasi",
+"Straid",
+"Maximas",
+"Ixmi",
+"Trath",
+"Urial",
+"Jhin",
+"Lynni",
+"Freyia",
+"Kitana",
+"Mirrfa",
+"Clawdiah",
+"Agothaxl",
+"Rosenna",
+"Clovis",
+"Haewurd",
+"Elorin",
+"Levinas",
+"Demortes",
+"Northam",
+"Daexin",
+"Benedicto",
+"Aeheli",
+"Velheima",
+"Clets",
+"Gerard",
+"Ayastia",
+"Adia",
+"Valik",
+"Aishia",
+"Zahera",
+"Jami",
+"Trey",
+"Sommnus",
+"Theo",
+"Briallen",
+"Aukan",
+"Raisha",
+"Iadra",
+"Alyx",
+"Bryock",
+"Pugsly",
+"Gunrir",
+"Dimbu",
+"Xanos",
+"Khalisi",
+"Alycena",
+"Verena",
+"Anahera",
+"Iaphi",
+"Kaestrin",
+"Maite",
+"Raime",
+"Belgarion",
+"Valkalkas",
+"Drayne",
+"Neodin",
+"Synx",
+"Aymah",
+"Ananta",
+"Khelzya",
+"Malian",
+"Raeche",
+"Bayne",
+"Dzekk",
+"Piari",
+"Bulge",
+"Phyndaris",
+"Roux",
+"Magni",
+"Brant",
+"Courtney",
+"Xandren",
+"Masi",
+"Krolis",
+"Mati",
+"Caeran",
+"Cayden",
+"Aithne",
+"Marin",
+"Emery",
+"Sansha",
+"Effrosyni",
+"Printiel",
+"Ophilia",
+"Kvothe",
+"Ramathorn",
+"Stickley",
+"Elwyn",
+"Vaerenth",
+"Naerthan",
+"Zoglin",
+"Jezreth",
+"Alisa",
+"Ecikoria",
+"Arista",
+"Bressan",
+"Jakir",
+"Shambunath",
+"Kayt",
+"Tabinathia",
+"Kaiara",
+"Falinzin",
+"Iesid",
+"Kaleigh",
+"Koda",
+"Kalts",
+"Tenshyo",
+"Labious",
+"Valin",
+"Legic",
+"Brae",
+"Alcidies",
+"Kallah",
+"Klonk",
+"Qaixheor",
+"Rosalind",
+"Jhura",
+"Aenar",
+"Obrac",
+"Noon",
+"Jun",
+"Ainete",
+"Khalil",
+"Vhlara",
+"Aiden",
+"Meriana",
+"Eratian",
+"Saybre",
+"Jibz",
+"Lycia",
+"Salius",
+"Renard",
+"Tenmu",
+"Kylana",
+"Sula",
+"Aisar",
+"Jekkan",
+"Grafdraxz",
+"Aumia",
+"Sekit",
+"Ioai",
+"Chaxapuarch",
+"Atrapoema",
+"Vevis",
+"Saerward",
+"Makahiya",
+"Niavex",
+"Aloa",
+"Wau",
+"Adlivun",
+"Rivas",
+"Arbre",
+"Iatan",
+"Kallia",
+"Lisette",
+"Vinyarion",
+"Xeraphine",
+"Seir",
+"Ysabelon",
+"Neoial",
+"Clearwater",
+"Kelsea",
+"Lemowe",
+"Vasilus",
+"Orunmila",
+"Sabella",
+"Ysi",
+"Ifreann",
+"Bjarte",
+"Tesetta",
+"Silvanar",
+"Rasani",
+"Imresyr",
+"Hodral",
+"Mildew",
+"Warruck",
+"Ingram",
+"Vaeldren",
+"Arataziel",
+"Maizin",
+"Jeromy",
+"Sirena",
+"Zephraim",
+"Zion",
+"Rennoc",
+"Callaia",
+"Sekara",
+"Hale",
+"Aevon",
+"Altair",
+"Kinder",
+"Shlandria",
+"Vulkar",
+"Hieros",
+"Tee",
+"Ferrovax",
+"Makaya",
+"Innuros",
+"Hallis",
+"Melantha",
+"Pleinair",
+"Asra",
+"Goris",
+"Caspien",
+"Chrys",
+"Aired",
+"Dyvona",
+"Tyson",
+"Selyssa",
+"Arcannia",
+"Airesi",
+"Carson",
+"Evelyne",
+"Sivekui",
+"Annika",
+"Oonagh",
+"Thordin",
+"Lonnus",
+"Kalinaar",
+"Sindora",
+"Lilea",
+"Dani",
+"Aryella",
+"Seraphina",
+"Iophe",
+"Velana",
+"Varrilix",
+"Kaius",
+"Erion",
+"Gerro",
+"Rilok",
+"Unu",
+"Eska",
+"Nuana",
+"Leranc",
+"Kalena",
+"Isia",
+"Serram",
+"Wylliam",
+"Nyssa",
+"Carthenian",
+"Aseru",
+"Tythos",
+"Faeden",
+"Aoide",
+"Tsuga",
+"Brosk",
+"Xavin",
+"Heskan",
+"Roxilyx",
+"Scandland",
+"Mahar",
+"Ronon",
+"Dasha",
+"Elidyr",
+"Grecia",
+"Edain",
+"Inari",
+"Yeras",
+"Rhaea",
+"Tahm",
+"Rahm",
+"Ugglee",
+"Aedui",
+"Mabel",
+"Zorn",
+"Kamus",
+"Caed",
+"Esper",
+"Alyia",
+"Aelea",
+"Cressida",
+"Osai",
+"Lanira",
+"Sonsunou",
+"Renarin",
+"Ranae",
+"Venn",
+"Miralla",
+"Rashar",
+"Eoleth",
+"Asilient",
+"Amrit",
+"Ghatzhjia",
+"Almeri",
+"Aithinne",
+"Talisa",
+"Parumvera",
+"Aeryx",
+"Aledar",
+"Mirahtesh",
+"Rothak",
+"Courene",
+"Rebeca",
+"Kjell",
+"Tristram",
+"Jakarn",
+"Nadryne",
+"Seldyn",
+"Kzark",
+"Wert",
+"Shakira",
+"Ishuri",
+"Kiyenri",
+"Katerinka",
+"Vyraeri",
+"Analynn",
+"Whippet",
+"Pilar",
+"Sibatti",
+"Deion",
+"Dyolclese",
+"Ninette",
+"Vrael",
+"Ravanna",
+"Zik",
+"Adec",
+"Tamori",
+"Vael",
+"Willoughby",
+"Sryaen",
+"Jourik",
+"Drestyn",
+"Hadoryu",
+"Czcibor",
+"Tinazin",
+"Eliadon",
+"Sarran",
+"Brynn",
+"Talyarra",
+"Fliennad",
+"Talonnb",
+"Arindalia",
+"Saidem",
+"Arafel",
+"Andromeydia",
+"Unpre",
+"Rellik",
+"Calloud",
+"Aranok",
+"Cernunnos",
+"Rihrin",
+"Mykellah",
+"Karhast",
+"Trager",
+"Sepzane",
+"Rhine",
+"Tifa",
+"Keshein",
+"Folly",
+"Brenny",
+"Ylaida",
+"Borminchia",
+"Charica",
+"Laithe",
+"Honeey",
+"Dakan",
+"Ternu",
+"Ianus",
+"Haydyn",
+"Church",
+"Daskalos",
+"Demarcus",
+"Mucka",
+"Vahn",
+"Kolyn",
+"Darim",
+"Agothine",
+"Naia",
+"Steingrimson",
+"Darmani",
+"Boden",
+"Bastian",
+"Raist",
+"Thurs",
+"Ventri",
+"Anthok",
+"Radryn",
+"Taiyang",
+"Nelaana",
+"Vivaera",
+"Kyou",
+"Ayanala",
+"Xigbar",
+"Calebb",
+"Lin",
+"Saltz",
+"Camile",
+"Amyie",
+"Indiana",
+"Syliana",
+"Serrice",
+"Orisae",
+"Asena",
+"Kassian",
+"Banukk",
+"Burdan",
+"Yvi",
+"Rictus",
+"Alamura",
+"Kelta",
+
+	}</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Ylem</name>
