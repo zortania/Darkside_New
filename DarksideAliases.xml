@@ -6985,12 +6985,13 @@ end</script>
   }
   
   local touse = {}
-  local mentcount = 0 
-  for aff in pairs(snd.mental_affs) do
-    if table.contains(snd.target_has, snd.mental_affs[aff]) then
-      mentcount = mentcount + 1
-    end
-  end
+  
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
+      end
 
 snd.starting_attack()
 function snd.attack_function()
@@ -7020,30 +7021,31 @@ function snd.attack_function()
    string = "commune leafstorm "..snd.target
   elseif theyran then
 		string = "nature pull "..snd.target
-  elseif not snd.checkAff("premonition") then
-    if not snd.their_premonition then
-      if not snd.my_premonition then
-        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
-      end
-    end
+  --elseif not snd.checkAff("premonition") then
+  --  if not snd.their_premonition then
+  --    if not snd.my_premonition then
+  --      string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
+  --    end
+  --  end
   elseif not snd.checkAff("infested") then
     string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
   elseif mentcount &lt; 3 then
     if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-      if not snd.checksomeAffs({"confusion, impatience"},1) then
+      echo("\nYou have not reached 3 mental affs")
+      if not snd.checkAff("impatience") and not snd.checkAff("confusion") then
         string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
       elseif not snd.chekcAff("stupidity") then
         string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
       else
-        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target.." "..venom
-	 		  call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target
 	 		end
     end
   elseif mentcount &gt;= 3 then
+    echo("\nYou have reached 3 mental affs")
     string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
     call = "wt Afflicting "..snd.target..": "..touse..snd.sep
-  elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
-    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
+  --elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
+  --  string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
 	else
    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
 	end
@@ -15660,6 +15662,61 @@ end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^bash1$</regex>
+					</Alias>
+				</AliasGroup>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>YALL</name>
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>check ylem log</name>
+						<script>compiled_logged_records = {}
+compiled_logged_tallies = {}
+local ylem_logger_orgs = {
+Spinesreach = "command",
+Bloodloch = "raiders",
+Enorian = "enorian",
+Duiran = "dion"
+}
+local org_to_read = ylem_logger_orgs[gmcp.Char.Status.city]
+enableTrigger("ylem readlog parser")
+send("readlog "..org_to_read.." 0 1", false)
+send("readlog "..org_to_read.." 0 2", false)
+send("readlog "..org_to_read.." 0 3", false)
+send("readlog "..org_to_read.." 0 4", false)
+send("readlog "..org_to_read.." 0 5", false)
+send("readlog "..org_to_read.." 0 6", false)
+send("readlog "..org_to_read.." 0 7", false)
+tempTimer(3, [[expandAlias("printylem")]])
+</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^ylemlog$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>print ylem log</name>
+						<script>disableTrigger("ylem readlog parser")
+cecho("\n&lt;green&gt;YALL is thinking&lt;white&gt;...\n...\n...\n...\n\n")
+cecho("&lt;green&gt;Over the previous seven days, "..gmcp.Char.Status.city.." has recorded:")
+for activity in pairs(compiled_logged_tallies) do
+  cecho("\n&lt;white&gt;"..compiled_logged_tallies[activity].." "..activity.."s")
+end
+cecho("\n&lt;green&gt;------------------------")
+cecho("\n&lt;white&gt;Attendence is as follows")
+cecho("\n&lt;green&gt;------------------------")
+for name in pairs(compiled_logged_records) do
+  cecho("\n&lt;white&gt;"..name..": ")
+  for activity in pairs(compiled_logged_records[name]) do
+    cecho(compiled_logged_records[name][activity].." "..activity.."s ")
+  end
+end
+--display(compiled_logged_records)
+send(" ")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^printylem$</regex>
 					</Alias>
 				</AliasGroup>
 			</AliasGroup>
