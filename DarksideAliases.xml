@@ -6863,20 +6863,6 @@ end</script>
 									<regex>^tco(.*)$</regex>
 								</Alias>
 							</AliasGroup>
-							<Alias isActive="yes" isFolder="no">
-								<name>Wield bashing</name>
-								<script>if snd.class == "Shaman" then
-	if (snd.wielded.left.name or snd.wielded.right.name) == "rod" then
-		snd.send("qeb unwield pole")
-		tempTimer(3, [[expandAlias("wbsh")]])
-	else
-		snd.send("quickwield both quarterstaff")
-	end
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^wbsh$</regex>
-							</Alias>
 							<AliasGroup isActive="yes" isFolder="yes">
 								<name>Aff Offenses</name>
 								<script></script>
@@ -7027,8 +7013,10 @@ function snd.attack_function()
         string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
       end
     end
-  elseif not snd.checkAff("infested") then
+  elseif not snd.checkAff("infested") and not snd.infested then
     string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
+    snd.infested = true
+    tempTimer(3, [[snd.infested = false]])
   elseif mentcount &lt; 3 then
     if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
       echo("\nYou have not reached 3 mental affs")
@@ -7044,8 +7032,8 @@ function snd.attack_function()
     echo("\nYou have reached 3 mental affs")
     string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
     call = "wt Afflicting "..snd.target..": "..touse..snd.sep
-  --elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
-  --  string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
+  elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
+    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
 	else
    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
 	end
@@ -7184,6 +7172,139 @@ end</script>
 									<regex>^kll$</regex>
 								</Alias>
 							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Limb Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Limbs</name>
+									<script>if snd.class == "Shaman" then
+
+snd.starting_attack()
+function snd.attack_function()
+
+	call = ""
+	
+ if not snd.waiting.queue then
+  if snd.shamanpet ~= "bear" and snd.balance.morph then
+    morphstring = "familiar morph bear"..snd.sep
+  end  
+  
+  if snd.used.shield then
+    string = morphstring
+    string = string.."fetish attune ".."commune leafstorm "..snd.target
+  elseif theyran then
+		string = morphstring
+    string = string.."nature pull "..snd.target
+  elseif snd.proned() then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune strangle "..snd.target
+  elseif not snd.proned() and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune slam "..snd.target
+  elseif not snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},2) then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." epseth"
+	 	call = "wt Vinelash "..snd.target..": epseth"..snd.sep
+  elseif not snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},2) then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." epteth"
+	 	call = "wt Vinelash "..snd.target..": epteth"..snd.sep
+  else
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." ouabain"
+	 call = "wt Vinelash "..snd.target..": ouabain"
+  end
+	
+	string = call..string
+	
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limbs$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Thorns</name>
+									<script>if snd.class == "Shaman" then
+
+snd.starting_attack()
+function snd.attack_function()
+
+	call = ""
+	
+ if not snd.waiting.queue then
+  if snd.shamanpet ~= "cougar" and snd.balance.morph then
+    morphstring = "familiar morph cougar"..snd.sep
+  end  
+  
+  
+  if snd.used.shield then
+    string = morphstring
+    string = string.."fetish attune ".."commune leafstorm "..snd.target
+  elseif theyran then
+		string = morphstring
+    string = string.."nature pull "..snd.target
+  elseif snd.proned() then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune strangle "..snd.target
+  elseif not snd.proned() and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 and snd.thorncount == 3 then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune slam "..snd.target
+  elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+    if not snd.checkAff("haemophilia") then
+      string = morphstring
+      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune vinelash "..snd.target.." hepafarin"
+    else
+      string = morphstring
+      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune vinelash "..snd.target.." prefarar"
+    end
+  else
+    if not snd.checkAff("haemophilia") then
+      string = morphstring
+      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." hepafarin"
+    else
+      string = morphstring
+      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." prefarar"
+    end
+  end
+	
+	string = call..string
+	
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^thorn$</regex>
+								</Alias>
+							</AliasGroup>
+							<Alias isActive="yes" isFolder="no">
+								<name>Wield bashing</name>
+								<script>if snd.class == "Shaman" then
+  snd.send("quickwield staff")
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^wbsh$</regex>
+							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>Templar</name>
