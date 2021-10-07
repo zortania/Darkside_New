@@ -6872,21 +6872,44 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Aff support</name>
 									<script>if snd.class == "Shaman" then
-snd.giving = {
+  snd.giving = {
 
-"clumsiness",
-"asthma",
-"slickness",
-"anorexia",
-"stupidity",
-"weariness",
-"allergies",
-"vomiting",
-"haemophilia",
-"sensitivity",
-"recklessness",
-"dizziness",
-}
+  "clumsiness",
+  "asthma",
+  "slickness",
+  "anorexia",
+  "stupidity",
+  "weariness",
+  "allergies",
+  "vomiting",
+  "haemophilia",
+  "sensitivity",
+  "recklessness",
+  "dizziness",
+  }
+  
+  snd.giving2 = {
+
+  "fear",
+  "agoraphobia",
+  "claustrophobia",
+  "vertigo",
+  "loneliness",
+  "shyness",
+  "paranoia",
+  "superstition",
+  
+  }
+  
+  local touse = {}
+  
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
+      end
+
 snd.starting_attack()
 function snd.attack_function()
 
@@ -6901,26 +6924,55 @@ function snd.attack_function()
     end
    end
   end
+  for i in pairs(snd.giving2) do
+				if not snd.checkAff(snd.giving2[i]) then
+					if not table.contains(touse, snd.giving2[i]) then
+						table.insert(touse, snd.giving2[i])
+					end
+				end
+			end
 	if venom == "none" then
 	 venom = "epseth"
 	end
+  
+  if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+    morphstring = "familiar morph wyvern"..snd.sep
+  end 
+  
   if snd.used.shield then
-   string = "commune leafstorm "..snd.target
+    string = morphstring
+    string = string.."commune leafstorm "..snd.target
   elseif theyran then
-		string = "nature pull "..snd.target
-  elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-		if not snd.checkAff("impatience") and not snd.checkAff("confusion") then
-			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
-		elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") then
-			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
-		else
-			string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
-	 		call = "wt Vinelash "..snd.target..": "..venom..snd.sep
-		end	
+    string = morphstring
+    string = string.."nature pull "..snd.target
+  elseif not snd.checkAff("infested") and not snd.infested then
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
+    snd.infested = true
+    tempTimer(5, [[snd.infested = false]])
+  elseif mentcount &lt; 3 then
+    if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+      echo("\nYou have not reached 3 mental affs")
+      if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
+      elseif not snd.checkAff("stupidity") then
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
+      else
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target
+	 		end
+    end
+  elseif mentcount &gt;= 3 then
+    echo("\nYou have reached 3 mental affs")
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
+    call = "wt Afflicting "..snd.target..": "..touse..snd.sep
   else
-   string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
-	 call = "wt Vinelash "..snd.target..": "..venom..snd.sep
-  end
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+	end
 	
 	string = call..string
 	
@@ -7003,39 +7055,54 @@ function snd.attack_function()
 	if venom == "none" then
 	 venom = "epseth"
 	end
+  
+  if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+    morphstring = "familiar morph wyvern"..snd.sep
+  end
+  
   if snd.used.shield then
-   string = "commune leafstorm "..snd.target
+    string = morphstring
+    string = string.."commune leafstorm "..snd.target
   elseif theyran then
-		string = "nature pull "..snd.target
+    string = morphstring
+    string = string.."nature pull "..snd.target
   elseif not snd.checkAff("premonition") then
     if not snd.their_premonition then
       if not snd.my_premonition then
-        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
       end
     end
   elseif not snd.checkAff("infested") and not snd.infested then
-    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
     snd.infested = true
-    tempTimer(3, [[snd.infested = false]])
+    tempTimer(5, [[snd.infested = false]])
   elseif mentcount &lt; 3 then
     if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
       echo("\nYou have not reached 3 mental affs")
       if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
-        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
       elseif not snd.checkAff("stupidity") then
-        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
       else
-        string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target
+        string = morphstring
+        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target
 	 		end
     end
   elseif mentcount &gt;= 3 then
     echo("\nYou have reached 3 mental affs")
-    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
     call = "wt Afflicting "..snd.target..": "..touse..snd.sep
   elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
-    string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
 	else
-   string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
+    string = morphstring
+    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
 	end
 	
 	string = call..string
@@ -7094,6 +7161,10 @@ function snd.attack_function()
 	if venom == "none" then
 	 venom = "epseth"
 	end
+  
+  if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+    morphstring = "familiar morph wyvern"..snd.sep
+  end
  
   if snd.used.shield then
     string = "commune leafstorm "..snd.target
