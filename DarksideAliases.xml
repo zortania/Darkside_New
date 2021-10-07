@@ -148,22 +148,26 @@ snd.toggle("calling")
 						<Alias isActive="yes" isFolder="no">
 							<name>listening</name>
 							<script>if matches[2] == "off" then
- snd.toggles.listening = false
- cecho("&lt;white&gt;Listening &lt;red&gt;OFF&lt;white&gt;!")
- send(" ")
-else
- snd.toggles.listening = true
- if snd.offense_loaded then
-  snd.callers = {}
-  for name in string.gmatch(matches[2], '([^ ]+)') do
-   table.insert(snd.callers, string.title(name))
+  if snd.toggles.listening then
+    snd.toggle("listening")
+    snd.callers = {}
   end
-  cecho("&lt;white&gt;Listening to: &lt;green&gt;"..table.concat(snd.callers, "&lt;white&gt;, &lt;green&gt;").."&lt;white&gt;!")
-  send(" ")
- else
-  cecho("&lt;white&gt;Listening &lt;green&gt;ON&lt;white&gt;!")
-	send(" ")
- end
+else
+  if not snd.toggles.listening then
+    snd.toggle("listening")
+  end
+  snd.toggles.listening = true
+  if snd.offense_loaded then
+    snd.callers = {}
+    for name in string.gmatch(matches[2], '([^ ]+)') do
+      table.insert(snd.callers, string.title(name))
+    end
+    cecho("&lt;white&gt;Listening to: &lt;green&gt;"..table.concat(snd.callers, "&lt;white&gt;, &lt;green&gt;").."&lt;white&gt;!")
+    send(" ")
+  else
+    cecho("&lt;white&gt;Listening &lt;green&gt;ON&lt;white&gt;!")
+    send(" ")
+  end
 end</script>
 							<command></command>
 							<packageName></packageName>
@@ -879,11 +883,11 @@ cecho("\n&lt;ForestGreen&gt;We get it! Every time you see that daily/weekly/mont
 cecho("\n")
 cecho("\n&lt;CadetBlue&gt;HOW IT WORKS!")
 cecho("\n&lt;MediumSeaGreen&gt;-------------")
-cecho("\n&lt;ForestGreen&gt;First, you will want to make sure you are wielding whatever you need to kill the vermin. After you are ready to start your quest of ridding a city of its vermin, you just &lt;DeepSkyBlue&gt;PATH TRACK &lt;ForestGreen&gt;to any city &lt;LimeGreen&gt;(make sure you are not an enemy!) &lt;ForestGreen&gt;and then type &lt;DeepSkyBlue&gt;vermon &lt;ForestGreen&gt;to start! This will work similar to &lt;DeepSkyBlue&gt;gogo &lt;ForestGreen&gt;in that it will just begin bashing from where you are currently. No matter which city you begin your vermin bashing in, it will end at the vermin mob and will automatically sell your vermin! So no more accidental offerings of vermin to your gods! Should you need to finish early, just type &lt;DeepSkyBlue&gt;vermon &lt;ForestGreen&gt;again and an echo will pop up to remind you to go sell your vermin!")
+cecho("\n&lt;ForestGreen&gt;First, you will want to make sure you are wielding whatever you need to kill the vermin. After you are ready to start your quest of ridding a city of its vermin, you just &lt;DeepSkyBlue&gt;PATH TRACK &lt;ForestGreen&gt;to any city &lt;LimeGreen&gt;(make sure you are not an enemy!) &lt;ForestGreen&gt;and then type &lt;DeepSkyBlue&gt;toggle vermin &lt;ForestGreen&gt;to start! This will work similar to &lt;DeepSkyBlue&gt;gogo &lt;ForestGreen&gt;in that it will just begin bashing from where you are currently. No matter which city you begin your vermin bashing in, it will end at the vermin mob and will automatically sell your vermin! So no more accidental offerings of vermin to your gods! Should you need to finish early, just type &lt;DeepSkyBlue&gt;toggle vermin &lt;ForestGreen&gt;again and an echo will pop up to remind you to go sell your vermin!")
 cecho("\n")
 cecho("\n&lt;CadetBlue&gt;ALIASES")
 cecho("\n&lt;MediumSeaGreen&gt;-------")
-cecho("\n&lt;DeepSkyBlue&gt;vermon         &lt;ForestGreen&gt;Toggles the vermin autobasher on/off")
+cecho("\n&lt;DeepSkyBlue&gt;toggle vermin         &lt;ForestGreen&gt;Toggles the vermin autobasher on/off")
 cecho("\n&lt;MediumSeaGreen&gt;-----------------------------------------")</script>
 								<command></command>
 								<packageName></packageName>
@@ -1356,40 +1360,30 @@ end</script>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
 							<name>Vermin Basher</name>
-							<script>if snd.vermin_on == true then
-	snd.vermin_on = false
+							<script>snd.send("vermin")
+if snd.toggles.vermin then
+	snd.toggles.vermin = false
 	bot.going = false
-	echo("VERMIN OFF")
-	snd.send("vermin")
+  disableTimer("moveroom")
+	cecho("&lt;red&gt;----------------\n   &lt;red&gt;VERMIN OFF\n&lt;red&gt;----------------")
 else
-	snd.vermin_on = true
-	if snd.city == "Spinesreach" then
-		snd.send("vermin"..snd.sep.."path track 11687")
-		snd.which_path = "verminspines"
-	elseif snd.city == "Bloodloch" then
-		snd.send("vermin"..snd.sep.."path track 9194")
-		snd.which_path = "verminbloodloch"
-	elseif snd.city == "Duiran" then
-		snd.send("vermin"..snd.sep.."path track 44060")
-		snd.which_path = "verminduiran"	
-	elseif snd.city == "Enorian" then
-		snd.send("vermin"..snd.sep.."path track 56484")
-		snd.which_path = "verminenorian"	
-	end
-	echo("VERMIN ON")
+	snd.toggles.vermin = true
+	local area = gmcp.Room.Info.area 
+  if not sunder_areaPaths then
+    snd.message("No area path list found, please check it is in the correct directory.")
+  elseif not sunder_areaPaths[area] then
+    snd.message("Path not found for current area.")
+  else
+    snd.message("Let's kill some vermin in: "..area.."!")
+    bot.going = true
+    bot.path = sunder_areaPaths[area]
+  end
+	cecho("\n&lt;green&gt;----------------\n   &lt;green&gt;VERMIN ON\n&lt;green&gt;----------------")
 	enableTimer("moveroom")
-	
-	if snd.which_path ~= "" then
-  	bot.going = true
-		bot.path =  sndpathpick()
-	end
-	
-end
-
-</script>
+end</script>
 							<command></command>
 							<packageName></packageName>
-							<regex>^vermon$</regex>
+							<regex>^toggle vermin$</regex>
 						</Alias>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
@@ -1437,7 +1431,7 @@ if snd.class == "Templar" then
 elseif snd.class == "Luminary" then
 	if hp &lt;= 60 then
   	snd.send("angel aura me")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 		snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1455,7 +1449,7 @@ elseif snd.class == "Monk" then
   	snd.send("transmute mana 1000"..snd.sep.. "numb")
  	elseif snd.have_aff("blackout") then
 		snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1521,7 +1515,7 @@ elseif snd.class == "Shaman" then
 elseif snd.class == "Sentinel" then
 	if hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 		snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1535,7 +1529,7 @@ elseif snd.class == "Sentinel" then
 elseif snd.class == "Wayfarer" then
 	if hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1547,7 +1541,7 @@ elseif snd.class == "Wayfarer" then
 elseif snd.class == "Syssin" then
 	if hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1577,7 +1571,7 @@ elseif snd.class == "Syssin" then
 elseif snd.class == "Shapeshifter" then
 	if hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1589,7 +1583,7 @@ elseif snd.class == "Shapeshifter" then
 elseif snd.class == "Indorani" then
 	if hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1601,7 +1595,7 @@ elseif snd.class == "Indorani" then
 elseif snd.class == "Carnifex" then
 	if hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1621,7 +1615,7 @@ elseif snd.class == "Archivist" then
 		end
 	elseif hp &lt;= 60 then
   	snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 		snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1633,7 +1627,7 @@ elseif snd.class == "Archivist" then
 elseif snd.class == "Zealot" then
 	if hp &lt;= 70 then
     snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 		snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1651,7 +1645,7 @@ elseif snd.class == "Praenomen" then
 		end
 	elseif hp &lt;= 60 then
     snd.send("touch shield")
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
@@ -1664,7 +1658,7 @@ elseif snd.class == "Teradrim" then
 endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
     if hp &lt;= 60 then
     	snd.send("sand shield me")
-    elseif snd.bashcounterattack then
+    elseif snd.counterattack_active then
       snd.send("sand shield me")
 	  elseif snd.pushattack then
 		  snd.send("push "..snd.target)
@@ -1703,7 +1697,7 @@ elseif snd.class == "Sciomancer" then
 		else
     	snd.send("touch shield")
 		end
-	elseif snd.bashcounterattack then
+	elseif snd.counterattack_active then
 			snd.send("touch shield")
 	elseif snd.pushattack then
 		  snd.send("push "..snd.target)
@@ -1729,6 +1723,26 @@ end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^sch$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Move to next area</name>
+						<script>if snd.toggles.fasthunt then
+
+  local area = sunder_areaPaths[gmcp.Room.Info.area]
+  local last_room_of_this_area = ""
+
+  for k, v in pairs(area) do
+    if v == "pthcity" then
+      last_room_of_this_area =  k
+    end
+  end
+
+  expandAlias("goto "..bot.path[last_room_of_this_area])
+
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^move to next area$</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
