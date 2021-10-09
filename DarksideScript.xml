@@ -434,6 +434,8 @@ snd.shopih = false
 snd.toparry = "none"
 snd.ylem_check = false
 snd.counterattack_active = false
+snd.probed = true
+snd.punisher = false
 
 snd.delete_prompt = false
 
@@ -18095,7 +18097,7 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
   if snd.probed then
   else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum" then   
+    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum" or gmcp.Room.info.area == "the Torturers' Caverns" then   
       send("probe "..snd.bashing.target)
       snd.probed = true
     end
@@ -18510,31 +18512,35 @@ end
 
 function snd.praenomen_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	if hp &lt;= 70 then
-		if snd.balance.mend and hasSkill("Mend") then 
+mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+
+	if snd.probed then
+  else
+    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum" or gmcp.Room.Info.area == "the Torturers' Caverns" then   
+      send("probe "..snd.bashing.target)
+      snd.probed = true
+    end
+  end
+
+  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if mp &gt;= 50 then
+      if snd.shield_check() then
+        battack = "clot 500"..snd.sep.."touch shield"
+      else
+        battack = "clot 500"
+      end
+    end
+	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+    if snd.punisher then
+      battack = "jig"
+    elseif snd.balance.mend and hasSkill("Mending") then
 			battack = "mend"
     else
-      if snd.shield_check() then
-        battack = "touch shield"
-      end
-		end
-	elseif hp &lt;= 60 and snd.shield_check() then
-    battack = "touch shield"
-  elseif snd.counterattack_active then
-			if snd.punisher then
-        battack = "jig"
-      else
-        battack = "touch shield"
-      end
+      battack = "touch shield"
+    end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
-  elseif snd.have_aff("blackout") then
-			if snd.punisher then
-        battack = "jig"
-      else
-        battack = "touch shield"
-      end
 	else
 		battack = "frenzy "..snd.bashing.target
 	end
@@ -24709,9 +24715,9 @@ def_celerity = "once",
 def_lifescent = "once",
 def_lifevision = "once",
 --def_veil = "on",
---def_stalk = "once",
---def_concentrate = "on",
---def_shadowblow = "on",
+def_stalk = "once",
+def_concentrate = "on",
+def_shadowblow = "on",
 def_blurred = "on",
 def_nightsight = "on",
 def_elusion = "on",
