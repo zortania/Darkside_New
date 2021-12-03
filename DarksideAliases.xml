@@ -605,6 +605,16 @@ end	</script>
 							<packageName></packageName>
 							<regex>^whois (\w+)$</regex>
 						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>walkarea</name>
+							<script>-- Used to quickly walk through an area without touching the mobs, use triggers to define ways to stop as in the Orrery Globe method
+snd.toggles.fastwalk = true
+snd_walkArea()
+expandAlias("move")</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^walkarea$</regex>
+						</Alias>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
 						<name>target</name>
@@ -1099,7 +1109,7 @@ cecho("\n &lt;green&gt;salve&lt;white&gt;              - Works towards frozen w/
 cecho("\n &lt;green&gt;aff&lt;white&gt;                - Venom lock into spinecut death sequence.")
 cecho("\n &lt;green&gt;lumi&lt;white&gt;               - T-fix + sensitivity support.")
 cecho("\n &lt;green&gt;ms&lt;white&gt;                 - Just venoms, no dhuriv attacks, perfect for starters.")
-elseif snd.class == "Luminary" then
+elseif snd.class == "Luminary" or snd.class == "Earthcaller" then
 cecho("\n&lt;goldenrod&gt;Afflictions:")
 cecho("\n &lt;green&gt;dmg &lt;white&gt;               - Damage kill with aff stacking and overwhelm.")
 cecho("\n &lt;green&gt;mana&lt;white&gt;               - Straight mana sap.")
@@ -1117,7 +1127,7 @@ cecho("\n&lt;goldenrod&gt;Afflictions:")
 cecho("\n &lt;green&gt;dmg &lt;white&gt;               - Damage kill.")
 cecho("\n &lt;green&gt;aff&lt;white&gt;                - Build mental affs and go for unravel.")
 cecho("\n &lt;green&gt;kll&lt;white&gt;                - Advanced 1v1 script.")
-elseif snd.class == "Carnifex" then
+elseif snd.class == "Carnifex" or snd.class == "Warden" then
 cecho("\n&lt;goldenrod&gt;Afflictions:")
 cecho("\n &lt;green&gt;dmg &lt;white&gt;               - Damage kill")
 cecho("\n &lt;green&gt;aff&lt;white&gt;                - Build affs!")
@@ -1125,7 +1135,7 @@ cecho("\n &lt;green&gt;limbs&lt;white&gt;              - Overall limb route")
 cecho("\n &lt;green&gt;legs&lt;white&gt;               - Specifically for legs!")
 cecho("\n&lt;goldenrod&gt;Other:")
 cecho("\n &lt;green&gt;pon&lt;white&gt;                - If you want to turn on active purge curing")
-elseif snd.class == "Indorani" then
+elseif snd.class == "Indorani" or snd.class == "Oneiromancer" then
 cecho("\n&lt;goldenrod&gt;Afflictions:")
 cecho("\n &lt;green&gt;dmg &lt;white&gt;               - Damage kill")
 cecho("\n &lt;green&gt;aff&lt;white&gt;                - Build affs! Mostly for unravel support.")
@@ -5266,7 +5276,7 @@ snd.giving_battle = {
 "sensitivity",
 "stupidity",
 "vertigo",
-"self-pity",
+"self_pity",
 "migraine",
 }
 snd.giving_chasten = {
@@ -5367,18 +5377,9 @@ if snd.class == "Luminary" then
   snd.starting_attack()
 
   function snd.attack_function()
-    local total_aff_count = 0
-    for aff in pairs(snd.all_affs) do
-      if table.contains(snd.target_has, snd.all_affs[aff]) then
-        total_aff_count = total_aff_count + 1
-      end
-    end
-    local mental_aff_count = 0
-    for aff in pairs(snd.mental_affs) do
-      if table.contains(snd.target_has, snd.mental_affs[aff]) then
-        mental_aff_count = mental_aff_count + 1
-      end
-    end
+    local total_aff_count = snd.aff_count_all()
+    local mental_aff_count = snd.aff_count_mental()
+  
     local string = "contemplate " .. snd.target .. snd.sep
     if not string.find(gmcp.Char.Vitals.wield_right, "mace") then
       string = string .. "quickwield right mace" .. snd.sep
@@ -5479,7 +5480,7 @@ if snd.class == "Luminary" then
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^affaf$</regex>
+									<regex>^gaff$</regex>
 								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
@@ -5491,7 +5492,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>mana drain</name>
 									<script>if snd.class == "Luminary" then
-  snd.giving_battle = {"stupidity", "vertigo", "self-pity", "migraine", "sensitivity", "impatience"}
+  snd.giving_battle = {"stupidity", "vertigo", "self_pity", "migraine", "sensitivity", "impatience"}
   snd.giving_chasten =
     {
       "lethargy",
@@ -5582,12 +5583,9 @@ if snd.class == "Luminary" then
   snd.starting_attack()
 
   function snd.attack_function()
-    local total_aff_count = 0
-    for aff in pairs(snd.all_affs) do
-      if table.contains(snd.target_has, snd.all_affs[aff]) then
-        total_aff_count = total_aff_count + 1
-      end
-    end
+    local total_aff_count = snd.aff_count_all()
+    local mental_aff_count = snd.aff_count_mental()
+  
  local string = "contemplate "..snd.target..snd.sep
  	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
 	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
@@ -5687,7 +5685,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Smite - Straight damage</name>
 									<script>if snd.class == "Luminary" then
-  snd.giving_battle = {"sensitivity", "stupidity", "vertigo", "self-pity", "migraine", "impatience"}
+  snd.giving_battle = {"sensitivity", "stupidity", "vertigo", "self_pity", "migraine", "impatience"}
   snd.giving_chasten =
     {
       "dementia",
@@ -5708,17 +5706,7 @@ end</script>
   
   local battle = "none"
   local chasten = "none"
-  
-  for i in pairs(snd.giving_chasten) do
-    if
-      not snd.checkAff(snd.giving_chasten[i]) and
-      chasten == "none" and
-      snd.giving_chasten[i] ~= battle
-    then
-      chasten = snd.giving_chasten[i]
-    end
-  end
-  
+    
   if snd.balance.battle then
     for i in pairs(snd.giving_battle) do
       if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
@@ -5726,6 +5714,15 @@ end</script>
       end
     end
   end
+  
+  for i in pairs(snd.giving_chasten) do
+    if
+      not snd.checkAff(snd.giving_chasten[i]) and chasten == "none" and
+      snd.giving_chasten[i] ~= battle
+    then
+      chasten = snd.giving_chasten[i]
+    end
+  end  
   
   for aff in pairs(snd.entangleaffs) do
     if snd.checkAff(aff) then
@@ -5871,8 +5868,11 @@ function snd.attack_function()
 			"asthma",
 			"slickness",
 			"confusion",
+      "slickness",
+      "anorexia",
 			"left_leg_broken",
 			"right_leg_broken",
+      "heartflutter",
 			"vomiting",
 			"dizziness",
 			"sight",
@@ -5932,7 +5932,7 @@ function snd.attack_function()
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
@@ -5940,7 +5940,7 @@ function snd.attack_function()
 			call = ""
 		end
 
-		string = call..string
+		string = "wipe dhurive"..snd.sep..call..string
     
 		if string ~= snd.last_attack and not snd.waiting.queue then
 			snd.last_attack = string
@@ -5951,7 +5951,7 @@ function snd.attack_function()
 	end
 end
 
-	snd.attack_function()
+	--snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -5979,8 +5979,8 @@ if snd.target_locked() then
       "asthma",
       "slickness",
       "anorexia",
-      "left_leg_broken",
-      "right_leg_broken",
+			"left_leg_broken",
+			"right_leg_broken",
       "confusion",
       "weariness",
       "vomiting",
@@ -6049,7 +6049,7 @@ function snd.attack_function()
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
 			string = "dhuriv spinecut "..snd.target
 		end
 
@@ -6098,6 +6098,7 @@ snd.giving = {
 "left_leg_broken",
 "right_leg_broken",
 "anorexia",
+"heartflutter",
 "sight",
 "hearing",
 "sensitivity",
@@ -6155,7 +6156,7 @@ snd.giving = {
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
 			string = "dhuriv spinecut "..snd.target
 		end
 			
@@ -6291,7 +6292,7 @@ function snd.attack_function()
 			end
 		end
 		
-		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
@@ -6413,7 +6414,7 @@ function snd.attack_function()
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
@@ -6513,7 +6514,7 @@ function snd.attack_function()
 			end
 		end
 
-		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+		if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
 			string = "dhuriv spinecut "..snd.target
 		end
 		
@@ -6556,6 +6557,7 @@ function snd.attack_function()
             "confusion",
             "left_leg_broken",
             "right_leg_broken",
+            "heartflutter",
             "weariness",
             "dizziness",
             "hearing",
@@ -6568,6 +6570,7 @@ function snd.attack_function()
             "slickness",
             "anorexia",
             "confusion",
+            "heartflutter",
             "left_leg_broken",
             "right_leg_broken",
             "stupidity",
@@ -6631,7 +6634,7 @@ function snd.attack_function()
             end
         end
  
-        if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "heartflutter"}, 4) and snd.proned() then
+        if snd.checksomeAffs({"confusion", "left_leg_broken", "right_leg_broken", "fallen", "heartflutter"}, 5) then
             string = "dhuriv spinecut "..snd.target
         end
        
@@ -10279,6 +10282,212 @@ end
 									<command></command>
 									<packageName></packageName>
 									<regex>^legz$</regex>
+								</Alias>
+							</AliasGroup>
+						</AliasGroup>
+						<AliasGroup isActive="yes" isFolder="yes">
+							<name>Oneiromancer</name>
+							<script></script>
+							<command></command>
+							<packageName></packageName>
+							<regex></regex>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Damage Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>damage</name>
+									<script>if snd.class == "Oneiromancer" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ if not snd.waiting.queue then
+  if snd.used.shield then
+		string = "touch hammer "..snd.target
+  else
+   	string = "starlight "..snd.target
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^dmg$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Afflictions</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Group Affliction</name>
+									<script>if snd.class == "Oneiromancer" then
+
+  snd.giving = {
+  "asthma",
+  "aeon",
+  "paresis",
+  "impatience",
+  "clumsiness",
+  "weariness",
+  "stupidity",
+  "anorexia",
+  "epilepsy",
+  "sensitivity",
+  "vomiting",
+  "lethargy",
+  "confusion",
+  "recklessness",	
+  "superstition",
+  "hypersomnia",
+}
+  
+  snd.starting_attack()
+  
+  function snd.attack_function() 
+   local string = ""
+   local raw_affs_to_fling = {}
+   local cards = {one = {affliction = "", card = ""}, two = {affliction = "", card = ""}}
+   
+   if not snd.waiting.queue then -- all instakill conditions(deform/vivi) or other add ons should go here as elseif.
+   
+    if snd.used.shield then
+  		string = "touch hammer "..snd.target
+    -- vivi/deform checks would prolly go here
+    
+    elseif snd.aff_count_all() &gt; 10 then
+      string = "starlight "..snd.target
+    
+  	else -- No special attacks, time to run through our aff list defined above and see what we want to give most.
+  		for i in pairs(snd.giving) do
+  			if not snd.checkAff(snd.giving[i]) then
+          if snd.giving[i] == "aeon" then
+            if snd.balance.aeon then
+              table.insert(raw_affs_to_fling, snd.giving[i])
+            end
+  				elseif not table.contains(raw_affs_to_fling, snd.giving[i]) then
+  					table.insert(raw_affs_to_fling, snd.giving[i]) -- insert into a raw aff list that they don't have, based on priority chosen above
+  				end
+  			end
+  		end
+      
+      for k, v in ipairs(raw_affs_to_fling) do -- run through the raw affs
+        if cards.one.affliction == "" then -- fill in card one, could start with card two if you want to work around dodge CD
+          if snd.cardshapes.oneiromancer[v].card == "diamond" then
+            if not snd.adder_attached then-- Make sure that if we're picking an adder venom, we haven't already thrown adder
+              cards.one.affliction = v
+              cards.one.card = snd.cardshapes.oneiromancer[v].card
+            end
+          else
+            cards.one.affliction = v
+            cards.one.card = snd.cardshapes.oneiromancer[v].card
+          end
+        elseif cards.one.card ~= snd.cardshapes.oneiromancer[v].card and cards.two.affliction == "" then -- if card types are different and haven't already set card two
+          if snd.cardshapes.oneiromancer[v].card == "diamond" then
+            if not snd.adder_attached then -- Make sure that if we're picking an adder venom, we haven't already thrown adder
+              cards.one.affliction = v
+              cards.one.card = snd.cardshapes.oneiromancer[v].card
+            end
+          else
+            cards.two.affliction = v
+            cards.two.card = snd.cardshapes.oneiromancer[v].card
+          end
+        end
+      end
+
+      -- If the card is an adder venom affliction, convert the affliction to the venom.
+      if cards.one.card == "diamond" then cards.one.affliction = snd.effects[cards.one.affliction] end
+      if cards.two.card == "diamond" then cards.two.affliction = snd.effects[cards.two.affliction] end
+      
+      if snd.need_leech_aura then
+  	    string = "unspool "..snd.target
+      end
+      
+      if snd.adder_ready then
+        string = string..snd.sep.."activate diamond "..snd.target
+      end
+      
+      -- Syntax should be the same unless you have arti deck/regular deck, change next line as necessary
+      -- Similarly, if you're using config auto_outc, feel free to remove outcping paper
+  		string = string..snd.sep.."outc sheet as "..cards.one.card..snd.sep.."outc sheet as "..cards.two.card
+      string = string..snd.sep.."unfurl "..cards.one.card.." "..cards.one.affliction.." and "..cards.two.card.." "..cards.two.affliction.." at "..snd.target
+  
+    	if snd.toggles.affcalling and not snd.target_gone then
+    	 call = "wt Afflicting "..snd.target..": "..cards.one.affliction..", "..cards.two.affliction..snd.sep
+       string = call..string
+    	end
+  	end
+  
+  
+    if string ~= snd.last_attack and not snd.waiting.queue then
+     snd.last_attack = string
+     snd.attack(snd.last_attack)
+     snd.waiting.queue = true
+     tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+   end
+  end
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^aff$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>limbs</name>
+									<script>if snd.class == "Oneiromancer" then
+
+  snd.giving = {"left_leg_broken", "right_leg_broken","left_arm_broken", "right_arm_broken",}
+  
+  snd.starting_attack()
+  
+  function snd.attack_function()
+    local string = ""
+    if not snd.waiting.queue then
+      if snd.used.shield then
+        string = "touch hammer "..snd.target
+      elseif snd.checksomeAffs({"left_arm_broken", "right_arm_broken", "left_leg_broken", "right_leg_broken", "leeched_aura"}, 5) then
+        string = "vanquish "..snd.target
+      elseif not snd.checksomeAffs(snd.giving, 4) then
+        for v in pairs(snd.giving) do
+          if not snd.checkAff(snd.giving[v])  then
+            string = "misfortune "..snd.target.." "..snd.giving[v]:gsub("_", " "):gsub("broken", "")
+            break
+          end
+        end
+      else
+        string = "starlight "..snd.target
+      end
+      
+      if snd.need_leech_aura then
+        string = "unspool "..snd.target..snd.sep..string
+      end 
+
+      if string ~= snd.last_attack and not snd.waiting.queue then
+        snd.last_attack = string
+        snd.attack(snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
+  
+    end
+  end
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limb$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>
@@ -14249,15 +14458,15 @@ snd.giving_shield = {
 "weariness",
 "asthma",
 }
-snd.giving_battle = {
+snd.giving_spur = {
 "impatience",
 "sensitivity",
 "stupidity",
 "vertigo",
-"self-pity",
+"self_pity",
 "migraine",
 }
-snd.giving_chasten = {
+snd.giving_subdue = {
 "loneliness",
 "hypochondria",
 "stupidity",
@@ -14270,22 +14479,22 @@ snd.giving_chasten = {
 snd.starting_attack()
 function snd.attack_function()
  local string = "contemplate "..snd.target..snd.sep
- 	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
+ 	if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then string = string.."quickwield right crozier"..snd.sep end
 	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
  local shield = "none"
- local battle = "none"
- local chasten = "none"
+ local spur = "none"
+ local subdue = "none"
  if snd.mana_percent &lt; 40 and not snd.used.shield then
-  string = "OSSO FRAGMENT "..snd.target
+  string = "osso fragment "..snd.target
  elseif snd.proned() then
-  string = "SHIELD DEFACE "..snd.target
+  string = "shield deface "..snd.target
  elseif table.contains(snd.target_has, "sight") then
   string = "tectonic transfixion "..snd.target
  else
   if snd.balance.battle then
-   for i in pairs(snd.giving_battle) do
-	  if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-	   battle = snd.giving_battle[i]
+   for i in pairs(snd.giving_spur) do
+	  if not snd.checkAff(snd.giving_spur[i]) and battle == "none" then
+	   spur = snd.giving_spur[i]
 	  end
 	 end
   end
@@ -14304,31 +14513,31 @@ function snd.attack_function()
   if snd.used.rebounding and shield ~= "facesmash" then
    shield = "shield raze"
   end
-  for i in pairs(snd.giving_chasten) do
-   if not snd.checkAff(snd.giving_chasten[i]) and chasten == "none" and snd.giving_chasten[i] ~= battle then
-	  chasten = snd.giving_chasten[i]
+  for i in pairs(snd.giving_subdue) do
+   if not snd.checkAff(snd.giving_subdue[i]) and subdue == "none" and snd.giving_subdue[i] ~= battle then
+	  subdue = snd.giving_subdue[i]
 	 end
   end
-  if battle ~= "none" then
+  if spur ~= "none" then
    if snd.toggles.affcalling and not snd.target_gone then
 	  string = "wt Spur "..snd.target..": "..battle..snd.sep
 	 end
-   string = string.."osso spur "..battle.." "..snd.target..snd.sep
+   string = string.."osso spur "..spur.." "..snd.target..snd.sep
   end
   string = string..shield.." "..snd.target..snd.sep
   if shield ~= "slam" and shield ~= "overwhelm" then
-   if chasten == "none" then
+   if subdue == "none" then
     string = string.."subdue "..snd.target
    else
 	  if snd.toggles.affcalling and not snd.target_gone then
-	   string = string.."wt Subdue "..snd.target..": "..chasten..snd.sep
+	   string = string.."wt Subdue "..snd.target..": "..subdue..snd.sep
 	  end
-    string = string.."subdue "..snd.target.." "..chasten
+    string = string.."subdue "..snd.target.." "..subdue
 	 end
   end
  end
  
- if string.find(string, "deface") and not string.find(gmcp.Char.Vitals.wield_left, "tower") then 
+ if string.find(string, "overwhelm") and not string.find(gmcp.Char.Vitals.wield_left, "tower") then 
  	string = string..snd.sep.."quickwield left tower"
  end
 
@@ -14340,52 +14549,43 @@ function snd.attack_function()
  end
 end
 snd.attack_function()
-end</script>
+end
+</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^ms$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>Group Affs - Used to lock someone in place</name>
-									<script>-- The purpose of this is to lock someone down with disrupt so they cannot use lock-breakers to escape.
-if snd.class == "Earthcaller" then
+									<script>if snd.class == "Earthcaller" then
   snd.giving_shield = {"sight", "paresis", "weariness", "confusion", "writhe_transfix", "asthma", "berserking"}
-  snd.giving_battle = {"impatience", "stupidity", "sensitivity", "self_pity", "vertigo"}
-  snd.giving_chasten = {"hypochondria", "stupidity", "recklessness", "lethargy", "masochism", "dementia", "paranoia", "anorexia",}
+  snd.giving_spur = {"impatience", "stupidity", "sensitivity", "self_pity", "vertigo"}
+  snd.giving_subdue = {"hypochondria", "stupidity", "recklessness", "lethargy", "masochism", "dementia", "paranoia", "anorexia",}
   snd.starting_attack()
 
   function snd.attack_function()
-    local total_aff_count = 0
-    for aff in pairs(snd.all_affs) do
-      if table.contains(snd.target_has, snd.all_affs[aff]) then
-        total_aff_count = total_aff_count + 1
-      end
-    end
-    local mental_aff_count = 0
-    for aff in pairs(snd.mental_affs) do
-      if table.contains(snd.target_has, snd.mental_affs[aff]) then
-        mental_aff_count = mental_aff_count + 1
-      end
-    end
+    local total_aff_count = snd.aff_count_all()
+    local mental_aff_count = snd.aff_count_mental()
+  
     local string = "contemplate " .. snd.target .. snd.sep
-    if not string.find(gmcp.Char.Vitals.wield_right, "mace") then
-      string = string .. "quickwield right mace" .. snd.sep
+    if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
+      string = string .. "quickwield right crozier" .. snd.sep
     end
     if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
       string = string .. "quickwield left buckler" .. snd.sep
     end
     local shield = "none"
-    local battle = "none"
-    local chasten = "none"
+    local spur = "none"
+    local subdue = "none"
     --Absolve check
     if snd.mana_percent &lt; 40 and not snd.used.shield then
-      string = "OSSO FRAGMENT " .. snd.target
+      string = "osso fragment " .. snd.target
     else
       --battle aff pick
       if snd.balance.battle then
-        for i in pairs(snd.giving_battle) do
-          if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-            battle = snd.giving_battle[i]
+        for i in pairs(snd.giving_spur) do
+          if not snd.checkAff(snd.giving_spur[i]) and spur == "none" then
+            spur = snd.giving_spur[i]
           end
         end
       end
@@ -14394,7 +14594,7 @@ if snd.class == "Earthcaller" then
         shield = "shield raze"
         --If they are prone/psuedo prone and have 5 affs, smack them
       elseif total_aff_count &gt;= 5 and snd.proned() then
-        shield = "SHIELD DEFACE " .. snd.target
+        shield = "shield deface " .. snd.target
         --We need to build up disrupt/affs.
       else
         for i in pairs(snd.giving_shield) do
@@ -14417,42 +14617,42 @@ if snd.class == "Earthcaller" then
         if snd.checkAff("confusion") or total_aff_count &lt; 3 then
           shield = "shield raze"
         else
-          shield = "DIRGE HYSTERIA"
+          shield = "dirge hysteria"
         end
       end
       --Chasten aff pick
-      for i in pairs(snd.giving_chasten) do
+      for i in pairs(snd.giving_subdue) do
         if
-          not snd.checkAff(snd.giving_chasten[i]) and
-          chasten == "none" and
-          snd.giving_chasten[i] ~= battle
+          not snd.checkAff(snd.giving_subdue[i]) and
+          subdue == "none" and
+          snd.giving_subdue[i] ~= battle
         then
-          chasten = snd.giving_chasten[i]
+          subdue = snd.giving_subdue[i]
         end
       end
-      --Start building our attack - battle first
-      if battle ~= "none" then
+      --Start building our attack - Spur first
+      if spur ~= "none" then
         if snd.toggles.affcalling and not snd.target_gone then
-          string = "wt Spur " .. snd.target .. ": " .. battle .. snd.sep
+          string = "wt Spur " .. snd.target .. ": " ..spur.. snd.sep
         end
-        string = string .. "osso spur " .. battle .. " " .. snd.target .. snd.sep
+        string = string .. "osso spur " ..spur.. " " ..snd.target..snd.sep
       end
       --Add shield/evoke/perform attacks
       string = string .. shield .. " " .. snd.target .. snd.sep
-      --Add chasten choice
+      --Add Subdue choice
       if not shield:find("slam") or shield:find("transfix") or shield:find("dazzle") or shield:find("crash") then
-        if chasten == "none" then
-          string = string .. "subdue " .. snd.target
+        if subdue == "none" then
+          string = string .. "chasten " .. snd.target
         else
           if snd.toggles.affcalling and not snd.target_gone then
-            string = string .. "wt Subdue " .. snd.target .. ": " .. chasten .. snd.sep
+            string = string .. "wt Subdue " .. snd.target .. ": " .. subdue .. snd.sep
           end
-          string = string .. "subdue " .. snd.target .. " " .. chasten
+          string = string .. "subdue " .. snd.target .. " " .. subdue
         end
       end
     end
     --Are we gonna smack them with overwhelm? Let's make it hurt.
-    if string.find(string, "deface") and not string.find(gmcp.Char.Vitals.wield_left, "tower") then
+    if string.find(string, "overwhelm") and not string.find(gmcp.Char.Vitals.wield_left, "tower") then
       string = string..snd.sep.."quickwield left tower"
     end
     if string ~= snd.last_attack and not snd.waiting.queue then
@@ -14464,7 +14664,8 @@ if snd.class == "Earthcaller" then
   end
 
   snd.attack_function()
-end</script>
+end
+</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^affaf$</regex>
@@ -14479,8 +14680,8 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>mana drain</name>
 									<script>if snd.class == "Earthcaller" then
-  snd.giving_battle = {"stupidity", "vertigo", "self-pity", "migraine", "sensitivity", "impatience"}
-  snd.giving_chasten =
+  snd.giving_spur = {"stupidity", "vertigo", "self_pity", "migraine", "sensitivity", "impatience"}
+  snd.giving_subdue =
     {
       "lethargy",
       "loneliness",
@@ -14495,42 +14696,42 @@ end</script>
 
   function snd.attack_function()
  local string = "contemplate "..snd.target..snd.sep
- 	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
+ 	if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then string = string.."quickwield right crozier"..snd.sep end
 	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
 
-    local battle = "none"
-    local chasten = "none"
+    local spur = "none"
+    local subdue = "none"
     if snd.mana_percent &lt; 40 and not snd.used.shield then
-      string = "OSSO FRAGMENT " .. snd.target
+      string = "osso fragment " .. snd.target
     elseif snd.mana_percent &lt; 40 and snd.used.shield then
-      for i in pairs(snd.giving_chasten) do
+      for i in pairs(snd.giving_subdue) do
         if
-          not snd.checkAff(snd.giving_chasten[i]) and
-          chasten == "none" and
-          snd.giving_chasten[i] ~= battle
+          not snd.checkAff(snd.giving_subdue[i]) and
+          subdue == "none" and
+          snd.giving_subdue[i] ~= battle
         then
-          chasten = snd.giving_chasten[i]
+          subdue = snd.giving_subdue[i]
         end
       end
       string = "shield raze " .. snd.target .. snd.sep
       if snd.toggles.affcalling and not snd.target_gone then
-        string = string .. "wt Subdue " .. snd.target .. ": " .. chasten .. snd.sep
+        string = string .. "wt subdue " .. snd.target .. ": " .. subdue .. snd.sep
       end
-      string = string .. "subdue " .. snd.target .. " " .. chasten
+      string = string .. "subdue " .. snd.target .. " " .. subdue
     else
       string = string.."osso bleach " .. snd.target
     end
 		
     if snd.balance.battle then
-      for i in pairs(snd.giving_battle) do
-        if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-          battle = snd.giving_battle[i]
+      for i in pairs(snd.giving_spur) do
+        if not snd.checkAff(snd.giving_spur[i]) and spur == "none" then
+          spur = snd.giving_spur[i]
         end
       end
     end
-    string = "osso spur " .. battle .. " " .. snd.target .. snd.sep .. string
+    string = "osso spur " .. spur .. " " .. snd.target .. snd.sep .. string
     if snd.toggles.affcalling and not snd.target_gone then
-      string = "wt Spur " .. snd.target .. ": " .. battle .. snd.sep .. string
+      string = "wt spur " .. snd.target .. ": " .. spur .. snd.sep .. string
     end
 
     if string ~= snd.last_attack and not snd.waiting.queue then
@@ -14549,13 +14750,10 @@ end</script>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>Group Damage - Best used with an impale</name>
-									<script>--This is for quick kills with sensitivity/transfix/impale/overwhelm/disembowel.
---May have tougher time on hardier opponents.
---May vary in usefulness depending on damage output.
-if snd.class == "Earthcaller" then
+									<script>if snd.class == "Earthcaller" then
   snd.giving_shield = {"paresis", "weariness", "sight", "asthma"}
-  snd.giving_battle = {"impatience", "sensitivity", "self_pity", "stupidity", "vertigo"}
-  snd.giving_chasten =
+  snd.giving_spur = {"impatience", "sensitivity", "self_pity", "stupidity", "vertigo"}
+  snd.giving_subdue =
     {
       "hypochondria",
       "loneliness",
@@ -14570,39 +14768,34 @@ if snd.class == "Earthcaller" then
   snd.starting_attack()
 
   function snd.attack_function()
-    local total_aff_count = 0
-    for aff in pairs(snd.all_affs) do
-      if table.contains(snd.target_has, snd.all_affs[aff]) then
-        total_aff_count = total_aff_count + 1
-      end
-    end
- local string = "contemplate "..snd.target..snd.sep
- 	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
+  local total_aff_count = snd.aff_count_all()
+  local mental_aff_count = snd.aff_count_mental()
+  
+  local string = "contemplate "..snd.target..snd.sep
+ 	if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then string = string.."quickwield right crozier"..snd.sep end
 	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
 
     local shield = "none"
-    local battle = "none"
-    local chasten = "none"
+    local spur = "none"
+    local subdue = "none"
     --Absolve check
     if snd.mana_percent &lt; 40 and not snd.used.shield then
-      string = "OSSO FRAGMENT " .. snd.target
+      string = "osso fragment " .. snd.target
       --They've hit our aff count limit, let's lock them down/kill them.
     elseif total_aff_count &gt;= 4 and snd.checkAff("sight") and not snd.used.shield then
       if not snd.checkAff("writhe_transfix") then
-        string = "tectonics transfixion " .. snd.target
+        string = "tectonic transfixion " .. snd.target
       else
         string = "shield deface " .. snd.target
         if snd.checkAff("hearing") and not snd.checkAff("sensitivity") then
           string = "osso spur " .. snd.target .. " sensitivity" .. snd.sep .. string
         end
       end
-      --Need to pile a few affs on still. Aiming for at least 4 before overwhelm so by the time
-      --we get to overwhelm, they're in the overwhelm aff/damage scaling range.	
     else
       if snd.balance.battle then
-        for i in pairs(snd.giving_battle) do
-          if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-            battle = snd.giving_battle[i]
+        for i in pairs(snd.giving_spur) do
+          if not snd.checkAff(snd.giving_spur[i]) and spur == "none" then
+            spur = snd.giving_spur[i]
           end
         end
       end
@@ -14621,42 +14814,42 @@ if snd.class == "Earthcaller" then
       if snd.used.rebounding and shield ~= "facesmash" then
         shield = "shield raze"
       end
-      --Chasten aff pick
-      for i in pairs(snd.giving_chasten) do
+
+      for i in pairs(snd.giving_subdue) do
         if
-          not snd.checkAff(snd.giving_chasten[i]) and
-          chasten == "none" and
-          snd.giving_chasten[i] ~= battle
+          not snd.checkAff(snd.giving_subdue[i]) and
+          subdue == "none" and
+          snd.giving_subdue[i] ~= battle
         then
-          chasten = snd.giving_chasten[i]
+          subdue = snd.giving_subdue[i]
         end
       end
-      --Start building our attack - battle first
-      if battle ~= "none" then
+
+      if spur ~= "none" then
         if snd.toggles.affcalling and not snd.target_gone then
-          string = "wt Spur " .. snd.target .. ": " .. battle .. snd.sep
+          string = "wt spur " .. snd.target .. ": " .. spur .. snd.sep
         end
-        string = string .. "osso spur " .. battle .. " " .. snd.target .. snd.sep
+        string = string .. "osso spur " .. spur .. " " .. snd.target .. snd.sep
       end
-      --Add shield/evoke/perform attacks
+
       string = string .. shield .. " " .. snd.target .. snd.sep
-      --Add chasten choice
+
       if shield ~= "slam" then
-        if chasten == "none" then
-          string = string .. "subdue " .. snd.target
+        if subdue == "none" then
+          string = string .. "chasten " .. snd.target
         else
           if snd.toggles.affcalling and not snd.target_gone then
-            string = string .. "wt Subdue " .. snd.target .. ": " .. chasten .. snd.sep
+            string = string .. "wt subdue " .. snd.target .. ": " .. subdue .. snd.sep
           end
-          string = string .. "Subdue " .. snd.target .. " " .. chasten
+          string = string .. "chasten " .. snd.target .. " " .. chasten
         end
       end
     end
-    --Are we gonna smack them with overwhelm? Let's make it hurt.
-    if string.find(string, "deface") and not string.find(gmcp.Char.Vitals.wield_left, "tower") then
+
+    if string.find(string, "overwhelm") and not string.find(gmcp.Char.Vitals.wield_left, "tower") then
       string = string..snd.sep.."quickwield left tower"
     end
-    --We have an instakill at 40% mana, let's make sure we keep track of mana.
+
 
     if string ~= snd.last_attack and not snd.waiting.queue then
       snd.last_attack = string
@@ -14675,8 +14868,8 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Smite - Straight damage</name>
 									<script>if snd.class == "Earthcaller" then
-  snd.giving_battle = {"sensitivity", "stupidity", "vertigo", "self-pity", "migraine", "impatience"}
-  snd.giving_chasten =
+  snd.giving_spur = {"sensitivity", "stupidity", "vertigo", "self_pity", "migraine", "impatience"}
+  snd.giving_subdue =
     {
       "dementia",
       "loneliness",
@@ -14691,29 +14884,28 @@ end</script>
 
   function snd.attack_function()
   local string = "contemplate "..snd.target..snd.sep
- 	if not string.find(gmcp.Char.Vitals.wield_right, "mace") then string = string.."quickwield right mace"..snd.sep end
+ 	if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then string = string.."quickwield right crozier"..snd.sep end
 	if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then string = string.."quickwield left buckler"..snd.sep end
   
-  local battle = "none"
-  local chasten = "none"
-  
-  for i in pairs(snd.giving_chasten) do
-    if
-      not snd.checkAff(snd.giving_chasten[i]) and
-      chasten == "none" and
-      snd.giving_chasten[i] ~= battle
-    then
-      chasten = snd.giving_chasten[i]
-    end
-  end
-  
+  local spur = "none"
+  local subdue = "none"
+  local overwhelm = false
+    
   if snd.balance.battle then
-    for i in pairs(snd.giving_battle) do
-      if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-        battle = snd.giving_battle[i]
+    for i in pairs(snd.giving_spur) do
+      if not snd.checkAff(snd.giving_spur[i]) and spur == "none" then
+        spur = snd.giving_spur[i]
       end
     end
   end
+  
+  for i in pairs(snd.giving_subdue) do
+    if not snd.checkAff(snd.giving_subdue[i]) and subdue == "none" and
+      snd.giving_subdue[i] ~= battle
+    then
+      subdue = snd.giving_subdue[i]
+    end
+  end  
   
   for aff in pairs(snd.entangleaffs) do
     if snd.checkAff(aff) then
@@ -14722,27 +14914,26 @@ end</script>
   end
   
   if snd.balance.battle then
-    string = string..snd.sep.."osso spur "..battle.." "..snd.target..snd.sep
+    string = string..snd.sep.."osso spur "..spur.." "..snd.target..snd.sep
     if snd.toggles.affcalling and not snd.target_gone then
-      string = "wt Spur " .. snd.target .. ": " .. battle .. snd.sep .. string
+      string = "wt spur " .. snd.target .. ": " .. spur .. snd.sep .. string
     end
   end
 
-
   if snd.mana_percent &lt; 40 and not snd.used.shield then
-    string = "OSSO FRAGMENT " .. snd.target
+    string = "osso fragment " .. snd.target
   elseif snd.mana_percent &lt; 40 and snd.used.shield then
     string = "shield raze " .. snd.target .. snd.sep
   elseif overwhelm then
-    string = "shield deface "..snd.target..snd.sep
+    string = "overwhelm "..snd.target..snd.sep
   else
-    string = string.."squash " .. snd.target ..snd.sep
+    string = string.."quash " .. snd.target ..snd.sep
   end
   
   if snd.toggles.affcalling and not snd.target_gone then
-    string = string .. "wt Subdue " .. snd.target .. ": " .. chasten .. snd.sep
+    string = string .. "wt subdue " .. snd.target .. ": " .. subdue .. snd.sep
   end
-  string = string .. " subdue " .. snd.target .. " " .. chasten
+  string = string .. " subdue " .. snd.target .. " " .. subdue
 		
     if string ~= snd.last_attack and not snd.waiting.queue then
       snd.last_attack = string
