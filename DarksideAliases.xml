@@ -256,6 +256,19 @@ end</script>
 							<regex>^(tcm|toggle chameleon)$</regex>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
+							<name>Auto Chameleon</name>
+							<script>snd.toggle("cham")
+local cham = math.random(#snd.shadow)
+if snd.toggles.cham then
+  snd.set_queue("chameleon " ..snd.shadow[cham], false)
+end
+
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^rcham$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
 							<name>Support</name>
 							<script>snd.toggle("support")</script>
 							<command></command>
@@ -1305,22 +1318,21 @@ send(" ")</script>
 							<script>x = bot.info.room
 x = "v"..x
 if bot.going then
-    if bot.path[x] ~= nil then
-      if string.find(bot.path[x], "pth") then
-	      y = string.sub(bot.path[x], 4)
-	      snd.moving_to = y
-	      send(" ")
-	    elseif mmp ~= nil then
-        expandAlias("goto "..bot.path[x], false)
-      else
-        snd.moving_to = bot.path[x]
-	      send(" ")
-      end
+  if bot.path[x] ~= nil then
+    if string.find(bot.path[x], "pth") then
+      y = string.sub(bot.path[x], 4)
+      snd.moving_to = y
+      send(" ")
+    elseif mmp ~= nil then
+      expandAlias("goto "..bot.path[x], false)
     else
-      echo("where r we")
+      snd.moving_to = bot.path[x]
+      send(" ")
     end
-end
-</script>
+  else
+    echo("where r we")
+  end
+end</script>
 							<command></command>
 							<packageName></packageName>
 							<regex>^move$</regex>
@@ -1372,24 +1384,34 @@ end</script>
 							<name>Vermin Basher</name>
 							<script>snd.send("vermin")
 if snd.toggles.vermin then
-	snd.toggles.vermin = false
-	bot.going = false
+  snd.toggles.vermin = false
+  bot.going = false
   disableTimer("moveroom")
-	cecho("&lt;red&gt;----------------\n   &lt;red&gt;VERMIN OFF\n&lt;red&gt;----------------")
+  cecho("&lt;red&gt;----------------\n   &lt;red&gt;VERMIN OFF\n&lt;red&gt;----------------")
 else
-	snd.toggles.vermin = true
-	local area = gmcp.Room.Info.area 
-  if not sunder_areaPaths then
-    snd.message("No area path list found, please check it is in the correct directory.")
-  elseif not sunder_areaPaths[area] then
-    snd.message("Path not found for current area.")
-  else
-    snd.message("Let's kill some vermin in: "..area.."!")
-    bot.going = true
-    bot.path = sunder_areaPaths[area]
+  snd.toggles.vermin = true
+  if snd.city == "Spinesreach" then
+    snd.send("vermin"..snd.sep.."path track 11687")
+    snd.which_path = "verminspines"
+  elseif snd.city == "Bloodloch" then
+    snd.send("vermin"..snd.sep.."path track 9193")
+    snd.which_path = "verminbloodloch"
+  elseif snd.city == "Duiran" then
+    snd.send("vermin"..snd.sep.."path track 44060")
+    snd.which_path = "verminduiran"	
+  elseif snd.city == "Enorian" then
+    snd.send("vermin"..snd.sep.."path track 56484")
+    snd.which_path = "verminenorian"	
   end
-	cecho("\n&lt;green&gt;----------------\n   &lt;green&gt;VERMIN ON\n&lt;green&gt;----------------")
-	enableTimer("moveroom")
+  
+  cecho("\n&lt;green&gt;----------------\n   &lt;green&gt;VERMIN ON\n&lt;green&gt;----------------")
+  enableTimer("moveroom")
+  
+  if snd.which_path ~= "" then
+    bot.going = true
+    bot.path =  sndpathpick()
+  end
+  
 end</script>
 							<command></command>
 							<packageName></packageName>
@@ -6699,33 +6721,38 @@ snd.starting_attack()
 
 function snd.attack_function()
  if not snd.waiting.queue then
-  venom = "none"
-  for i in pairs(snd.giving) do
-   if not table.contains(snd.target_has, snd.giving[i]) then
-    if venom == "none" then
-     venom = snd.effects[snd.giving[i]]
-    end
-   end
-  end
-	if venom == "none" then
-	 venom = "epseth"
-	end
-  if snd.used.shield then
-   string = "commune leafstorm "..snd.target
-  elseif tonumber(gmcp.Char.Vitals.energy) then
-   string = "commune boost"..snd.sep.."commune vinelash "..snd.target.." "..venom
-  else
-   string = "commune vinelash "..snd.target.." "..venom
-  end
-		
-		
-	if not snd.fetishattuned then
-	 string = "fetish attune "..snd.target..snd.sep..string
-	end
+  local venom = "none"
+  string =""
   
-  if not snd.loyalsattacking then
-    string = "order familiar kill "..snd.target..snd.sep..string
+    for i in pairs(snd.giving) do
+      if not snd.checkAff(snd.giving[i]) and venom == "none" then
+        venom = snd.effects[snd.giving[i]]
+      end
+    end
+    if venom == "none" then
+      venom = "epseth"
+    end   
+  
+    if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+      string = "familiar morph wyvern"..snd.sep.."order familiar follow me"..snd.sep
+    end
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
+    
+  if snd.used.shield then
+   string = string.."commune leafstorm "..snd.target
+  elseif tonumber(gmcp.Char.Vitals.energy) then
+   string = string.."commune boost"..snd.sep.."commune vinelash "..snd.target.." "..venom
+  else
+   string = string.."commune vinelash "..snd.target.." "..venom
   end
+  
   if string ~= snd.last_attack and not snd.waiting.queue then
    snd.last_attack = string
    snd.attack(snd.last_attack)
@@ -6761,35 +6788,48 @@ snd.giving = {
 snd.starting_attack()
 function snd.attack_function()
 
-	call = ""
+  call = ""
+  string = ""
 	
  if not snd.waiting.queue then
-  venom = "none"
-  for i in pairs(snd.giving) do
-   if not table.contains(snd.target_has, snd.giving[i]) then
+    local venom = "none"
+  
+    for i in pairs(snd.giving) do
+      if not snd.checkAff(snd.giving[i]) and venom == "none" then
+        venom = snd.effects[snd.giving[i]]
+      end
+    end
     if venom == "none" then
-     venom = snd.effects[snd.giving[i]]
+      venom = "epseth"
+    end 
+  
+    if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+      string = "familiar morph wyvern"..snd.sep.."order familiar follow me"..snd.sep
     end
-   end
-  end
-	if venom == "none" then
-	 venom = "epseth"
-	end
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
+    
   if snd.used.shield then
- 	  string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune leafstorm "..snd.target
+    string = string.."commune leafstorm "..snd.target
   elseif snd.checkAff("stormtouched") then
- 	  if tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
-  	 string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.target
- 	  else
- 	 	  string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune lightning "..snd.target
+    if tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
+      string = string.."commune boost"..snd.sep.."commune lightning "..snd.target
+    else
+      string = string.."commune lightning "..snd.target
     end
- 	else
-  	if tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
-  		string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost "..snd.sep.."commune vinelash "..snd.target.." "..venom 
+  else
+    if tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
+      string = string.."commune boost "..snd.sep.."commune vinelash "..snd.target.." "..venom 
       call = "wt Vinelash "..snd.target..": "..venom..snd.sep 
-  	else
-      string = "fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
-  	  call = "wt Vinelash "..snd.target..": "..venom..snd.sep
+    else
+      string = string.."commune vinelash "..snd.target.." "..venom
+      call = "wt Vinelash "..snd.target..": "..venom..snd.sep
     end
 		
 	end
@@ -6808,6 +6848,55 @@ end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^dmg$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Blender</name>
+									<script>if snd.class == "Shaman" then
+snd.starting_attack()
+function snd.attack_function()
+
+  call = ""
+  string =""
+
+  if not snd.waiting.queue then
+  
+    if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+      string = "familiar morph wyvern"..snd.sep.."order familiar follow me"..snd.sep
+    end
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
+  
+    if snd.used.shield then
+      string = string.."commune leafstorm "..snd.target
+    elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
+      string = string.."commune boost"..snd.sep.."COMMUNE CHAINLIGHTNING "..snd.target
+    elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+      string = string.."COMMUNE CHAINLIGHTNING "..snd.target
+    else
+      string = string.."commune vinelash "..snd.target.." epteth"
+    end
+  
+  end
+  string = call..string
+
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^blend$</regex>
 								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
@@ -6909,110 +6998,76 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Aff support</name>
 									<script>if snd.class == "Shaman" then
-  snd.giving = {
+  snd.giving = {"clumsiness", "asthma", "slickness", "anorexia", "stupidity", "weariness", "allergies", "vomiting", "haemophilia", "sensitivity", "recklessness", "dizziness"}
+  snd.giving_prem = {"fear", "agoraphobia", "claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition"}
+  snd.starting_attack()
 
-  "clumsiness",
-  "asthma",
-  "slickness",
-  "anorexia",
-  "stupidity",
-  "weariness",
-  "allergies",
-  "vomiting",
-  "haemophilia",
-  "sensitivity",
-  "recklessness",
-  "dizziness",
-  }
-  
-  snd.giving2 = {
-
-  "fear",
-  "agoraphobia",
-  "claustrophobia",
-  "vertigo",
-  "loneliness",
-  "shyness",
-  "paranoia",
-  "superstition",
-  
-  }
-  
-  local touse = {}
-  
-      local mentcount = 0 
-      for aff in pairs(snd.mental_affs) do
-          if table.contains(snd.target_has, snd.mental_affs[aff]) then
-              mentcount = mentcount + 1
-          end
-      end
-
-snd.starting_attack()
 function snd.attack_function()
+  local mentcount = snd.aff_count_mental()
 
-	call = ""
-	
- if not snd.waiting.queue then
-  venom = "none"
-  for i in pairs(snd.giving) do
-   if not table.contains(snd.target_has, snd.giving[i]) then
+  call = ""
+  string =""
+
+  if not snd.waiting.queue then
+    local venom = "none"
+    local prem = "none"
+  
+    for i in pairs(snd.giving) do
+      if not snd.checkAff(snd.giving[i]) and venom == "none" then
+        venom = snd.effects[snd.giving[i]]
+      end
+    end
     if venom == "none" then
-     venom = snd.effects[snd.giving[i]]
-    end
-   end
-  end
-  for i in pairs(snd.giving2) do
-				if not snd.checkAff(snd.giving2[i]) then
-					if not table.contains(touse, snd.giving2[i]) then
-						table.insert(touse, snd.giving2[i])
-					end
-				end
-			end
-	if venom == "none" then
-	 venom = "epseth"
-	end
+      venom = "epseth"
+    end 
   
-  if snd.shamanpet ~= "wyvern" and snd.balance.morph then
-    morphstring = "familiar morph wyvern"..snd.sep
-  end 
-  
-  if snd.used.shield then
-    string = morphstring
-    string = string.."commune leafstorm "..snd.target
-  elseif theyran then
-    string = morphstring
-    string = string.."nature pull "..snd.target
-  elseif not snd.checkAff("infested") and not snd.infested then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
-    snd.infested = true
-    tempTimer(5, [[snd.infested = false]])
-  elseif mentcount &lt; 3 then
-    if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-      echo("\nYou have not reached 3 mental affs")
-      if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
-      elseif not snd.checkAff("stupidity") then
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
-      else
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target
-	 		end
+    for i in pairs(snd.giving_prem) do
+      if not snd.checkAff(snd.giving_prem[i]) and prem == "none" then
+        prem = snd.giving_prem[i]
+      end
     end
-  elseif mentcount &gt;= 3 then
-    echo("\nYou have reached 3 mental affs")
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
-    call = "wt Afflicting "..snd.target..": "..touse..snd.sep
-  else
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
-	end
-	
-	string = call..string
-	
+  
+    if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+      string = "familiar morph wyvern"..snd.sep.."order familiar follow me"..snd.sep
+    end
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
+  
+    if snd.used.shield then
+      string = string.."commune leafstorm "..snd.target
+    elseif theyran then
+      string = string.."nature pull "..snd.target
+    elseif mentcount &lt; 3 then
+      if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+        echo("\nYou have not reached 3 mental affs")
+        if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
+          string = string.."commune sporulation "..snd.target
+        elseif not snd.checkAff("stupidity") then
+          string = string.."commune overload "..snd.target
+        else
+          string = string.."commune staticburst "..snd.target
+        end
+      end
+    elseif mentcount &gt;= 3 then
+      echo("\nYou have reached 3 mental affs")
+      string = string.."shaman divulgence "..snd.target.." "..prem
+      call = "wt Afflicting "..snd.target..": "..prem..snd.sep
+    elseif not snd.checkAff("infested") and not snd.infested then
+      string = string.."commune infest " ..snd.target
+      snd.infested = true
+      tempTimer(2, [[snd.infested = false]])
+    else
+      string = string.."commune vinelash "..snd.target.." "..venom
+    end
+
+  string = call..string
+
   if string ~= snd.last_attack and not snd.waiting.queue then
    snd.last_attack = string
    snd.attack(snd.last_attack)
@@ -7046,7 +7101,7 @@ end</script>
   "dizziness",
   }
   
-  snd.giving2 = {
+  snd.giving_prem = {
 
   "fear",
   "agoraphobia",
@@ -7059,88 +7114,84 @@ end</script>
   
   }
   
-  local touse = {}
-  
-      local mentcount = 0 
-      for aff in pairs(snd.mental_affs) do
-          if table.contains(snd.target_has, snd.mental_affs[aff]) then
-              mentcount = mentcount + 1
-          end
-      end
 
 snd.starting_attack()
 function snd.attack_function()
 
-	call = ""
-	
- if not snd.waiting.queue then
-  venom = "none"
-  for i in pairs(snd.giving) do
-   if not table.contains(snd.target_has, snd.giving[i]) then
-    if venom == "none" then
-     venom = snd.effects[snd.giving[i]]
-    end
-   end
-  end
-  for i in pairs(snd.giving2) do
-				if not snd.checkAff(snd.giving2[i]) then
-					if not table.contains(touse, snd.giving2[i]) then
-						table.insert(touse, snd.giving2[i])
-					end
-				end
-			end
-	if venom == "none" then
-	 venom = "epseth"
-	end
+local mentcount = snd.aff_count_mental()
+
+  call = ""
+  string =""
+
+  if not snd.waiting.queue then
+    local venom = "none"
+    local prem = "none"
   
-  if snd.shamanpet ~= "wyvern" and snd.balance.morph then
-    morphstring = "familiar morph wyvern"..snd.sep
-  end
-  
-  if snd.used.shield then
-    string = morphstring
-    string = string.."commune leafstorm "..snd.target
-  elseif theyran then
-    string = morphstring
-    string = string.."nature pull "..snd.target
-  elseif not snd.checkAff("premonition") then
-    if not snd.their_premonition then
-      if not snd.my_premonition then
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman premonition " ..snd.target
+    for i in pairs(snd.giving) do
+      if not snd.checkAff(snd.giving[i]) and venom == "none" then
+        venom = snd.effects[snd.giving[i]]
       end
     end
-  elseif not snd.checkAff("infested") and not snd.infested then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune infest " ..snd.target
-    snd.infested = true
-    tempTimer(5, [[snd.infested = false]])
-  elseif mentcount &lt; 3 then
-    if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-      echo("\nYou have not reached 3 mental affs")
-      if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune sporulation "..snd.target
-      elseif not snd.checkAff("stupidity") then
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune overload "..snd.target
-      else
-        string = morphstring
-        string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune staticburst "..snd.target
-	 		end
+    if venom == "none" then
+      venom = "epseth"
+    end 
+  
+    for i in pairs(snd.giving_prem) do
+      if not snd.checkAff(snd.giving_prem[i]) and prem == "none" then
+        prem = snd.giving_prem[i]
+      end
     end
-  elseif mentcount &gt;= 3 then
-    echo("\nYou have reached 3 mental affs")
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."shaman divulgence "..snd.target.." "..touse
-    call = "wt Afflicting "..snd.target..": "..touse..snd.sep
-  elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune reclamation " ..snd.target
-	else
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." "..venom
-	end
+  
+    if snd.shamanpet ~= "serpent" and snd.balance.morph then
+      string = "familiar morph serpent"..snd.sep.."order familiar follow me"..snd.sep
+    else
+      string = ""
+    end
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    else
+      string = ""
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    else
+      string = ""
+    end
+  
+    if snd.used.shield then
+      string = string.."commune leafstorm "..snd.target
+    elseif theyran then
+      string = string.."nature pull "..snd.target
+    elseif not snd.checkAff("premonition") then
+      if not snd.their_premonition then
+        string = string.."shaman premonition " ..snd.target
+      end
+    elseif not snd.checkAff("infested") and not snd.infested then
+      string = string.."commune infest " ..snd.target
+      snd.infested = true
+      tempTimer(5, [[snd.infested = false]])
+    elseif mentcount &lt; 3 then
+      if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+        echo("\nYou have not reached 3 mental affs")
+        if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
+          string = string.."commune sporulation "..snd.target
+        elseif not snd.checkAff("stupidity") then
+          string = string.."commune overload "..snd.target
+        else
+          string = string.."commune staticburst "..snd.target
+        end
+      end
+    elseif mentcount &gt;= 3 then
+      echo("\nYou have reached 3 mental affs")
+      string = string.."shaman divulgence "..snd.target.." "..prem
+      call = "wt Afflicting "..snd.target..": "..prem..snd.sep
+    elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
+      string = string.."commune reclamation " ..snd.target
+    else
+      string = string.."commune vinelash "..snd.target.." "..venom
+    end
 	
 	string = call..string
 	
@@ -7181,90 +7232,87 @@ snd.giving = {
 snd.starting_attack()
 function snd.attack_function()
 
-	call = ""
+  call = ""
+  string =""
+  
   local boosting = false -- this is like templar vorpal
   if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then boosting = true -- yesss
   end
-	
- if not snd.waiting.queue then
-  venom = "none"
-  for i in pairs(snd.giving) do
-   if not table.contains(snd.target_has, snd.giving[i]) then
-    if venom == "none" then
-     venom = snd.effects[snd.giving[i]]
+
+  if not snd.waiting.queue then
+    local venom = "none"
+    for i in pairs(snd.giving) do
+      if not snd.checkAff(snd.giving[i]) and venom == "none" then
+        venom = snd.effects[snd.giving[i]]
+      end
     end
-   end
-  end
-	if venom == "none" then
-	 venom = "epseth"
-	end
+    if venom == "none" then
+      venom = "epseth"
+    end
   
-  if snd.shamanpet ~= "wyvern" and snd.balance.morph then
-    morphstring = "familiar morph wyvern"..snd.sep
-  end
+    if snd.shamanpet ~= "wyvern" and snd.balance.morph then
+      string = "familiar morph wyvern"..snd.sep.."order familiar follow me"..snd.sep
+    end
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
  
-  if snd.used.shield then
-    string = "commune leafstorm "..snd.target
-  elseif snd.checksomeAffs({"blighted", "infested", "stormtouched", "spiritbane"}, 3) and snd.incomingomen == false then
-    string = "shaman omen "..snd.target.." in 6"
-		
-  elseif snd.incomingomen then
-	  if not snd.checksomeAffs({"hearing", "sensitivity"}, 1) then
-		  string = "commune boost"..snd.sep.."commune effusion "..snd.target
-	  elseif not snd.checkAff("sensitivity") then
-		  string = "commune boost"..snd.sep.."commune vinelash "..snd.target.." prefarar"
-	  elseif snd.checkAff("stormtouched") then
-      string = "commune boost"..snd.sep.."commune lightning "..snd.target
-	  else
-		  string = "commune boost"..snd.sep.."commune vinelash "..snd.target
-		end
+    if snd.used.shield then
+      string = string.."commune leafstorm "..snd.target
+    elseif snd.checksomeAffs({"blighted", "infested", "stormtouched", "spiritbane"}, 3) and snd.incomingomen == false then
+      string = string.."shaman omen "..snd.target.." in 6"
+    elseif snd.incomingomen then
+      if not snd.checksomeAffs({"hearing", "sensitivity"}, 1) then
+        string = string.."commune boost"..snd.sep.."commune effusion "..snd.target
+      elseif not snd.checkAff("sensitivity") then
+        string = string.."commune boost"..snd.sep.."commune vinelash "..snd.target.." prefarar"
+      elseif snd.checkAff("stormtouched") then
+        string = string.."commune boost"..snd.sep.."commune lightning "..snd.target
+      else
+        string = string.."commune boost"..snd.sep.."commune vinelash "..snd.target
+      end
 
-  elseif snd.checksomeAffs({"sadness", "confusion", "dementia", "hallucinations", "paranoia", "hatred", "addiction", "hypersomnia", "blood curse", "blighted", 
-													"self-pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonance", "infested"}, 2) then
-    if not snd.checkAff("infested") then
-		  string = "commune infest "..snd.target
-		elseif not snd.checkAff("blighted") then
-			string = "commune spines "..snd.target
-		elseif not snd.checkAff("premonition") then
-			string = "shaman premonition "..snd.target
-		elseif not snd.checkAff("vitalbane") and tonumber(gmcp.Char.Vitals.energy) &gt;= 2 then
-			string = "commune scourge "..snd.target
-    elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") and tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
-      string = "commune boost"..snd.sep.."commune overload "..snd.target
-    elseif not snd.checkAff("impatience") and not snd.checkAff("confusion") and tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
-      string = "commune boost"..snd.sep.."commune sporulation "..snd.target
-		elseif not snd.stormcloud and tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
-			string = "commune boost"..snd.sep.."commune stormbolt "..snd.target
-		else
-			string = "commune boost"..snd.sep.."commune lightning "..snd.target
-	end
+    elseif snd.checksomeAffs({"sadness", "confusion", "dementia", "hallucinations", "paranoia", "hatred", "addiction", "hypersomnia", "blood curse", "blighted", "self-pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonance", "infested"}, 2) then
+      if not snd.checkAff("infested") then
+        string = string.."commune infest "..snd.target
+      elseif not snd.checkAff("blighted") then
+        string = string.."commune spines "..snd.target
+      elseif not snd.checkAff("premonition") then
+        string = string.."shaman premonition "..snd.target
+      elseif not snd.checkAff("vitalbane") and tonumber(gmcp.Char.Vitals.energy) &gt;= 2 then
+        string = string.."commune scourge "..snd.target
+      elseif not snd.checkAff("paresis") and not snd.checkAff("stupidity") and tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
+        string = string.."commune boost"..snd.sep.."commune overload "..snd.target
+      elseif not snd.checkAff("impatience") and not snd.checkAff("confusion") and tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
+        string = string.."commune boost"..snd.sep.."commune sporulation "..snd.target
+      elseif not snd.stormcloud and tonumber(gmcp.Char.Vitals.energy) &gt;= 4 then
+        string = string.."commune boost"..snd.sep.."commune stormbolt "..snd.target
+      else
+        string = string.."commune boost"..snd.sep.."commune lightning "..snd.target
+      end
 
-  elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-    if not snd.checkAff("infested") then
-		  string = "commune infest "..snd.target
-		elseif not snd.checkAff("blighted") then
-			string = "commune spines "..snd.target
-    elseif not snd.checkAff("vitalbane") then
-			string = "commune scourge "..snd.target
-    else
-    	string = "commune vinelash "..snd.target
+    elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+      if not snd.checkAff("infested") then
+        string = string.."commune infest "..snd.target
+      elseif not snd.checkAff("blighted") then
+        string = string.."commune spines "..snd.target
+      elseif not snd.checkAff("vitalbane") then
+        string = string.."commune scourge "..snd.target
+      else
+        string = string.."commune vinelash "..snd.target
     end
   else
-    string = "commune vinelash "..snd.target
-  end
-		
-		
-	if not snd.fetishattuned then
-	 string = "fetish attune "..snd.target..snd.sep..string
-	end
-  
-  if not snd.loyalsattacking then
-    string = "order familiar kill "..snd.target..snd.sep..string
+    string = string.."commune vinelash "..snd.target
   end
   
 
-	string = call..string
-	
+  string = call..string
+
   if string ~= snd.last_attack and not snd.waiting.queue then
    snd.last_attack = string
    snd.attack(snd.last_attack)
@@ -7293,37 +7341,39 @@ end</script>
 snd.starting_attack()
 function snd.attack_function()
 
-	call = ""
+  call = ""
+  string =""
 	
  if not snd.waiting.queue then
   if snd.shamanpet ~= "bear" and snd.balance.morph then
-    morphstring = "familiar morph bear"..snd.sep
-  end  
+    string = "familiar morph bear"..snd.sep.."order familiar follow me"..snd.sep
+  end 
+    
+    if not snd.fetishattuned then
+      string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
   
   if snd.used.shield then
-    string = morphstring
-    string = string.."fetish attune ".."commune leafstorm "..snd.target
+    string = string.."commune leafstorm "..snd.target
   elseif theyran then
-		string = morphstring
     string = string.."nature pull "..snd.target
   elseif snd.proned() then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune strangle "..snd.target
+    string = string.."commune strangle "..snd.target
   elseif not snd.proned() and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune slam "..snd.target
+    string = string.."commune boost"..snd.sep.."commune slam "..snd.target
   elseif not snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},2) then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." epseth"
-	 	call = "wt Vinelash "..snd.target..": epseth"..snd.sep
+    string = string.."commune vinelash "..snd.target.." epseth"
+    call = "wt Vinelash "..snd.target..": epseth"..snd.sep
   elseif not snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},2) then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." epteth"
-	 	call = "wt Vinelash "..snd.target..": epteth"..snd.sep
+    string = string.."commune vinelash "..snd.target.." epteth"
+    call = "wt Vinelash "..snd.target..": epteth"..snd.sep
   else
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." ouabain"
-	 call = "wt Vinelash "..snd.target..": ouabain"
+    string = string.."commune vinelash "..snd.target.." ouabain"
+  call = "wt Vinelash "..snd.target..": ouabain"
   end
 	
 	string = call..string
@@ -7349,46 +7399,47 @@ end</script>
 snd.starting_attack()
 function snd.attack_function()
 
-	call = ""
-	
+  call = ""
+  string =""
+  
  if not snd.waiting.queue then
   if snd.shamanpet ~= "cougar" and snd.balance.morph then
-    morphstring = "familiar morph cougar"..snd.sep
+    string = "familiar morph cougar"..snd.sep.."order familiar follow me"..snd.sep
   end  
+    
+  if not snd.fetishattuned then
+    string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+  end
+    
+    if not snd.loyalsattacking then
+      string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    end
   
   
   if snd.used.shield then
-    string = morphstring
-    string = string.."fetish attune ".."commune leafstorm "..snd.target
+    string = string.."commune leafstorm "..snd.target
   elseif theyran then
-		string = morphstring
     string = string.."nature pull "..snd.target
   elseif snd.proned() then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune strangle "..snd.target
+    string = string.."commune strangle "..snd.target
   elseif not snd.proned() and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 and snd.thorncount == 3 then
-    string = morphstring
-    string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune slam "..snd.target
+    string = string.."commune boost"..snd.sep.."commune slam "..snd.target
   elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
     if not snd.checkAff("haemophilia") then
-      string = morphstring
-      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune vinelash "..snd.target.." hepafarin"
+      string = string.."commune boost"..snd.sep.."commune vinelash "..snd.target.." hepafarin"
     else
-      string = morphstring
-      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune boost"..snd.sep.."commune vinelash "..snd.target.." prefarar"
+      string = string.."commune boost"..snd.sep.."commune vinelash "..snd.target.." prefarar"
     end
   else
     if not snd.checkAff("haemophilia") then
-      string = morphstring
-      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." hepafarin"
+      string = string.."commune vinelash "..snd.target.." hepafarin"
     else
-      string = morphstring
-      string = string.."fetish attune "..snd.target..snd.sep.."order familiar kill "..snd.target..snd.sep.."commune vinelash "..snd.target.." prefarar"
+      string = string.."commune vinelash "..snd.target.." prefarar"
     end
   end
-	
-	string = call..string
-	
+  
+  string = call..string
+  
   if string ~= snd.last_attack and not snd.waiting.queue then
    snd.last_attack = string
    snd.attack(snd.last_attack)
@@ -9146,7 +9197,12 @@ end</script>
     
     -- This checks for a present snd.zenith defense. It is used later in snd.zenith/Flow Handling.
     
-	-- This is a failsafe to take crispy off of a target that has cured ablaze.
+    
+    if not snd.loyalsattacking then
+      string = "order loyals kill "..snd.target..snd.sep 
+    end
+    
+    -- This is a failsafe to take crispy off of a target that has cured ablaze.
     if snd.checkAff("crispy") then
       if not snd.checkaff("ablaze") then
         snd.target_cured("crispy")
@@ -9159,21 +9215,21 @@ end</script>
     -- In this mode, we're going to only rely on Purification. It's built to support a quick Immolate.
     if not snd.waiting.queue then
       if theytumbling then
-			  string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
+        string = string.."psi tether "..snd.target
       elseif snd.used.shield then
-        string = "order loyals kill "..snd.target..snd.sep .. "touch hammer "..snd.target
-        -- OK, so if immolation is ready... we should cast it!	
+        string = string.."touch hammer "..snd.target
+        -- OK, so if immolation is ready... we should cast it!
       elseif snd.immolation_ready then
-        string = "order loyals kill "..snd.target..snd.sep .. "enact immolation " .. snd.target
+        string = string.."enact immolation " .. snd.target
         -- OK, so if immolation isn't ready, what next? Heatspear!
       elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") and snd.limb_dmg["torso"] &lt;= 66.66 then
-        string = "order loyals kill "..snd.target..snd.sep .. "enact heatspear " .. snd.target
+        string = string.."enact heatspear " .. snd.target
         -- OK, what if they have heatspear? Are they ablaze?! Quicken!
       elseif snd.checkAff("ablaze") then
-        string = "order loyals kill "..snd.target..snd.sep .. "enact quicken "..snd.target
+        string = string.."enact quicken "..snd.target
         -- OK, so we've done all of this, but they don't have ablaze! Ez fix..
       else
-        string = "order loyals kill "..snd.target..snd.sep .. "enact scorch " .. snd.target
+        string = string.."enact scorch " .. snd.target
       end
       -- Flow Handling/snd.zenith Handling
       -- In this mode, we only Flow when we have snd.zenith, otherwise we are casting.
@@ -9181,19 +9237,19 @@ end</script>
       -- Our Flow attacks should always be punches to take advantage of Firefist.
       if snd.zenith then
         if snd.used.shield then
-          string = "order loyals kill "..snd.target..snd.sep .. "touch hammer " .. snd.target
+          string = string.."touch hammer " .. snd.target
         elseif snd.parried_limb ~= "torso" then
-          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " clawtwist clawtwist" .. snd.sep .. string
+          string = string.."flow " .. snd.target .. " clawtwist clawtwist" .. snd.sep .. string
         elseif snd.parried_limb ~= "left arm" then
-          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " pummel left pummel left" .. snd.sep .. string
+          string = string.."flow " .. snd.target .. " pummel left pummel left" .. snd.sep .. string
         else
-          string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " pummel right pummel right" .. snd.sep .. string
+          string = string.."flow " .. snd.target .. " pummel right pummel right" .. snd.sep .. string
         end
       end
       -- Hackles handling
       -- In this mode, we really just hackles whipburst.
       -- We will Whipburst even in lieu of a Flow combo.
-      -- First, we should check if we have hackles balance.	
+      -- First, we should check if we have hackles balance.
       if gmcp.Char.Vitals.ability_bal == "1" then
         string = "hackles " .. snd.target .. " whipburst " .. snd.sep .. string
       end
@@ -9444,7 +9500,7 @@ end
     -- Consider writing a check for different combos on firefist?
     if not snd.waiting.queue then
       if theytumbling then
-			  string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
+        string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
       elseif snd.used.shield then
         string = "order loyals kill "..snd.target..snd.sep .. "touch hammer " .. snd.target
 --      elseif not snd.checkAff("indifference") and not snd.used.shield and tonumber(gmcp.Char.Vitals.psi) &gt; 50 then
@@ -9548,6 +9604,13 @@ if snd.class == "Zealot" then
   snd.starting_attack()
 
   function snd.attack_function()
+  
+      
+    
+    if not snd.loyalsattacking then
+      string = "order loyals kill "..snd.target..snd.sep 
+    end
+
    
 -- Zeal Attacks Table
     local zeal_attacks = {
@@ -9601,42 +9664,42 @@ if snd.class == "Zealot" then
  
     if not snd.waiting.queue then
       if theytumbling then
-			  string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
+        string = string.."psi tether "..snd.target
       elseif snd.used.shield then
-        string = "order loyals kill "..snd.target..snd.sep .. "touch hammer "..snd.target
+        string = string.."touch hammer "..snd.target
       elseif not snd.enemy_restoration_balance and snd.balance.pendulum then
-        string = "order loyals kill "..snd.target..snd.sep .. "enact pendulum "..snd.target
+        string = string.."enact pendulum "..snd.target
       elseif snd.zenith and snd.resto_limb ~="none" and (snd.limb_dmg["torso"]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg["torso"] &lt;= 33.33 and string.find(left, "torso") and snd.resto_limb ~= "left leg" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt;= 33.33 and string.find(left, "leg") then
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." wanekick left direblow"
+        string = string.."flow "..snd.target.." wanekick left direblow"
       elseif snd.zenith and snd.resto_limb ~="none" and (snd.limb_dmg["torso"]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg["torso"] &lt; 33.33 and string.find(left, "torso") and snd.resto_limb ~= "right leg" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." wanekick right direblow"
+        string = string.."flow "..snd.target.." wanekick right direblow"
       elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." wanekick left twinpress"
+        string = string.."flow "..snd.target.." wanekick left twinpress"
       elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." wanekick right twinpress"
+        string = string.."flow "..snd.target.." wanekick right twinpress"
       elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." wanekick left dislocate left leg"
+        string = string.."flow "..snd.target.." wanekick left dislocate left leg"
       elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." wanekick right dislocate right leg"
+        string = string.."flow "..snd.target.." wanekick right dislocate right leg"
       else
-        string = "order loyals kill "..snd.target..snd.sep .. "flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]
+        string = string.."flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]
       end
  
       if gmcp.Char.Vitals.ability_bal == "1" and not snd.used.shield then
         if snd.zenith and string.find(snd.welt_ready, "arm") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore wrist") then
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." wristlash "..snd.sep..string
+          string = string.."hackles "..snd.target.." wristlash "..snd.sep..string
         elseif snd.zenith and string.find(snd.welt_ready, "leg") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore ankle") then    
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." anklepin "..snd.sep..string
+          string = string.."hackles "..snd.target.." anklepin "..snd.sep..string
         elseif not snd.checkAff("blurry vision") then
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." jawcrack "..snd.sep..string
+          string = string.."hackles "..snd.target.." jawcrack "..snd.sep..string
         elseif snd.checkAff("heatspear") then
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." whipburst "..snd.sep..string
+          string = string.."hackles "..snd.target.." whipburst "..snd.sep..string
         elseif not snd.checkAff("sore ankle") then
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." anklepin "..snd.sep..string
+          string = string.."hackles "..snd.target.." anklepin "..snd.sep..string
         elseif not snd.checkAff("sore wrist") then
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." wristlash "..snd.sep..string
+          string = string.."hackles "..snd.target.." wristlash "..snd.sep..string
         else
-          string = "order loyals kill "..snd.target..snd.sep .. "hackles "..snd.target.." whipburst "..snd.sep..string
+          string = string.."hackles "..snd.target.." whipburst "..snd.sep..string
         end
       end
  
@@ -9658,25 +9721,25 @@ if snd.class == "Zealot" then
             end
           end
         elseif snd.balance.pendulum and not snd.enemy_restoration_balance then
-          string = "order loyals kill "..snd.target..snd.sep .. "enact pendulum " ..snd.target
+          string = string.."enact pendulum " ..snd.target
         end
       end
       
       if snd.immolation_ready then
-        string = "order loyals kill "..snd.target..snd.sep .. "enact immolation " .. snd.target
+        string = string.."enact immolation " .. snd.target
       end 
  
       if snd.zenith then
         if snd.checkAff("heatspear") then
-          string = string..snd.sep.."order loyals kill "..snd.target..snd.sep .. "enact quicken "..snd.target
+          string = string.."enact quicken "..snd.target
         elseif not snd.checkAff("heatspear") and not snd.checkAff("ablaze") and snd.firefist then
-          string = string..snd.sep.."order loyals kill "..snd.target..snd.sep .. "enact heatspear "..snd.target
+          string = string.."enact heatspear "..snd.target
         elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
-          string = string..snd.sep.."order loyals kill "..snd.target..snd.sep .. "enact heatspear "..snd.target
+          string = string.."enact heatspear "..snd.target
         elseif snd.limb_status["torso"] ~= "healed" and snd.checkAff("ablaze") then
-          string = string..snd.sep.."order loyals kill "..snd.target..snd.sep .. "enact quicken "..snd.target
+          string = string.."enact quicken "..snd.target
         else
-          string = string..snd.sep.."order loyals kill "..snd.target..snd.sep .. "enact scorch "..snd.target
+          string = string.."enact scorch "..snd.target
         end
       end
        
@@ -16557,7 +16620,7 @@ tempTimer(3.5, [[send("firstaid priority ringing_ears 2##firstaid priority limp_
 tempTimer(4, [[send("firstaid priority left_leg_damaged 3##firstaid priority right_leg_damaged 3##firstaid priority right_leg_mangled 3##firstaid priority left_leg_mangled 3##firstaid priority right_arm_mangled 3##firstaid priority left_arm_mangled 3##firstaid priority left_leg_bruised_critical 3##firstaid priority right_leg_bruised_critical 3##firstaid priority torso_bruised_critical 3##firstaid priority voidgaze 3##firstaid priority clumsiness 3##firstaid priority sandrot 3##firstaid priority thin_blood 3")]])
 tempTimer(4.5, [[send("firstaid priority disfigurement 4##firstaid priority migraine 4##firstaid priority left_leg_broken 4##firstaid priority right_leg_broken 4##firstaid priority right_arm_broken 4##firstaid priority left_arm_broken 4##firstaid priority firstaid_predict_arms 4##firstaid priority firstaid_predict_legs 4##firstaid priority first##firstaid priority impatience 4##firstaid priority infested 4##firstaid priority mirroring 4##firstaid priority pacifism 4##firstaid priority patterns 4##firstaid priority recklessness 4")]])
 tempTimer(5, [[send("firstaid priority weariness 4##firstaid priority deadening 5##firstaid priority spinal_rip 5##firstaid priority head_damaged 5##firstaid priority torso_damaged 5##firstaid priority torso_mangled 5##firstaid priority left_arm_bruised 5##firstaid priority right_arm_bruised 5##firstaid priority left_leg_bruised 5##firstaid priority right_leg_bruised 5##firstaid priority head_bruised 5##firstaid priority torso_bruised 5##firstaid priority left_leg_bruised_moderate 5")]])
-tempTimer(5.5, [[send("firstaid priority torso_bruised_moderate 5##firstaid priority head_bruised_moderate 5##firstaid priority gloom 5##firstaid priority blighted 5##firstaid priority blood_curse 5##firstaid priority blood_poison 5##firstaid priority confusion 5##firstaid priority idiocy 5##firstaid priority mental_disruption 5##firstaid priority merciful 5##firstaid priority physical_disruption 5##firstaid priority plodding 5##firstaid priority soulfire 5##firstaid priority soulburn 5##firstaid priority squelched 6")]])
+tempTimer(5.5, [[send("firstaid priority torso_bruised_moderate 5##firstaid priority head_bruised_moderate 5##firstaid priority gloom 5##firstaid priority blighted 5##firstaid priority blood_curse 5##firstaid priority blood_poison 5##firstaid priority confusion 5##firstaid priority idiocy 5##firstaid priority mental_disruption 5##firstaid priority merciful 5##firstaid priority physical_disruption 5##firstaid priority plodding 5##firstaid priority squelched 6")]])
 tempTimer(6, [[send("firstaid priority shivering 6##firstaid priority frozen 6##firstaid priority gorged 6##firstaid priority effused_blood 6##firstaid priority blurry_vision 6##firstaid priority smashed_throat 6##firstaid priority cracked_ribs 6##firstaid priority whiplash 6##firstaid priority backstrain 6##firstaid priority collapsed_lung 6##firstaid priority left_arm_dislocated 6##firstaid priority left_leg_dislocated 6##firstaid priority right_arm_dislocated 6##firstaid priority right_leg_dislocated 6##firstaid priority sore_wrist 6")]])
 tempTimer(6.5, [[send("firstaid priority sore_ankle 6##firstaid priority muscle_spasms 6##firstaid priority heatspear 6##firstaid priority sensitivity 6##firstaid priority rend 6##firstaid priority epilepsy 6##firstaid priority masochism 6##firstaid priority loneliness 6##firstaid priority haemophilia 6##firstaid priority lethargy 6##firstaid priority vomiting 6##firstaid priority impairment 6##firstaid priority crippled 6##firstaid priority allergies 6")]])
 tempTimer(7, [[send("firstaid priority shaderot_heat 6##firstaid priority shaderot_wither 6##firstaid priority ablaze 7##firstaid priority hypothermia 7##firstaid priority stuttering 7##firstaid priority crippled_throat 7##firstaid priority mauled_face 7##firstaid priority deepwound 7##firstaid priority stiffness 7##firstaid priority stupidity 7##firstaid priority heartflutter 7")]])
@@ -16634,7 +16697,7 @@ snd.get_new_target()</script>
 snd.removeTarget(who)
 
 if snd.toggles.calling then 
-	send("wt Target removed: " .. who)
+  send("wt Target removed: " .. who)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -16698,7 +16761,7 @@ end</script>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
 						<name>Rihrin Path</name>
-						<script>expandAlias("bashpath illdon, tiyen, spiral, nal'jin, xaanhal, forgotten dome, dovan, dramedo, clawhook, basilisk, bakal, helba, ia'shal, maul")</script>
+						<script>expandAlias("bashpath illdon, tiyen, spiral, nal'jin, xaanhal, forgotten dome, a basilisk lair, clawhook range, bakal chasm, dovan, dramedo, depths, ia'shal, maul")</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^bash1$</regex>
