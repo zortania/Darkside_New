@@ -94,14 +94,14 @@ if snd.bashing_loaded or snd.toggles.fastwalk then
     if gmcp.Room.Info.area == "the Shattered Vortex" then
       x, y = string.match(gmcp.Char.Status.level, "(.*) (.*)")
       level = tonumber(x)
-      if level &lt; 100 then
+      if level &lt; 90 then
         area = "the Shattered Vortex (Low Level)"
+      elseif gmcp.Char.Status.name == "Rihrin" then
+        area = "the Shattered Vortex (All)"
       elseif snd.faction == "spirit" then
         area = "the Shattered Vortex (Spirit)"
       elseif snd.faction == "shadow" then
         area = "the Shattered Vortex (Shadow)"
-      elseif gmcp.Char.Status.name == "Rihrin" then
-        area = "the Shaterred Vortex (All)"
       end
       if area ~= snd.my.area then
         cecho("\n&lt;green&gt;Entering: " .. area)
@@ -12608,12 +12608,12 @@ if gmcp.Room.Info.area == "the Shattered Vortex" then
   level = tonumber(x)
   if level &lt; 90 then
     area = "the Shattered Vortex (Low Level)"
+  elseif gmcp.Char.Status.name == "Rihrin" then
+    area = "the Shattered Vortex (All)"
   elseif snd.faction == "spirit" then
-    area = "the Shattered Vortex (Shadow)"
+    area = "the Shattered Vortex (Spirit)"
   elseif snd.faction == "shadow" then
     area = "the Shattered Vortex (Shadow)"
-  elseif gmcp.Char.Status.name == "Rihrin" then
-    area = "the Shaterred Vortex (All)"
   end
   snd.load_targets(area)
 else
@@ -12879,8 +12879,11 @@ end
 						<name>deathblow</name>
 						<script>if snd.gui.enabled then 
   deleteLine()
-end 
-snd.message("DEATH: "..matches[2], "death")
+end
+--local snd.death_message = false
+--if not snd.death_message then
+  snd.message("DEATH: "..matches[2], "death")
+--end
 if snd.counterattack_active then
   snd.counterattack_active = false
 end
@@ -12903,7 +12906,7 @@ end
   if snd.totalslain[test] == nil then
     snd.totalslain[test] = 0
   end
-  Msys.totalslain[test] = Msys.totalslain[test] + 1</script>
+  snd.totalslain[test] = snd.totalslain[test] + 1</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -13320,29 +13323,27 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>exp trigger</name>
-						<script>snd.stats.max_xp = tonumber(gmcp.Char.Vitals.maxxp)
+						<script>deleteLine()
+snd.message("&lt;red&gt;Experience Gained&lt;white&gt;: " .. matches[2] .. " - from " .. matches[3] .. ". Total: " .. matches[4] .. ".")
 
-snd.stats.last_xp = string.gsub(matches[2],",","")
-snd.stats.last_xp = tonumber(snd.stats.last_xp)
+local max_xp = tonumber(gmcp.Char.Vitals.maxxp)
 
-snd.stats.xp = string.gsub(matches[4],",","")
-snd.stats.xp = tonumber(snd.stats.xp)
+local last_xp = string.gsub(matches[2],",","")
+last_xp = tonumber(last_xp)
+
+local xp = string.gsub(matches[4],",","")
+local xp = tonumber(xp)
 
 if snd.gui.enabled then 
-  local mobs_to_level = (snd.stats.max_xp - snd.stats.xp) / snd.stats.last_xp
-  local mobs_xp_percent = (tonumber(snd.stats.last_xp) / snd.stats.max_xp) * 100
-  local xp_point_percent = (25 - (((snd.stats.xp / snd.stats.max_xp) * 100) % 25))
+  local mobs_to_level = (max_xp - xp) / last_xp
+  local mobs_xp_percent = (tonumber(last_xp) / max_xp) * 100
+  local xp_point_percent = (25 - (((xp / max_xp) * 100) % 25))
   local mobs_to_point = xp_point_percent / mobs_xp_percent
-
-  deleteLine()
-  snd.message("&lt;red&gt;Experience Gained&lt;white&gt;: " .. matches[2] .. " - from " .. matches[3] .. ". Total: " .. matches[4] .. ".")
-  snd.message("&lt;white&gt;"..(snd.stats.max_xp - snd.stats.xp).."&lt;yellow&gt;xp [&lt;white&gt;"..round(mobs_to_level,0).."&lt;yellow&gt;] to level!")
+  
+  snd.message("&lt;white&gt;"..(max_xp - xp).."&lt;yellow&gt;xp [&lt;white&gt;"..round(mobs_to_level,0).."&lt;yellow&gt;] to level!")
    
   local x, y = string.match(gmcp.Char.Status.level, "(.*) (.*)")
   local level = tonumber(x)
-  if level &gt; 99 then
-    snd.message("&lt;white&gt;"..round(((xp_point_percent/100)*snd.stats.max_xp), 0).."&lt;yellow&gt;xp [&lt;white&gt;"..round(mobs_to_point,0).."&lt;yellow&gt;] to haven point!")
-  end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -13705,8 +13706,10 @@ end</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>Depths of a submerged lair.</string>
+							<string>Before the remnants of a forgotten idol.</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>3</integer>
 							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
@@ -18126,8 +18129,8 @@ end</script>
 										<name>Weariness mutagen</name>
 										<script>if matches[2] == snd.target then
   if not snd.checkAff("weariness") then 
-		snd.target_got("weariness")
-	end
+    snd.target_got("weariness")
+  end
 end</script>
 										<triggerType>0</triggerType>
 										<conditonLineDelta>0</conditonLineDelta>
@@ -33499,11 +33502,15 @@ end</script>
 								</regexCodePropertyList>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-								<name>Web Clan mixup</name>
-								<script>if matches[5] == "web" or matches[5] == "Web" then
+								<name>Weird vox I hate it</name>
+								<script>if matches[2] == "Web" then
   if table.isMember(snd.allies, matches[3]) then
     snd.send("web invite")
   end
+end
+if not snd.spoken then
+  snd.spoken = true  
+  enableTimer("Spoken")
 end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
@@ -33516,31 +33523,7 @@ end</script>
 								<colorTriggerFgColor>#000000</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>^(.+): (\w+) says, "(.+)(\w+)(.+)$</string>
-								</regexCodeList>
-								<regexCodePropertyList>
-									<integer>1</integer>
-								</regexCodePropertyList>
-							</Trigger>
-							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-								<name>Web clan</name>
-								<script>if matches[4] == "web" or matches[5] == "Web" then
-  if table.isMember(snd.allies, matches[3]) then
-    snd.send("web invite")
-  end
-end</script>
-								<triggerType>0</triggerType>
-								<conditonLineDelta>0</conditonLineDelta>
-								<mStayOpen>0</mStayOpen>
-								<mCommand></mCommand>
-								<packageName></packageName>
-								<mFgColor>#ff0000</mFgColor>
-								<mBgColor>#ffff00</mBgColor>
-								<mSoundFile></mSoundFile>
-								<colorTriggerFgColor>#000000</colorTriggerFgColor>
-								<colorTriggerBgColor>#000000</colorTriggerBgColor>
-								<regexCodeList>
-									<string>^(.+): (\w+) says, "(.+)(.|\!|\?)$</string>
+									<string>^\(Tells\): "(.+)(.|\!|\?)" (\w+) tells you.</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
@@ -34397,107 +34380,107 @@ end</script>
  found_set = "none"
  for set in pairs(snd.cureset_skills) do
   if table.contains(snd.cureset_skills[set], skill) then
-	 found_set = set
-   cecho("\n&lt;orange_red&gt;Found set: "..found_set)
+    found_set = set
+    cecho("\n&lt;orange_red&gt;Found set: "..found_set)
     if snd.class_hitting ~= "none" then
       cecho("\n&lt;orange_red&gt;The class hitting you is: "..snd.class_hitting)
     else
       snd.class_hitting = found_set
       cecho("\n&lt;orange_red&gt;Curing is set for class: "..snd.class_hitting)
     end
-	end
+  end
  end
   if snd.class_hitting == "none" then --haven't seen anyone hit yet
     if found_set == "none" then --skill isn't in class list
       echo("\nNo curing set.")
     end
-	elseif found_set == "archivist" then
-   snd.firstaidassArchivist()
-	 snd.class_hitting = found_set --note what class is hitting
-   snd.send("qeb dodge upset")
-	 echo("\nCuring set flagged Archivist.")
-	elseif found_set == "indorani" then
-   snd.firstaidassIndorani()
-	 snd.class_hitting = found_set --note what class is hitting
-   snd.send("qeb dodge upset")
-	 echo("\nCuring set flagged Indorani.")
-	elseif found_set == "oneiromancer" then
-   snd.firstaidassOneiromancer()
-	 snd.class_hitting = found_set --note what class is hitting
-   snd.send("qeb dodge upset")
-	 echo("\nCuring set flagged Oneiromancer.")
-	elseif found_set == "luminary" then
-   snd.firstaidassLuminary()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Luminary.")
-	elseif found_set == "earthcaller" then
-   snd.firstaidassEarthcaller()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Earthcaller.")
-	elseif found_set == "zealot" then
-   snd.firstaidassZealot()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Zealot.")
-	elseif found_set == "sentinel" then
-   snd.firstaidassSentinel()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Sentinel.")
-	elseif found_set == "ascendril" then
-   snd.firstaidassAscendril()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Ascendril.")
-	elseif found_set == "teradrim" then
-   snd.firstaidassTeradrim()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Teradrim.")
-	elseif found_set == "shifter" then
-   snd.firstaidassShifter()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Shifter.")
-	elseif found_set == "carnifex" then
-   snd.firstaidassCarnifex = true
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Carnifex.")
-	elseif found_set == "warden" then
-   snd.firstaidassWarden()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Warden.")
-	elseif found_set == "templar" then
-   snd.firstaidassTemplar()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Templar.")
-	elseif found_set == "revenant" then
-   snd.firstaidassRevenant()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Revenant.")
-	elseif found_set == "praenomen" then
-   snd.firstaidassPraenomen()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Praenomen.")
-	elseif found_set == "sciomancer" then
-   snd.firstaidassSciomancer()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Sciomancer.")
-	elseif found_set == "shaman" then
-   snd.firstaidassShaman()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Shaman.")
-	elseif found_set == "wayfarer" then
-   snd.firstaidassWayfarer()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Wayfarer.")
-	elseif found_set == "syssin" then
-   snd.firstaidassSyssin()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Syssin.")
-	elseif found_set == "monk" then
-   snd.firstaidassMonk()
-	 snd.class_hitting = found_set --note what class is hitting
-	 echo("\nCuring set flagged Monk.")
-   if snd.class == "Zealot" then
-    snd.send("qeb rebuke left leg")
-   end
-	end
+  elseif found_set == "archivist" then
+    snd.firstaidassArchivist()
+    snd.class_hitting = found_set --note what class is hitting
+    snd.send("qeb dodge upset")
+    echo("\nCuring set flagged Archivist.")
+  elseif found_set == "indorani" then
+    snd.firstaidassIndorani()
+    snd.class_hitting = found_set --note what class is hitting
+    snd.send("qeb dodge upset")
+    echo("\nCuring set flagged Indorani.")
+  elseif found_set == "oneiromancer" then
+    snd.firstaidassOneiromancer()
+    snd.class_hitting = found_set --note what class is hitting
+    snd.send("qeb dodge upset")
+    echo("\nCuring set flagged Oneiromancer.")
+  elseif found_set == "luminary" then
+    snd.firstaidassLuminary()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Luminary.")
+  elseif found_set == "earthcaller" then
+    snd.firstaidassEarthcaller()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Earthcaller.")
+  elseif found_set == "zealot" then
+    snd.firstaidassZealot()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Zealot.")
+  elseif found_set == "sentinel" then
+    snd.firstaidassSentinel()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Sentinel.")
+  elseif found_set == "ascendril" then
+    snd.firstaidassAscendril()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Ascendril.")
+  elseif found_set == "teradrim" then
+    snd.firstaidassTeradrim()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Teradrim.")
+  elseif found_set == "shifter" then
+    snd.firstaidassShifter()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Shifter.")
+  elseif found_set == "carnifex" then
+    snd.firstaidassCarnifex = true
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Carnifex.")
+  elseif found_set == "warden" then
+    snd.firstaidassWarden()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Warden.")
+  elseif found_set == "templar" then
+    snd.firstaidassTemplar()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Templar.")
+  elseif found_set == "revenant" then
+    snd.firstaidassRevenant()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Revenant.")
+  elseif found_set == "praenomen" then
+    snd.firstaidassPraenomen()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Praenomen.")
+  elseif found_set == "sciomancer" then
+    snd.firstaidassSciomancer()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Sciomancer.")
+  elseif found_set == "shaman" then
+    snd.firstaidassShaman()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Shaman.")
+  elseif found_set == "wayfarer" then
+    snd.firstaidassWayfarer()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Wayfarer.")
+  elseif found_set == "syssin" then
+    snd.firstaidassSyssin()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Syssin.")
+  elseif found_set == "monk" then
+    snd.firstaidassMonk()
+    snd.class_hitting = found_set --note what class is hitting
+    echo("\nCuring set flagged Monk.")
+    if snd.class == "Zealot" then
+      snd.send("qeb rebuke left leg")
+    end
+  end
   snd.person_hitting = multimatches[2][2]
 
 end
