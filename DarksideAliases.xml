@@ -7051,7 +7051,7 @@ function snd.attack_function()
     elseif theyran then
       string = string.."nature pull "..snd.target
     elseif mentcount &lt; 3 then
-      if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
+      if tonumber(gmcp.Char.Vitals.energy) &gt; 2 then
         echo("\nYou have not reached 3 mental affs")
         if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
           string = string.."commune sporulation "..snd.target
@@ -7065,10 +7065,6 @@ function snd.attack_function()
       echo("\nYou have reached 3 mental affs")
       string = string.."shaman divulgence "..snd.target.." "..prem
       call = "wt Afflicting "..snd.target..": "..prem..snd.sep
-    elseif not snd.checkAff("infested") and not snd.infested then
-      string = string.."commune infest " ..snd.target
-      snd.infested = true
-      tempTimer(2, [[snd.infested = false]])
     else
       string = string.."commune vinelash "..snd.target.." "..venom
     end
@@ -7125,7 +7121,12 @@ end</script>
 snd.starting_attack()
 function snd.attack_function()
 
-local mentcount = snd.aff_count_mental()
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
+      end
 
   call = ""
   string =""
@@ -7170,35 +7171,33 @@ local mentcount = snd.aff_count_mental()
     if snd.used.shield then
       string = string.."commune leafstorm "..snd.target
     elseif theyran then
-      string = string.."nature pull "..snd.target
+      string = string.."nature pull "..snd.target    
     elseif not snd.checkAff("premonition") then
       if not snd.their_premonition then
         string = string.."shaman premonition " ..snd.target
       end
-    elseif not snd.checkAff("infested") and not snd.infested then
-      string = string.."commune infest " ..snd.target
-      snd.infested = true
-      tempTimer(5, [[snd.infested = false]])
-    elseif mentcount &lt; 3 then
-      if tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
-        echo("\nYou have not reached 3 mental affs")
-        if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
-          string = string.."commune sporulation "..snd.target
-        elseif not snd.checkAff("stupidity") then
-          string = string.."commune overload "..snd.target
-        else
-          string = string.."commune staticburst "..snd.target
-        end
-      end
-    elseif mentcount &gt;= 3 then
-      echo("\nYou have reached 3 mental affs")
-      string = string.."shaman divulgence "..snd.target.." "..prem
-      call = "wt Afflicting "..snd.target..": "..prem..snd.sep
+    elseif tonumber(gmcp.Char.Vitals.energy) &lt; 3 then
+      string = string.."commune vinelash "..snd.target.." "..venom
     elseif snd.checksomeAffs({"fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, superstition"}, 5) and snd.my_premonition then
       string = string.."commune reclamation " ..snd.target
     else
-      string = string.."commune vinelash "..snd.target.." "..venom
+      if mentcount &gt; 3 then
+        string = string.."shaman divulgence "..snd.target.." "..prem
+        call = "wt Afflicting "..snd.target..": "..prem..snd.sep
+      else
+        if tonumber(gmcp.Char.Vitals.energy) &gt; 2 then
+          if not (snd.checkAff("impatience") or snd.checkAff("confusion")) then
+            string = string.."commune sporulation "..snd.target
+          elseif not snd.checkAff("stupidity") then
+            string = string.."commune overload "..snd.target
+          else
+            string = string.."commune staticburst "..snd.target
+          end
+        end
+      end
     end
+    
+    cecho("\n&lt;yellow&gt;You have reached "..mentcount.." mental affs")
 	
 	string = call..string
 	
