@@ -1289,8 +1289,10 @@ send(" ")</script>
 					<Alias isActive="yes" isFolder="no">
 						<name>generics</name>
 						<script>snd.toggle("generics")
-
-cecho("\n&lt;red&gt;The use of a generic word (ie 'kelki' instead of 'kelki1234' or just '1234') brings with it a certain amount of risk. You risk hitting an NPC that you may not mean to, including quest mobs with the same short name, or boss mobs in the same vein. This is your warning. Please use it when appropriate.")
+if snd.toggles.generics then
+  cecho("\n&lt;red&gt;The use of a generic word (ie 'kelki' instead of 'kelki1234' or just '1234') brings with it a certain amount of risk. You risk hitting an NPC that you may not mean to, including quest mobs with the same short name, or boss mobs in the same vein. This is your warning. Please use it when appropriate.")
+else
+end
 </script>
 						<command></command>
 						<packageName></packageName>
@@ -10552,6 +10554,76 @@ end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^limb$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Vivi 2.0</name>
+									<script>if snd.class == "Oneiromancer" then
+
+
+
+  snd.giving = {"left_arm_broken", "right_arm_broken", "left_leg_broken", "right_leg_broken",}
+  
+  snd.starting_attack()
+  
+  function snd.attack_function()
+  
+   local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+    local string = ""
+    if not snd.waiting.queue then
+  if hp &lt;= 40 and snd.balance.crystal then
+    string = "touch crystal"
+  elseif hp &lt;= 75 then
+   string = "unfurl flower at me"
+   elseif snd.aff_tally() &gt; 3 and snd.balance.fool then
+    string = "unfurl fire at me"
+    elseif snd.used.shield then
+        string = "touch hammer "..snd.target
+      elseif snd.checksomeAffs({"left_arm_broken", "right_arm_broken", "left_leg_broken", "right_leg_broken", "leeched_aura"}, 5) then
+        string = "vanquish "..snd.target
+      elseif not snd.checksomeAffs(snd.giving, 4) then
+        for v in pairs(snd.giving) do
+          if not snd.checkAff(snd.giving[v])  then
+            string = "misfortune "..snd.target.." "..snd.giving[v]:gsub("_", " "):gsub("broken", "")
+            break
+          end
+        end
+      elseif snd.aff_count_all() &gt; 10 then
+      string = "disjunct "..snd.target    
+      else
+        string = "chill "..snd.target
+      end
+      
+      if snd.need_leech_aura then
+        string = "unspool "..snd.target..snd.sep..string
+      end 
+
+      if snd.balance.chimera then
+          string = "order quetzal croon"..snd.sep..string
+      end
+
+      if snd.balance.envelop and snd.balance.soulmaster and string.find(string, "anorexia") then
+        string = "order blob envelop"..snd.sep..string..snd.sep.."order "..snd.target.." apply restoration to arms"
+      end
+
+    if not snd.loyalsattacking then
+        string = "order loyals kill "..snd.target..snd.sep..string
+       end
+      
+
+      if string ~= snd.last_attack and not snd.waiting.queue then
+        snd.last_attack = string
+        snd.attack(snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
+  
+    end
+  end
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^vivi$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>

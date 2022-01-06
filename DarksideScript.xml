@@ -435,7 +435,7 @@ snd.shopih = false
 snd.toparry = "none"
 snd.ylem_check = false
 snd.counterattack_active = false
-snd.probed = true
+snd.probed = false
 snd.punisher = false
 
 
@@ -837,7 +837,7 @@ function gmcp_room()
     snd.send("plants")
   end
   if snd.bashing_loaded then
-    enableTimer("looktimer")
+    --enableTimer("looktimer")
     snd.vermin = 0
     if snd.toggles.vermin then
       enableTimer("moveroom")
@@ -3707,7 +3707,7 @@ def_intervention = {defense = "intervention", type = "normal", effect = "Protect
 def_tacticianmark = {defense = "tacticianmark", type = "yellow", effect = "simuls go zoom", balance = {}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_initiative = {defense = "initiative", type = "normal", effect = "Periodic heal on damage done.", balance = {needybalancetake = "warden initiative on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Initiative"},
 def_displacement = {defense = "displacement", type = "normal", effect = "Steals soul on hit.", balance = {equilibriumtake = "ancest displacement"}, state = "down", needit = false, timer =createStopWatch(), skill = "Displacement"},
-def_simulacrum_opening = {defense = "simulacrum_opening", type = "normal", effect = "Increases damage done to mobs.", balance = {}, state = "down", needit = false, timer = createStopWatch(), skill = "Openings"},
+def_simulacrum_opening = {defense = "simulacrum_opening", type = "normal", effect = "Increases damage done to mobs.", balance = {needyequilibriumtake = "simul openings on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Openings"},
 def_severity = {defense = "severity", type = "normal", effect = "Attacks hit through parry.", balance = {needybalancetake = "warden severity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Severity"},
 def_roaring = {defense = "roaring", type = "normal", effect = "Make them prone/off bal.", balance = {needybalancetake = "warden roaring on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Roaring"},
 
@@ -18468,44 +18468,49 @@ function snd.shield_check()
 end
 
 function snd.bashing_function()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+
   if not snd.room_clear then return end
     if not snd.waiting.queue then
       if not snd.bashing.targeted then
         snd.runBasher()
       else
         battack = ""
-          for k,v in pairs(snd.class_list) do
-            if snd.class_list[k].class == snd.class then
-              v.func()
-            end
+        for k,v in pairs(snd.class_list) do
+          if snd.class_list[k].class == snd.class then
+            v.func()
           end
-      if tonumber(snd.toggles.gauntlet_level) &gt;= 2 and snd.balance.barrier and not snd.liarstrummed then 
-        if snd.elementalcount &lt; 50 then
-          battack = battack..snd.sep.."absorb ylem"        
+        end
+        if tonumber(snd.toggles.gauntlet_level) &gt;= 2 and snd.balance.barrier and not snd.liarstrummed then 
+          if snd.elementalcount &lt; 50 then
+            battack = battack..snd.sep.."absorb ylem" ..snd.sep       
+          else
+            battack = "sacrifice corpses"..snd.sep..battack..snd.sep.."absorb ylem"..snd.sep
+            snd.elementalcount = 0
+          end
         else
-          battack = "sacrifice corpses"..snd.sep..battack..snd.sep.."absorb ylem"
-          snd.elementalcount = 0
+          if snd.elementalcount &lt; 50 then
+            battack = battack
+          else
+            battack = "sacrifice corpses"..snd.sep..battack
+            snd.elementalcount = 0
+          end
         end
-      else
-        if snd.elementalcount &lt; 50 then
-          battack = battack
+        if snd.probed then
         else
-          battack = "sacrifice corpses"..snd.sep..battack
-          snd.elementalcount = 0
+          if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
+            battack = "probe "..snd.bashing.target..snd.sep..battack
+            snd.probed = true
+          end
         end
-      end
-      if snd.probed then
-      else
-        if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-          battack = "probe "..snd.bashing.target..snd.sep..battack
-          snd.probed = true
-        end
-      end
-      if battack ~= snd.last_attack and snd.ylem_check == false then
-      snd.last_attack = battack
-      snd.send("qeb stand"..snd.sep..snd.last_attack)
-      snd.waiting.queue = true
-      tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+        
+             
+        if battack ~= snd.last_attack and snd.ylem_check == false then
+        snd.last_attack = battack
+        snd.send("qeb stand"..snd.sep..snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
       end
     end
   end
@@ -18634,14 +18639,6 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
     transmutecheck_timer = tempTimer(5,[[snd.transmutation = true]])
   end
               
-  if snd.probed then
-  else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
-
   if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 70 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if gmcp.Char.Status.name == "Rihrin" then
       if snd.punisher then
@@ -18706,14 +18703,6 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 
-  if snd.probed then
-  else
-   if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
-  
   if snd.familiar and snd.balance.morph then
     if snd.shamanpet == "bear" then
       battack = "order spirit passive"..snd.sep.."familiar morph spider"..snd.sep
@@ -18782,13 +18771,6 @@ end
 
 function snd.sentinel_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	if snd.probed then
-  else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
 
   if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if mp &gt;= 50 then
@@ -18973,13 +18955,6 @@ end
 function snd.carnifex_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  if snd.probed then
-  else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
 
   if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 70 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if gmcp.Char.Status.name == "Rihrin" then
@@ -19034,13 +19009,6 @@ end
 function snd.warden_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  if snd.probed then
-  else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
 
   if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 70 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if gmcp.Char.Status.name == "Rihrin" then
@@ -19142,15 +19110,8 @@ function snd.zealot_bash()
 
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  if snd.probed then
-  else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
 
-  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 70 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 70 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if gmcp.Char.Status.name == "Rihrin" then
       if snd.punisher then
         if snd.reflection_charge &gt; 0 and not snd.reflected then
@@ -19204,14 +19165,6 @@ end
 function snd.praenomen_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-
-  if snd.probed then
-  else
-    if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum" or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-      send("probe "..snd.bashing.target)
-      snd.probed = true
-    end
-  end
 
   if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if mp &gt;= 50 then
@@ -25634,9 +25587,10 @@ def_ancestral_bolster = "on",
 def_invocation  = "on",
 def_gripping = "on",
 def_fitness = "once",
-def_roaring  = "once",
+--def_roaring  = "once",
 def_intervention = "once",
 def_shroud = "once",
+--def_rigor = "on",
 },
 
 shapeshifter = {
@@ -30538,6 +30492,7 @@ end</script>
 "Orfeo",
 "Neoma",
 "Pietre",
+"Thia",
 "Didi",
 "Aliyah",
 "Malachai",
@@ -30659,7 +30614,6 @@ end</script>
 "Aenilris",
 "Tianlong",
 "Kaiona",
-"Deandra",
 "Cayn",
 "Ansury",
 "Bhrigu",
@@ -30671,6 +30625,7 @@ end</script>
 "Gavramel",
 "Rakim",
 "Yettave",
+"Ysyrin",
 "Vonandor",
 "Thedoc",
 "Kendi",
@@ -30798,7 +30753,6 @@ end</script>
 "Lehar",
 "Bormulf",
 "Kaivalya",
-"Siaern",
 "Manelesi",
 "Fezzix",
 "Brin",
@@ -30911,6 +30865,7 @@ end</script>
 "Vonai",
 "Blodwyn",
 "Toz",
+"Gallard",
 "Linkovitch",
 "Etrigan",
 "Vharen",
@@ -31308,6 +31263,7 @@ end</script>
 "Ayegor",
 "Kilmoner",
 "Amedeus",
+"Deandra",
 "Seji",
 "Cole",
 "Colt",
@@ -31316,6 +31272,7 @@ end</script>
 "Daelares",
 "Alaxi",
 "Haemon",
+"Annerissa",
 "Ianthe",
 "Kaskame",
 "Balrus",
@@ -31326,6 +31283,8 @@ end</script>
 "Daoin",
 "Iaphia",
 "Rynkhia",
+"Sardara",
+"Siaern",
 "Alexein",
 "Talakea",
 "Tala",
@@ -31753,6 +31712,7 @@ end</script>
 "Leranc",
 "Kalena",
 "Isia",
+"Renault",
 "Serram",
 "Wylliam",
 "Nyssa",
@@ -31812,6 +31772,8 @@ end</script>
 "Kjell",
 "Tristram",
 "Jakarn",
+"Zerin",
+"Ollie",
 "Nadryne",
 "Seldyn",
 "Kzark",
@@ -31886,6 +31848,7 @@ end</script>
 "Naia",
 "Steingrimson",
 "Curiel",
+"Mastvin",
 "Chimalmatko",
 "Darmani",
 "Boden",
