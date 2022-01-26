@@ -11860,7 +11860,7 @@ end
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>Not enough mana transmute</name>
 								<script>snd.transmutation = false
-transmutecheck_timer = tempTimer(5,[[snd.transmutation = true]])</script>
+tempTimer(5,[[snd.transmutation = true]])</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -14909,12 +14909,16 @@ snd.reflected = false</script>
 									<string>One of your reflections has been destroyed!</string>
 									<string>All your reflections wink out of existence!</string>
 									<string>Your reflection defence has been stripped.</string>
+									<string>One of your reflections has been destroyed! You have 0 left.</string>
+									<string>^One of your reflections has been destroyed! You have (\w+) left.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
+									<integer>3</integer>
+									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -15682,13 +15686,14 @@ end</script>
 							<name>aff called</name>
 							<script>if matches[3]:lower() == snd.target:lower() then
   snd.maybe_affs = {}
-  for aff in string.gmatch(matches[4]:lower(), '([^, ]+)') do
+  for aff in string.gmatch(matches[4]:lower(), '([^. ]+)', '([^, ]+)') do
     table.insert(snd.maybe_affs, aff)
   end
+  display(thing)
+  display(snd.maybe_affs)
   snd.hitting = matches[2]
-end
-
-</script>
+  snd.who_called_affs = matches[2]
+end</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>50</mStayOpen>
@@ -17338,7 +17343,7 @@ end</script>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
-								<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Syssin Hit Confirmation</name>
 									<script></script>
 									<triggerType>0</triggerType>
@@ -21116,7 +21121,7 @@ end</script>
 									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 										<name>windlance prone</name>
 										<script>if matches[2] == snd.target then
-	snd.target_got("fallen")
+  snd.target_got("fallen")
 end</script>
 										<triggerType>0</triggerType>
 										<conditonLineDelta>0</conditonLineDelta>
@@ -23925,7 +23930,7 @@ end
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Tenacity Devastate</name>
 									<script>if matches[2] == snd.target then
   snd.used.rebounding = false
@@ -25292,23 +25297,40 @@ end
     snd.target_cured("whiplash")
     table.insert(snd.last_affs, "whiplash")
   elseif snd.checkAff("backstrain") and matches[4] == "torso" then
-    snd.target_cured("backsrain")
+    snd.target_cured("backstrain")
     table.insert(snd.last_affs, "backsrain")
   elseif snd.checkAff("muscle_spasms") and matches[4] == "torso" then
     snd.target_cured("muscle_spasms")
     table.insert(snd.last_affs, "muscle_spasms")
-  elseif snd.checkAff("stiffness") then
-    snd.target_cured("stiffness")
-    table.insert(snd.last_affs, "stiffness")
   elseif snd.checkAff("sore_wrist") and matches[4]:find("arm") then
     snd.target_cured("sore_wrist")
     table.insert(snd.last_affs, "sore_wrist")
-  elseif snd.checkAff("weak_grip") then
-    snd.target_cured("weak_grip")
-    table.insert(snd.last_affs, "weak_grip")
   elseif snd.checkAff("sore_ankle") and matches[4]:find("leg") then
     snd.target_cured("sore_ankle")
     table.insert(snd.last_affs, "sore_ankle")
+  else
+    if snd.checkAff("whiplash") then
+      snd.target_cured("whiplash")
+      table.insert(snd.last_affs, "whiplash")
+    elseif snd.checkAff("backstrain") then
+      snd.target_cured("backstrain")
+      table.insert(snd.last_affs, "backsrain")
+    elseif snd.checkAff("muscle_spasms") then
+      snd.target_cured("muscle_spasms")
+      table.insert(snd.last_affs, "muscle_spasms")
+    elseif snd.checkAff("stiffness") then
+      snd.target_cured("stiffness")
+      table.insert(snd.last_affs, "stiffness")
+    elseif snd.checkAff("sore_wrist") then
+      snd.target_cured("sore_wrist")
+      table.insert(snd.last_affs, "sore_wrist")
+    elseif snd.checkAff("weak_grip") then
+      snd.target_cured("weak_grip")
+      table.insert(snd.last_affs, "weak_grip")
+    elseif snd.checkAff("sore_ankle") then
+      snd.target_cured("sore_ankle")
+      table.insert(snd.last_affs, "sore_ankle")
+    end
   end
 elseif snd.toggles.nontargetgags and snd.gui.enabled then
   deleteFull()
@@ -26028,7 +26050,7 @@ end</script>
 										</regexCodePropertyList>
 									</Trigger>
 								</Trigger>
-								<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Heelrush</name>
 									<script></script>
 									<triggerType>0</triggerType>
@@ -28569,32 +28591,6 @@ end</script>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
 								<string>^Flames leap from .+ and ignite (\w+)\.$</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>1</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>finesse undo</name>
-							<script>if matches[4] == snd.target then
-  if #snd.last_affs &gt;= 1 then
-    for i in pairs(snd.last_affs) do
-    	snd.target_cured(snd.last_affs[i])
-   	end
-  end
-end</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand></mCommand>
-							<packageName></packageName>
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile></mSoundFile>
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>^(\w+) stops short as (the )?\w+ comes upon (\w+)'s rebounding aura and deftly pulls away.$</string>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>1</integer>
@@ -33299,10 +33295,10 @@ end</script>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>prismatic barrier</name>
-								<script>
+								<script>-- Turned off for now while we try just ignoring these people.
 if snd.gui.enabled then 
-deleteLine()
-snd.message(matches[2].."has a prismatic barrier!")
+--deleteLine()
+--snd.message(matches[2].."has a prismatic barrier!")
 end
 
 if matches[2] == snd.target then
@@ -33342,10 +33338,8 @@ disableTrigger("prismatic barrier")</script>
 								<regexCodeList>
 									<string>^Your attack is repelled by the prismatic barrier surrounding (\w+)\.$</string>
 									<string>^(\w+) strums a few notes on an Iosai lyre, and a prismatic barrier forms around (the )?\w+\.$</string>
-									<string>^Your attack is repelled by the magical aegis protecting (\w+).$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
-									<integer>1</integer>
 									<integer>1</integer>
 									<integer>1</integer>
 								</regexCodePropertyList>
@@ -33443,8 +33437,10 @@ end</script>
 									<string>^\(Tells\): Wafting pleasantly like the sea breeze, (\w+)'s voice reaches you, "(.+)(.|\!|\?)"</string>
 									<string>^\(Tells\): With a lilting, nearly singsong voice, (\w+) tells you, "(.+)(.|\!|\?)"</string>
 									<string>^\(Tells\): Pitched to be heard over the waves and wind, (\w+) tells you, "(.+)(.|\!|\?)"</string>
+									<string>^\(Tells\): Breezy, harmonic voices echo (\w+)'s words as the Yeleni tells you, "(.+)(.|\!|\?)"</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>1</integer>
 									<integer>1</integer>
 									<integer>1</integer>
 									<integer>1</integer>
@@ -33543,6 +33539,51 @@ end</script>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>^\(Tells\): "(.+)(.|\!|\?)" (\w+) tells you.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Aegis1</name>
+								<script>-- Turned off for now while we try just ignoring these people.
+if snd.gui.enabled then 
+--deleteLine()
+--snd.message(matches[2].."has a prismatic barrier!")
+end
+
+if matches[2] == snd.target then
+ if snd.class == "Shaman" then
+  snd.send("qeb commune leafstorm "..matches[2])
+ elseif snd.class == "Luminary" then
+  snd.send("qeb perform force "..matches[2].." kick "..gmcp.Char.Status.name)
+ elseif snd.class == "Earthcaller" then
+  snd.send("qeb dirge ordain "..matches[2].." kick "..gmcp.Char.Status.name)
+ elseif hasSkill("HourglassTattoo") then
+ 	snd.send("qeb touch hourglass "..matches[2]) 
+ elseif snd.class == "Templar" then
+ 	snd.send("qeb aura withering "..matches[2])
+elseif snd.class == "Revenant" then
+ 	snd.send("qeb phantasm parasite "..matches[2])
+else
+  snd.send("wt "..matches[2].." has aegis up!")
+  snd.get_new_target()
+ end
+end
+tempTimer(3, [[enableTrigger("Aegis1")]])
+disableTrigger("Aegis1")</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^Your attack is repelled by the magical aegis protecting (\w+).$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
@@ -34157,7 +34198,7 @@ end</script>
 								</regexCodePropertyList>
 							</Trigger>
 						</TriggerGroup>
-						<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Shrines</name>
 							<script></script>
 							<triggerType>0</triggerType>
@@ -35646,6 +35687,28 @@ setTriggerStayOpen ("Goggle seek", 0)</script>
 								</regexCodePropertyList>
 							</Trigger>
 						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Call revives</name>
+							<script>send("wt Lifesense: "..matches[2].." is alive")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>^You sense that (\w+) has risen once more.$</string>
+								<string>^You sense that (\w+) has been resurrected.$</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+								<integer>1</integer>
+							</regexCodePropertyList>
+						</Trigger>
 					</TriggerGroup>
 					<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>generic triggers</name>
@@ -36347,7 +36410,7 @@ end</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>net</name>
 							<script>if snd.toggles.questing then
-	snd.send("give net to jinjin")
+  snd.send("give net to jinjin")
 end</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -38230,6 +38293,56 @@ end</script>
 							</regexCodePropertyList>
 						</Trigger>
 					</TriggerGroup>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Meteorite Info here</name>
+						<script>send("qeb take "..matches[2])</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^"meteorite(\d+)"\s+(.+)$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Meteorites room trigger</name>
+						<script>send("info here")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^The burnished surface of this .* meteorite has been dirtied somewhat upon impact.$</string>
+							<string>An unremarkably dull meteorite</string>
+							<string>An icy blue</string>
+							<string>Sunk into the ground</string>
+							<string>Dirtied upon impact</string>
+							<string>meteorites</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+							<integer>0</integer>
+							<integer>0</integer>
+							<integer>0</integer>
+							<integer>0</integer>
+							<integer>0</integer>
+						</regexCodePropertyList>
+					</Trigger>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Utilities</name>
@@ -38743,8 +38856,8 @@ end</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>^The surface of a compass-inlaid ilmenite bracer ripples, briefly revealing the visage of (.*).$</string>
-							<string> ^A .* eye tinges red as it reveals (\w+) trying to locate you.$</string>
-							<string>^A mirror\-polished venantium eye tinges red as it reveals (\w+) trying to locate you.$</string>
+							<string>^A mirror\-polished venantium eye tinges red as it reveals (.*) trying to locate you.$</string>
+							<string>^A pair of multi-lensed venantium glasses tinges red as it reveals (.*) trying to locate you.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -38953,13 +39066,13 @@ local linestrength = matches[2]
 local fishstrength = matches[3]
 local distance = matches[4]
 
-if tonumber(fishstrength) &gt;= 25 and tonumber(linestrength) &lt;= 15 then
-  send("qeb fishing lead", false)
-elseif tonumber(linestrength) &gt;= 90 and tonumber(distance) &gt;= 10 then
+if tonumber(linestrength) &gt; 95 and tonumber(distance) &gt; 10 then
   send("qeb fishing cut", false)
-elseif tonumber(linestrength) &gt;= 7 and tonumber(distance) &gt;= 0 then
-  send("qeb fishing reel", false)
-elseif tonumber(linestrength) &lt;= 100 then
+elseif tonumber(linestrength) &gt; 90 and tonumber(distance) &gt; 30 then
+  send("qeb fishing cut", false)
+elseif tonumber(fishstrength) &gt; 25 then
+  send("qeb fishing lead", false)
+elseif tonumber(linestrength) &lt; 100 then
   send("qeb fishing reel", false)
 
 end
@@ -39427,7 +39540,8 @@ snd.message("\nYou lost a fish. Getting ready to cast again.")</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Delete fish line</name>
-						<script>deleteFull()</script>
+						<script>deleteFull()
+--^You scan the water with your enhanced vision, revealing (.+) on your line!$</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -39439,10 +39553,10 @@ snd.message("\nYou lost a fish. Getting ready to cast again.")</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^You scan the water with your enhanced vision, revealing (.+) on your line!$</string>
 							<string>^With a mighty heave, you lift (.+) out of the water.$</string>
 							<string>^At (.+), (.+), this falls below your heaviest catch of (.+) at this hole by (.+).$</string>
 							<string>^At (.+), this falls below your heaviest catch of (.+) at this hole by (.+).$</string>
+							<string>^You scan the water with your enhanced vision, revealing (.+) on your line!$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>

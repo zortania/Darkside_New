@@ -1395,6 +1395,7 @@ if snd.toggles.vermin then
   bot.going = false
   disableTimer("moveroom")
   cecho("&lt;red&gt;----------------\n   &lt;red&gt;VERMIN OFF\n&lt;red&gt;----------------")
+  snd.send("vermin")
 else
   snd.toggles.vermin = true
   if snd.city == "Spinesreach" then
@@ -7005,12 +7006,45 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Aff support</name>
 									<script>if snd.class == "Shaman" then
-  snd.giving = {"clumsiness", "asthma", "slickness", "anorexia", "stupidity", "weariness", "allergies", "vomiting", "haemophilia", "sensitivity", "recklessness", "dizziness"}
-  snd.giving_prem = {"fear", "agoraphobia", "claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition"}
-  snd.starting_attack()
+  snd.giving = {
 
+  "clumsiness",
+  "asthma",
+  "slickness",
+  "anorexia",
+  "stupidity",
+  "weariness",
+  "allergies",
+  "vomiting",
+  "haemophilia",
+  "sensitivity",
+  "recklessness",
+  "dizziness",
+  }
+  
+  snd.giving_prem = {
+
+  "fear",
+  "agoraphobia",
+  "claustrophobia",
+  "vertigo",
+  "loneliness",
+  "shyness",
+  "paranoia",
+  "superstition",
+  
+  }
+  
+
+snd.starting_attack()
 function snd.attack_function()
-  local mentcount = snd.aff_count_mental()
+
+      local mentcount = 0 
+      for aff in pairs(snd.mental_affs) do
+          if table.contains(snd.target_has, snd.mental_affs[aff]) then
+              mentcount = mentcount + 1
+          end
+      end
 
   call = ""
   string =""
@@ -7034,43 +7068,51 @@ function snd.attack_function()
       end
     end
   
-    if snd.shamanpet ~= "wyvern" and snd.balance.morph then
-      string = "familiar morph wyvern"..snd.sep.."order familiar follow me"..snd.sep
+    if snd.shamanpet ~= "serpent" and snd.balance.morph then
+      string = "familiar morph serpent"..snd.sep.."order familiar follow me"..snd.sep
+    else
+      string = ""
     end
     
     if not snd.fetishattuned then
       string = string..snd.sep.."fetish attune "..snd.target..snd.sep 
+    else
+      string = ""
     end
     
     if not snd.loyalsattacking then
       string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
+    else
+      string = ""
     end
   
     if snd.used.shield then
       string = string.."commune leafstorm "..snd.target
     elseif theyran then
-      string = string.."nature pull "..snd.target
-    elseif mentcount &lt; 3 then
-      if tonumber(gmcp.Char.Vitals.energy) &gt; 2 then
-        echo("\nYou have not reached 3 mental affs")
-        if not snd.checkAff("impatience") or not snd.checkAff("confusion") then
-          string = string.."commune sporulation "..snd.target
-        elseif not snd.checkAff("stupidity") then
-          string = string.."commune overload "..snd.target
-        else
-          string = string.."commune staticburst "..snd.target
+      string = string.."nature pull "..snd.target    
+    elseif tonumber(gmcp.Char.Vitals.energy) &lt; 3 then
+      string = string.."commune vinelash "..snd.target.." "..venom
+    else
+      if mentcount &gt; 3 then
+        string = string.."shaman divulgence "..snd.target.." "..prem
+        call = "wt Afflicting "..snd.target..": "..prem..snd.sep
+      else
+        if tonumber(gmcp.Char.Vitals.energy) &gt; 2 then
+          if not (snd.checkAff("impatience") or snd.checkAff("confusion")) then
+            string = string.."commune sporulation "..snd.target
+          elseif not snd.checkAff("stupidity") then
+            string = string.."commune overload "..snd.target
+          else
+            string = string.."commune staticburst "..snd.target
+          end
         end
       end
-    elseif mentcount &gt;= 3 then
-      echo("\nYou have reached 3 mental affs")
-      string = string.."shaman divulgence "..snd.target.." "..prem
-      call = "wt Afflicting "..snd.target..": "..prem..snd.sep
-    else
-      string = string.."commune vinelash "..snd.target.." "..venom
     end
-
-  string = call..string
-
+    
+    cecho("\n&lt;yellow&gt;You have reached "..mentcount.." mental affs")
+	
+	string = call..string
+	
   if string ~= snd.last_attack and not snd.waiting.queue then
    snd.last_attack = string
    snd.attack(snd.last_attack)
@@ -10346,7 +10388,7 @@ end
 </script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^legz$</regex>
+									<regex>^legs$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>
