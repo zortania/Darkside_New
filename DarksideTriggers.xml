@@ -96,8 +96,8 @@ if snd.bashing_loaded or snd.toggles.fastwalk then
       level = tonumber(x)
       if level &lt; 90 then
         area = "the Shattered Vortex (Low Level)"
-      elseif gmcp.Char.Status.name == "Rihrin" then
-        area = "the Shattered Vortex (All)"
+      --elseif gmcp.Char.Status.name == "Rihrin" then
+       -- area = "the Shattered Vortex (All)"
       elseif snd.faction == "spirit" then
         area = "the Shattered Vortex (Spirit)"
       elseif snd.faction == "shadow" then
@@ -276,7 +276,14 @@ else
   end
 end
 
---snd.bashstatusdisplayfunc()</script>
+--snd.bashstatusdisplayfunc()
+
+if not snd.can_legs() and not snd.elevating then
+  snd.send("firstaid elevate left_leg_broken")
+  snd.send("firstaid elevate right_leg_broken")
+  snd.elevating = true
+  tempTimer(2,[[snd.elevating = false]])
+end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>1</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -6049,7 +6056,7 @@ end</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>Not correct essence</name>
 								<script>if snd.defenses.def_linked.state ~= "deffed" then
-  snd.send("contemplate yi##contemplate jherza##contemplate jhako")
+  snd.send("contemplate yi"..snd.sep.."contemplate jherza"..snd.sep.."contemplate jhako")
 elseif snd.defenses.def_oneness.state ~= "deffed" then
   snd.send("contemplate yuef")
 end</script>
@@ -7822,8 +7829,13 @@ cecho("\n&lt;white&gt;You have been hit by Loki.")</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>sluggish</name>
 								<script>cecho("\n&lt;white&gt;You have have Aeon.")
-snd.send("firstaid predict aeon")
-snd.send("firstaid elevate aeon")</script>
+
+if not snd.elevating then
+  snd.send("firstaid predict aeon")
+  snd.send("firstaid elevate aeon")
+  snd.elevating = true
+  tempTimer(2,[[snd.elevating = false]])
+end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -8001,7 +8013,7 @@ send("FIRSTAID PRIORITY PRESTORE torso 5% 4")</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>No longer stunned</name>
 									<script>if snd.have_aff("stun") then snd.aff_remove("stun") end
-snd.send("qeb stand##diag")
+snd.send("qeb stand"..snd.sep.."diag")
 snd.healretry = false
 if not snd.have_aff("blackout") then
 	if gmcp.Char.Vitals.herb == "1" then snd.herbalance = true else snd.herbalance = false end
@@ -9260,7 +9272,11 @@ end</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>Allergies gonna die in 15</name>
 								<script>snd.aff_gain("allergies")
-snd.send("firstaid elevate allergies")</script>
+if not snd.elevating then
+  snd.send("firstaid elevate allergies")
+  snd.elevating = true
+  tempTimer(2,[[snd.elevating = false]])
+end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -9285,7 +9301,8 @@ snd.send("firstaid elevate allergies")</script>
 								<script>snd.unknownquantity = 0
 snd.aff_remove("unknown")
 snd.diag_sent = true
-tempTimer(1, [[snd.diag_sent = false]])</script>
+tempTimer(1, [[snd.diag_sent = false]])
+snd.prestore = true</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -9298,9 +9315,11 @@ tempTimer(1, [[snd.diag_sent = false]])</script>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>First Aid will now utilize pre-restoration.</string>
+									<string>^First Aid will now utilize pre-restoration.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>3</integer>
+									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -11740,7 +11759,6 @@ if snd.have_aff("anorexia") then
 	snd.aff_cure("anorexia") 
 end
 snd.healretry = false
-deleteLine()
 if snd.have_aff("stun") then snd.aff_remove("stun") end
 snd.lastsip = "health"
 local healthsip = tonumber(gmcp.Char.Vitals.maxhp) * .13
@@ -12610,8 +12628,8 @@ if gmcp.Room.Info.area == "the Shattered Vortex" then
   level = tonumber(x)
   if level &lt; 90 then
     area = "the Shattered Vortex (Low Level)"
-  elseif gmcp.Char.Status.name == "Rihrin" then
-    area = "the Shattered Vortex (All)"
+  --elseif gmcp.Char.Status.name == "Rihrin" then
+   -- area = "the Shattered Vortex (All)"
   elseif snd.faction == "spirit" then
     area = "the Shattered Vortex (Spirit)"
   elseif snd.faction == "shadow" then
@@ -13107,10 +13125,10 @@ snd.toggles.bashing = true</script>
 						<name>resummon</name>
 						<script>if snd.toggles.bashing or snd.toggles.fasthunt then
   if snd.elementalcount &lt; 50 then
-    snd.set_queue("summon elemental##qeb kill elemental")
+    snd.set_queue("summon elemental"..snd.sep.."qeb kill elemental")
     snd.elementalcount = snd.elementalcount + 1
   else
-    snd.set_queue("summon elemental##qeb sacrifice corpses##kill elemental")
+    snd.set_queue("summon elemental"..snd.sep.."qeb sacrifice corpses"..snd.sep.."kill elemental")
   end
 end</script>
 						<triggerType>0</triggerType>
@@ -13562,7 +13580,7 @@ expandAlias("mnt")</script>
 					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Redrain</name>
 						<script>if snd.toggles.bashing or snd.toggles.fasthunt then
-  snd.set_queue("drain globe##summon elemental##qeb kill elemental")
+  snd.set_queue("drain globe"..snd.sep.."summon elemental"..snd.sep.."qeb kill elemental")
   snd.localcount = snd.localcount+1
   if snd.localcount &gt; 3 then
     disableTrigger("Redrain")
@@ -13823,6 +13841,7 @@ end</script>
 								<string> ^A .* eye tinges red as it reveals (\w+) trying to locate you.$</string>
 								<string> ^A .* venantium eye tinges red as it reveals (\w+) trying to locate you.$</string>
 								<string>(Leaders): </string>
+								<string>(Builders):</string>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>1</integer>
@@ -13849,6 +13868,7 @@ end</script>
 								<integer>1</integer>
 								<integer>1</integer>
 								<integer>1</integer>
+								<integer>2</integer>
 								<integer>2</integer>
 							</regexCodePropertyList>
 						</Trigger>
@@ -15622,8 +15642,6 @@ end</script>
   if snd.checkAff("no_speed") then -- Assume they sip speed over sipping health, remove speed after the lowest delay (averages between: 4.5-5 seconds)
     tempTimer(4.5, [[snd.target_cured("no_speed")]])
   end
-elseif snd.toggles.nontargetgags and snd.gui.enabled then
-  deleteFull()
 end</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -15686,14 +15704,14 @@ end</script>
 							<name>aff called</name>
 							<script>if matches[3]:lower() == snd.target:lower() then
   snd.maybe_affs = {}
-  for aff in string.gmatch(matches[4]:lower(), '([^. ]+)', '([^, ]+)') do
+  for aff in string.gmatch(matches[4]:lower(), '([^, ]+)') do
     table.insert(snd.maybe_affs, aff)
   end
-  display(thing)
-  display(snd.maybe_affs)
   snd.hitting = matches[2]
   snd.who_called_affs = matches[2]
-end</script>
+end
+
+</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>50</mStayOpen>
@@ -17343,7 +17361,7 @@ end</script>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
-								<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Syssin Hit Confirmation</name>
 									<script></script>
 									<triggerType>0</triggerType>
@@ -26050,7 +26068,7 @@ end</script>
 										</regexCodePropertyList>
 									</Trigger>
 								</Trigger>
-								<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Heelrush</name>
 									<script></script>
 									<triggerType>0</triggerType>
@@ -33622,7 +33640,7 @@ rainbow(matches[1])</script>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>^You have scored a .* hit!$</string>
-									<string>^You have scored an .* hit!$</string>
+									<string>^You have scored an ANNIHILATING CRITICAL hit!!!$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
@@ -36519,7 +36537,7 @@ end</script>
 						</Trigger>
 						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Widows</name>
-							<script>send("take net##take rock##take packet##take hay##take pickaxe##take ore")</script>
+							<script>send("take net"..snd.sep.."take rock"..snd.sep.."take packet"..snd.sep.."take hay"..snd.sep.."take pickaxe"..snd.sep.."take ore")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -37861,7 +37879,7 @@ end</script>
 		send("say I heard you have a new weaving book")
 		book1 = 1
 	elseif book1 == 2 then
-		send("put carving in gate##w")
+		send("put carving in gate"..snd.sep.."w")
 		book1 = 3
 	end
 end</script>
@@ -38858,8 +38876,16 @@ end</script>
 							<string>^The surface of a compass-inlaid ilmenite bracer ripples, briefly revealing the visage of (.*).$</string>
 							<string>^A mirror\-polished venantium eye tinges red as it reveals (.*) trying to locate you.$</string>
 							<string>^A pair of multi-lensed venantium glasses tinges red as it reveals (.*) trying to locate you.$</string>
+							<string>^The surface of a compass-inlaid ilmenite bracer ripples, briefly revealing the visage of (.*).$</string>
+							<string> ^A .* eye tinges red as it reveals (.*) trying to locate you.$</string>
+							<string> ^A .* venantium eye tinges red as it reveals (.*) trying to locate you.$</string>
+							<string>^A sprawling venantium cuff  tinges red as it reveals (.*) trying to locate you.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
+							<integer>1</integer>
+							<integer>1</integer>
+							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
@@ -40140,7 +40166,7 @@ snd.set_queue("qeb push statue")</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Mine 2</name>
-						<script>snd.send("qeb take 50 ore##take 50 coal")</script>
+						<script>snd.send("qeb take 50 ore"..snd.sep.."take 50 coal")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
