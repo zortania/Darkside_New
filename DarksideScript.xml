@@ -3083,6 +3083,7 @@ aff_torso_ravaged = {state = "healed", effect = "not sure it's actually used sin
 aff_tree_seared = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_trick_flame = {state = "healed", effect = "doubles ablaze stacks, easier re-application of stacks", cures = {}, assess = false, timer = createStopWatch()},
 aff_troubled_breathing = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_unknown = {state = "healed", effect = "unknown aff", cures = {}, assess = false, timer = createStopWatch()},
 aff_vertigo = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_vinethorns = {state = "healed", effect = "", cures = {special = "pull thorn from body"}, assess = false, timer = createStopWatch()},
 aff_vitalbane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3276,10 +3277,10 @@ function snd.aff_remove(affliction)
  if not string.find(affliction, "aff_") then
   affliction = "aff_"..affliction
  end
- --if snd.afflictions[affliction].cures.writhe ~= nil then
- --   snd.status.writhing = false
- --end
- --snd.afflictions[affliction].state = "healed"
+ if snd.afflictions[affliction].cures.writhe ~= nil then
+    --snd.status.writhing = false
+ end
+ snd.afflictions[affliction].state = "healed"
  if snd.gui.enabled then 
   display_my_affs()
   color_self_limbs()
@@ -18537,6 +18538,7 @@ snd.class_list = {
 {class = "Carnifex", func = function(current) snd.carnifex_bash() end},
 {class = "Revenant", func = function(current) snd.revenant_bash() end},
 {class = "Warden", func = function(current) snd.warden_bash() end},
+{class = "None", func = function(current) snd.astral_bash() end},
 }
 
 function snd.shield_check()
@@ -19414,6 +19416,52 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
         battack = "cast fever " ..snd.bashing.target..snd.sep.."absorb ylem"
       end
     end
+ 	end
+end
+
+function snd.astral_bash()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  if snd.reflection_charge == 3 then
+    snd.reflected = false
+  end
+
+  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if mp &gt;= 50 then
+      if snd.shield_check() then
+        battack = "clot 500"..snd.sep.."touch shield"
+      else
+        battack = "clot 500"
+      end
+    end
+	elseif snd.counterattack_active or snd.have_aff("blackout") then
+    if gmcp.Char.Status.name == "Rihrin" then
+		  if snd.punisher then
+        if snd.reflection_charge &gt; 0 and not snd.reflected then
+			     battack = "point wand at me"
+        else
+          if snd.balance.barrier and not snd.liarstrummed then
+            battack = "strum lyre"
+            snd.liarstrummed = true
+            tempTimer(1.5,[[snd.liarstrummed = false]])
+          else
+            battack = "jig"
+          end
+        end
+      else
+        battack = "touch shield"
+      end
+    else
+      if snd.punisher then
+        battack = "jig"
+      else
+        battack = "touch shield"
+      end
+    end
+	elseif snd.pushattack then
+		battack = "push "..snd.bashing.target
+		snd.pushattack = false
+	else
+  	battack = "astral evert "..snd.bashing.target
  	end
 end</script>
 						<eventHandlerList />
@@ -24378,7 +24426,7 @@ end</script>
 			send("clot 60")
 			snd.percentestmana = snd.percentestmana - 240
 		elseif (snd.count(snd.people_hitting_me)) &lt; 2 and not (snd.class_hitting == "luminary" or snd.class_hitting == "praenomen" or snd.class_hitting == "earthcaller") then
-			if tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 and tonumber(snd.percenesttmana) &gt; 30 then 
+			if tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 and tonumber((snd.percentestmana/100)) &gt; 30 then 
 				send("clot 120")
 				snd.percentestmana = snd.percentestmana - 480
 			end
@@ -24593,7 +24641,6 @@ end
 						<script>snd.def_options = {
 
 none = {
-
 def_astral_refulgence = "on",
 def_astral_presence = "on",
 def_astral_chaosspores = "on",
@@ -24623,6 +24670,14 @@ def_blindness = "on",
 def_waterbreathing = "on",
 --def_vigor = "on",
 
+},
+
+astral = {
+def_astral_refulgence = "on",
+def_astral_presence = "on",
+def_astral_chaosspores = "on",
+def_astral_dreamtide = "on",
+def_astral_recursion = "on",
 },
 
 templar = {
@@ -25186,6 +25241,7 @@ snd.glimpse = "none"
 snd.gorged = ""
 snd.glimpsing = false
 snd.reflection_charge = 3
+snd.flamewreathed = {limb = "", resonance = ""}
 
 --Teradrim
 templimbscourge = "none"
@@ -25200,7 +25256,9 @@ snd.runeused = false
   
 --Astral
 snd.glory = 0
-
+snd.hamartia_used = false
+snd.huntresses_used = false
+snd.unmasked = false
 
 snd.callers = {}
 snd.defended = false
@@ -26305,6 +26363,9 @@ snd.locking = false
  snd.my_premonition = false
  snd.their_premonition = false
  snd.loyalsattacking = false
+ snd.glory = 0
+ snd.unmasked = false
+ snd.flamewreathed = {limb = "", resonance = ""}
  
  if snd.gui.enabled then 
     color_enemy_affs()
@@ -29047,16 +29108,9 @@ snd.all_class_attacks = {
    },
   
   ["Astral"] = {
-    Eversion = function(target)
-      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-        snd.target_got("slickness")
-        snd.target_got("disfigurement")
-      else
-        snd.target_got("magic_weakness")
-        snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
-      end
+    Huntresses = function(target)
+      snd.huntresses_used = true
+      tempTimer(90, [[snd.huntresses_used = false]])
     end,
     Contaminate = function(target)
       enableTrigger("Astral Contaminate")
@@ -29066,13 +29120,37 @@ snd.all_class_attacks = {
       end
     end,
     Hamartia = function(target, shield)
+      snd.hamartia_used = true
       if shield then
         snd.used.shield = false
       end
       if #snd.maybe_affs &gt;= 1 then
         snd.onHit2({})
       end
+    end,    
+    Unmask = function(target)
+      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+        snd.target_got("slickness")
+        snd.target_got("disfigurement")
+        snd.unmasked = true
+        tempTimer(25, [[snd.unmasked = false]])
+        snd.glory = snd.glory - 1
+      else
+        snd.target_got("magic_weakness")
+        snd.target_got("fire_weakness")
+        tempTimer(30, [[snd.target_cured("magic_weakness")]])
+        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.glory = snd.glory - 1
+      end
+    end,    
+    Devour = function(target)
+      snd.glory = snd.glory - 2
+      snd.hamartia_used = false
+    end,  
+    Crescent = function(target)
+      snd.glory = snd.glory - 3
     end,
+    
    },
   
   
@@ -29691,7 +29769,6 @@ end</script>
 "Nispy",
 "Qem",
 "Glach",
-"Zima",
 "Feichin",
 "Callidora",
 "Pargu",
@@ -29712,10 +29789,13 @@ end</script>
 "Elene",
 "Taelyndara",
 "Orhm",
+"Tiana",
+"Asaraii",
 "Asanna",
 "Mathus",
 "Herus",
 "Xolotl",
+"Zethrie",
 "Ervyn",
 "Sarelle",
 "Sfazo",
@@ -29921,6 +30001,8 @@ end</script>
 "Nixia",
 "Taja",
 "Kirill",
+"Aloree",
+"Paxe",
 "Zyphen",
 "Sohma",
 "Sarisa",
@@ -30338,6 +30420,7 @@ end</script>
 "Kagura",
 "Tryss",
 "Rou",
+"Zaephlyn",
 "Graffeon",
 "Zubayr",
 "Gub",
@@ -30500,6 +30583,7 @@ end</script>
 "Kerryn",
 "Corrina",
 "Tucker",
+"Zima",
 "Xashire",
 "Amarylis",
 "Klegane",
@@ -30514,6 +30598,8 @@ end</script>
 "Dref",
 "Seji",
 "Cole",
+"Xon",
+"Devin",
 "Colt",
 "Jaqul",
 "Kidos",
@@ -30564,7 +30650,6 @@ end</script>
 "Caitria",
 "Elliana",
 "Aban",
-"Zethrie",
 "Missari",
 "Haley",
 "Bayla",
@@ -30827,7 +30912,7 @@ end</script>
 "Vaerenth",
 "Naerthan",
 "Zoglin",
-"Jezreth",
+"Jezriel",
 "Alisa",
 "Ecikoria",
 "Anai",
@@ -31129,6 +31214,8 @@ end</script>
 "Church",
 "Daskalos",
 "Demarcus",
+"Ardaun",
+"Anyeria",
 "Mucka",
 "Vahn",
 "Kolyn",

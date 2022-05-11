@@ -1788,6 +1788,22 @@ elseif snd.class == "Oneiromancer" then
 	else
     snd.send("impel athame at "..snd.target)
 	end
+elseif snd.class == "None" then
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+	if (hp &lt;= 60 or snd.have_aff("blackout")) and snd.shield_check() then
+  	snd.send("touch shield")
+  elseif snd.counterattack_active then
+			if snd.punisher then
+        snd.send("jig")
+      else
+        snd.send("touch shield")
+      end
+	elseif snd.pushattack then
+		snd.send("push "..snd.target)
+		snd.pushattack = false
+	else
+    snd.send("qeb astral evert "..snd.target)
+  end
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -15402,39 +15418,65 @@ end</script>
 						<Alias isActive="yes" isFolder="no">
 							<name>PvP</name>
 							<script>if snd.class == "None" then
-snd.starting_attack()
-function snd.attack_function()
+  snd.starting_attack()
+  function snd.attack_function()
     if not snd.waiting.queue then
 
- 
-      local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-      local physcount = 0
-      for aff in pairs(snd.physical_affs) do
-          if table.contains(snd.target_has, snd.physical_affs[aff]) then
-              physcount = physcount + 1
-          end
-      end
-      local mentcount = 0 
-      for aff in pairs(snd.mental_affs) do
-          if table.contains(snd.target_has, snd.mental_affs[aff]) then
-              mentcount = mentcount + 1
-          end
-      end
+    local prem = "none"
+    
+    snd.giving_prem = {
+    
+    "stupidity",
+    "anorexia",
+    "impatience",
+    "asthma",
+    "sensitivity",
+    "recklessness"
+		
+    }
 			
-      cecho("\n&lt;red&gt;"..physcount.." "..mentcount)
-      
-      if snd.used.shield then
-      	string = "astral hamartia "..snd.target.." shield"
-			elseif not snd.checksomeAffs({"asthma, weariness, clumsiness, vomiting"}, 4) then
-				string = "astral evert "..snd.target..snd.sep		
-			elseif not snd.checksomeAffs({"stupidity, anorexia, impatience, asthma, sensitivity, recklessness"}, 6) then
-				string = "astral hamartia "..snd.target..snd.sep		
-			end
-
-      if snd.toggles.affcalling and not snd.target_gone then
-          string = call..string
-					call = "wt Afflicting "..snd.target..": "..string
+    for i in pairs(snd.giving_prem) do
+      if not snd.checkAff(snd.giving_prem[i]) and prem == "none" then
+        prem = snd.giving_prem[i]
       end
+    end
+			
+      
+      if snd.used.shield and not snd.hamartia_used then
+      	string = "astral hamartia "..snd.target.." shield"
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+      elseif not snd.huntresses_used then
+        string = "astral huntresses "..snd.target
+        snd.huntresses_used = true
+        tempTimer(90, [[snd.huntresses_used = false]])
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+      elseif snd.glory &gt;= 2 and not snd.unmasked then
+        string = "astral unmask "..snd.target
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+      elseif snd.glory &gt;= 3 then
+        string = "astral crescent "..snd.target
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+			elseif not snd.checksomeAffs({"stupidity", "anorexia", "impatience", "asthma", "sensitivity", "recklessness"}, 6) and not snd.hamartia_used then
+				string = "astral hamartia "..snd.target.." "..prem
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+      elseif not snd.checksomeAffs({"asthma", "weariness", "clumsiness", "vomiting"}, 4) then
+				string = "astral evert "..snd.target	
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+			elseif not snd.checksomeAffs({"stupidity", "anorexia", "impatience", "confusion", "dementia", "recklessness"}, 6) then
+        string = "astral pyresce "..snd.target
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+			else
+        string = "astral contaminate "..snd.target	
+        cecho("\n"..snd.glory)
+        cecho("\n"..snd.glory)
+			end
 
       if string ~= snd.last_attack and not snd.waiting.queue then
           snd.last_attack = string
@@ -17231,7 +17273,7 @@ end</script>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
 						<name>Rihrin Path</name>
-						<script>expandAlias("bashpath illdon, tiyen, spiral, nal'jin, xaanhal, forgotten dome, a basilisk lair, clawhook range, bakal chasm, dovan, dramedo, depths, ia'shal, maul")</script>
+						<script>expandAlias("bashpath illdon, tiyen, xaanhal, forgotten dome, a basilisk lair, dovan, maul")</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^bash1$</regex>
@@ -17323,6 +17365,17 @@ aatlas.default()</script>
 				</Alias>
 			</AliasGroup>
 		</AliasGroup>
+		<Alias isActive="yes" isFolder="no">
+			<name>Astral Defs</name>
+			<script>expandAlias("kd def_astral_refulgence")
+expandAlias("kd astral_presence")
+expandAlias("kd astral_chaosspores")
+expandAlias("kd astral_dreamtide")
+expandAlias("kd astral_recursion")</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^astral$</regex>
+		</Alias>
 	</AliasPackage>
 	<ActionPackage />
 	<ScriptPackage />
