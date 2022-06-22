@@ -1094,11 +1094,7 @@ end</script>
   end	
 	snd.are_we_checking_ql = false
 	people_update()
-end
-
-
-
-</script>
+end</script>
 							<eventHandlerList>
 								<string>gmcp.Room.Players</string>
 							</eventHandlerList>
@@ -1125,12 +1121,11 @@ end
 							<name>gmcp_people_add</name>
 							<packageName></packageName>
 							<script>function gmcp_people_add()
- 
-local newPlayers = gmcp.Room.AddPlayer.name
-    if not table.contains(snd.players_here, newPlayers) then
-        table.insert(snd.players_here, newPlayers)
-				people_update()
-    end
+  local newPlayers = gmcp.Room.AddPlayer.name
+  if not table.contains(snd.players_here, newPlayers) then
+    table.insert(snd.players_here, newPlayers)
+    people_update()
+  end
 end</script>
 							<eventHandlerList>
 								<string>gmcp.Room.AddPlayer</string>
@@ -1142,31 +1137,32 @@ end</script>
 							<script>people_update = function()
 	spirit_people:clear()
 	shadow_people:clear()
-
+  snd.shadow_targets = {}
+  snd.spirit_targets = {}
 	local spiritpeoplehere = {}
 	for name, val in pairs(snd.players_here) do
 		if val and (table.isMember(snd.spirit, val) or table.isMember(snd.randomspirit, val)) then 
 			table.insert(spiritpeoplehere, val) 
 		end
-	end
-	
+	end	
 	local shadowpeoplehere = {}
 	for name, val in pairs(snd.players_here) do
 		if val and (table.isMember(snd.shadow, val) or table.isMember(snd.randomshadow, val)) then
 			table.insert(shadowpeoplehere, val) 
 		end
-	end
-	
+	end	
 	if #spiritpeoplehere &gt;= 1 then
-	 spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
-	 snd.spirit_targets = spiritpeoplehere
-  end
-	
+    if snd.gui.enabled then
+	     spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+    end
+	  snd.spirit_targets = spiritpeoplehere
+  end	
 	if #shadowpeoplehere &gt;= 1 then
-	 shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
-	 snd.shadow_targets = shadowpeoplehere
-  end
-	
+    if snd.gui.enabled then
+	     shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+    end
+	  snd.shadow_targets = shadowpeoplehere
+  end	
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -1644,25 +1640,17 @@ function snd.can_firstaid()
 end 
 
 function snd.self_prone()
- local prone = false
- local proneaffs = {
-  "frozen",
-  "indifference",
-  "paralysis",
-  "writhe_transfix",
-  "writhe_web",
-  "writhe_feed",
-  "writhe_impaled",
-  "writhe_thighlock",
-  "writhe_armpitlock",
-  "writhe_necklock",
-  "writhe_ropes",
-  "writhe_vines",
-  "fallen",
-  "asleep",
- }
- if snd.self_checksomeAffs(proneaffs, 1) then prone = true end
- return prone
+
+  if not snd.have_aff("frozen") or snd.have_aff("indifference") or snd.have_aff("paralysis") or 
+      snd.have_aff("writhe_transfix") or snd.have_aff("writhe_web") or snd.have_aff("writhe_feed") or 
+      snd.have_aff("writhe_impaled") or snd.have_aff("writhe_thighlock") or snd.have_aff("writhe_armpitlock") or 
+      snd.have_aff("writhe_necklock") or snd.have_aff("writhe_ropes") or snd.have_aff("writhe_vines") or 
+      snd.have_aff("fallen") or snd.have_aff("asleep") then
+    return false
+  
+  else
+    return true
+  end
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -2587,29 +2575,33 @@ function snd.do_queue()
         --  end
         -- end
       --end
-   if snd.defenses_loaded and snd.toggles.defenses then
-   for k in pairs(snd.defenses) do
-    if snd.defenses[k].state == "down" and snd.defenses[k].needit then
-			if k == "def_vitality" then
-				if snd.balance.vitality then
-					table.insert(snd.queue, k)
-				end
-			elseif (k == "def_shroud" or k == "def_ghost" or k == "def_hiding") then
-				if snd.defenses.def_phase.state ~= "deffed" then
-					table.insert(snd.queue, k)
-				end
-			elseif (k == "def_miasma" or k == "def_safeguard" or k == "def_warmth") then
-				if not (snd.defenses.def_miasma.state == "deffed" 
-				or snd.defenses.def_safeguard.state == "deffed" 
-				or snd.defenses.def_warmth.state == "deffed") then 
-					table.insert(snd.queue, k)
-				end      
-			else
-	    	table.insert(snd.queue, k)
-    	end
-		end
-   end
-  end
+    if snd.defenses_loaded and snd.toggles.defenses then
+      for k in pairs(snd.defenses) do
+        if snd.defenses[k].state == "down" and snd.defenses[k].needit then
+          if k == "def_vitality" then
+            if snd.balance.vitality then
+              table.insert(snd.queue, k)
+            end
+          elseif (k == "def_shroud" or k == "def_ghost" or k == "def_hiding") then
+            if snd.defenses.def_phase.state ~= "deffed" then
+              table.insert(snd.queue, k)
+            end
+          elseif (k == "def_miasma" or k == "def_safeguard" or k == "def_warmth") then
+            if
+              not (
+                snd.defenses.def_miasma.state == "deffed" or
+                snd.defenses.def_safeguard.state == "deffed" or
+                snd.defenses.def_warmth.state == "deffed"
+              )
+            then
+              table.insert(snd.queue, k)
+            end
+          else
+            table.insert(snd.queue, k)
+          end
+        end
+      end
+    end
    if snd.queued ~= nil then
     table.insert(snd.queue, "queue")
    end
@@ -2629,22 +2621,23 @@ function snd.do_queue()
         if snd.moving_to ~= "none" then
           table.insert(snd.queue, "moving")
         end
-  	    if snd.need_fitness then
-  	      table.insert(snd.queue, "fitness")
-  	    end
-  	   if (hasSkill("Purge") or hasSkill("Annul")) and (snd.class == "Carnifex" or snd.class == "Warden") and snd.aff_tally() &gt;= 3 then
-  	     table.insert(snd.queue, "purge")
-  	   end
+      if snd.toggles.active and snd.have_aff("asthma") and snd.have_aff("slickness") and gmcp.Char.Vitals.pipe == "1" then
+        snd.need_fitness = true
+        table.insert(snd.queue, "fitness")
+      end
+        if ((hasSkill("Purge") and snd.class == "Carnifex") or (hasSkill("Annul") and snd.class == "Warden")) and snd.purge_check() then
+          table.insert(snd.queue, "purge")
+        end
         if snd.rage_check() then
           table.insert(snd.queue, "rage")
         end
         if snd.need_aegis then
   	      table.insert(snd.queue, "aegis")
   	    end
-  	    if hasSkill("Panacea") and snd.class == "Shaman" and snd.aff_tally() &gt;= 3 then
+  	    if hasSkill("Panacea") and snd.class == "Shaman" and snd.panacea_check() then
   	      table.insert(snd.queue, "panacea")
   	    end
-  	    if hasSkill("Purify") and snd.class == "Praenomen" and snd.aff_tally() &gt;= 3 then
+  	    if hasSkill("Purify") and snd.class == "Praenomen" and snd.purify_check() then
   	      table.insert(snd.queue, "purify")
   	    end
         if hasSkill("Scour") and snd.class == "Teradrim" and snd.have_aff("slickness") then
@@ -2799,7 +2792,7 @@ aff_allergies = {state = "healed", effect = "", cures = {herb = "ginseng", tree 
 aff_amplify_asphyxiation = {state = "healed", effect = "more dmg from asphyx source per stack", cures = {}, assess = false, timer = createStopWatch()},
 aff_amplify_blunt = {state = "healed", effect = "more dmg from blunt source per stack", cures = {}, assess = false, timer = createStopWatch()},
 aff_amplify_cold = {state = "healed", effect = "more dmg from cold source per stack", cures = {}, assess = false, timer = createStopWatch()},
-aff_amplify_cutting = {state = "healed", effect = "more dmg from cutting source per stack", cures = {}, assess = false, timer = createStopWatch()},
+aff_amplify_cutting = {state = "healed", effect = "more dmg from cutting source per stack",cures = {}, assess = false, timer = createStopWatch()},
 aff_amplify_electric = {state = "healed", effect = "more dmg from electric source per stack", cures = {}, assess = false, timer = createStopWatch()},
 aff_amplify_fire = {state = "healed", effect = "more dmg from fire source per stack", cures = {}, assess = false, timer = createStopWatch()},
 aff_amplify_magic = {state = "healed", effect = "more dmg from magic source per stack", cures = {}, assess = false, timer = createStopWatch()},
@@ -18776,6 +18769,8 @@ snd.global_targets = {
     end
   else
     snd.counterattack_active = false
+    snd.probed = false
+    snd.punisher = false
     if snd.toggles.calling and snd.bashing.old_target ~= snd.bashing.target and snd.bashing.target ~= "none" then
       snd.send("wt target: " .. snd.bashing.target)
     end
@@ -19695,7 +19690,7 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 end
 
 function snd.astral_bash()
-hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   if snd.reflection_charge == 3 then
     snd.reflected = false
   end
@@ -19709,34 +19704,32 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
       end
     end
 	elseif snd.counterattack_active or snd.have_aff("blackout") then
-    if gmcp.Char.Status.name == "Rihrin" then
-		  if snd.punisher then
-        if snd.reflection_charge &gt; 0 and not snd.reflected then
-			     battack = "point wand at me"
-        else
-          if snd.balance.barrier and not snd.liarstrummed then
-            battack = "strum lyre"
-            snd.liarstrummed = true
-            tempTimer(1.5,[[snd.liarstrummed = false]])
-          else
-            battack = "jig"
-          end
-        end
+    if snd.punisher then
+      if snd.reflection_charge &gt; 0 and not snd.reflected then
+			   battack = "point wand at me"
       else
-        battack = "touch shield"
+        if snd.balance.barrier and not snd.liarstrummed then
+          battack = "strum lyre"
+          snd.liarstrummed = true
+          tempTimer(1.5,[[snd.liarstrummed = false]])
+        else
+          battack = "jig"
+        end
       end
     else
-      if snd.punisher then
-        battack = "jig"
-      else
-        battack = "touch shield"
-      end
+      battack = "touch shield"
     end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
+  elseif hp &lt;= 50 and not snd.self_prone() then
+    battack = "astral ambrosia"
 	else
-  	battack = "astral evert "..snd.bashing.target
+    if snd.counterattack_active then
+      battack = battack.."jig"
+    else
+    	battack = "astral evert "..snd.bashing.target
+    end
  	end
 end
 
@@ -21616,43 +21609,51 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>purge</name>
 							<packageName></packageName>
-							<script>
-function snd.do_purge()
-  if snd.balance.purge and not snd.waiting.purge then
-    if snd.have_aff("paresis") then
-      snd.send("firstaid elevate paresis")
-    elseif snd.have_aff("paralysis") then
-      snd.send("firstaid elevate paralysis")
-    else
-      found_aff = false
-      for aff in pairs(snd.physical_affs) do
-        if snd.have_aff(snd.physical_affs[aff]) then
-          if string.find(snd.physical_affs[aff], "_broken") then
-            local string = string.gsub(snd.physical_affs[aff], "_broken")
-            if snd.afflictions[string.."_damaged"].state == "healed" then
-              found_aff = true
-            end
-          else
-            found_aff = true
+							<script>purge_threshold = 2
+
+function snd.purge_check()
+-- Attempt to purge if don't have paralysis and have at least 2 curable physical affs.
+  if snd.balance.purge and not snd.waiting.purge and not snd.have_aff("paralysis") then
+    local purgable = {}
+    
+    for _, aff in pairs(snd.physical_affs) do
+      if snd.have_aff(aff) and aff ~= "paralysis" then
+        local i, _ = string.find(aff, "_broken")
+        if i then
+          local s = string.sub(aff, 0, i - 1)
+          if snd.afflictions["aff_"..s.."_damaged"].state == "healed" then
+            table.insert(purgable, aff)
           end
-        end
-      end
-      if found_aff then
-        if snd.class == "Carnifex" then
-          snd.send("soul purge")
-          echo("(soul purge)")
         else
-          snd.send("ancest annul")
-          echo("(ancest annul)")
+          table.insert(purgable, aff)
         end
-        snd.last_type = "purge"
-        snd.last_item = "purge"
       end
     end
-    snd.waiting.purge = true
-    tempTimer(snd.delay(), [[snd.waiting.purge = false]])
+    
+    if #purgable &gt;= purge_threshold then
+      return true
+    else
+      return false
+    end
   end
-end</script>
+end
+
+function snd.do_purge()
+  
+      if snd.class == "Carnifex" then
+        snd.send("soul purge")
+        echo("(soul purge)")
+      else
+        snd.send("ancest annul")
+        echo("(ancest annul)")
+      end
+      
+      snd.last_type = "purge"
+      snd.last_item = "purge"
+      snd.waiting.purge = true
+      tempTimer(snd.delay(), [[snd.waiting.purge = false]])
+end
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -21674,38 +21675,45 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>purify</name>
 							<packageName></packageName>
-							<script>
+							<script>purify_threshold = 2
+
+function snd.purify_check()
+-- Attempt to purge if don't have paralysis and have at least 2 curable physical affs.
+  if snd.balance.purify and not snd.waiting.purify and not snd.have_aff("paralysis") then
+    local purifiable = {}
+    
+    for _, aff in pairs(snd.physical_affs) do
+      if snd.have_aff(aff) and aff ~= "paralysis" then
+        local i, _ = string.find(aff, "_broken")
+        if i then
+          local s = string.sub(aff, 0, i - 1)
+          if snd.afflictions["aff_"..s.."_damaged"].state == "healed" then
+            table.insert(purifiable, aff)
+          end
+        else
+          table.insert(purifiable, aff)
+        end
+      end
+    end
+    
+    if #purifiable &gt;= purify_threshold then
+      return true
+    else
+      return false
+    end
+  end
+end
+
 function snd.do_purify()
- if snd.balance.purify and not snd.waiting.purify then
-  if snd.have_aff("paresis") then
-	 snd.send("firstaid elevate paresis")
-	elseif snd.have_aff("paralysis") then
-	 snd.send("firstaid elevate paralysis")
-	else
-   found_aff = false
-   for aff in pairs(snd.physical_affs) do
-	  if snd.have_aff(snd.physical_affs[aff]) then
-		 if string.find(snd.physical_affs[aff], "_broken") then
-		  local string = string.gsub(snd.physical_affs[aff], "_broken")
-			if snd.afflictions[string.."_damaged"].state == "healed" then
-			 found_aff = true
-			end
-		 else
-	    found_aff = true
-		 end
-	  end
-	 end
-	 if found_aff then
+  
     snd.send("purify blood")
     echo("(purify blood)")
     snd.last_type = "purify"
     snd.last_item = "purify"
-	 end
-	end
 	snd.waiting.purify = true
   tempTimer(snd.delay(), [[snd.waiting.purify = false]])
- end
-end</script>
+end
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -21796,38 +21804,48 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>panacea</name>
 							<packageName></packageName>
-							<script>
+							<script>panacea_threshold = 2
+
+function snd.panacea_check()
+-- Attempt to purge if don't have paralysis and have at least 2 curable physical affs.
+  if snd.balance.panacea and not snd.waiting.panacea and not snd.have_aff("paralysis") then
+    local panaceable = {}
+    
+    for _, aff in pairs(snd.physical_affs) do
+      if snd.have_aff(aff) and aff ~= "paralysis" then
+        local i, _ = string.find(aff, "_broken")
+        if i then
+          local s = string.sub(aff, 0, i - 1)
+          if snd.afflictions["aff_"..s.."_damaged"].state == "healed" then
+            table.insert(panaceable, aff)
+          end
+        else
+          table.insert(panaceable, aff)
+        end
+      end
+    end
+    
+    if #panaceable &gt;= panacea_threshold then
+      return true
+    else
+      return false
+    end
+  end
+end
+
 function snd.do_panacea()
- if snd.balance.panacea and not snd.waiting.panacea then
-  if snd.have_aff("paresis") then
-	 snd.send("firstaid elevate paresis")
-	elseif snd.have_aff("paralysis") then
-	 snd.send("firstaid elevate paralysis")
-	else
-   found_aff = false
-   for aff in pairs(snd.physical_affs) do
-	  if snd.have_aff(snd.physical_affs[aff]) then
-		 if string.find(snd.physical_affs[aff], "_broken") then
-		  local string = string.gsub(snd.physical_affs[aff], "_broken")
-			if snd.afflictions[string.."_damaged"].state == "healed" then
-			 found_aff = true
-			end
-		 else
-	    found_aff = true
-		 end
-	  end
-	 end
-	 if found_aff then
-    snd.send("nature panacea")
-    echo("(nature panacea)")
-    snd.last_type = "panacea"
-    snd.last_item = "panacea"
-	 end
-	end
-	snd.waiting.panacea = true
-  tempTimer(snd.delay(), [[snd.waiting.panacea = false]])
- end
-end</script>
+  
+      if snd.class == "Shaman" then
+        snd.send("nature panacea")
+        echo("(nature panacea)")
+      end
+      
+      snd.last_type = "panacea"
+      snd.last_item = "panacea"
+      snd.waiting.panacea = true
+      tempTimer(snd.delay(), [[snd.waiting.panacea = false]])
+end
+</script>
 							<eventHandlerList />
 						</Script>
 						<ScriptGroup isActive="yes" isFolder="yes">
@@ -21844,6 +21862,7 @@ end</script>
 								<name>Advanced Salve Curing</name>
 								<packageName></packageName>
 								<script>function snd.firstaidsalve()
+if not snd.have_aff("salve_seared") then
 	if snd.salvebal and not snd.have_aff("slickness") and not snd.have_aff("slough") and not snd.have_aff("void") and not snd.have_aff("weakvoid") and not snd.salveaffflag then
     if snd.faction == "spirit" then
 		  if #snd.shadow_targets &lt; 1 then 
@@ -21907,6 +21926,7 @@ end</script>
 		  end
     end
 	end
+end
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -24981,7 +25001,7 @@ def_speed = "on",
 def_caloric = "on",
 def_dodge_melee = "on",
 def_nightsight = "on",
-def_clarity = "once",
+def_clarity = "on",
 def_fangbarrier = "on",
 def_deafness = "on",
 def_blindness = "on",
@@ -24997,7 +25017,7 @@ def_euphonia = "once",
 def_aurora = "once",
 },
 
-astral = {
+None = {
 def_astral_refulgence = "on",
 def_astral_presence = "on",
 def_astral_chaosspores = "on",
@@ -25032,15 +25052,13 @@ def_constitution = "once",
 },
 
 syssin = {
-def_warding = "once",
-def_finesse = "once",
---def_hiding = "once",
-def_shadowsight = "once",
+def_warding = "on",
+def_finesse = "on",
+def_shadowsight = "on",
 def_ghost = "on",
 def_shroud = "on",
 def_lipreading = "on",
-def_shadowsight = "once",
---def_shadowslip = "once",
+def_weaving = "on",
 },
 
 monk = {
@@ -25274,7 +25292,7 @@ def_mindspark = "on",
 						<packageName></packageName>
 						<script>function snd.parry()
   if snd.class == "None" then
-    expandalias("tpry")
+    expandAlias("tpry")
   end
   local highest = 0
   if not hasSkill("Parrying") then
@@ -25567,6 +25585,8 @@ snd.gorged = ""
 snd.glimpsing = false
 snd.reflection_charge = 3
 snd.flamewreathed = {limb = "", resonance = ""}
+snd.fulcrum_call = true
+snd.fulcrum_ready = true
 
 --Teradrim
 templimbscourge = "none"
@@ -25618,7 +25638,6 @@ snd.oldalerts = {}
 snd.panic = false
 snd.alertness = {}
 snd.alertnessDir = "none"
-snd.firefly_bal = false
 theytumbling = false -- start system with them not being recognized as tumbling
 theyran = false -- start system for if they fled and we want to try a quick grab
 snd.theyrandir = "none"
@@ -27079,151 +27098,10 @@ end</script>
            end,
   },
   
---Earthcaller
-  ["Subjugation"] = {
-  
-  Crush = function(target, limb)
-            snd.last_hit_limb = limb
-            enableTrigger("Crush Confirmation")
-          end,
-  
-  Obliterate = function(target, limb)
-           	snd.last_hit_limb = limb
-          	snd.last_limb_dmg = 25
-          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-            snd.onHit2({"Parry", "Dodge"})
-          end,
-  
-  Ribcage = function(target)
-           snd.used.shield = true
-         end,
-  
-  Dust = function(target)
-           snd.target_got("ablaze")
-           snd.target_got("angel_seared")
-           tempTimer(15, [[snd.target_cured("angel_seared")]])
-         end,
-  
-  Incisor = function(target, defense)
-            snd.used.rebounding = false
-          end,
-          
-  Raze = function(target, defense)
-            if defense == "shield" then snd.used.shield = false
-            elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
-            end
-          end,
-          
-  Subdue = function(target)
-             if snd.battle_aff ~= "none" then
-              snd.target_got(snd.battle_aff)
-            	table.insert(snd.last_affs, snd.battle_aff)
-             end
-             if snd.chasten_aff ~= "none" then
-              snd.target_got(snd.chasten_aff)
-            	table.insert(snd.last_affs, snd.chasten_aff)
-             end
-            end,
-  
-  Strike = function(target)
-            table.insert(snd.maybe_affs, "paresis")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  Punch = function(target)
-            table.insert(snd.maybe_affs, "weariness")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  Facesmash = function(target)
-                if not snd.checksomeAffs({"berserking", "sight"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "berserking")
-                  table.insert(snd.maybe_affs, 2, "sight")
-                elseif snd.checkAff("berserking") then
-                  table.insert(snd.maybe_affs, 1, "sight")
-                else
-                  table.insert(snd.maybe_affs, 1, "berserking")
-                end
-                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Facesmash")
-              end,
-  Slam = function(target)
-                if not snd.checksomeAffs({"asthma", "haemophilia"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "asthma")
-                  table.insert(snd.maybe_affs, 2, "haemophilia")
-                elseif snd.checkAff("asthma") then
-                  table.insert(snd.maybe_affs, 1, "haemophilia")
-                else
-                  table.insert(snd.maybe_affs, 1, "asthma")
-                end
-                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Slam")
-              end,
-  Horrification = function(target)
-            table.insert(snd.maybe_affs, "sight")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  
-  },
-  
-  ["Apocalyptia"] = {
-    Hysteria = function(target)
-               snd.target_got("confusion")
-               snd.target_got("dizziness")
-             end,
-    Lull = function(target)
-               snd.target_got("peace")
-             end,
-    Reckoning = function(target)
-                  snd.target_got("hellsight")
-                end,
-
-  },
-  
-  ["Tectonics"] = {
-    Ashfall = function(target)
-                 snd.target_got("epilepsy")
-                end,
-                
-    Transfixion = function(target, blindness)
-                    snd.target_got("sight")
-                    if not blindness then  
-                     snd.target_got("writhe_transfix")
-                   end
-                  end,
-    Vent = function(target)
-                snd.target_got("berserking")
-                snd.target_got("hallucinations")
-              end,
-    Fault = function(target)
-             snd.target_got("tree_seared")
-             tempTimer(19, [[snd.target_cured("tree_seared")]])
-           end,
-    Spew = function(target)
-             snd.target_got("ablaze")
-             enableTrigger("Illumination Fire")
-           end,
-    Aftershock = function(target)
-             snd.target_got("aftershock")
-           end,
-  },
-  
 --Zealot
   ["Zeal"] = {
     Swagger = function(target)
                snd.target_cured("paresis")
-               if snd.hitting == "You" then
-                if snd.swagger == 0 then
- 	                snd.swagger = 1
-                elseif snd.swagger == 1 then
-	                snd.swagger = 2
-                elseif snd.swagger == 2 then
-	                snd.swagger = 3
-                elseif snd.swagger == 3 then
-	                snd.swagger = 4
-                end
-                    snd.swaggered = true
-                    tempTimer(5,[[snd.swaggered = false]])
-
-                    cecho("&lt;red&gt;\nSwagger Total: &lt;white&gt;"..snd.swagger)
-                end
-
              end,
     Anklepin = function(target)
                snd.target_got("sore_ankle")
@@ -27446,7 +27324,7 @@ end</script>
     Windlance = function(target, element)
                   snd.used.shield = false
                   if melement == "Air" then
-                    if snd.checkAff("clumsiness") and snd.target_got("clumsiness") then
+                    if snd.checkAff("clumsiness") and snd.target_got("dizziness") then
                       snd.target_got("dissonance")
                     elseif snd.checkAff("clumsiness") then
                       snd.target_got("dizziness")
@@ -27757,15 +27635,9 @@ end</script>
       Withering = function()
                     snd.target_got("withering")
                   end,
-      Contort = function(target, conditional)
-                    if conditional == "paresis" then
-                      snd.target_got("paresis")
-                    elseif conditional == "stupidity" then
-                      snd.target_got("stupidity")
-                    elseif conditional == "confusion" then
-                      snd.target_got("confusion")
-                    end
-                  end,
+      Contort = function(target, aff)
+                  snd.target_got(aff)
+                end,
 
   },
   
@@ -27859,6 +27731,15 @@ end</script>
                           snd.their_premonition = true
                         end
                   end,
+    Divulgence = function(target)
+                  if #snd.maybe_affs &gt;= 1 then
+                    snd.onHit2({})
+                  end
+                end,
+    Omen = function(target)
+             snd.incomingomen = true
+             snd.message(matches[2].." has an omen incoming in 6 seconds!", "dendara")
+          end,
         
 
   },
@@ -27900,19 +27781,23 @@ end</script>
   
   ["Tarot"] = {
         Sun = function(target, dodge)
-                if not dodge and #snd.maybe_affs &gt; 0 then
-                  local aff = snd.maybe_affs[1]
-                  if snd.indorani_cards[aff].card == "sun" then
-                    snd.target_got(aff)
+                if #snd.maybe_affs &gt; 0 then
+                  if not dodge then
+                    local aff = snd.maybe_affs[1]
+                    if snd.cardshapes.indorani[aff].card == "sun" then
+                      snd.target_got(aff)
+                    end
                   end
                   table.remove(snd.maybe_affs, 1)
                 end
               end,
         Moon = function(target, dodge)
-                if not dodge and #snd.maybe_affs &gt; 0 then
-                  local aff = snd.maybe_affs[1]
-                  if snd.indorani_cards[aff].card == "moon" then
-                    snd.target_got(aff)
+                if #snd.maybe_affs &gt; 0 then
+                  if not dodge then
+                    local aff = snd.maybe_affs[1]
+                    if snd.cardshapes.indorani[aff].card == "moon" then
+                      snd.target_got(aff)
+                    end
                   end
                   table.remove(snd.maybe_affs, 1)
                 end
@@ -27932,7 +27817,6 @@ end</script>
                   snd.target_got("aeon")
                 end
                 snd.target_got("no_speed")
-                snd.balance.aeon = false  
         end,
         
         Justice = function(target)
@@ -28095,11 +27979,8 @@ end</script>
   },
   
   ["Mentis"] = {
-    Mesmerize = function(target, defense)
-                  if defense == "unblind" then snd.target_got("sight")
-                  else
-                    snd.target_got("writhe_transfix")
-                  end
+    Mesmerize = function(target)
+                 snd.target_got("writhe_transfix")
                 end,
     Confusion = function(target)
                  snd.target_got("confusion")
@@ -28186,6 +28067,7 @@ end</script>
             snd.target_got("blood_rune")
         end,
     },
+    
 --Archivist
   ["Geometrics"] = {
     Pattern = function(target)
@@ -28233,11 +28115,11 @@ end</script>
     Sealing = function(target, shape)
                 snd.target_got(shape.."_sealed")
                 if shape == "square" then
-                  tempTimer(30, [[snd.target_cured("square_sealed")]])
+                  tempTimer(31, [[snd.target_cured("square_sealed")]])
                 elseif shape == "circle" then
-                  tempTimer(30, [[snd.target_cured("circle_sealed")]])
+                  tempTimer(31, [[snd.target_cured("circle_sealed")]])
                 elseif shape == "triangle" then
-                  tempTimer(30, [[snd.target_cured("triangle_sealed")]])
+                  tempTimer(31, [[snd.target_cured("triangle_sealed")]])
                 end
               end,
     Fork = function(target)
@@ -28601,6 +28483,11 @@ end</script>
                 enableTrigger("Soul Implant Give")
                 snd.target_got("soul_implant")
               end,
+    Erode = function(target)
+              snd.used.shield = false
+              snd.used.rebounding = false
+              snd.target_cured("barrier")
+            end,
     
   },
   
@@ -28663,6 +28550,11 @@ end</script>
   Firebreath = function(target)
                  snd.target_got("ablaze")
                end,
+  Ululate = function(target)
+            if table.isMember(snd.players_here, snd.target) and snd.hitting ~= snd.target then
+              snd.target_got("blurry_vision")
+            end
+          end,
   },
   
 --Monk
@@ -28672,25 +28564,52 @@ end</script>
                snd.target_cured("fallen")
              end,
              
-    Sidekick = function(target)
-              	snd.last_limb_dmg = 9
+    Sidekick = function(target)                
+                if snd.stance == "tiger" then
+                  snd.last_limb_dmg = 10.8
+              	else
+                  snd.last_limb_dmg = 9
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
     Snapkick = function(target)
-              	snd.last_limb_dmg = 9
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 10.8
+              	else
+              	 snd.last_limb_dmg = 9
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
-    Moonkick = function(target)
-              	snd.last_limb_dmg = 9
+    Moonkick = function(target)                
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 10.8
+              	else
+                  snd.last_limb_dmg = 9
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
     Whirlwind = function(target)
-              	snd.last_limb_dmg = 9
-                if snd.checkAff("fallen") then snd.last_limb_dmg = 12.5 end
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  if snd.checkAff("fallen") then 
+                    snd.last_limb_dmg = 12.5
+                  else
+                    snd.last_limb_dmg = 10.8
+                  end
+              	else
+                  if snd.checkAff("fallen") then 
+                    snd.last_limb_dmg = 12.5
+                  else
+                    snd.last_limb_dmg = 9
+                  end
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
-    Axe = function(target)
-              	snd.last_limb_dmg = 9
+    Axe = function(target)                
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 10.8
+              	else
+                  snd.last_limb_dmg = 9
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
     Sweepkick = function(target)
@@ -28705,20 +28624,36 @@ end</script>
                 snd.target_got("weak_grip")
                 enableTrigger("Monk Hit Tracking")
               end,
-    Hook = function(target)
-              	snd.last_limb_dmg = 5.5
+    Hook = function(target)                
+                if snd.stance == "tiger" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
-    Uppercut = function(target)
-              	snd.last_limb_dmg = 5.5
+    Uppercut = function(target)                
+                if snd.stance == "tiger" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
-    Hammerfist = function(target)
-              	snd.last_limb_dmg = 5.5
+    Hammerfist = function(target)                
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
     Spear = function(target)
-              	snd.last_limb_dmg = 5.5
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
                 enableTrigger("Monk Hit Tracking")
               end,
     Palmstrike = function(target)
@@ -28986,18 +28921,18 @@ end</script>
                 snd.target_cured("writhe_necklock")
                 --snd.onHit2({"Dodge", "Parry"}) don't believe it can be missed
                end,
-   Destroy = function(target, limb)
+   Mangle = function(target, limb)
                 snd.last_hit_limb = limb
                 snd.last_limb_dmg = 33.33 - snd.limb_dmg[limb]
                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
                 snd.onHit2({"Dodge", "Parry"})
                end,
-   Mangle = function(target, limb)
+   Destroy = function(target, limb)
                 snd.last_hit_limb = limb
                 snd.last_limb_dmg = 66.67 - snd.limb_dmg[limb]
                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
                 snd.onHit2({"Dodge", "Parry"})
-               end, 
+               end,  
    Leapslash = function(target, limb)
                 snd.target_got("fallen")
                end,
@@ -29175,8 +29110,8 @@ end</script>
                  snd.parried_limb = "none"
               end,
   },
-  
-  --Random stuff
+
+--Random stuff
   
     ["Artifact"] = {
     Strum = function(target)
@@ -29232,6 +29167,9 @@ end</script>
     Duplicity = function(target)
                     enableTrigger("Weapon Hit Confirmation")
                    end,
+    Fell = function(target)
+                    enableTrigger("Weapon Hit Confirmation")
+                  end,
     Gouge = function(target)
             if #snd.maybe_affs == 0 then
               table.insert(snd.maybe_affs, "rend")
@@ -29283,15 +29221,9 @@ end</script>
       Parasite = function()
                     snd.target_got("withering")
                   end,
-      Discord = function(target, conditional)
-                    if conditional == "paresis" then
-                      snd.target_got("paresis")
-                    elseif conditional == "stupidity" then
-                      snd.target_got("stupidity")
-                    elseif conditional == "confusion" then
-                      snd.target_got("confusion")
-                    end
-                  end,
+      Discord = function(target, aff)
+                  snd.target_got(aff)
+                end,
 
   },
   
@@ -29386,6 +29318,12 @@ end</script>
     Elude = function(target)
                    snd.target_got("eluded")
                  end,   
+    Carve = function(target)
+              snd.used.shield = false
+              snd.used.rebounding = false
+              snd.target_cured("barrier")
+              snd.target_cured("aegis")
+            end,
               
   },
   
@@ -29445,7 +29383,137 @@ end</script>
                enableTrigger("Sunder Parry")
               end
             end,
+  Dirge = function(target)
+            if table.isMember(snd.players_here, snd.target) and snd.hitting ~= snd.target then
+              snd.target_got("blurry_vision")
+            end
+          end,
 
+  },
+  
+--Earthcaller
+  ["Subjugation"] = {
+  
+  Crush = function(target, limb)
+            snd.last_hit_limb = limb
+            enableTrigger("Crush Confirmation")
+          end,
+  
+  Obliterate = function(target, limb)
+           	snd.last_hit_limb = limb
+          	snd.last_limb_dmg = 25
+          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Parry", "Dodge"})
+          end,
+  
+  Ribcage = function(target)
+           snd.used.shield = true
+         end,
+  
+  Dust = function(target)
+           snd.target_got("ablaze")
+           snd.target_got("angel_seared")
+           tempTimer(15, [[snd.target_cured("angel_seared")]])
+         end,
+  
+  Incisor = function(target, defense)
+            snd.used.rebounding = false
+          end,
+          
+  Raze = function(target, defense)
+            if defense == "shield" then snd.used.shield = false
+            elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
+            end
+          end,
+          
+  Subdue = function(target)
+             if snd.battle_aff ~= "none" then
+              snd.target_got(snd.battle_aff)
+            	table.insert(snd.last_affs, snd.battle_aff)
+             end
+             if snd.chasten_aff ~= "none" then
+              snd.target_got(snd.chasten_aff)
+            	table.insert(snd.last_affs, snd.chasten_aff)
+             end
+            end,
+  
+  Strike = function(target)
+            table.insert(snd.maybe_affs, "paresis")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  Punch = function(target)
+            table.insert(snd.maybe_affs, "weariness")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  Facesmash = function(target)
+                if not snd.checksomeAffs({"berserking", "sight"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "berserking")
+                  table.insert(snd.maybe_affs, 2, "sight")
+                elseif snd.checkAff("berserking") then
+                  table.insert(snd.maybe_affs, 1, "sight")
+                else
+                  table.insert(snd.maybe_affs, 1, "berserking")
+                end
+                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Facesmash")
+              end,
+  Slam = function(target)
+                if not snd.checksomeAffs({"asthma", "haemophilia"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "asthma")
+                  table.insert(snd.maybe_affs, 2, "haemophilia")
+                elseif snd.checkAff("asthma") then
+                  table.insert(snd.maybe_affs, 1, "haemophilia")
+                else
+                  table.insert(snd.maybe_affs, 1, "asthma")
+                end
+                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Slam")
+              end,
+  Horrification = function(target)
+            table.insert(snd.maybe_affs, "sight")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  
+  },
+  
+  ["Apocalyptia"] = {
+    Hysteria = function(target)
+               snd.target_got("confusion")
+               snd.target_got("dizziness")
+             end,
+    Lull = function(target)
+               snd.target_got("peace")
+             end,
+    Reckoning = function(target)
+                  snd.target_got("hellsight")
+                end,
+
+  },
+  
+  ["Tectonics"] = {
+    Ashfall = function(target)
+                 snd.target_got("epilepsy")
+                end,
+                
+    Transfixion = function(target, blindness)
+                    snd.target_got("sight")
+                    if not blindness then  
+                     snd.target_got("writhe_transfix")
+                   end
+                  end,
+    Vent = function(target)
+                snd.target_got("berserking")
+                snd.target_got("hallucinations")
+              end,
+    Fault = function(target)
+             snd.target_got("faulted")
+             tempTimer(18.5, [[snd.target_cured("faulted")]])
+           end,
+    Spew = function(target)
+             snd.target_got("ablaze")
+             enableTrigger("Fervour Spew")
+           end,
+    Aftershock = function(target)
+             snd.target_got("aftershock")
+           end,
   },
   
   ["Aetherial"] = {
@@ -29475,52 +29543,6 @@ end</script>
         snd.onHit2({})
       end
     end,
-   },
-  
-  ["Astral"] = {
-    Huntresses = function(target)
-      snd.huntresses_used = true
-      tempTimer(90, [[snd.huntresses_used = false]])
-    end,
-    Contaminate = function(target)
-      enableTrigger("Astral Contaminate")
-      enableTrigger("Sunder Parry")
-      if #snd.maybe_affs &gt;= 1 then
-        snd.onHit2({"Parry",})
-      end
-    end,
-    Hamartia = function(target, shield)
-      snd.hamartia_used = true
-      if shield then
-        snd.used.shield = false
-      end
-      if #snd.maybe_affs &gt;= 1 then
-        snd.onHit2({})
-      end
-    end,    
-    Unmask = function(target)
-      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-        snd.target_got("slickness")
-        snd.target_got("disfigurement")
-        snd.unmasked = true
-        tempTimer(25, [[snd.unmasked = false]])
-        snd.glory = snd.glory - 1
-      else
-        snd.target_got("magic_weakness")
-        snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
-        snd.glory = snd.glory - 1
-      end
-    end,    
-    Devour = function(target)
-      snd.glory = snd.glory - 2
-      snd.hamartia_used = false
-    end,  
-    Crescent = function(target)
-      snd.glory = snd.glory - 3
-    end,
-    
    },
    
 -- Bard
@@ -29638,7 +29660,53 @@ end</script>
               snd.globecount = 3
               snd.target_got("globes")
               end,
-  },  
+  }, 
+  
+  ["Astral"] = {
+    Huntresses = function(target)
+      snd.huntresses_used = true
+      tempTimer(90, [[snd.huntresses_used = false]])
+    end,
+    Contaminate = function(target)
+      enableTrigger("Astral Contaminate")
+      enableTrigger("Sunder Parry")
+      if #snd.maybe_affs &gt;= 1 then
+        snd.onHit2({"Parry",})
+      end
+    end,
+    Hamartia = function(target, shield)
+      snd.hamartia_used = true
+      if shield then
+        snd.used.shield = false
+      end
+      if #snd.maybe_affs &gt;= 1 then
+        snd.onHit2({})
+      end
+    end,    
+    Unmask = function(target)
+      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+        snd.target_got("slickness")
+        snd.target_got("disfigurement")
+        snd.unmasked = true
+        tempTimer(25, [[snd.unmasked = false]])
+        snd.glory = snd.glory - 1
+      else
+        snd.target_got("magic_weakness")
+        snd.target_got("fire_weakness")
+        tempTimer(30, [[snd.target_cured("magic_weakness")]])
+        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.glory = snd.glory - 1
+      end
+    end,    
+    Devour = function(target)
+      snd.glory = snd.glory - 2
+      snd.hamartia_used = false
+    end,  
+    Crescent = function(target)
+      snd.glory = snd.glory - 3
+    end,
+    
+   }, 
   
   ["Tiarna"] = {
   Inculcate = function(target)
@@ -30584,10 +30652,13 @@ end</script>
 "Callidora",
 "Pargu",
 "Dierjiano",
+"Kiershu",
 "Lorne",
 "Ultra",
+"Nirala",
 "Roknar",
 "Bryn",
+"Xin",
 "Safiya",
 "Ensis",
 "Zaene",
@@ -30815,6 +30886,7 @@ end</script>
 "Nixia",
 "Taja",
 "Kirill",
+"Talulla",
 "Aloree",
 "Paxe",
 "Zyphen",
@@ -30827,6 +30899,7 @@ end</script>
 "Kurak",
 "Necerursh",
 "Jadice",
+"Rehr",
 "Jaegth",
 "Livia",
 "Kylae",
@@ -31404,11 +31477,11 @@ end</script>
 "Edhain",
 "Aralaan",
 "Allegra",
-"Kiershu",
 "Ayegor",
 "Amedeus",
 "Deandra",
 "Damonicus",
+"Cormac",
 "Dref",
 "Seji",
 "Cole",
@@ -31422,7 +31495,6 @@ end</script>
 "Radagon",
 "Jaqul",
 "Kidos",
-"Nirala",
 "Cameryn",
 "Vorlo",
 "Taldor",
@@ -31510,6 +31582,7 @@ end</script>
 "Amrynn",
 "Ateslemek",
 "Solrethael",
+"Alya",
 "Rum",
 "Jaelle",
 "Trowen",
@@ -31609,7 +31682,9 @@ end</script>
 "Nera",
 "Sudoxen",
 "Sekeres",
+"Romorn",
 "Kisme",
+"Stine",
 "Pascal",
 "Nozerem",
 "Uske",
@@ -31630,6 +31705,7 @@ end</script>
 "Corlin",
 "Aisling",
 "Rak",
+"Santeri",
 "Jasline",
 "Eaku",
 "Morwin",
@@ -31956,6 +32032,7 @@ end</script>
 "Tristram",
 "Jakarn",
 "Hedera",
+"Layos",
 "Zerin",
 "Irric",
 "Mielo",
@@ -31982,6 +32059,7 @@ end</script>
 "Dyolclese",
 "Ninette",
 "Jindea",
+"Emhyra",
 "Vrael",
 "Ravanna",
 "Zik",
@@ -32043,6 +32121,7 @@ end</script>
 "Demarcus",
 "Ardaun",
 "Anyeria",
+"Alizee",
 "Mucka",
 "Vahn",
 "Kolyn",
@@ -32101,6 +32180,125 @@ end</script>
 	}</script>
 						<eventHandlerList />
 					</Script>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Timers</name>
+						<packageName></packageName>
+						<script></script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>setup + query function</name>
+							<packageName></packageName>
+							<script>
+snd.timers = snd.timers or {}
+snd.timers.pill = snd.timers.pill or {}
+snd.timers.focus = snd.timers.focus or {}
+snd.timers.tree = snd.timers.tree or {}
+snd.timers.endgame = snd.timers.endgame or {}
+snd.timers.restoration = snd.timers.restoration or {}
+snd.timers.rebounding = snd.timers.rebounding or {}
+
+for k, _ in pairs(snd.timers) do
+  snd.timers[k] = {["start"] = nil, ["limit"] = nil}
+end
+
+function snd.timer_check(which, time_left, mode)
+  if mode == nil then
+    mode = "more than"
+  end
+  if
+    snd.timers[which] ~= nil and
+    snd.timers[which]["start"] ~= nil and
+    snd.timers[which]["limit"] ~= nil
+  then
+    local now = os.clock()
+    local endtime = snd.timers[which]["start"] + snd.timers[which]["limit"]
+    if mode == "more than" then
+      if endtime - now &gt; time_left then
+        return true
+      else
+        return false
+      end
+    elseif mode == "less than" then
+      if endtime - now &lt; time_left and (balance ~= "rebounding" or endtime - now &gt; 0) then
+        return true
+      else
+        return false
+      end
+    end
+  else
+    if mode == "less than" and balance ~= "rebounding" then
+      return true
+    else
+      return false
+    end
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>method specific timer functions</name>
+							<packageName></packageName>
+							<script>function snd.track_pill(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.pill.start = os.clock()
+    local limit = 1.9
+    snd.timers.pill.limit = limit
+  end
+end
+
+function snd.track_focus(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.focus.start = os.clock()
+    local limit = 5
+    if snd.checkAff("mental_disruption") then
+      limit = 10
+    elseif snd.checkAff("mental_fatigue") then
+      limit = 7
+    end
+    snd.timers.focus.limit = limit
+  end
+end
+
+function snd.track_rebounding(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.rebounding.start = os.clock()
+    local limit = 6.5
+    snd.timers.rebounding.limit = limit
+  end
+end
+
+function snd.track_rebounding_up(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.rebounding.limit = os.clock()
+  end
+end
+
+function snd.track_restoration(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.restoration.start = os.clock()
+    local limit = 4.15
+    snd.timers.restoration.limit = limit
+  end
+end
+
+function snd.track_tree(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.tree.start = os.clock()
+    local limit = 10
+    snd.timers.tree.limit = limit
+  end
+end
+
+function snd.track_endgame(target)
+  if target:lower() == snd.target:lower() then
+    snd.timers.endgame.start = os.clock()
+    local limit = 20
+    snd.timers.endgame.limit = limit
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Ylem</name>
@@ -32235,8 +32433,8 @@ v11830 = "60181",
 v60181 = "36271",
 v36271 = "36677",
 v36677 = "1012",
-v1012 = "20450",
-v20450 = "58789",
+v1012 = "71074",
+v71074 = "58789",
 v58789 = "17612",
 v17612 = "62102",
 v62102 = "64479",

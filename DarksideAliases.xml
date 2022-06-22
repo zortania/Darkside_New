@@ -1801,6 +1801,8 @@ elseif snd.class == "None" then
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
 		snd.pushattack = false
+  elseif hp &lt;= 50 and snd.self_prone() then
+    snd.send("qeb astral ambrosia")
 	else
     snd.send("qeb astral evert "..snd.target)
   end
@@ -1968,6 +1970,7 @@ if snd.class == "Ascendril" then send("simultaneity") end
 --if snd.class == "Archivist" then snd.send("incite lens") end
 if snd.class == "Sciomancer" then snd.send("channel shadow") end
 if snd.class == "Teradrim" then snd.send("golem call") end
+--if gmcp.Char.Status.race == "Astral Noble" and snd.class == "None" then expandAlias("astral") end
 send("def", false)
 
 snd.load_def(selection)
@@ -5173,7 +5176,7 @@ end</script>
 									<packageName></packageName>
 									<regex>^olp$</regex>
 								</Alias>
-								<Alias isActive="yes" isFolder="no">
+								<Alias isActive="no" isFolder="no">
 									<name>frozen</name>
 									<script>if snd.class == "Ascendril" then
   snd.starting_attack()
@@ -5217,18 +5220,23 @@ end</script>
       while #tohit &lt; 3 do
         table.insert(tohit, extraaff)
       end
-      if snd.glimpse == "none" and not snd.glimpsing and not snd.checkAff("frostbrand") then
-        string = "fulcrum glimpse water"
-      elseif snd.glimpse == "none" and snd.checkAff("frostbrand") then
-        string = "fulcrum catalyst " .. snd.target .. " frost"
-      elseif snd.used.shield == true or 
+      if snd.fulcrum_call then
+        string = "fulcrum recall"
+        snd.fulcrum_call = false
+      elseif if snd.used.shield == true or 
 			((snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1) or snd.limb_status["left leg"] ~= "healed" or snd.limb_status["right leg"] ~= "healed") and not snd.proned()) then
 				string = "cast windlance " .. snd.target
-      elseif snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
-        if gmcp.Char.Vitals.ability_bal == "1" then
-          string = "fulcrum flare " .. snd.target
+      elseif snd.fulcrum_ready then
+        if snd.glimpse == "none" and not snd.glimpsing and not snd.checkAff("frostbrand") then
+          string = "fulcrum glimpse water"
+        elseif snd.glimpse == "none" and snd.checkAff("frostbrand") then
+          string = "fulcrum catalyst " .. snd.target .. " frost"
+        elseif snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
+          if gmcp.Char.Vitals.ability_bal == "1" then
+            string = "fulcrum flare " .. snd.target
+          end
         end
-        if gmcp.Char.Vitals.resonance == "water" then
+      elseif gmcp.Char.Vitals.resonance == "water" then
           if not stalled then
             if snd.limb_dmg.torso == 0 and snd.parried_limb ~= "torso" then
               string = string .. snd.sep .. "fulcrum stall 3 firelash " .. snd.target .. " torso"
@@ -5308,7 +5316,10 @@ function snd.attack_function()
 		local string = "" -- we'll load this with our attack string
 		local call = "" -- and this with our affliction call
 			
-	if snd.glimpse == "none" and snd.checkAff("stormtouched") and not snd.glimpsing then
+	if snd.fulcrum_call then
+    string = "fulcrum recall"
+    snd.fulcrum_call = false
+  elseif snd.glimpse == "none" and snd.checkAff("stormtouched") and not snd.glimpsing then
 		string = "fulcrum glimpse air"
 	elseif snd.glimpse == "none" and not snd.checkAff("stormtouched") then
 		string = "fulcrum glimpse fire"
@@ -5383,7 +5394,10 @@ end</script>
           end
         end
       end
-      if snd.glimpse == "none" and not snd.glimpsing and not snd.checkAff("frostbrand") then
+      if snd.fulcrum_call then
+        string = "fulcrum recall"
+        snd.fulcrum_call = false
+      elseif snd.glimpse == "none" and not snd.glimpsing and not snd.checkAff("frostbrand") then
         string = "fulcrum glimpse water"
       elseif snd.glimpse == "none" and snd.checkAff("frostbrand") then
         string = "fulcrum catalyst " .. snd.target .. " frost"
@@ -5518,8 +5532,11 @@ function snd.attack_function()
 	while #tohit &lt; 3 do
 		table.insert(tohit, extraaff)
 	end
-			
-	if snd.glimpse == "none" and not snd.checkAff("thunderbrand") and not snd.glimpsing then
+  
+  if snd.fulcrum_call then
+    string = "fulcrum recall"
+    snd.fulcrum_call = false
+  elseif snd.glimpse == "none" and not snd.checkAff("thunderbrand") and not snd.glimpsing then
 		string = "fulcrum glimpse air"
 	elseif snd.glimpse == "none" and snd.checkAff("thunderbrand") then
 		string = "fulcrum catalyst "..snd.target.." air"
@@ -5618,11 +5635,17 @@ function snd.attack_function()
 		string = string..snd.sep.."cast windlance "..snd.target
 	end
 			
-	if snd.glimpse == "none" and not snd.glimpsing then
+	if snd.fulcrum_call then
+    string = "fulcrum recall"
+    snd.fulcrum_call = false
+  elseif snd.glimpse == "none" and not snd.glimpsing then
 		string = "fulcrum glimpse fire"
 	end
 
-	if snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
+	if snd.fulcrum_call then
+    string = "fulcrum recall"
+    snd.fulcrum_call = false
+  elseif snd.glimpse == "water" or snd.glimpse == "fire" or snd.glimpse == "air" then
 	
 		if gmcp.Char.Vitals.ability_bal == "1" then
 			string = "fulcrum flare "..snd.target
@@ -6989,7 +7012,7 @@ snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^aff$</regex>
+									<regex>^aff2$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>Aff 2</name>
@@ -7119,7 +7142,7 @@ snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^aff2$</regex>
+									<regex>^aff$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>Iesid Route</name>
@@ -7289,7 +7312,7 @@ function snd.attack_function()
     call = "wt Vinelash "..snd.target..": epteth"..snd.sep
   else
     string = string.."commune vinelash "..snd.target.." ouabain"
-  call = "wt Vinelash "..snd.target..": ouabain"
+    call = "wt Vinelash "..snd.target..": ouabain"..snd.sep
   end
 	
 	string = call..string
@@ -7338,8 +7361,8 @@ function snd.attack_function()
     string = string.."nature pull "..snd.target
   elseif snd.proned() then
     string = string.."commune strangle "..snd.target
-  elseif not snd.proned() and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 and snd.thorncount == 3 then
-    string = string.."commune boost"..snd.sep.."commune slam "..snd.target
+  elseif not snd.proned() and tonumber(gmcp.Char.Vitals.energy) &gt;= 3 and snd.thorncount &gt;= 3 then
+    string = string.."commune boost"..snd.sep.."commune slam "..snd.target.." 6"
   elseif tonumber(gmcp.Char.Vitals.energy) &gt;= 3 then
     if not snd.checkAff("haemophilia") then
       string = string.."commune boost"..snd.sep.."commune vinelash "..snd.target.." hepafarin"
@@ -7368,7 +7391,7 @@ snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^thorn$</regex>
+									<regex>^thorns$</regex>
 								</Alias>
 							</AliasGroup>
 							<Alias isActive="yes" isFolder="no">
@@ -17448,7 +17471,7 @@ send("firstaid priority ringing_ears 4")-- Phys Aff. (decongestant)
 send("firstaid priority blood_poison 4") -- Phys Aff.(decongestant)
 
 -- Opiate Physicals
-send("firstaid priority sandrot 3") -- Phys Aff. (opiate)
+send("firstaid priority slough 3") -- Phys Aff. (opiate)
 send("firstaid priority heartflutter 4") -- Phys Aff. (opiate)
 
 -- Salve Physicals
@@ -17573,7 +17596,7 @@ tempTimer(2, [[send("firstaid priority defence speed 1##firstaid priority defenc
 tempTimer(2.5, [[send("FIRSTAID PRIORITY PRESTORE head 15% 8##firstaid priority aeon 1##firstaid priority anorexia 1##firstaid priority indifference 1##firstaid priority destroyed_throat 1##firstaid priority crippled_body 1##firstaid priority paresis 1##firstaid priority paralysis 1##firstaid priority asleep 1##firstaid priority voyria 1##firstaid priority writhe_gunk 1")]])
 tempTimer(3, [[send("firstaid priority writhe_grappled 1##firstaid priority writhe_stasis 1##firstaid priority writhe_web 1##firstaid priority writhe_vines 1##firstaid priority writhe_bind 1##firstaid priority writhe_transfix 1##firstaid priority writhe_ropes 1##firstaid priority writhe_impaled 1##firstaid priority writhe_thighlock 1##firstaid priority dazed 1##firstaid priority writhe_hoist 1##firstaid priority itchy 1##firstaid priority slickness 2##firstaid priority hellsight 2##firstaid priority asthma 2")]])
 tempTimer(3.5, [[send("firstaid priority ringing_ears 2##firstaid priority limp_veins 2##firstaid priority head_mangled 2##firstaid priority crushed_chest 2##firstaid priority burnt_skin 2##firstaid priority head_bruised_critical 2##firstaid priority disrupted 2##firstaid priority withering 3##firstaid priority left_arm_amputated 3##firstaid priority right_arm_amputated 3##firstaid priority left_leg_amputated 3##firstaid priority right_leg_amputated 3##firstaid priority left_arm_damaged 3##firstaid priority right_arm_damaged 3")]])
-tempTimer(4, [[send("firstaid priority left_leg_damaged 3##firstaid priority right_leg_damaged 3##firstaid priority right_leg_mangled 3##firstaid priority left_leg_mangled 3##firstaid priority right_arm_mangled 3##firstaid priority left_arm_mangled 3##firstaid priority left_leg_bruised_critical 3##firstaid priority right_leg_bruised_critical 3##firstaid priority torso_bruised_critical 3##firstaid priority voidgaze 3##firstaid priority clumsiness 3##firstaid priority sandrot 3##firstaid priority thin_blood 3")]])
+tempTimer(4, [[send("firstaid priority left_leg_damaged 3##firstaid priority right_leg_damaged 3##firstaid priority right_leg_mangled 3##firstaid priority left_leg_mangled 3##firstaid priority right_arm_mangled 3##firstaid priority left_arm_mangled 3##firstaid priority left_leg_bruised_critical 3##firstaid priority right_leg_bruised_critical 3##firstaid priority torso_bruised_critical 3##firstaid priority voidgaze 3##firstaid priority clumsiness 3##firstaid priority slough 3##firstaid priority thin_blood 3")]])
 tempTimer(4.5, [[send("firstaid priority disfigurement 4##firstaid priority migraine 4##firstaid priority left_leg_broken 4##firstaid priority right_leg_broken 4##firstaid priority right_arm_broken 4##firstaid priority left_arm_broken 4##firstaid priority firstaid_predict_arms 4##firstaid priority firstaid_predict_legs 4##firstaid priority first##firstaid priority impatience 4##firstaid priority infested 4##firstaid priority mirroring 4##firstaid priority pacifism 4##firstaid priority patterns 4##firstaid priority recklessness 4")]])
 tempTimer(5, [[send("firstaid priority weariness 4##firstaid priority deadening 5##firstaid priority spinal_rip 5##firstaid priority head_damaged 5##firstaid priority torso_damaged 5##firstaid priority torso_mangled 5##firstaid priority left_arm_bruised 5##firstaid priority right_arm_bruised 5##firstaid priority left_leg_bruised 5##firstaid priority right_leg_bruised 5##firstaid priority head_bruised 5##firstaid priority torso_bruised 5##firstaid priority left_leg_bruised_moderate 5")]])
 tempTimer(5.5, [[send("firstaid priority torso_bruised_moderate 5##firstaid priority head_bruised_moderate 5##firstaid priority gloom 5##firstaid priority blighted 5##firstaid priority blood_curse 5##firstaid priority blood_poison 5##firstaid priority confusion 5##firstaid priority idiocy 5##firstaid priority mental_disruption 5##firstaid priority merciful 5##firstaid priority physical_disruption 5##firstaid priority plodding 5##firstaid priority squelched 6")]])
