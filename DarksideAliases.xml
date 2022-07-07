@@ -1605,7 +1605,7 @@ elseif snd.class == "Syssin" then
 	 		if snd.wielding("dirk") or snd.wielding("stilleto") then
 	  		snd.send("backstab "..snd.target)
 	 		else
-	  		snd.send("quickwield left dirk"..snd.sep.."backstab "..snd.target)
+	  		snd.send("quickwield right dirk"..snd.sep.."backstab "..snd.target)
 	 		end
 		else
 	 		if snd.wielding("whip") then
@@ -2617,7 +2617,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>wield bashing</name>
 									<script>if snd.class == "Syssin" then
-snd.send("quickwield left whip"..snd.sep.."quickwield right shield")
+  snd.send("quickwield left shield"..snd.sep.."quickwield right dirk")
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -2626,11 +2626,20 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>wield pvp</name>
 									<script>if snd.class == "Syssin" then
-snd.send("quickwield left dirk"..snd.sep.."quickwield right shield")
+  snd.send("quickwield left whip"..snd.sep.."quickwield right dirk")
 end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^wpvp$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>wield bow</name>
+									<script>if snd.class == "Syssin" then
+  snd.send("secure dirk"..snd.sep.."secure whip"..snd.sep.."wear buckler"..snd.sep.."bowstance")
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^wbow$</regex>
 								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
@@ -2650,15 +2659,15 @@ end
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^bk(.*)$</regex>
+									<regex>^yank(.*)$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>backstab</name>
 									<script>if snd.class == "Syssin" then
 if matches[2] == "" then
- snd.send("qeb quickwield left dirk"..snd.sep.."backstab "..snd.target.." curare")
+ snd.send("qeb quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia")
 else
- snd.send("qeb quickwield left dirk"..snd.sep.."backstab "..matches[2].." curare")
+ snd.send("qeb quickwield right dirk"..snd.sep.."backstab "..matches[2].." selarnia")
 end
 end</script>
 									<command></command>
@@ -2694,6 +2703,19 @@ end</script>
 									<packageName></packageName>
 									<regex>^at(?: (.*))?$</regex>
 								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Vortex</name>
+									<script>if snd.class == "Syssin" then
+  if matches[2] == nil then
+    snd.send("qeb worm vortex "..snd.target)
+  else
+    snd.send("qeb worm vortex "..matches[2])
+  end
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^vt(?: (.*))?$</regex>
+								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
 								<name>Hypnosis</name>
@@ -2704,7 +2726,7 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>hypnotise</name>
 									<script>if snd.class == "Syssin" then
-snd.send("qeb hypnotise "..snd.target)
+  snd.send("qeb hypnotise "..snd.target)
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -2840,6 +2862,15 @@ end</script>
 									<packageName></packageName>
 									<regex>^hypm$</regex>
 								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Remove amulet</name>
+									<script>if snd.class == "Syssin" then
+  snd.set_queue("hypnotise "..snd.target..snd.sep.."suggest "..snd.target.." action remove amulet"..snd.sep.."qeb seal "..snd.target.." 3"..snd.sept.."snap "..snd.target)
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^ra$</regex>
+								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
 								<name>Affliction Offenses</name>
@@ -2893,11 +2924,11 @@ function snd.attack_function()
 		if not snd.can_arms() then -- this means we have at least one broken arm
 			-- so we'll have to bedazzle instead of dstab
 			string = "bedazzle "..snd.target
-		-- let's move on
+		elseif not snd.used.shield and snd.balance.backstab then
+	 		string = "quickwield right dirk"..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia"
 		elseif snd.checksomeAffs({"anorexia", "allergies", "vomiting", "mental disruption"},1) and not snd.checkAff("thin_blood") then
 			if snd.used.paste then
-				string = "quickwield left whip"..snd.sep.."flay "..snd.target.." fangbarrier"
-				snd.flayingfang = true
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
 			else
 				-- if they don't yet have scytherus, fangbarrier is down, and they have at least one thing to cover it
 				string = "bite "..snd.target.." scytherus"
@@ -2926,17 +2957,11 @@ function snd.attack_function()
 				table.insert(tohit, snd.effects[touse[aff]])
 			end
 			-- now we know which venoms we want, let's decide what attack to use
-			if (snd.defenses.def_hiding.state == "deffed" or snd.defenses.def_phase.state == "deffed") and not snd.used.shield then
-				string = "quickwield left dirk"..snd.sep.."backstab "..snd.target.." "..tohit[1]
-				call = "wt Afflicting "..snd.target..": "..tohit[1]
-			elseif snd.used.shield then
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." shield"
-			elseif snd.used.rebounding then
-          -- we can use a venom with flay if we're flaying shield or rebounding
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." rebounding"
+			if snd.used.shield or snd.used.rebounding then
+        string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
         call = "wt Afflicting "..snd.target..": "..tohit[1]
-      else -- otherwise, we don't need to flay - go full ham!
-				string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+			else -- otherwise, we don't need to flay - go full ham!
+				string = "quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
 				call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
 			end
 		end
@@ -3047,20 +3072,20 @@ function snd.attack_function()
 		if not snd.can_arms() then -- this means we have at least one broken arm
 			-- so we'll have to bedazzle instead of dstab
 			string = "bedazzle "..snd.target
+		elseif not snd.used.shield and snd.balance.backstab then
+	 		string = "quickwield right dirk"..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia"
 		elseif not snd.checkAff("numbed_skin") then
 			-- they don't have numbness yet
 			if snd.used.paste then -- but they have fangbarrier, so we can't give it
 				-- we need to flay first
-				string = "quickwield left whip"..snd.sep.."flay "..snd.target.." fangbarrier"
-				snd.flayingfang = true
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
 			else -- they don't have fangbarrier - go for it!
 				string = "shadow mark numbness "..snd.target
 			end
 		-- they already have numbness, let's move on
 		elseif snd.checksomeAffs({"anorexia", "allergies", "vomiting", "mental disruption"},1) and not snd.checkAff("thin_blood") then
 			if snd.used.paste then
-				string = "quickwield left whip"..snd.sep.."flay "..snd.target.." fangbarrier"
-				snd.flayingfang = true
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
 			else
 				-- if they don't yet have scytherus, fangbarrier is down, and they have at least one thing to cover it
 				string = "bite "..snd.target.." scytherus"
@@ -3089,14 +3114,11 @@ function snd.attack_function()
 				table.insert(tohit, snd.effects[touse[aff]])
 			end
 			-- now we know which venoms we want, let's decide what attack to use
-			if snd.used.shield then
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." shield"
-			elseif snd.used.rebounding then
-          -- we can use a venom with flay if we're flaying shield or rebounding
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." rebounding"
+			if snd.used.shield or snd.used.rebounding then
+        string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
         call = "wt Afflicting "..snd.target..": "..tohit[1]
-      else -- otherwise, we don't need to flay - go full ham!
-				string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+			else -- otherwise, we don't need to flay - go full ham!
+				string = "quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
 				call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
 			end
 		end
@@ -3104,9 +3126,7 @@ function snd.attack_function()
 			string = call..snd.sep..string
 		end
 		-- now let's see if we can append some hypnosis
-		if snd.hypno == "open" or snd.hypno == "none" then
-			-- 'open' means they're ready for suggestions, 'none' means we haven't started yet
-			-- either way, we're going to suggest something now
+  	if snd.hypno == "open" or snd.hypno == "none" then
 			if #snd.hypno_stack &gt;= snd.last_hypno + 1 then -- we still have more in the hypno_stack
 				snd.hyp = snd.last_hypno+1 -- move on to the next thing
 				if snd.hypno == "none" then -- if we haven't hypnotised yet
@@ -3117,15 +3137,19 @@ function snd.attack_function()
 			elseif snd.hypno == "open" then -- we're at the end of the (hypno) line, and they're not sealed yet
 				string = "seal "..snd.target.." 3" -- so seal them up
 			end
+			elseif snd.hypno == "ready" then --They're sealed so snap em!
+			  string = string..snd.sep.."snap "..snd.target
+			end
 		elseif snd.hypno == "running" then -- we have an active hypnosis going
 			-- just append hypnotise so we don't miss when it ends
 			string = string..snd.sep.."hypnotise "..snd.target
 		end
-	end
 	-- anything we can do with shadow balance this round?
 	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" and table.contains(snd.target_has, "numbed_skin") then
 		-- we do have shadow balance and we don't need to hold it for numbness
-		if snd.target_locked() and #snd.target_has &gt;= 8 then
+		if snd.hypno == "ready" then
+      string = string..snd.sep.."snap "..snd.target
+    elseif snd.target_locked() and #snd.target_has &gt;= 8 then
 			-- the target's locked and affed up, let's hurry the finish along
 			string = string..snd.sep.."shadow sleight pall "..snd.target
 		elseif not snd.checkAff("void") and snd.hypno ~= "running" then
@@ -3225,20 +3249,20 @@ function snd.attack_function()
 		if not snd.can_arms() then -- this means we have at least one broken arm
 			-- so we'll have to bedazzle instead of dstab
 			string = "bedazzle "..snd.target
+		elseif not snd.used.shield and snd.balance.backstab then
+	 		string = "quickwield right dirk"..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia"
 		elseif not snd.checkAff("numbed_skin") then
 			-- they don't have numbness yet
 			if snd.used.paste then -- but they have fangbarrier, so we can't give it
 				-- we need to flay first
-				string = "quickwield left whip"..snd.sep.."flay "..snd.target.." fangbarrier"
-				snd.flayingfang = true
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
 			else -- they don't have fangbarrier - go for it!
 				string = "shadow mark numbness "..snd.target
 			end
 		-- they already have numbness, let's move on
 		elseif snd.checksomeAffs({"anorexia", "allergies", "vomiting", "mental disruption"},1) and not snd.checkAff("thin_blood") then
 			if snd.used.paste then
-				string = "quickwield left whip"..snd.sep.."flay "..snd.target.." fangbarrier"
-				snd.flayingfang = true
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
 			else
 				-- if they don't yet have scytherus, fangbarrier is down, and they have at least one thing to cover it
 				string = "bite "..snd.target.." scytherus"
@@ -3267,24 +3291,21 @@ function snd.attack_function()
 				table.insert(tohit, snd.effects[touse[aff]])
 			end
 			-- now we know which venoms we want, let's decide what attack to use
-			if snd.used.shield then
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." shield"
-			elseif snd.used.rebounding then
-          -- we can use a venom with flay if we're flaying shield or rebounding
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." rebounding"
-        call = "wt Afflicting "..snd.target..": "..tohit[1]
-      else -- otherwise, we don't need to flay - go full ham!
-				string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
-				call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
-			end
+			if snd.used.shield or snd.used.rebounding then
+        string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
+        call = "wt Afflicting "..snd.target..": "..tohit[1]..snd.sep
+			else -- otherwise, we don't need to flay - go full ham!
+				string = "quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+				call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]..snd.sep
+      end
 		end
+		-- prepend our affliction call, if we need one
 		if snd.toggles.affcalling and not snd.target_gone then
 			string = call..snd.sep..string
 		end
-		-- now let's see if we can append some hypnosis
-		if snd.hypno == "open" or snd.hypno == "none" then
-			-- 'open' means they're ready for suggestions, 'none' means we haven't started yet
-			-- either way, we're going to suggest something now
+    
+
+  	if snd.hypno == "open" or snd.hypno == "none" then
 			if #snd.hypno_stack &gt;= snd.last_hypno + 1 then -- we still have more in the hypno_stack
 				snd.hyp = snd.last_hypno+1 -- move on to the next thing
 				if snd.hypno == "none" then -- if we haven't hypnotised yet
@@ -3295,15 +3316,20 @@ function snd.attack_function()
 			elseif snd.hypno == "open" then -- we're at the end of the (hypno) line, and they're not sealed yet
 				string = "seal "..snd.target.." 3" -- so seal them up
 			end
+			elseif snd.hypno == "ready" then --They're sealed so snap em!
+			  string = string..snd.sep.."snap "..snd.target
+			end
 		elseif snd.hypno == "running" then -- we have an active hypnosis going
 			-- just append hypnotise so we don't miss when it ends
 			string = string..snd.sep.."hypnotise "..snd.target
 		end
-	end
+  
 	-- anything we can do with shadow balance this round?
 	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" and table.contains(snd.target_has, "numbed_skin") then
 		-- we do have shadow balance and we don't need to hold it for numbness
-		if snd.target_locked() and #snd.target_has &gt;= 8 then
+		if snd.hypno == "ready" then
+      string = string..snd.sep.."snap "..snd.target
+    elseif snd.target_locked() and #snd.target_has &gt;= 8 then
 			-- the target's locked and affed up, let's hurry the finish along
 			string = string..snd.sep.."shadow sleight pall "..snd.target
 		elseif not snd.checkAff("void") and snd.hypno ~= "running" then
@@ -3313,6 +3339,8 @@ function snd.attack_function()
 			string = string..snd.sep.."shadow sleight dissipate "..snd.target
 		end
 	end
+  
+  
 	if string ~= snd.last_attack and not snd.waiting.queue then
 		snd.last_attack = string
 		snd.attack(snd.last_attack)
@@ -3324,7 +3352,7 @@ snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
-									<regex>^kl$</regex>
+									<regex>^kll$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
 									<name>1v1</name>
@@ -3404,12 +3432,11 @@ function snd.attack_function()
 		if not snd.can_arms() then -- this means we have at least one broken arm
 			-- so we'll have to bedazzle instead of dstab
 			string = "bedazzle "..snd.target
-		elseif (snd.defenses.def_hiding.state == "deffed" or snd.defenses.def_phase.state == "deffed") and not snd.used.shield then
-	 		string = "quickwield left dirk"..snd.sep.."quickwield right shield"..snd.sep.."backstab "..snd.target
+		elseif not snd.used.shield and snd.balance.backstab then
+	 		string = "quickwield right dirk"..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia"
 		elseif snd.checksomeAffs({"anorexia", "allergies", "vomiting", "mental disruption"},1) and not snd.checkAff("thin_blood") then
 			if snd.used.paste then
-				string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."flay "..snd.target.." fangbarrier"
-				snd.flayingfang = true
+				string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."flay "..snd.target
 			else
 				-- if they don't yet have scytherus, fangbarrier is down, and they have at least one thing to cover it
 				string = "bite "..snd.target.." scytherus"
@@ -3417,7 +3444,7 @@ function snd.attack_function()
 		elseif snd.target_locked() and snd.checkAff("sensitivity") then
 			-- they're locked and ready to be finished off
 			if snd.used.paste then
-				string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."flay "..snd.target
+				string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."flay "..snd.target
 			else
 				string = "bite "..snd.target.." camus"
 			end
@@ -3438,20 +3465,19 @@ function snd.attack_function()
 				table.insert(tohit, snd.effects[touse[aff]])
 			end
 			-- now we know which venoms we want, let's decide what attack to use
-			if snd.used.shield then
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." shield"
-			elseif snd.used.rebounding then
-          -- we can use a venom with flay if we're flaying shield or rebounding
-        string = "quickwield left whip"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target.." rebounding"
+			if snd.used.rebounding or snd.used.shield then
+        string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
         call = "wt Afflicting "..snd.target..": "..tohit[1]
-      else -- otherwise, we don't need to flay - go full ham!
-        string = "quickwield left dirk"..snd.sep.."quickwield right shield"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+			else -- otherwise, we don't need to flay - go full ham!
+        string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
         call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
       end
 		end
+		-- prepend our affliction call, if we need one
 		if snd.toggles.affcalling and not snd.target_gone then
 			string = call..snd.sep..string
 		end
+    
 		-- now let's see if we can append some hypnosis
 		if snd.hypno == "open" or snd.hypno == "none" then
 			-- 'open' means they're ready for suggestions, 'none' means we haven't started yet
@@ -3478,7 +3504,9 @@ function snd.attack_function()
 	-- anything we can do with shadow balance this round?
 	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" then
 		-- we do have shadow balance and we don't need to hold it for numbness
-		if snd.target_locked() and #snd.target_has &gt;= 8 then
+		if snd.hypno == "ready" then
+      string = string..snd.sep.."snap "..snd.target
+    elseif snd.target_locked() and #snd.target_has &gt;= 8 then
 			-- the target's locked and affed up, let's hurry the finish along
 			string = string..snd.sep.."shadow sleight pall "..snd.target
 		elseif not snd.checkAff("void") and snd.hypno ~= "running" then
@@ -3488,6 +3516,7 @@ function snd.attack_function()
 			string = string..snd.sep.."shadow sleight dissipate "..snd.target
 		end
 	end
+  
 	if string ~= snd.last_attack and not snd.waiting.queue then
 		snd.last_attack = string
 		snd.attack(snd.last_attack)
@@ -3515,13 +3544,16 @@ snd.starting_attack()
 function snd.attack_function()
  local string = ""
  if not snd.waiting.queue then
-  if (snd.defenses.def_hiding.state == "deffed" or snd.defenses.def_phase.state == "deffed") and not snd.used.shield then
-	 string = "quickwield left dirk"..snd.sep.."backstab "..snd.target
-  elseif snd.proned() and not snd.used.shield then
+  if not snd.can_arms() then -- this means we have at least one broken arm
+			-- so we'll have to bedazzle instead of dstab
+			string = "bedazzle "..snd.target
+	elseif not snd.used.shield and snd.balance.backstab then
+	 		string = "quickwield right dirk"..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia"
+	elseif snd.proned() and not snd.used.shield then
    string = "quickwield left whip"..snd.sep.."garrote "..snd.target
   else
 	 if snd.used.paste then
-	  string = "quickwield left whip"..snd.sep.."flay "..snd.target.." fangbarrier"
+	  string = "quickwield left whip"..snd.sep.."flay "..snd.target
 	 else
     string = "bite "..snd.target.." camus"
 	 end
@@ -3543,6 +3575,319 @@ end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^dmg$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Shooting</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>snipe</name>
+									<script>if snd.class == "Syssin" then
+  snd.set_queue("secure dirk"..snd.sep.."secure whip"..snd.sep.."wear buckler"..snd.sep.."bowstance"..snd.sep.."switch normal"..snd.sep.."snipe "..snd.target.." "..matches[2])
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^snp (\w+)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>meteor</name>
+									<script>if snd.class == "Syssin" then
+  snd.set_queue("secure dirk"..snd.sep.."secure whip"..snd.sep.."wear buckler"..snd.sep.."bowstance"..snd.sep.."switch meteor"..snd.sep.."shoot "..snd.target.." meteor")
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^met$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>ghost</name>
+									<script>if snd.class == "Syssin" then
+  if matches[2] == nil then
+    snd.set_queue("secure dirk"..snd.sep.."secure whip"..snd.sep.."wear buckler"..snd.sep.."bowstance"..snd.sep.."switch ghost"..snd.sep.."shoot "..snd.target)
+  else
+    snd.set_queue("secure dirk"..snd.sep.."secure whip"..snd.sep.."wear buckler"..snd.sep.."bowstance"..snd.sep.."switch ghost"..snd.sep.."shoot "..matches[2])
+  end
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^gs(?: (.*))?$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Limbs</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Limbs / Squelch</name>
+									<script>if snd.class == "Syssin" then
+snd.hypno_stack = { -- hypnosis affs, in priority order
+ "stuttering",
+ "dementia",
+ "anorexia",
+}
+  snd.starting_attack()
+  function snd.attack_function()
+	 local string = "" -- this will populate with our attack
+	 local call = "" -- this will be for affliction calling
+	 local touse = {} -- this will store the affs we still want to hit with
+	 local tohit = {} -- this will store the effects from touse
+	 local extraaff = "delphinium" -- what to use if we used everything else
+	 -- and how far away we are from a lock
+	 local missing = snd.missingAff("stupidity/paresis/anorexia/asthma/slickness", "/")
+	 if snd.target_locked() then
+		  snd.giving = {
+		  "squelched",
+		  "left_leg_broken",
+		  "right_leg_broken",
+		  "hearing",
+		  "sensitivity",
+		  "voyria"
+		  }
+	 elseif snd.hypno == "running" then
+		  snd.giving = { -- the venoms we're going to apply while hypnosis is running, in prioritized order
+		  "squelched", 
+		  "left_leg_broken",
+		  "right_leg_broken",
+		  "paresis",
+		  "clumsiness",
+		  "asthma",
+		  "shyness", -- to keep impatience stuck, this buries it
+		  "slickness",
+		  "anorexia", -- work harder on the lock than buffer affs, while hypnosis is going
+		  "stupidity", -- not as important, since we're running impatience
+		  "vomiting",
+		  "allergies",
+		  "sensitivity",
+		  "weariness",
+		  "voyria",
+		  }
+	 else
+		  snd.giving = { -- the venoms we're going to apply while hypnosis is building, in prioritized order
+		  "squelched", 
+		  "left_leg_broken",
+		  "right_leg_broken",
+		  "anorexia",
+		  "slickness",
+		  "clumsiness",
+		  "asthma",
+		  "paresis",
+		  "shyness", -- to bury impatience once hypno fires
+		  "allergies", 
+		  "stupidity",
+		  "sensitivity",
+		  "weariness",
+		  }
+	end
+	if not snd.waiting.queue then -- make sure not to spam
+		if not snd.can_arms() then -- this means we have at least one broken arm
+			-- so we'll have to bedazzle instead of dstab
+			string = "bedazzle "..snd.target
+		elseif not snd.used.shield and snd.balance.backstab then
+	 		string = "quickwield right dirk"..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.target.." selarnia"
+		elseif snd.target_locked() then
+			-- they're locked and ready to be finished off
+			if snd.used.paste then
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
+			else
+				string = "bite "..snd.target.." camus"
+			end
+		else -- none of the special conditions are met, let's go with a meat-and-potatoes dstab
+			-- first and foremost, check if we can lock them with one or two more affs
+			if #missing == 1 or (#missing == 2 and not snd.used.shield and not snd.used.rebounding) then
+				touse = missing
+			end
+			-- any aff we're not using to lock, we'll pick from the lists above
+			for i in pairs(snd.giving) do
+				if not snd.checkAff(snd.giving[i]) then
+					if not table.contains(touse, snd.giving[i]) then
+						table.insert(touse, snd.giving[i])
+					end
+				end
+			end
+			for aff in pairs(touse) do
+				table.insert(tohit, snd.effects[touse[aff]])
+			end
+			-- now we know which venoms we want, let's decide what attack to use
+			if snd.used.shield or snd.used.rebounding then
+        string = "quickwield left whip"..snd.sep.."quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
+        call = "wt Afflicting "..snd.target..": "..tohit[1]..snd.sep
+			else -- otherwise, we don't need to flay - go full ham!
+				string = "quickwield right dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+				call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]..snd.sep
+      end
+		end
+		-- prepend our affliction call, if we need one
+		if snd.toggles.affcalling and not snd.target_gone then
+			string = call..string..snd.sep
+		end
+    
+		if snd.hypno == "open" or snd.hypno == "none" then
+			-- 'open' means they're ready for suggestions, 'none' means we haven't started yet
+			-- either way, we're going to suggest something now
+			if #snd.hypno_stack &gt;= snd.last_hypno + 1 then -- we still have more in the hypno_stack
+				snd.hyp = snd.last_hypno+1 -- move on to the next thing
+				if snd.hypno == "none" then -- if we haven't hypnotised yet
+					string = string..snd.sep.."hypnotise "..snd.target -- do that first
+				end
+				-- append the suggestion to our attack string
+				string = string..snd.sep.."suggest "..snd.target.." "..snd.hypno_stack[snd.hyp]
+			elseif snd.hypno == "open" then -- we're at the end of the (hypno) line, and they're not sealed yet
+				string = "seal "..snd.target.." 3" -- so seal them up
+			end
+			elseif snd.hypno == "ready" then --They're sealed so snap em!
+			  string = string..snd.sep.."snap "..snd.target
+			end
+		elseif snd.hypno == "running" then -- we have an active hypnosis going
+			-- just append hypnotise so we don't miss when it ends
+			string = string..snd.sep.."hypnotise "..snd.target
+		end
+    
+	-- anything we can do with shadow balance this round?
+	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" and table.contains(snd.target_has, "numbed_skin") then
+		-- we do have shadow balance and we don't need to hold it for numbness
+		if snd.hypno == "ready" then
+      string = string..snd.sep.."snap "..snd.target
+    elseif snd.target_locked() and #snd.target_has &gt;= 8 then
+			-- the target's locked and affed up, let's hurry the finish along
+			string = string..snd.sep.."shadow sleight pall "..snd.target
+		elseif not snd.checkAff("void") and snd.hypno ~= "running" then
+			-- they aren't under active hypnosis, and not locked - let's void!
+			string = string..snd.sep.."shadow sleight void "..snd.target
+		else -- they're under hypnosis, but not yet locked, nudge it along with dissipate
+			string = string..snd.sep.."shadow sleight dissipate "..snd.target
+		end
+	end
+  
+  
+	if string ~= snd.last_attack and not snd.waiting.queue then
+		snd.last_attack = string
+		snd.attack(snd.last_attack)
+		snd.waiting.queue = true
+		tempTimer(0.2, [[snd.waiting.queue = false]])
+	end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limbs$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>legs</name>
+									<script>if snd.class == "Syssin" then
+snd.starting_attack()
+function snd.attack_function()
+	local string = "" -- this will populate with our attack
+	local call = "" -- this will be for affliction calling
+	local touse = {} -- this will store the affs we still want to hit with
+	local tohit = {} -- this will store the effects from touse
+	local extraaff = "delphinium" -- what to use if we used everything else
+	-- and how far away we are from a lock
+	local missing = snd.missingAff("stupidity/paresis/anorexia/asthma/slickness", "/")
+
+		snd.giving = { -- the venoms we're going to apply while hypnosis is building, in prioritized order
+		"left_leg_broken",
+		"right_leg_broken",
+		"left_arm_broken",
+		"right_arm_broken",
+		"stupidity",
+		"anorexia",
+		"hearing",
+		"sensitivity",
+		--"squelched",
+		"shyness", -- to bury impatience once hypno fires
+		--"vomiting", -- stick these two early, to bury scytherus
+		"allergies", -- this being the second
+		--"haemophilia",
+		--"recklessness",
+		"weariness",
+		--"dizziness",
+		--"voyria",
+
+}
+	if not snd.waiting.queue then -- make sure not to spam
+		if not snd.can_arms() then -- this means we have at least one broken arm
+			-- so we'll have to bedazzle instead of dstab
+			string = "bedazzle "..snd.target
+		-- let's move on
+		elseif (snd.checkAff("anorexia") or snd.checkAff("allergies") or snd.checkAff("vomiting") or snd.checkAff("mental_disruption")) 
+					and not snd.checkAff("thin_blood") then
+			if snd.used.paste then
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
+				snd.flayingfang = true
+			else
+				-- if they don't yet have scytherus, fangbarrier is down, and they have at least one thing to cover it
+				string = "bite "..snd.target.." scytherus"
+			end
+		elseif snd.target_locked() and snd.checkAff("sensitivity") then
+			-- they're locked and ready to be finished off
+			if snd.used.paste then
+				string = "quickwield left whip"..snd.sep.."flay "..snd.target
+			else
+				string = "bite "..snd.target.." camus"
+			end
+		else -- none of the special conditions are met, let's go with a meat-and-potatoes dstab
+			-- first and foremost, check if we can lock them with one or two more affs
+			if #missing == 1 or (#missing == 2 and not snd.used.shield and not snd.used.rebounding) then
+				touse = missing
+			end
+			-- any aff we're not using to lock, we'll pick from the lists above
+			for i in pairs(snd.giving) do
+				if not snd.checkAff(snd.giving[i]) then
+					if not table.contains(touse, snd.giving[i]) then
+						table.insert(touse, snd.giving[i])
+					end
+				end
+			end
+			for aff in pairs(touse) do
+				table.insert(tohit, snd.effects[touse[aff]])
+			end
+			-- now we know which venoms we want, let's decide what attack to use
+			if not snd.used.shield and snd.balance.backstab then
+				string = "quickwield left dirk"..snd.sep.."backstab "..snd.target.." "..tohit[1]
+				call = "wt Afflicting "..snd.target..": "..tohit[1]
+			elseif snd.used.shield or snd.used.rebounding then
+				-- we can use a venom with flay if we're flaying shield
+				string = "quickwield left whip"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
+				call = "wt Afflicting "..snd.target..": "..tohit[1]
+			else -- otherwise, we don't need to flay - go full ham!
+				string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+				call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
+			end
+		end
+		if snd.toggles.affcalling and not snd.target_gone then
+			string = call..snd.sep..string
+		end
+	end
+	-- anything we can do with shadow balance this round?
+	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" then
+		-- we do have shadow balance and we don't need to hold it for numbness
+		if snd.target_locked() and #snd.target_has &gt;= 8 then
+			-- the target's locked and affed up, let's hurry the finish along
+			string = string..snd.sep.."shadow sleight pall "..snd.target
+		elseif not snd.checkAff("void") and snd.hypno ~= "running" then
+			-- they aren't under active hypnosis, and not locked - let's void!
+			string = string..snd.sep.."shadow sleight void "..snd.target
+		else -- they're under hypnosis, but not yet locked, nudge it along with dissipate
+			string = string..snd.sep.."shadow sleight dissipate "..snd.target
+		end
+	end
+	if string ~= snd.last_attack and not snd.waiting.queue then
+		snd.last_attack = string
+		snd.attack(snd.last_attack)
+		snd.waiting.queue = true
+		tempTimer(0.2, [[snd.waiting.queue = false]])
+	end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^legs$</regex>
 								</Alias>
 							</AliasGroup>
 						</AliasGroup>
@@ -5317,6 +5662,57 @@ end</script>
 									<packageName></packageName>
 									<regex>^olp$</regex>
 								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Wield bashing</name>
+									<script>if snd.class == "Ascendril" then
+  snd.send("quickwield both 210886 shield")
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^wbsh$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sketching 1</name>
+									<script>snd.send("trace clarity onto "..matches[2]..snd.sep.."qeb trace addling onto "..matches[2])</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^sk1 (\w+)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sketching 2</name>
+									<script>snd.send("trace addling onto "..matches[2]..snd.sep.."qeb trace entrapment onto "..matches[2])</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^sk2 (\w+)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sketching 3</name>
+									<script>snd.send("trace portal onto "..matches[2]..snd.sep.."qeb trace portal onto "..matches[2])</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^sk3 (\w+)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sketching 4</name>
+									<script>snd.send("trace portal onto "..matches[2]..snd.sep.."qeb trace gravity onto "..matches[2])</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^sk4 (\w+)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sketch 5</name>
+									<script>snd.send("trace clarity onto "..matches[2]..snd.sep.."qeb trace destruction onto "..matches[2])</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^sk5 (\w+)$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sketch 6</name>
+									<script>snd.send("trace destruction onto "..matches[2]..snd.sep.."qeb trace destruction onto "..matches[2])</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^sk6 (\w+)$</regex>
+								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
 								<name>Affs</name>
@@ -5382,7 +5778,7 @@ function snd.attack_function()
         if gmcp.Char.Vitals.ability_bal == "1" then
           string = "fulcrum flare " .. snd.target..snd.sep
         end
-      elseif gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "fire" then
+      elseif gmcp.Char.Vitals.resonance ~= "air" then
 	     string = "fulcrum enrich air"..snd.sep
       end
     end    
@@ -5406,6 +5802,7 @@ function snd.attack_function()
 				  else
 					   string = string..snd.sep.."fulcrum stall 3 thunder "..snd.target
 				  end
+        end
      elseif snd.defenses.def_stalled.state == "deffed" then
         if gmcp.Char.Vitals.resonance == "water" then
 				  if snd.checksomeAffs({"dizziness", "stupidity"},2) then
@@ -5429,17 +5826,15 @@ function snd.attack_function()
           end
         end
       end
-		end
+    end
 
-end
-
-	if string ~= snd.last_attack and not snd.waiting.queue then
-		snd.last_attack = string
-		snd.attack(snd.last_attack)
-		snd.waiting.queue = true
-		tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-	end
-end
+	 if string ~= snd.last_attack and not snd.waiting.queue then
+		  snd.last_attack = string
+		  snd.attack(snd.last_attack)
+		  snd.waiting.queue = true
+		  tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+	 end
+  end
 end
 snd.attack_function()
 end</script>
@@ -16067,6 +16462,8 @@ end</script>
       --elseif snd.glory &gt;= 2 and not snd.unmasked then
       --  string = "astral unmask "..snd.target
       --  cecho("\n"..snd.glory)
+      elseif hp &lt;= 50 and not snd.self_prone() then
+        string = "astral ambrosia"
       elseif snd.glory &gt;= 3 then
         string = "astral crescent "..snd.target
         cecho("\n"..snd.glory)

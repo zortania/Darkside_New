@@ -1230,7 +1230,7 @@ end</script>
 	["ot"] = "Order",
   ["cot"] = "Order",
   ["congregation"] = "Order",
-  ["leaders"] = "Leaders",
+  ["leaders"] = "Misc",
 }
 
 	if channel == "web" and snd.toggles.listening and table.contains(snd.callers, talker) then
@@ -2751,6 +2751,7 @@ aff_mana_low = {state = "healed", cures = {moss = "send"}, assess = false, timer
 aff_bleeding = {state = "healed", cures = {clot = "send"}, assess = false, timer = createStopWatch()},
 
 aff_prone = {state = "healed", effect = "cannot move or attack, must STAND", cures = {stand = "send"}, assess = false, timer = createStopWatch()},
+aff_fallen = {state = "healed", effect = "cannot move or attack, must STAND", cures = {stand = "send"}, assess = false, timer = createStopWatch()},
 aff_asleep = {state = "healed", effect = "cannot do anything other than WAKE", cures = {}, assess = false, timer = createStopWatch()},
 aff_stun = {state = "healed", effect = "cannot do anything", cures = {}, assess = false, timer = createStopWatch()},
 aff_aeon = {state = "healed", effect = "delays all actions", cures = {smoke = "elm"}, assess = false, timer = createStopWatch()},
@@ -19204,10 +19205,10 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 		end
  	else
   	if snd.defenses.def_hiding.state == "deffed" then
-	 		if snd.wielding("dirk") or snd.wielding("stilleto") then
+	 		if snd.wielding("dirk") then
 	  		battack = "backstab "..snd.bashing.target
 	 		else
-	  		battack = "quickwield left dirk"..snd.sep.."backstab "..snd.bashing.target
+	  		battack = "quickwield right dirk"..snd.sep.."backstab "..snd.bashing.target
 	 		end
 		else
 	 		if snd.wielding("whip") then
@@ -19577,31 +19578,33 @@ function snd.ascendril_bash()
   if snd.reflection_charge == 3 then
     snd.reflected = false
   end
-  if hp &lt;=40 and snd.shield_check() then
-	 	battack = "touch shield"
-	elseif hp &lt;= 60 then
-		if snd.reflection_charge &gt; 0 then
-      battack = "cast reflection"
-		else
-      if snd.shield_check() then
-			 battack = "touch shield"
-      end
-		end
-  elseif snd.counterattack_active then
-			if snd.punisher then
-        battack = "jig"
+  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if mp &gt;= 50 then
+      if snd.shield_check() and not snd.punisher then
+        battack = "clot 500"..snd.sep.."touch shield"
       else
-        battack = "touch shield"
+        battack = "clot 500"
       end
+    end
+	elseif snd.counterattack_active or snd.have_aff("blackout") then
+    if snd.punisher then
+      if snd.reflection_charge &gt; 0 and not snd.reflected then
+			   battack = "cast reflection"
+      else
+        if snd.balance.barrier and not snd.liarstrummed then
+          battack = "strum lyre"
+          snd.liarstrummed = true
+          tempTimer(1.5,[[snd.liarstrummed = false]])
+        else
+          battack = "jig"
+        end
+      end
+    else
+      battack = "touch shield"
+    end
 	elseif snd.pushattack then
 		battack = "push "..snd.bashing.target
 		snd.pushattack = false
-  elseif snd.have_aff("blackout") then
-			if snd.punisher then
-        battack = "jig"
-      else
-        battack = "touch shield"
-      end
   else
     if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "air"  then
    		battack = "cast frostblade "..snd.bashing.target
@@ -19680,7 +19683,7 @@ function snd.astral_bash()
 
   if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if mp &gt;= 50 then
-      if snd.shield_check() then
+      if snd.shield_check() and not snd.punisher then
         battack = "clot 500"..snd.sep.."touch shield"
       else
         battack = "clot 500"
@@ -21645,8 +21648,8 @@ end
 							<script>
 function snd.do_shrug()
  if snd.full_balance() and snd.need_fitness and snd.can_shrug() then
-  snd.send("shrug asthma")
-  echo("(shrug asthma)")
+  snd.send("shrug venom")
+  echo("(shrug venom)")
   snd.last_type = "shrug"
   snd.last_item = "shrug"
   snd.waiting.balance = true
@@ -22721,8 +22724,8 @@ function snd.firstaidassShifter()
 	if snd.firstaidcuretrack.head ~= "6" and snd.firstaidcuretrack.prehead ~= "20" then
 		send("FIRSTAID PRIORITY PRESTORE head 20% 6")
 	end
-  if snd.firstaidcuretrack.torso ~= "8" and snd.firstaidcuretrack.pretorso ~= "20" then
-		send("FIRSTAID PRIORITY PRESTORE torso 20% 6")
+  if snd.firstaidcuretrack.torso ~= "4" and snd.firstaidcuretrack.pretorso ~= "20" then
+		send("FIRSTAID PRIORITY PRESTORE torso 20% 4")
 	end
   if snd.firstaidcuretrack.left_leg_bruised_critical ~= "2" then
 		snd.setting_priority = "left_leg_bruised_critical 2"
@@ -22760,6 +22763,12 @@ function snd.firstaidassShifter()
   if snd.firstaidcuretrack.torso_bruised_moderate ~= "2" then
 		snd.setting_priority = "torso_bruised_moderate 2"
   end
+	if snd.firstaidcuretrack.cippled_body ~= "1" then
+		send("firstaid priority cippled_body 1")
+	end	
+	if snd.firstaidcuretrack.anorexia ~= "1" then
+		send("firstaid priority anorexia 1")
+	end	
 	if snd.firstaidcuretrack.paresis ~= "3" then
 		send("firstaid priority paresis 3")
 	end	
@@ -22781,11 +22790,23 @@ function snd.firstaidassShifter()
 	if snd.firstaidcuretrack.plodding ~= "3" then
 		send("firstaid priority plodding 3")
 	end		
+	if snd.firstaidcuretrack.stupidity ~= "3" then
+		send("firstaid priority stupidity 3")
+	end			
+	if snd.firstaidcuretrack.frozen ~= "3" then
+		send("firstaid priority frozen 3")
+	end	
 	if snd.firstaidcuretrack.blurry_vision ~= "3" then
 		send("firstaid priority blurry_vision 3")
 	end		
 	if snd.firstaidcuretrack.rend ~= "4" then
 		send("firstaid priority rend 4")
+	end	
+	if snd.firstaidcuretrack.weariness ~= "4" then
+		send("firstaid priority weariness 4")
+	end	
+	if snd.firstaidcuretrack.lethargy ~= "4" then
+		send("firstaid priority lethargy 4")
 	end	
 	snd.firstaidchangecure = false  -- keep last
 end
@@ -26283,7 +26304,6 @@ function Reverse(arr)
   end
 end
 
-
 function snd.onHit()
   if snd.toggles.atkecho and snd.gui.enabled then
     deleteLine()
@@ -26387,13 +26407,17 @@ function snd.onHit2(checks, conditional)
       if conditional == "Sentinel Slash" and #snd.maybe_affs == 2 then
           snd.using_both_hands = 1
       end
-      
+            
       if conditional == "Carnifex" or conditional == "Warden" then
         snd.using_both_hands = 1
       end
       
       if conditional == "Templar2h" then
         snd.using_both_hands = 1
+      end
+      
+      if conditional == "Bard Hiltblow" and #snd.maybe_affs &lt; 1 then
+        disableTrigger("Hiltblow Confirmation")
       end
   end
 
@@ -26474,7 +26498,7 @@ function snd.attack(attack)
   if snd.can_fitness() and snd.need_fitness then
  	 string = "fitness"
   elseif snd.can_shrug() and snd.need_fitness then
- 	 string = "shrug asthma"
+ 	 string = "shrug venom"
   else
  	 string = attack
   end
@@ -27062,6 +27086,7 @@ end</script>
   ["Zeal"] = {
     Swagger = function(target)
                snd.target_cured("paresis")
+               snd.target_cured("paralysis")
              end,
     Anklepin = function(target)
                snd.target_got("sore_ankle")
@@ -28264,7 +28289,7 @@ end</script>
                snd.onHit2({"Dodge", "Parry", "Rebounding"})
               end,
     Shockwave = function(target)
-                  snd.target_got("prone")
+                  snd.target_got("fallen")
                   enableTrigger("Shockwave limb breaks")
                 end,
     Furor = function(target, where)
@@ -28346,6 +28371,10 @@ end</script>
     Scourge = function(target, where)
                 snd.target_got(where.."_broken")
               end,
+    
+    Trap = function(target)
+                snd.target_got("sand_trapped")
+              end,
 
   },
   
@@ -28363,6 +28392,7 @@ end</script>
                if snd.hitting == "You" then
                 snd.target_impaled = true
                end
+               theytumbling = false
             end
           end,
     Raze = function(target, defense)
@@ -28688,6 +28718,12 @@ end</script>
                 snd.used.paste = false
                 snd.target_got("no_speed")
              end
+             if condition:find("none") then
+                snd.used.rebounding = false
+                snd.used.paste = false
+                snd.used.shield = false
+             end
+             
             end,
     Slit = function(target)
                   enableTrigger("Syssin Hit Confirmation")
@@ -28717,7 +28753,7 @@ end</script>
                 if conditional == "Numbness" then
                   snd.target_got("numbed_skin")
                   if not table.isMember(gmcp.Room.Info.details, "darkness") then
-                    tempTimer(9.5, [[snd.target_cured("numbed_skin")]])
+                    tempTimer(15, [[snd.target_cured("numbed_skin")]])
                   end
                 end
     end,   
@@ -28928,7 +28964,7 @@ end</script>
               ["baleful"] = "impairment",
               ["rousing"] = "bravado",
               ["distasteful"] = "anorexia",
-              ["forceful"] = "prone",
+              ["forceful"] = "fallen",
               ["mind-numbing"] = "stupidity",
               ["stomach-turning"] = "vomiting",
               ["claustrophobic"] = "claustraphobia",
@@ -29511,9 +29547,11 @@ end</script>
            end,
            
   Needle = function(target, venom)
+            if target == "you" then return end
+            if venom == "miss" then snd.aff_gain("clumsiness") end
             if not venom then
               snd.needle = snd.venomEffect(snd.maybe_affs)
-            elseif venom ~= "dodge" then
+            elseif venom ~= "dodge" or venom ~= "miss" then
               if snd.needle == "none" then
                 snd.needle = snd.venomEffect(venom)
                 end
@@ -29551,8 +29589,13 @@ end</script>
           end,
   
   Hiltblow = function(target)    
+              enableTrigger("Hiltblow Confirmation")
               snd.onHit2({"Dodge", "Rebounding"}, "Bard Hiltblow")
           end, 
+          
+  Tackle = function(target)
+        snd.target_got("fallen")
+        end,
 
 },
 
@@ -29600,6 +29643,11 @@ end</script>
     Globes = function(target)            
               snd.globecount = 3
               snd.target_got("globes")
+              end,
+              
+    Mindbreak = function(target)
+              snd.target_got("migraine")
+              snd.target_got("squelched")
               end,
   }, 
   
@@ -30603,6 +30651,7 @@ end</script>
 "Noctis",
 "Yautji",
 "Desidora",
+"Wurnys",
 "Malcanthet",
 "Elene",
 "Taelyndara",
@@ -30839,6 +30888,7 @@ end</script>
 "Jadice",
 "Rehr",
 "Jaegth",
+"Uumbaji",
 "Livia",
 "Kylae",
 "Itkovian",
@@ -32118,6 +32168,43 @@ end</script>
 	}</script>
 						<eventHandlerList />
 					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Spinesreach Militia</name>
+						<packageName></packageName>
+						<script>snd.spines = {
+"Feirenz",
+"Kagura",
+"Nisavi",
+"Ayukazi",
+"Legyn",
+"Raynia",
+"Inkh",
+"Holbrook",
+"Saidenn",
+"Seurimas",
+"Desidora",
+"Uumbaji",
+"Rou",
+"Rhyot",
+"Wjoltyr",
+"Renli",
+"Corvo",
+"Nahuaque",
+"Lenoriel",
+"Knigi",
+"Kanivara",
+"Arath",
+"Teani",
+"Khalu",
+"Zaephlyn",
+"Pietre",
+"Callidora",
+"Etetafreya",
+"Alystrine",
+"Talulla",
+}</script>
+						<eventHandlerList />
+					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Timers</name>
 						<packageName></packageName>
@@ -32320,7 +32407,8 @@ v42831 = "768",
 v768 = "973",
 v973 = "71926",
 v71926 = "19810",
-v19810 = "31552",
+v19810 = "71554",
+v71554 = "31552",
 v31552 = "19987",
 v19987 = "64288",
 v64288 = "55101",
@@ -32335,7 +32423,8 @@ v3276 = "63351",
 v63351 = "20932",
 v20932 = "20281",
 v20281 = "15820",
-v15820 = "21908",
+v15820 = "70916",
+v70916 = "21908",
 v21908 = "53660",
 v53660 = "51157",
 v51157 = "62383",
