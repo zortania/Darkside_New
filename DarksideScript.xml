@@ -589,7 +589,7 @@ snd.mental_affs = {
 "impatience",
 "confusion",
 "dementia",
-"premonition"
+"dread"
 }
 
 snd.all_affs =  table.n_union(snd.physical_affs, snd.mental_affs, { "hypochondria",})
@@ -2351,7 +2351,7 @@ snd.priorities = {
  
 "aff_disrupted",
 "aff_fear",
-"aff_premonition",
+"aff_dread",
 "aff_vinethorns",
  
 "aff_void",
@@ -2609,10 +2609,10 @@ function snd.do_queue()
         if snd.moving_to ~= "none" then
           table.insert(snd.queue, "moving")
         end
-      if snd.toggles.active and snd.have_aff("asthma") and snd.have_aff("slickness") and gmcp.Char.Vitals.pipe == "1" then
-        snd.need_fitness = true
-        table.insert(snd.queue, "fitness")
-      end
+        if snd.toggles.active and snd.have_aff("asthma") and snd.have_aff("slickness") and gmcp.Char.Vitals.pipe == "1" then
+          snd.need_fitness = true
+          table.insert(snd.queue, "fitness")
+        end
         if ((hasSkill("Purge") and snd.class == "Carnifex") or (hasSkill("Annul") and snd.class == "Warden")) and snd.purge_check() then
           table.insert(snd.queue, "purge")
         end
@@ -2622,7 +2622,7 @@ function snd.do_queue()
         if snd.need_aegis then
   	      table.insert(snd.queue, "aegis")
   	    end
-  	    if hasSkill("Panacea") and snd.class == "Shaman" and snd.panacea_check() then
+  	    if (hasSkill("Panacea") and snd.class == "Shaman") or (snd.class == "Alchemist" and hasSkill("Subversion")) and snd.panacea_check() then
   	      table.insert(snd.queue, "panacea")
   	    end
   	    if hasSkill("Purify") and snd.class == "Praenomen" and snd.purify_check() then
@@ -2839,6 +2839,7 @@ aff_disrupted = {state = "healed", effect = "", cures = {special = "concentrate"
 aff_dissonance = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_distortion = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_dizziness = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_dread = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_effused_blood = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_eldritch_invocation = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_electric_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -2971,7 +2972,6 @@ aff_pre_restore_left_leg = {state = "healed", effect = "", cures = {salve = "res
 aff_pre_restore_right_arm = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
 aff_pre_restore_right_leg = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_pre_restore_torso = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
-aff_premonition = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_psi_tether = {state = "healed", effect = "hurts you if you walk too far from zealot", cures = {}, assess = false, timer = createStopWatch()},
 aff_psychic_weakness = {state = "healed", effect = "more dmg from psychic source", cures = {}, assess = false, timer = createStopWatch()},
 aff_punished_arms = {state = "healed", effect = "unable to parry", cures = {}, assess = false, timer = createStopWatch()},
@@ -21802,6 +21802,9 @@ function snd.do_panacea()
       if snd.class == "Shaman" then
         snd.send("nature panacea")
         echo("(nature panacea)")
+      else
+        snd.send("botany subvert")
+        echo("(botany subvert)")        
       end
       
       snd.last_type = "panacea"
@@ -22111,7 +22114,7 @@ end</script>
 	snd.firstaidcuretrack.egocentric = "7"
 	snd.firstaidcuretrack.exhausted = "7"
 	-- special
-  snd.firstaidcuretrack.premonition = "7"	
+  snd.firstaidcuretrack.dread = "7"	
   -- level 8
 	-- salves
 	snd.firstaidcuretrack.head = "8"
@@ -22233,6 +22236,11 @@ if snd.toggles.active then
     send("firstaid use focus on")
     send("firstaid stormtouched off")		
 		
+	elseif snd.class_hitting == "tidesage" and (snd.count(snd.people_hitting_me)) &lt; 2 then
+		snd.firstaidassTidesage()	
+    send("firstaid use focus on")
+    send("firstaid stormtouched off")		
+		
 	elseif snd.class_hitting == "carnifex" and (snd.count(snd.people_hitting_me)) &lt; 2 then
 		snd.firstaidassCarnifex()	
     send("firstaid use focus on")
@@ -22277,7 +22285,17 @@ if snd.toggles.active then
       send("firstaid stormtouched off")	
     else
 		  send("firstaid stormtouched on")
+    end		
+		
+	elseif snd.class_hitting == "alchemist" and (snd.count(snd.people_hitting_me)) &lt; 2 then
+		snd.firstaidassAlchemist()		
+    send("firstaid use focus on")
+    if snd.have_aff("paralysis") then
+      send("firstaid stormtouched off")	
+    else
+		  send("firstaid stormtouched on")
     end
+    
 	elseif snd.class_hitting == "syssin" and (snd.count(snd.people_hitting_me)) &lt; 2 then
 		snd.firstaidassSyssin()	
     send("firstaid use focus on")
@@ -22701,7 +22719,7 @@ function snd.firstaidassZealot()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.head ~= "24" and snd.firstaidcuretrack.prehead ~= "15" then
   send("FIRSTAID PRIORITY PRESTORE head 15% 24")
 	end  	
-  if snd.firstaidcuretrack.blurry_vision ~= "26" and (snd.class == "Archivist" or snd.class == "Shaman" or snd.class == "Ascendril" or snd.class == "Sciomancer") then
+  if snd.firstaidcuretrack.blurry_vision ~= "26" and (snd.class == "Archivist" or snd.class == "Shaman" or snd.class == "Alchemist" or snd.class == "Ascendril" or snd.class == "Sciomancer") then
 		send("firstaid priority blurry_vision 26")
 	end	
   
@@ -23296,6 +23314,13 @@ function snd.firstaidassTeradrim()  -- curing based on class being attacked by
 	snd.firstaidchangecure = false  -- keep last	
 end
 
+function snd.firstaidassTidesage()  -- curing based on class being attacked by
+	if snd.firstaidcuretrack.paresis ~= "1" then
+		send("firstaid priority paresis 1")
+	end	
+	snd.firstaidchangecure = false  -- keep last	
+end
+
 function snd.firstaidassSciomancer()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.paralysis ~= "1" then
 		send("firstaid priority paralysis 1")
@@ -23511,7 +23536,45 @@ function snd.firstaidassShaman()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.shyness ~= "6" then
 		send("firstaid priority shyness 6")
 	end
-  if snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Syssin" then
+  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Syssin") then
+    if snd.firstaidcuretrack.clumsiness ~= "5" then
+  		send("firstaid priority clumsiness 5")
+  	end 
+  else
+    if snd.firstaidcuretrack.clumsiness ~= "7" then
+  		send("firstaid priority clumsiness 7")
+  	end     
+  end
+  if snd.firstaidcuretrack.blindness ~= "8" then
+		send("firstaid priority defence blindness 8")
+	end 
+  
+	snd.firstaidchangecure = false  -- keep last	
+end
+
+function snd.firstaidassAlchemist()  -- curing based on class being attacked by
+  if snd.firstaidcuretrack.impatience ~= "2" then
+		send("firstaid priority impatience 2")
+	end 
+  if snd.firstaidcuretrack.paranoia ~= "3" then
+		send("firstaid priority paranoia 3")
+	end
+  if snd.firstaidcuretrack.deafness ~= "3" then
+		send("firstaid priority defence deafness 3")
+	end 
+  if snd.firstaidcuretrack.stormtouched ~= "4" then
+		send("firstaid priority stormtouched 4")
+	end
+  if snd.firstaidcuretrack.agoraphobia ~= "5" then
+		send("firstaid priority agoraphobia 5")
+	end
+  if snd.firstaidcuretrack.claustrophobia ~= "5" then
+		send("firstaid priority claustrophobia 5")
+	end
+  if snd.firstaidcuretrack.shyness ~= "6" then
+		send("firstaid priority shyness 6")
+	end
+  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Tidesage" or snd.class == "Syssin") then
     if snd.firstaidcuretrack.clumsiness ~= "5" then
   		send("firstaid priority clumsiness 5")
   	end 
@@ -23560,7 +23623,7 @@ function snd.firstaidclass()  -- priority based on class being used, must add to
 		snd.firstaidcuretrack.paresis = "1"
 		snd.firstaidclassset = true
 		
-	elseif snd.class == "Shaman" and not snd.firstaidclassset then
+	elseif (snd.class == "Shaman" or snd.class == "Alchemist") and not snd.firstaidclassset then
 		snd.firstaidcuretrack.paresis = "1"
 		snd.firstaidclassset = true
 		
@@ -23568,7 +23631,7 @@ function snd.firstaidclass()  -- priority based on class being used, must add to
 		snd.firstaidcuretrack.paresis = "1"
 		snd.firstaidclassset = true
 		
-	elseif snd.class == "Teradrim" and not snd.firstaidclassset then
+	elseif (snd.class == "Teradrim" or snd.class == "Tidesage") and not snd.firstaidclassset then
 		if not (snd.class_hitting == "indorani" or snd.class_hitting == "oneiromancer") then
       snd.firstaidcuretrack.paresis = "1"
     end
@@ -23655,7 +23718,7 @@ function snd.firstaidresetlistnone()
 		snd.setting_priority = "crushed_chest 3"
     snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.paresis ~= "3" and not snd.class == "Shaman" and not snd.class == "Archivist" then
+  if snd.firstaidcuretrack.paresis ~= "3" and not (snd.class == "Shaman" or snd.class == "Archivist" or snd.class == "Alchemist") then
 		snd.setting_priority = "paresis 3"
     snd.update_priority = 1
   end
@@ -23743,7 +23806,7 @@ function snd.firstaidresetlistnone()
 		snd.setting_priority = "mirroring 4"
     snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.pacifism ~= "4" and not snd.class == "Revenant" and not snd.class == "Templar" then
+  if snd.firstaidcuretrack.pacifism ~= "4" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "pacifism 4"
     snd.update_priority = 1
   end
@@ -23951,19 +24014,19 @@ function snd.firstaidresetlistnone()
 		snd.setting_priority = "hypersomnia 7"
     snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.justice ~= "7" and not snd.class == "Revenant" and not snd.class == "Templar" then
+  if snd.firstaidcuretrack.justice ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "justice 7"
     snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.laxity ~= "7" and not snd.class == "Revenant" and not snd.class == "Templar" then
+  if snd.firstaidcuretrack.laxity ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "laxity 7"
     snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.lovers_effect ~= "7" and not snd.class == "Revenant" and not snd.class == "Templar" then
+  if snd.firstaidcuretrack.lovers_effect ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "lovers_effect 7"
     snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.peace ~= "7" and not snd.class == "Revenant" and not snd.class == "Templar" then
+  if snd.firstaidcuretrack.peace ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "peace 7"
     snd.update_priority = 1
   end
@@ -24060,7 +24123,7 @@ function snd.firstaidresetlistnone()
 		snd.setting_priority = "commitment_fear 9"
     snd.update_priority = 1
 	end
-	if snd.firstaidcuretrack.hubris ~= "9" and not snd.class == "Revenant" and not snd.class == "Templar" then
+	if snd.firstaidcuretrack.hubris ~= "9" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "hubris 9"
     snd.update_priority = 1
 	end
@@ -24068,7 +24131,7 @@ function snd.firstaidresetlistnone()
     snd.setting_priority = "worrywart 9"
     snd.update_priority = 1
   end
-	if snd.firstaidcuretrack.magnanimity ~= "9" and not snd.class == "Revenant" and not snd.class == "Templar" then
+	if snd.firstaidcuretrack.magnanimity ~= "9" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "magnanimity 9"
     snd.update_priority = 1
 	end
@@ -24106,11 +24169,11 @@ function snd.firstaidresetlistnone()
 		snd.setting_priority = "blisters 10"
     snd.update_priority = 1
 	end
-	if snd.firstaidcuretrack.generosity ~= "10" and not snd.class == "Revenant" and not snd.class == "Templar" then
+	if snd.firstaidcuretrack.generosity ~= "10" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "generosity 10"
     snd.update_priority = 1
 	end
-	if snd.firstaidcuretrack.superstition ~= "10" and not snd.class == "Revenant" and not snd.class == "Templar" then
+	if snd.firstaidcuretrack.superstition ~= "10" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "superstition 10"
     snd.update_priority = 1
 	end
@@ -24840,7 +24903,7 @@ end</script>
 			snd.send("divert upsets")
 			snd.avoidanceset = "upsets"
 		-- if indo upset before gremlin (need to time), melee rest of time
-		elseif (snd.class_hitting == "shaman" or snd.class_hitting == "archivist") and snd.avoidanceset ~= "upsets" and (snd.count(snd.people_hitting_me)) &lt; 2 then
+		elseif (snd.class_hitting == "shaman" or snd.class_hitting == "alchemist" or snd.class_hitting == "archivist") and snd.avoidanceset ~= "upsets" and (snd.count(snd.people_hitting_me)) &lt; 2 then
 			snd.send("dodge upsets") 
 			snd.send("divert upsets")
 			snd.avoidanceset = "upsets"		
@@ -25295,7 +25358,7 @@ def_mindspark = "on",
         else
           snd.toparry = "head"
         end
-      elseif (snd.class_hitting == "teradrim" or snd.class_hitting == "templar"or snd.class_hitting == "revenant") then
+      elseif (snd.class_hitting == "teradrim" or snd.class_hitting == "tidesage" or snd.class_hitting == "templar" or snd.class_hitting == "revenant") then
         if (snd.have_aff("left_leg_bruised") or snd.have_aff("left_leg_bruised_moderate") or snd.have_aff("left_leg_bruised_critical")) then
           snd.toparry = "left leg"
         elseif (snd.have_aff("right_leg_bruised") or snd.have_aff("right_leg_bruised_moderate") or snd.have_aff("right_leg_bruised_critical")) then
@@ -25460,6 +25523,8 @@ snd.localcount = 0
 --Misc
 snd.spectype = ""
 snd.parried = false
+snd.block = ""
+snd.reblock = false
 
 snd.enemylist = false
 snd.stunrecheck = false
@@ -25515,8 +25580,8 @@ snd.familiar = false
 snd.thorncount = 0
 snd.fetishattuned = false
 snd.loyalsattacking = false
-snd.my_premonition = false
-snd.their_premonition = false
+snd.my_dread = false
+snd.their_dread = false
 snd.fetish1 = ""
 snd.fetish2 = ""
 snd.fetish3 = ""
@@ -25973,7 +26038,7 @@ focus = {
 "confusion",
 "dementia",
 "nyctophobia",
-"premonition"
+"dread"
 }
 
 }
@@ -25992,27 +26057,29 @@ snd.entangleaffs = {
 
 
 snd.cureset_skills = {
-ascendril = {"Elemancy", "Arcanism", "Thaumaturgy"},
-sciomancer = {"Sciomancy", "Sorcery", "Gravitation"},
-oneiromancer = {"Oneiromancy", "Hyalincuru", "Contracts"},
-indorani = {"Necromancy", "Tarot", "Domination"},
-praenomen = {"Corpus", "Mentis", "Sanguis"},
+alchemist = {"Alchemy", "Experimentation", "Botany"},
 archivist = {"Geometrics", "Numerology", "Bioessence"},
-teradrim = {"Terramancy", "Animation", "Desiccation"},
-luminary = {"Spirituality", "Devotation", "Illumination"},
+ascendril = {"Elemancy", "Arcanism", "Thaumaturgy"},
+bard = {"Weaving", "Performance", "Songcalling"},
+carnifex = {"Savagery", "Deathlore", "Warhounds"},
 earthcaller = {"Subjugation", "Apocalyptia", "Tectonics"},
-zealot = {"Zeal", "Purification", "Psionics"},
+indorani = {"Necromancy", "Tarot", "Domination"},
+luminary = {"Spirituality", "Devotation", "Illumination"},
+monk = {"Tekura", "Kaido", "Telepathy"},
+oneiromancer = {"Oneiromancy", "Hyalincuru", "Contracts"},
+praenomen = {"Corpus", "Mentis", "Sanguis"},
+revenant = {"Riving", "Manifestation", "Chirography"},
+sciomancer = {"Sciomancy", "Sorcery", "Gravitation"},
 sentinel = {"Dhuriv", "Woodlore", "Tracking"},
 shaman = {"Primality", "Shamanism", "Naturalism"},
-monk = {"Tekura", "Kaido", "Telepathy"},
-syssin = {"Assassination", "Subterfuge", "Hypnosis"},
 shifter = {"Ferality", "Shapeshifting", "Vocalizing"},
-wayfarer = {"Tenacity", "Wayfaring", "Fury"},
+syssin = {"Assassination", "Subterfuge", "Hypnosis"},
 templar = {"Battlefury", "Righteousness", "Bladefire"},
-carnifex = {"Savagery", "Deathlore", "Warhounds"},
-revenant = {"Riving", "Manifestation", "Chirography"},
+teradrim = {"Terramancy", "Animation", "Desiccation"},
+tidesage = {"Wavebreaking", "Synthesis", "Inundation"},
 warden = {"Warding", "Ancestry", "Communion"},
-bard = {"Weaving", "Performance", "Songcalling"},
+wayfarer = {"Tenacity", "Wayfaring", "Fury"},
+zealot = {"Zeal", "Purification", "Psionics"},
 }</script>
 						<eventHandlerList />
 					</Script>
@@ -26251,7 +26318,7 @@ function snd.target_used(curative)
             snd.target_cured(snd.cures[curative][affliction])
             aff_found = true
           elseif snd.target_has[i] == "blighted" or snd.target_has[i] == "infested" then
-            if not snd.checkAff("premonition") then
+            if not snd.checkAff("dread") then
               snd.target_cured(snd.cures[curative][affliction])
               aff_found = true
             end
@@ -26704,8 +26771,8 @@ snd.locking = false
  snd.thorncount = 0
  snd.fetishattuned = false
  snd.loyalsattacking = false
- snd.my_premonition = false
- snd.their_premonition = false
+ snd.my_dread = false
+ snd.their_dread = false
  snd.loyalsattacking = false
  snd.glory = 0
  snd.unmasked = false
@@ -26960,285 +27027,273 @@ end</script>
 						<packageName></packageName>
 						<script>snd.all_class_attacks = {
 
---Luminary
-  ["Spirituality"] = {
-  
-  Crush = function(target, limb)
-            snd.last_hit_limb = limb
-            enableTrigger("Crush Confirmation")
-          end,
-  
-  Smash = function(target, limb)
-           	snd.last_hit_limb = limb
-          	snd.last_limb_dmg = 25
-          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-            snd.onHit2({"Parry", "Dodge"})
-          end,
-  
-  Aura = function(target)
-           snd.used.shield = true
+["Adherent"] = {
+ Wither = function(target)
+          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+            snd.target_got("slickness")
+            snd.target_got("disfigurement")
+          else
+            snd.target_got("magic_weakness")
+            snd.target_got("fire_weakness")
+            tempTimer(30, [[snd.target_cured("magic_weakness")]])
+            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+         end
+       end,
+ Avatar = function(target)
+          enableTrigger("Adherent Avatar")
+          enableTrigger("Sunder Parry")
+          if #snd.maybe_affs &gt;= 1 then
+            snd.onHit2({"Parry",})
+          end
          end,
-  
-  Sear = function(target)
-           snd.target_got("ablaze")
-           snd.target_got("angel_seared")
-           tempTimer(15, [[snd.target_cured("angel_seared")]])
-         end,
-  
-  Strip = function(target, defense)
-            snd.used.rebounding = false
-          end,
-          
-  Raze = function(target, defense)
-            if defense == "shield" then snd.used.shield = false
-            elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
-            end
-          end,
-          
-  Chasten = function(target)
-             if snd.battle_aff ~= "none" then
-              snd.target_got(snd.battle_aff)
-            	table.insert(snd.last_affs, snd.battle_aff)
-             end
-             if snd.chasten_aff ~= "none" then
-              snd.target_got(snd.chasten_aff)
-            	table.insert(snd.last_affs, snd.chasten_aff)
-             end
-            end,
-  
-  Strike = function(target)
-            table.insert(snd.maybe_affs, "paresis")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  Punch = function(target)
-            table.insert(snd.maybe_affs, "weariness")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  Facesmash = function(target)
-                if not snd.checksomeAffs({"berserking", "sight"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "berserking")
-                  table.insert(snd.maybe_affs, 2, "sight")
-                elseif snd.checkAff("berserking") then
-                  table.insert(snd.maybe_affs, 1, "sight")
-                else
-                  table.insert(snd.maybe_affs, 1, "berserking")
-                end
-                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Facesmash")
-              end,
-  Slam = function(target)
-                if not snd.checksomeAffs({"asthma", "haemophilia"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "asthma")
-                  table.insert(snd.maybe_affs, 2, "haemophilia")
-                elseif snd.checkAff("asthma") then
-                  table.insert(snd.maybe_affs, 1, "haemophilia")
-                else
-                  table.insert(snd.maybe_affs, 1, "asthma")
-                end
-                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Slam")
-              end,
-  Brilliance = function(target)
-            table.insert(snd.maybe_affs, "sight")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  
-  },
-  
-  ["Devotion"] = {
-    Dazzle = function(target)
-               snd.target_got("confusion")
-               snd.target_got("dizziness")
-             end,
-    Peace = function(target)
-               snd.target_got("peace")
-             end,
-    Hellsight = function(target)
-                  snd.target_got("hellsight")
-                end,
-
-  },
-  
-  ["Illumination"] = {
-    Lightning = function(target)
-                 snd.target_got("allergies")
-                end,
-                
-    Transfixion = function(target, blindness)
-                    snd.target_got("sight")
-                    if not blindness then  
-                     snd.target_got("writhe_transfix")
-                   end
-                  end,
-    Heatwave = function(target)
-                snd.target_got("berserking")
-                snd.target_got("hallucinations")
-              end,
-    Sear = function(target)
-             snd.target_got("tree_seared")
-             tempTimer(19, [[snd.target_cured("tree_seared")]])
-           end,
-    Fire = function(target)
-             snd.target_got("ablaze")
-             enableTrigger("Illumination Fire")
-           end,
-  },
-  
---Zealot
-  ["Zeal"] = {
-    Swagger = function(target)
-               snd.target_cured("paresis")
-               snd.target_cured("paralysis")
-             end,
-    Anklepin = function(target)
-               snd.target_got("sore_ankle")
-             end,
-    Jawcrack = function(target)
-               snd.target_got("stuttering")
-               snd.target_got("blurry_vision")
-             end,
-    Descent = function(target)
-               snd.target_got("backstrain")
-             end,                          
-    Wristlash = function(target)
-               snd.target_got("sore_wrist")
-             end,
-    Uprise = function(target)
-               snd.target_got("whiplash")
-             end,
-    Blitz = function(target, conditional)
-              if conditional == "start" then
-                enableTrigger("Blitz Affs")
-              else
-                disableTrigger("Blitz Affs")
+ Tentacle = function(target, shield)
+              if shield then
+                snd.used.shield = false
+              end
+              if #snd.maybe_affs &gt;= 1 then
+                snd.onHit2({})
               end
             end,
-    Palmforce = function(target)
-                  snd.target_got("fallen")
-                end,       
-    Dislocate = function(target, limb)
-                  table.insert(snd.maybe_affs, 1, limb.."_dislocated")
-                  snd.onHit2({"Dodge", "Parry"})
-                end,
-    Twinpress = function(target)
-                	table.insert(snd.maybe_affs, "stiffness")
-                	table.insert(snd.maybe_affs, "muscle_spasms")
-                  snd.onHit2({"Dodge"})
-                end,
-    Clawtwist = function(target)
-                    snd.last_hit_limb = "torso"
-                    snd.last_limb_dmg = 14
-                    snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                    snd.onHit2({"Parry", "Dodge"})
-                end,
-    Pummel = function(target, limb)
-                    snd.last_hit_limb = limb
-                    snd.last_limb_dmg = 9.5
-                    snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                    snd.onHit2({"Parry", "Dodge"})
-                end,
-    Wanekick = function(target, limb)
-                    snd.last_hit_limb = limb
-                    snd.last_limb_dmg = 9
-                    snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                    snd.onHit2({"Parry", "Dodge"})
-                end,
-    Risekick = function(target)
-                	snd.last_hit_limb = "torso"
-                	snd.last_limb_dmg = 5
-                	snd.took_limb_dmg("torso", snd.last_limb_dmg)
-                  snd.onHit2({"Parry", "Dodge"})
-                end,
-    Edgekick = function(target)
-                 	snd.last_hit_limb = "head"
-                	snd.last_limb_dmg = 3.49
-                	snd.took_limb_dmg("head", snd.last_limb_dmg)
-                  table.insert(snd.maybe_affs, 1, "crippled_throat")
-                  snd.onHit2({"Parry", "Dodge"})
-                end,
-    Sunkick = function(target)
-                snd.last_hit_limb = "head"
-              	snd.last_limb_dmg = 6
-              	snd.took_limb_dmg("head", snd.last_limb_dmg)
-                if not snd.checksomeAffs({"stupidity", "dizziness"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "stupidity")
-                  table.insert(snd.maybe_affs, 2, "dizziness")
-                elseif snd.checkAff("stupidity") then
-                  table.insert(snd.maybe_affs, 1, "dizziness")
-                else
-                  table.insert(snd.maybe_affs, 1, "stupidity")
-                end
-                snd.onHit2({"Dodge", "Parry"}, "Sunkick")    
+   },
+  
+  ["Aetherial"] = {
+    Beam = function(target)
+      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+        snd.target_got("slickness")
+        snd.target_got("disfigurement")
+      else
+        snd.target_got("magic_weakness")
+        snd.target_got("fire_weakness")
+        tempTimer(30, [[snd.target_cured("magic_weakness")]])
+        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+      end
+    end,
+    Volley = function(target)
+      enableTrigger("Aetherial Volley")
+      enableTrigger("Sunder Parry")
+      if #snd.maybe_affs &gt;= 1 then
+        snd.onHit2({"Parry",})
+      end
+    end,
+    Omission = function(target, shield)
+      if shield then
+        snd.used.shield = false
+      end
+      if #snd.maybe_affs &gt;= 1 then
+        snd.onHit2({})
+      end
+    end,
+   },
+  
+--Alchemist
+  ["Alchemy"] = {
+  
+    Upset = function(target, boosted)
+             if not boosted then
+               snd.target_got("fallen")
+             end
+           end,
+             
+    Infiltrative = function(target, boosted)
+             if not boosted then
+               snd.target_got("infested")
+             end
+           end,
+    Pathogen = function(target, boosted)
+             if not boosted then
+               snd.target_got("blighted")
+             end
+           end,
+    Electroshock = function(target, boosted)
+                snd.target_got("paresis")
+                snd.target_got("stupidity")
               end,
-    Direblow = function(target)
-                -- enableTrigger("Direblow Hit Confirmation")
-                end,
-    Heelrush = function(target)
-                 enableTrigger("Heelrush")
-               end,
-                
-  },
-  
-  ["Purification"] = {
-  
-  Heatspear = function(target)
-                snd.target_got("heatspear")
+    Intrusive = function(target, boosted)
+             if boosted then
+               snd.target_got("plodding")
+             end
+             snd.target_got("lifebane")
+             if lifebane_timer then killTimer(lifebane_timer) end
+	           lifebane_timer = tempTimer(40,[[snd.target_cured("lifebane")]])
+           end,
+    Asphyxiat = function(target, boosted)
+                snd.target_got("writhe_vines")
               end,
 
-  Scorch = function(target)
-             snd.target_got("ablaze")
-           end,
-  Rejection = function(target)
-                snd.used.rebounding = true
+    Virulent = function(target, boosted)
+                  if #snd.maybe_affs &gt;= 1 then
+                    snd.onHit2({})
+                  end
+                end,
+    Corrosive = function(target, boosted)
+                  snd.used.shield = false
+                end,
+    Malignant = function(target, boosted)
+             if boosted then
+               snd.target_got("idiocy")
+             end
+             snd.target_got("vitalbane")
+           end,  
+    Fulmination = function(target, boosted)
+                  if boosted then
+                    snd.target_got("stormbolt_cloud")
+                  end
+                end,
+    Neurotic = function(target)
+    --This never shows boosted message.
+                snd.target_got("impatience")
+                snd.target_got("confusion")
               end,
-  Quicken = function(target)
-            snd.target_got("ablaze")
-            snd.flamestack = snd.flamestack + 3
-            if snd.class == "Zealot" then
-              cecho("\n"..snd.target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
-            end
-            end,
-  Pendulum = function(target, direction)
-              local pendulum_table = {--Create the table showing what limb references what
-              ["left arm"] = {["clockwise"] = "right arm", ["anti-clockwise"] = "left leg"},
-              ["right arm"] = {["clockwise"] = "right leg", ["anti-clockwise"] = "left arm"},
-              ["right leg"] = {["clockwise"] = "left leg", ["anti-clockwise"] = "right arm"},
-              ["left leg"] = {["clockwise"] = "left arm", ["anti-clockwise"] = "right leg"},
-              }
-              local limb_damage_copy = mmp.deepcopy(snd.limb_dmg) -- copy limb damage table so we can manipulate values while iterating current unchanged values
+    Rousing = function(target)
+                snd.target_got("sight")
+                snd.target_got("hearing")
+                snd.target_got("sensitivity")
+              end,
+    Parity = function(target, boosted)
+    --This might be hidden from all except the Shaman, not sure
+             if boosted then
+               snd.target_got("justice")
+             end
+           end,  
+  },
+  
+  ["Experimentation"] = {
+    Prognosis = function(target)
+                    snd.target_got("dread")
+                        if snd.hitting == "You" then
+                          snd.my_dread = true
+                          snd.their_dread = false
+                        else
+                          snd.my_dread = false
+                          snd.their_dread = true
+                        end
+                  end,
+    Hallucinogen = function(target)
+                  if #snd.maybe_affs &gt;= 1 then
+                    snd.onHit2({})
+                  end
+                end,
+    Causality = function(target)
+             snd.incomingomen = true
+             snd.message(matches[2].." has an Causality incoming in 6 seconds!", "alchemy")
+          end,
+        
+
+  },
+  
+  ["Botany"] = {
+        
+
+  },
+
+--Archivist
+  ["Geometrics"] = {
+    Pattern = function(target)
+                snd.target_got("patterns")
+              end,
               
-              for k, v in pairs(limb_damage_copy) do
-                if k ~= "total" and k ~= "head" and k ~= "torso" and v &gt; 0 then -- only check appendages and ones with damage
-                  snd.took_limb_dmg(pendulum_table[k][direction], v) -- add limb damage to new limb
-                  snd.took_limb_dmg(k, -v) -- remove damage from current limb
+    Lemniscate = function(target)
+                   snd.target_got("lemniscate")
+                   lemniscate_timer = tempTimer(9.0,[[snd.target_cured("lemniscate")]])
+                 end,
+    Matrix = function(target)
+               snd.target_got("matrix")
+               matrix_timer = tempTimer(20.0,[[snd.target_cured("matrix")]])
+             end,
 
-                  local x = snd.limb_dmg[pendulum_table[k][direction]] -- check current amount of limb dmg
-                  if x &gt; 33.33 then -- check if its got a damage break
-                    if x &gt; 66.66 then -- check if its gotten mangled
-                      snd.limb_status[pendulum_table[k][direction]] = "mangled" -- if it has, update our snd.limb_status map
-                    else
-                      snd.limb_status[pendulum_table[k][direction]] = "broken" -- as above
-                    end
-                  end
-                  
-                  if snd.checkAff(k:gsub(" ", "_").."_broken") then -- we need to check for level one breaks as well
-                    snd.target_got(pendulum_table[k][direction]:gsub(" ", "_").."_broken")--add new limb break
-                    snd.target_cured(k:gsub(" ", "_").."_broken")--remove old
-                  end
-                end
+    Circle = function(target)
+              local t = {"merciful", "masochism", "berserking", "recklessness"} -- initialize table with circle affs
+              for _, v in pairs(t) do -- iterate circle affs
+                if not snd.checkAff(v) then -- check if they have it
+                  snd.target_got(v) -- if they don't have it, add it
+                  break -- if we added an aff, break out of the loop
+                end -- end if
+              end -- end for
+             end,
+                      
+    Triangle = function(target)
+              local t = {"laxity", "lovers_effect", "peace", "magnanimity"} 
+              for _, v in pairs(t) do
+                if not snd.checkAff(v) then
+                  snd.target_got(v)
+                  break 
+                end 
               end
-            end,
+             end,
+                
+    Square = function(target)
+              local t = {"dizziness", "faintness", "epilepsy", "shyness"} 
+              for _, v in pairs(t) do
+                if not snd.checkAff(v) then
+                  snd.target_got(v)
+                  break 
+                end 
+              end
+             end,
+    Sealing = function(target, shape)
+                snd.target_got(shape.."_sealed")
+                if shape == "square" then
+                  tempTimer(31, [[snd.target_cured("square_sealed")]])
+                elseif shape == "circle" then
+                  tempTimer(31, [[snd.target_cured("circle_sealed")]])
+                elseif shape == "triangle" then
+                  tempTimer(31, [[snd.target_cured("triangle_sealed")]])
+                end
+              end,
+    Fork = function(target)
+             snd.used.shield = false
+           end,
   },
   
-  ["Psionics"] = {
-        Neutralise = function(target)
-                       snd.target_got("no_speed")
-                     end,
-                    
-        Deprival = function(target)
-                    snd.target_got("merciful")
-                    snd.target_got("dementia")
-                    snd.target_got("paranoia")
-                  end,
+  ["Numerology"] = {
+        
+    Madness = function(target)
+               snd.target_got("dementia")
+               snd.target_got("paranoia")
+               snd.target_got("hallucinations")
+               if snd.hitting == "You" then snd.balance.madness = false end
+              end,
+    Affliction = function(target)
+                   enableTrigger("Elicit Affliction")
+                 end,
+
   },
+  
+  ["Bioessence"] = {
+          Infection = function(target)
+                        snd.target_got("mutagen")
+                        if snd.hitting == "You" then
+                          snd.my_mutagen = true
+                          snd.their_mutagen = false
+                        else
+                          snd.my_mutagen = false
+                          snd.their_mutagen = true
+                        end
+             end,
+          Advance = function(target)
+                        snd.target_got("mutagen")
+                        if snd.hitting == "You" then
+                          snd.my_mutagen = true
+                          snd.their_mutagen = false
+                        else
+                          snd.my_mutagen = false
+                          snd.their_mutagen = true
+                        end
+             end,
+          Jolt = function(target)
+                   snd.target_cured("no_speed")
+                 end,
+          Preserve = function(target, level)
+                       if level == "severe" then
+                        snd.target_got("cold")
+                        snd.target_got("cold")
+                       elseif level == "moderate" then
+                        snd.target_got("cold")
+                       end
+                       snd.target_got("cold")
+                      end,
+
+  },  
   
 --Ascendril
   ["Elemancy"] = {
@@ -27431,10 +27486,184 @@ end</script>
 
   },
   
---Sentinel
-  ["Dhuriv"] = {
+  ["Astral"] = {
+    Huntresses = function(target)
+      snd.huntresses_used = true
+      tempTimer(90, [[snd.huntresses_used = false]])
+    end,
+    Contaminate = function(target)
+      enableTrigger("Astral Contaminate")
+      enableTrigger("Sunder Parry")
+      if #snd.maybe_affs &gt;= 1 then
+        snd.onHit2({"Parry",})
+      end
+    end,
+    Hamartia = function(target, shield)
+      snd.hamartia_used = true
+      if shield then
+        snd.used.shield = false
+      end
+      if #snd.maybe_affs &gt;= 1 then
+        snd.onHit2({})
+      end
+    end,    
+    Unmask = function(target)
+      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+        snd.target_got("slickness")
+        snd.target_got("disfigurement")
+        snd.unmasked = true
+        tempTimer(25, [[snd.unmasked = false]])
+        snd.glory = snd.glory - 1
+      else
+        snd.target_got("magic_weakness")
+        snd.target_got("fire_weakness")
+        tempTimer(30, [[snd.target_cured("magic_weakness")]])
+        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.glory = snd.glory - 1
+      end
+    end,    
+    Devour = function(target)
+      snd.glory = snd.glory - 2
+      snd.hamartia_used = false
+    end,  
+    Crescent = function(target)
+      snd.glory = snd.glory - 3
+    end,
     
-  Impale = function(target, failed)
+   }, 
+   
+-- Bard
+  ["Performance"] = {
+  
+  Pierce = function(target, defense)
+              if defense == "shield" then snd.used.shield = false
+              elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
+              else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
+              end
+            end,
+  
+  Tempo = function(target)
+          enableTrigger("Bard Hit Confirmation")
+          end,
+          
+  
+  Rhythm = function(target, conditional)
+            local rhythm_table = {
+            ["one"] = "paresis",
+            ["two"] = "shyness",
+            ["three"] = "besilence",}
+            snd.target_got(rhythm_table[conditional])
+            enableTrigger("Bard Rhythm Confirmation")
+           end,
+           
+  Needle = function(target, venom)
+            if target == "you" then return end
+            if venom == "miss" then snd.aff_gain("clumsiness") end
+            if not venom then
+              snd.needle = snd.venomEffect(snd.maybe_affs)
+            elseif venom ~= "dodge" or venom ~= "miss" then
+              if snd.needle == "none" then
+                snd.needle = snd.venomEffect(venom)
+                end
+              end
+            end,         
+  
+  
+  
+  Ridicule = function(target)
+             snd.target_got("self_loathing")
+             end,
+  
+  -- Seduce does nothing w/o happiness induce or scantily-clad, and the lovers_effect has a confirmation line for that. Not sure we need below.
+--  Seduce = function(target)
+--            snd.target_got("lovers_effect")
+--            end,
+  
+  Quip = function(target)
+          snd.target_got("hatred")
+          end,
+        
+  Sock = function(target)
+          if snd.checkAff("dizziness") then
+             table.insert(snd.maybe_affs, "dazed")
+          else
+             table.insert(snd.maybe_affs, "dizziness")
+          end
+          snd.onHit2({"Dodge"}) 
+        end,
+  
+  
+  Crackshot = function(target)
+          snd.target_got("dizziness")
+          snd.target_got("perplexed")
+          end,
+  
+  Hiltblow = function(target)    
+              enableTrigger("Hiltblow Confirmation")
+              snd.onHit2({"Dodge", "Rebounding"}, "Bard Hiltblow")
+          end, 
+          
+  Tackle = function(target)
+        snd.target_got("fallen")
+        end,
+
+},
+
+  ["Weaving"] = { 
+  
+  
+    Anelace = function(target, stab)
+            if stab then
+               snd.target_got("hollow")
+               snd.target_got("narcolepsy")
+             end
+            end,
+             
+    Headstitch = function(target)
+               snd.target_got("deadening")
+               snd.target_got("besilence")
+             end,
+
+                  
+    Barbs = function(target)
+                  snd.target_got("manabarbs")
+                  snd.target_got(snd.globe_affs[snd.globecount])
+                  snd.globecount = snd.globecount-1
+                  if snd.globecount == 0 then
+                    snd.target_cured("globes")
+                    end
+                  end,
+           
+                  
+    Runeband = function(target)
+              snd.target_got("runeband")
+              snd.runebandcount = 1
+              snd.bandclockwise = true
+              end,                            
+                
+    Bladestorm = function(target)
+              snd.target_got("bladestorm")
+              end,
+              
+    Ironcollar = function(target)
+             enableTrigger("Ironcollar Handling")
+             tempTimer(3, [[disableTrigger("Ironcollar Handling")]])
+             end, 
+                
+    Globes = function(target)            
+              snd.globecount = 3
+              snd.target_got("globes")
+              end,
+              
+    Mindbreak = function(target)
+              snd.target_got("migraine")
+              snd.target_got("squelched")
+              end,
+  }, 
+--Carnifex
+  ["Savagery"] = {
+  
+  Skewer = function(target, failed)
              if failed then
                snd.removeProneStates(true)
              else
@@ -27442,291 +27671,306 @@ end</script>
                if snd.hitting == "You" then
                 snd.target_impaled = true
                end
+               theytumbling = false
             end
           end,
-   Throatcrush = function(target)
-                    table.insert(snd.maybe_affs, "destroyed_throat")
-                    snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
-                  end,
-   Gouge = function(target)
-              table.insert(snd.maybe_affs, 1, "impatience")
-              snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
-            end,
-   Heartbreaker = function(target)
-                    table.insert(snd.maybe_affs, "heartflutter")
-                    snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
-                  end,
-   Twirl = function(target)
-              table.insert(snd.maybe_affs, 1, "confusion")
-              snd.onHit2({"Dodge",}, "Sentinel")
-            end,
-   Trip = function(target)
-            table.insert(snd.maybe_affs, 1, "fallen")
-            snd.onHit2({"Dodge"}, "Sentinel")
-          end,
-   Flourish = function(target)
-                  snd.onHit2({"Dodge", "Rebounding"}, "Sentinel")
-                end,
-   Slash = function(target)
-              snd.onHit2({"Dodge", "Rebounding"}, "Sentinel Slash")
-            end,
-   Stab = function(target)
-            snd.onHit2({"Dodge", "Rebounding"}, "Sentinel")
-          end,
-   Weaken = function(target)
-              enableTrigger("Weaken arms or legs")
-              snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
-            end,
-   Crosscut = function(target)
-                if snd.checkAff("impairment") then
-                  table.insert(snd.maybe_affs, 1, "addiction")
-                else
-                 table.insert(snd.maybe_affs, 1, "impairment")
-                end
-                  snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
-                end,
-   Reave = function(target, conditional)
-          	if conditional == "shield" then
-          		snd.used.shield = false
-          	else
-          		snd.used.shield = false
-          		snd.used.rebounding = false
-          	end
-          end,           
-   Slam = function(target)
-            if not snd.checksomeAffs({"laxity", "epilepsy"}, 1) then
-              table.insert(snd.maybe_affs, 1, "laxity")
-              table.insert(snd.maybe_affs, 2, "epilepsy")
-            elseif snd.checkAff("laxity") then
-              table.insert(snd.maybe_affs, 1, "epilepsy")
-            else
-              table.insert(snd.maybe_affs, 1, "laxity")
-            end
-            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel Slam")
-          end,      
-   Blind = function(target)
-                if snd.checkAff("sight") then
-                  table.insert(snd.maybe_affs, 1, "blurry_vision")
-                else
-                 table.insert(snd.maybe_affs, 1, "sight")
-                end
-                  snd.onHit2({"Dodge", "Rebounding"}, "Sentinel")
-                end,            
-   Slice = function(target)
-            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
-          end,
-   Thrust = function(target)
-            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
-          end,  
-   Slit = function(target)
-            table.insert(snd.maybe_affs, "crippled_throat")
-            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
-          end,
-   Dualraze = function(target, defense)
-                if defense == "shield" then snd.used.shield = false end
-                if defense == "rebounding" then snd.used.rebounding = false end
-                if defense == "speed" then snd.target_got("no_speed") end
-                if defense == "failure" then snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false end
-              end,
-  Pierce = function(target)
-            enableTrigger("Dhuriv Pierce/Sever")
-           end,
-  Sever = function(target)
-            enableTrigger("Dhuriv Pierce/Sever")
-           end,
-  },
-  
-  ["Woodlore"] = {
-    Daunt = function(target, animal)
-              local daunt_list = {
-              	["direwolf"] = "claustrophobia",
-              	["raloth"] = "agoraphobia",
-              	["crocodile"] = "loneliness",
-                ["cockatrice"] = "berserking",
-              }
-	           snd.target_got(daunt_list[animal])
-    end,
-    
-    Icebreath = function(target)
-                  snd.target_got("cold")
-                end,
-  },
-  
-  ["Tracking"] = {
-        
-
-  },
-  
---Templar
-  ["Battlefury"] = {
-  
-    Doublestrike = function(target)
-                    enableTrigger("Weapon Hit Confirmation")
-                   end,
-                   
-    Rend = function(target)
-            if #snd.maybe_affs == 0 then
-              table.insert(snd.maybe_affs, "rend")
-            end
-            snd.onHit2({"Rebounding", "Dodge"})
-           end,
-    Rage = function(target)
-             snd.handleRage()
-           end,
-    Impale = function(target, failed)
-               if failed then
-                 snd.removeProneStates(true)
-               else
-                 snd.target_got("writhe_impaled")
-                 if snd.hitting == "You" then
-                  snd.target_impaled = true
-                 end
-              end
-            end,
-    Disembowel = function(target)
-                   snd.target_impaled = false
-                   snd.target_cured("writhe_impaled")
-                 end,
     Raze = function(target, defense)
               if defense == "shield" then snd.used.shield = false
               elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
               else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
               end
             end,
-   Razestrike = function(target, defense)
+    Crush = function(target, conditional)
+              local aff = {["knees"] = "crushed_kneecaps", ["elbows"] = "crushed_elbows", ["chest"] = "cracked_ribs"}
+              if conditional == "chest" and snd.checkAff("cracked_ribs") then
+                table.insert(snd.maybe_affs, "crushed_chest")
+              else
+                table.insert(snd.maybe_affs, aff[conditional])
+              end
+              snd.onHit2({"Rebounding", "Dodge"}, "Carnifex")
+              if conditional == "knees" then tempTimer(11.5, [[snd.target_cured("crushed_kneecaps")]]) end
+              if conditional == "elbows" then tempTimer(7.5, [[snd.target_cured("crushed_elbows")]]) end
+            end,
+    Doublebash = function(target)
+                   enableTrigger("Doublebash Hit Confirmation")
+                 end,
+    Batter = function(target)
+               table.insert(snd.maybe_affs, "blurry_vision")
+               snd.onHit2({"Rebounding", "Dodge"})
+              end,
+    Hook = function(target)
+              snd.target_got("fallen")
+            end,
+   Razehack = function(target, defense)
                 if defense == "shield" then snd.used.shield = false end
                 if defense == "rebounding" then snd.used.rebounding = false end
                 if defense == "speed" then snd.target_got("no_speed") end
                 if defense == "failure" then snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false end
-                enableTrigger("Weapon Hit Confirmation")
+                snd.onHit2({"Dodge", "Rebounding"})
               end,
-    Lunge = function(target, what)
-              if what == "impale" then
-                snd.target_got("writhe_impaled")
-              end
-              snd.target_got("fallen")
-            end,
-    Charge = function(target)
-               snd.target_got("fallen")
+    Spinning = function(target)
+                  enableTrigger("Spinslash 2nd half")
+                  snd.onHit2({"Dodge", "Rebounding"}, "Carnifex")
+                end,
+  },
+  
+  ["Deathlore"] = {
+        
+    Shield = function(target)
+               snd.used.shield = true
              end,
-  },
-  
-  ["Righteousness"] = {
-      Withering = function()
-                    snd.target_got("withering")
-                  end,
-      Contort = function(target, aff)
-                  snd.target_got(aff)
-                end,
-
-  },
-  
-  ["Bladefire"] = {
-      Vorpal = function()
-                 enableTrigger("vorpal confirmation")
-               end,        
-
-  },
-  
---Shaman
-  ["Primality"] = {
-  
-    Slam = function(target, boosted)
-             if not boosted then
-               snd.target_got("fallen")
-             end
-           end,
-             
-    Infest = function(target, boosted)
-             if not boosted then
-               snd.target_got("infested")
-             end
-           end,
-    Spines = function(target, boosted)
-             if not boosted then
-               snd.target_got("blighted")
-             end
-           end,
-    Overload = function(target, boosted)
-                snd.target_got("paresis")
-                snd.target_got("stupidity")
+    Frailty = function(target)
+                snd.target_got("glasslimb")
               end,
-    Vitiate = function(target, boosted)
-             if boosted then
-               snd.target_got("plodding")
-             end
-             snd.target_got("lifebane")
-             if lifebane_timer then killTimer(lifebane_timer) end
-	           lifebane_timer = tempTimer(40,[[snd.target_cured("lifebane")]])
-           end,
-    Strangle = function(target, boosted)
-                snd.target_got("writhe_vines")
+    Distortion = function(target)
+                   snd.target_got("distortion")
+                 end,   
+    Wither = function(target)
+               enableTrigger("Wither Limb Messages")
+             end,
+    Wraith = function(target)
+               snd.target_got("soul_wraith")
+             end,
+    Poison = function(target)
+               snd.target_got("soul_poison")
+               if snd.hitting == "You" then
+                 snd.balance.soulpoison = false
+               end
+             end,
+    Disease = function(target)
+                snd.target_got("soul_disease")
+              end,
+    Implant = function(target)
+                enableTrigger("Soul Implant Give")
+                snd.target_got("soul_implant")
+              end,
+    Erode = function(target)
+              snd.used.shield = false
+              snd.used.rebounding = false
+              snd.target_cured("barrier")
+            end,
+    
+  },
+  
+  ["Warhounds"] = {
+        
+ Acidspit = function(target)
+              if snd.checkAff("weariness") then
+                snd.target_got("crippled")
+              else
+                snd.target_got("weariness")
+              end
+            end,
+
+ Poisonclaw = function(target)
+                if snd.checkAff("blisters") then
+                  snd.target_got("limp_veins")
+                else
+                  snd.target_got("blisters")
+                end
               end,
 
-    Vinelash = function(target, boosted)
-                  if #snd.maybe_affs &gt;= 1 then
-                    snd.onHit2({})
-                  end
-                end,
-    Leafstorm  = function(target, boosted)
-                  snd.used.shield = false
-                end,
-    Scourge = function(target, boosted)
-             if boosted then
-               snd.target_got("idiocy")
-             end
-             snd.target_got("vitalbane")
-           end,  
-    Stormbolt = function(target, boosted)
-                  if boosted then
-                    snd.target_got("stormbolt_cloud")
-                  end
-                end,
-    Sporulation = function(target)
-    --This never shows boosted message.
-                snd.target_got("impatience")
-                snd.target_got("confusion")
-              end,
-    Effusion = function(target)
-                snd.target_got("sight")
-                snd.target_got("hearing")
-                snd.target_got("sensitivity")
-              end,
-    Equivalence = function(target, boosted)
-    --This might be hidden from all except the Shaman, not sure
-             if boosted then
-               snd.target_got("justice")
-             end
-           end,  
-  },
-  
-  ["Shamanism"] = {
-    Premonition = function(target)
-                    snd.target_got("premonition")
-                        if snd.hitting == "You" then
-                          snd.my_premonition = true
-                          snd.their_premonition = false
-                        else
-                          snd.my_premonition = false
-                          snd.their_premonition = true
-                        end
-                  end,
-    Divulgence = function(target)
-                  if #snd.maybe_affs &gt;= 1 then
-                    snd.onHit2({})
-                  end
-                end,
-    Omen = function(target)
-             snd.incomingomen = true
-             snd.message(matches[2].." has an omen incoming in 6 seconds!", "dendara")
+ Shock = function(target)
+            if snd.checkAff("epilepsy") then
+              snd.target_got("hallucinations")
+            else
+              snd.target_got("epilepsy")
+            end
           end,
-        
+ Stare = function(target)
+            if snd.checkAff("berserking") then
+              snd.target_got("impairment")
+            else
+              snd.target_got("berserking")
+            end
+          end,
+
+ Growl = function(target)
+            if snd.checkAff("dizziness") then
+              snd.target_got("recklessness")
+            else
+              snd.target_got("dizziness")
+            end
+          end,
+  
+  Shatter = function(target)
+              snd.used.shield = false
+            end,
+  Bite = function(target, limb)
+                 snd.last_hit_limb = limb
+                 snd.last_limb_dmg = 2.49
+                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                 enableTrigger("Sunder Parry")
+               end,
+  Contagion = function(target)
+              --loki
+              end,
+  Tundralhowl = function(target)
+                  snd.target_got("cold")
+                end,
+  Firebreath = function(target)
+                 snd.target_got("ablaze")
+               end,
+  Ululate = function(target)
+            if table.isMember(snd.players_here, snd.target) and snd.hitting ~= snd.target then
+              snd.target_got("blurry_vision")
+            end
+          end,
+  },
+
+
+["Chaos"] = {
+ Warp = function(target)
+          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+            snd.target_got("slickness")
+            snd.target_got("disfigurement")
+          else
+            snd.target_got("magic_weakness")
+            snd.target_got("fire_weakness")
+            tempTimer(30, [[snd.target_cured("magic_weakness")]])
+            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+         end
+       end,
+  Claw = function(target)
+          enableTrigger("Chaos Claw")
+          enableTrigger("Sunder Parry")
+          if #snd.maybe_affs &gt;= 1 then
+            snd.onHit2({"Parry",})
+          end
+         end,
+ Shock = function(target, shield)
+              if shield then
+                snd.used.shield = false
+              end
+              if #snd.maybe_affs &gt;= 1 then
+                snd.onHit2({})
+              end
+            end,
+   },
+  
+--Earthcaller
+  ["Subjugation"] = {
+  
+  Crush = function(target, limb)
+            snd.last_hit_limb = limb
+            enableTrigger("Crush Confirmation")
+          end,
+  
+  Obliterate = function(target, limb)
+           	snd.last_hit_limb = limb
+          	snd.last_limb_dmg = 25
+          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Parry", "Dodge"})
+          end,
+  
+  Ribcage = function(target)
+           snd.used.shield = true
+         end,
+  
+  Dust = function(target)
+           snd.target_got("ablaze")
+           snd.target_got("angel_seared")
+           tempTimer(15, [[snd.target_cured("angel_seared")]])
+         end,
+  
+  Incisor = function(target, defense)
+            snd.used.rebounding = false
+          end,
+          
+  Raze = function(target, defense)
+            if defense == "shield" then snd.used.shield = false
+            elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
+            end
+          end,
+          
+  Subdue = function(target)
+             if snd.battle_aff ~= "none" then
+              snd.target_got(snd.battle_aff)
+            	table.insert(snd.last_affs, snd.battle_aff)
+             end
+             if snd.chasten_aff ~= "none" then
+              snd.target_got(snd.chasten_aff)
+            	table.insert(snd.last_affs, snd.chasten_aff)
+             end
+            end,
+  
+  Strike = function(target)
+            table.insert(snd.maybe_affs, "paresis")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  Punch = function(target)
+            table.insert(snd.maybe_affs, "weariness")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  Facesmash = function(target)
+                if not snd.checksomeAffs({"berserking", "sight"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "berserking")
+                  table.insert(snd.maybe_affs, 2, "sight")
+                elseif snd.checkAff("berserking") then
+                  table.insert(snd.maybe_affs, 1, "sight")
+                else
+                  table.insert(snd.maybe_affs, 1, "berserking")
+                end
+                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Facesmash")
+              end,
+  Slam = function(target)
+                if not snd.checksomeAffs({"asthma", "haemophilia"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "asthma")
+                  table.insert(snd.maybe_affs, 2, "haemophilia")
+                elseif snd.checkAff("asthma") then
+                  table.insert(snd.maybe_affs, 1, "haemophilia")
+                else
+                  table.insert(snd.maybe_affs, 1, "asthma")
+                end
+                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Slam")
+              end,
+  Horrification = function(target)
+            table.insert(snd.maybe_affs, "sight")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  
+  },
+  
+  ["Apocalyptia"] = {
+    Hysteria = function(target)
+               snd.target_got("confusion")
+               snd.target_got("dizziness")
+             end,
+    Lull = function(target)
+               snd.target_got("peace")
+             end,
+    Reckoning = function(target)
+                  snd.target_got("hellsight")
+                end,
 
   },
   
-  ["Naturalism"] = {
-        
-
+  ["Tectonics"] = {
+    Ashfall = function(target)
+                 snd.target_got("epilepsy")
+                end,
+                
+    Transfixion = function(target, blindness)
+                    snd.target_got("sight")
+                    if not blindness then  
+                     snd.target_got("writhe_transfix")
+                   end
+                  end,
+    Vent = function(target)
+                snd.target_got("berserking")
+                snd.target_got("hallucinations")
+              end,
+    Fault = function(target)
+             snd.target_got("faulted")
+             tempTimer(18.5, [[snd.target_cured("faulted")]])
+           end,
+    Spew = function(target)
+             snd.target_got("ablaze")
+             enableTrigger("Fervour Spew")
+           end,
+    Aftershock = function(target)
+             snd.target_got("aftershock")
+           end,
   },  
   
 --Indorani
@@ -27827,6 +28071,314 @@ end</script>
             end,        
 
   },
+
+  
+  --Luminary
+  ["Spirituality"] = {
+  
+  Crush = function(target, limb)
+            snd.last_hit_limb = limb
+            enableTrigger("Crush Confirmation")
+          end,
+  
+  Smash = function(target, limb)
+           	snd.last_hit_limb = limb
+          	snd.last_limb_dmg = 25
+          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Parry", "Dodge"})
+          end,
+  
+  Aura = function(target)
+           snd.used.shield = true
+         end,
+  
+  Sear = function(target)
+           snd.target_got("ablaze")
+           snd.target_got("angel_seared")
+           tempTimer(15, [[snd.target_cured("angel_seared")]])
+         end,
+  
+  Strip = function(target, defense)
+            snd.used.rebounding = false
+          end,
+          
+  Raze = function(target, defense)
+            if defense == "shield" then snd.used.shield = false
+            elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
+            end
+          end,
+          
+  Chasten = function(target)
+             if snd.battle_aff ~= "none" then
+              snd.target_got(snd.battle_aff)
+            	table.insert(snd.last_affs, snd.battle_aff)
+             end
+             if snd.chasten_aff ~= "none" then
+              snd.target_got(snd.chasten_aff)
+            	table.insert(snd.last_affs, snd.chasten_aff)
+             end
+            end,
+  
+  Strike = function(target)
+            table.insert(snd.maybe_affs, "paresis")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  Punch = function(target)
+            table.insert(snd.maybe_affs, "weariness")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  Facesmash = function(target)
+                if not snd.checksomeAffs({"berserking", "sight"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "berserking")
+                  table.insert(snd.maybe_affs, 2, "sight")
+                elseif snd.checkAff("berserking") then
+                  table.insert(snd.maybe_affs, 1, "sight")
+                else
+                  table.insert(snd.maybe_affs, 1, "berserking")
+                end
+                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Facesmash")
+              end,
+  Slam = function(target)
+                if not snd.checksomeAffs({"asthma", "haemophilia"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "asthma")
+                  table.insert(snd.maybe_affs, 2, "haemophilia")
+                elseif snd.checkAff("asthma") then
+                  table.insert(snd.maybe_affs, 1, "haemophilia")
+                else
+                  table.insert(snd.maybe_affs, 1, "asthma")
+                end
+                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Slam")
+              end,
+  Brilliance = function(target)
+            table.insert(snd.maybe_affs, "sight")
+            snd.onHit2({"Dodge", "Rebounding"})
+          end,
+  
+  },
+  
+  ["Devotion"] = {
+    Dazzle = function(target)
+               snd.target_got("confusion")
+               snd.target_got("dizziness")
+             end,
+    Peace = function(target)
+               snd.target_got("peace")
+             end,
+    Hellsight = function(target)
+                  snd.target_got("hellsight")
+                end,
+
+  },
+  
+  ["Illumination"] = {
+    Lightning = function(target)
+                 snd.target_got("allergies")
+                end,
+                
+    Transfixion = function(target, blindness)
+                    snd.target_got("sight")
+                    if not blindness then  
+                     snd.target_got("writhe_transfix")
+                   end
+                  end,
+    Heatwave = function(target)
+                snd.target_got("berserking")
+                snd.target_got("hallucinations")
+              end,
+    Sear = function(target)
+             snd.target_got("tree_seared")
+             tempTimer(19, [[snd.target_cured("tree_seared")]])
+           end,
+    Fire = function(target)
+             snd.target_got("ablaze")
+             enableTrigger("Illumination Fire")
+           end,
+  },
+  
+--Monk
+  ["Tekura"] = {
+
+    Kipup = function(target)
+               snd.target_cured("fallen")
+             end,
+             
+    Sidekick = function(target)                
+                if snd.stance == "tiger" then
+                  snd.last_limb_dmg = 10.8
+              	else
+                  snd.last_limb_dmg = 9
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Snapkick = function(target)
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 10.8
+              	else
+              	 snd.last_limb_dmg = 9
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Moonkick = function(target)                
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 10.8
+              	else
+                  snd.last_limb_dmg = 9
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Whirlwind = function(target)
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  if snd.checkAff("fallen") then 
+                    snd.last_limb_dmg = 12.5
+                  else
+                    snd.last_limb_dmg = 10.8
+                  end
+              	else
+                  if snd.checkAff("fallen") then 
+                    snd.last_limb_dmg = 12.5
+                  else
+                    snd.last_limb_dmg = 9
+                  end
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Axe = function(target)                
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 10.8
+              	else
+                  snd.last_limb_dmg = 9
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Sweepkick = function(target)
+              	snd.target_got("fallen")
+                snd.target_got("sore_ankle")
+              end,
+    Scythekick = function(target)
+              	snd.used.shield = false
+              end,
+    Cometkick = function(target)
+              	snd.last_limb_dmg = 5.5
+                snd.target_got("weak_grip")
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Hook = function(target)                
+                if snd.stance == "tiger" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Uppercut = function(target)                
+                if snd.stance == "tiger" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Hammerfist = function(target)                
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Spear = function(target)
+                if snd.stance == "tiger" or snd.stance == "cobra" then
+                  snd.last_limb_dmg = 6.6
+              	else
+                  snd.last_limb_dmg = 5.5
+                end
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Palmstrike = function(target)
+                snd.last_limb_dmg = 3
+                enableTrigger("Monk Hit Tracking")
+              	snd.target_got("blurry_vision")
+              end,
+    Jumpkick = function(target)
+                snd.last_limb_dmg = 6
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Jab = function(target)
+              	snd.last_limb_dmg = 5
+                enableTrigger("Monk Hit Tracking")
+              end,
+    Throatstrike = function(target)
+                enableTrigger("Throatstrike confirmation hit")
+              end,
+    Bladehand = function(target)
+                enableTrigger("Turmoil confirmation hit")
+              end,
+    Slam = function(target)
+             snd.target_got("fallen") --Just incase
+           end,
+    Feint = function(target, limb)
+             snd.parried_limb = limb
+            end,
+    Wrench = function(target)
+               enableTrigger("Wrench confirmation hit")
+             end,
+
+  },
+  
+  ["Kaido"] = {
+    Cripple = function(target)
+               --
+              end,
+              
+    Restoration = function(target)
+                    snd.handleRestore()
+                  end,
+    Ripple = function(target)
+                snd.target_got("ripple")
+                snd.target_cured("turmoil")
+              end,
+
+  },
+  
+  ["Telepathy"] = {
+  
+    Disrupt = function(target, fail)
+                if not fail then
+                  snd.target_got("disrupted")
+                end
+              end,
+        
+
+  },
+
+["Nocturn"] = {
+ Corrupt = function(target)
+          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+            snd.target_got("slickness")
+            snd.target_got("disfigurement")
+          else
+            snd.target_got("magic_weakness")
+            snd.target_got("fire_weakness")
+            tempTimer(30, [[snd.target_cured("magic_weakness")]])
+            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+         end
+       end,
+ Lash = function(target)
+          enableTrigger("Nocturn Lash")
+          enableTrigger("Sunder Parry")
+          if #snd.maybe_affs &gt;= 1 then
+            snd.onHit2({"Parry",})
+          end
+         end,
+ Haemoplague = function(target, shield)
+              if shield then
+                snd.used.shield = false
+              end
+              if #snd.maybe_affs &gt;= 1 then
+                snd.onHit2({})
+              end
+            end,
+   },
   
 --Oneiromancer
   ["Oneiromancy"] = {
@@ -28047,116 +28599,109 @@ end</script>
             snd.target_got("blood_rune")
         end,
     },
-    
---Archivist
-  ["Geometrics"] = {
-    Pattern = function(target)
-                snd.target_got("patterns")
-              end,
-              
-    Lemniscate = function(target)
-                   snd.target_got("lemniscate")
-                   lemniscate_timer = tempTimer(9.0,[[snd.target_cured("lemniscate")]])
-                 end,
-    Matrix = function(target)
-               snd.target_got("matrix")
-               matrix_timer = tempTimer(20.0,[[snd.target_cured("matrix")]])
-             end,
-
-    Circle = function(target)
-              local t = {"merciful", "masochism", "berserking", "recklessness"} -- initialize table with circle affs
-              for _, v in pairs(t) do -- iterate circle affs
-                if not snd.checkAff(v) then -- check if they have it
-                  snd.target_got(v) -- if they don't have it, add it
-                  break -- if we added an aff, break out of the loop
-                end -- end if
-              end -- end for
-             end,
-                      
-    Triangle = function(target)
-              local t = {"laxity", "lovers_effect", "peace", "magnanimity"} 
-              for _, v in pairs(t) do
-                if not snd.checkAff(v) then
-                  snd.target_got(v)
-                  break 
-                end 
-              end
-             end,
-                
-    Square = function(target)
-              local t = {"dizziness", "faintness", "epilepsy", "shyness"} 
-              for _, v in pairs(t) do
-                if not snd.checkAff(v) then
-                  snd.target_got(v)
-                  break 
-                end 
-              end
-             end,
-    Sealing = function(target, shape)
-                snd.target_got(shape.."_sealed")
-                if shape == "square" then
-                  tempTimer(31, [[snd.target_cured("square_sealed")]])
-                elseif shape == "circle" then
-                  tempTimer(31, [[snd.target_cured("circle_sealed")]])
-                elseif shape == "triangle" then
-                  tempTimer(31, [[snd.target_cured("triangle_sealed")]])
-                end
-              end,
-    Fork = function(target)
-             snd.used.shield = false
+  
+--Revenant
+  ["Riving"] = {
+    Rage = function(target)  
+             snd.handleRage()
            end,
-  },
-  
-  ["Numerology"] = {
-        
-    Madness = function(target)
-               snd.target_got("dementia")
-               snd.target_got("paranoia")
-               snd.target_got("hallucinations")
-               if snd.hitting == "You" then snd.balance.madness = false end
+    Duplicity = function(target)
+                    enableTrigger("Weapon Hit Confirmation")
+                   end,
+    Fell = function(target)
+                    enableTrigger("Weapon Hit Confirmation")
+                  end,
+    Gouge = function(target)
+            if #snd.maybe_affs == 0 then
+              table.insert(snd.maybe_affs, "rend")
+            end
+            snd.onHit2({"Rebounding", "Dodge"})
+           end,
+    Transpierce = function(target, failed)
+               if failed then
+                 snd.removeProneStates(true)
+               else
+                 snd.target_got("writhe_impaled")
+                 if snd.hitting == "You" then
+                  snd.target_impaled = true
+                 end
+              end
+            end,      
+    Raze = function(target, defense)
+              if defense == "shield" then snd.used.shield = false
+              elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
+              else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
+              end
+            end,
+   Deceive = function(target, defense)
+                if defense == "shield" then snd.used.shield = false end
+                if defense == "rebounding" then snd.used.rebounding = false end
+                if defense == "speed" then snd.target_got("no_speed") end
+                if defense == "failure" then snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false end
+                enableTrigger("Weapon Hit Confirmation")
               end,
-    Affliction = function(target)
-                   enableTrigger("Elicit Affliction")
+    Extirpate = function(target)
+                   snd.target_impaled = false
+                   snd.target_cured("writhe_impaled")
                  end,
+    Jumpcut = function(target, what)
+              if what == "impale" then
+                snd.target_got("writhe_impaled")
+              end
+              snd.target_got("fallen")
+            end,
+    Initiate = function(target)
+               snd.target_got("fallen")
+             end,    
+  },
+  
+  ["Manifestation"] = {
+      Parasite = function()
+                    snd.target_got("withering")
+                  end,
+      Discord = function(target, aff)
+                  snd.target_got(aff)
+                end,
 
   },
   
-  ["Bioessence"] = {
-          Infection = function(target)
-                        snd.target_got("mutagen")
-                        if snd.hitting == "You" then
-                          snd.my_mutagen = true
-                          snd.their_mutagen = false
-                        else
-                          snd.my_mutagen = false
-                          snd.their_mutagen = true
-                        end
-             end,
-          Advance = function(target)
-                        snd.target_got("mutagen")
-                        if snd.hitting == "You" then
-                          snd.my_mutagen = true
-                          snd.their_mutagen = false
-                        else
-                          snd.my_mutagen = false
-                          snd.their_mutagen = true
-                        end
-             end,
-          Jolt = function(target)
-                   snd.target_cured("no_speed")
-                 end,
-          Preserve = function(target, level)
-                       if level == "severe" then
-                        snd.target_got("cold")
-                        snd.target_got("cold")
-                       elseif level == "moderate" then
-                        snd.target_got("cold")
-                       end
-                       snd.target_got("cold")
-                      end,
+  ["Chirography"] = {
+      Atdum = function()
+           enableTrigger("atdum confirmation")
+         end,      
 
   },
-  
+
+
+["Sagani"] = {
+ Flux = function(target)
+          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+            snd.target_got("slickness")
+            snd.target_got("disfigurement")
+          else
+            snd.target_got("magic_weakness")
+            snd.target_got("fire_weakness")
+            tempTimer(30, [[snd.target_cured("magic_weakness")]])
+            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+         end
+       end,
+ Carbonise = function(target)
+          enableTrigger("Sagani Carbonise")
+          enableTrigger("Sunder Parry")
+          if #snd.maybe_affs &gt;= 1 then
+            snd.onHit2({"Parry",})
+          end
+         end,
+ Erode = function(target, shield)
+              if shield then
+                snd.used.shield = false
+              end
+              if #snd.maybe_affs &gt;= 1 then
+                snd.onHit2({})
+              end
+            end,
+   },
+    
 --Sciomancer
   ["Sciomancy"] = {
       Chill = function(target, shadowprice)
@@ -28259,81 +28804,9 @@ end</script>
              end,
   },
   
---Teradrim
-  ["Terramancy"] = {
-    Gutsmash = function(target)
-                snd.last_hit_limb = "torso"
-                snd.last_limb_dmg = 11.99
-                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                snd.onHit2({"Dodge", "Parry", "Rebounding"})
-               end,
-    Facesmash = function(target)
-                snd.last_hit_limb = "head"
-                snd.last_limb_dmg = 12.99
-                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                snd.onHit2({"Dodge", "Parry", "Rebounding"})
-               end,
-    Shred = function(target, where)
-                snd.last_hit_limb = where
-                snd.last_limb_dmg = 6.99
-                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                snd.onHit2({"Dodge", "Parry", "Rebounding"})
-               end,
-    Overhand = function(target)
-                 snd.target_got("fallen")
-               end,
-    Batter = function(target, where)
-               snd.last_hit_limb = where
-               snd.last_limb_dmg = 13.75
-               snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-               snd.onHit2({"Dodge", "Parry", "Rebounding"})
-              end,
-    Shockwave = function(target)
-                  snd.target_got("fallen")
-                  enableTrigger("Shockwave limb breaks")
-                end,
-    Furor = function(target, where)
-             	snd.last_hit_limb = where
-            	snd.last_limb_dmg = 7.78
-            	snd.took_limb_dmg(where, snd.last_limb_dmg)
-              snd.onHit2({"Dodge", "Parry", "Rebounding"})
-            end,
-    Stoneblast = function(target)
-                  if snd.used.rebounding then
-                    snd.used.rebounding = false
-                  else
-                    snd.used.shield = false
-                  end
-                end,
-    Fracture = function(target, where)
-                 table.insert(snd.maybe_affs, where.."_broken")
-                 	snd.last_hit_limb = where
-                	snd.last_limb_dmg = 11.99
-                  if snd.limb_bruising[snd.last_hit_limb] ~= 0 then
-                    snd.last_limb_dmg = 11.99 + (snd.limb_bruising[snd.last_hit_limb]*4)
-                  end
-                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                  snd.onHit2({"Dodge", "Parry", "Rebounding"})
-               end,  
-    Skullbash = function(target)
-                 	snd.last_hit_limb = "head"
-                	snd.last_limb_dmg = 17.65
-                  local afflist = {"stupidity", "indifference", "impatience"}
-                  local check = 0
-                  for _, v in pairs(afflist) do if snd.limb_bruising["head"] &gt; check then
-                    table.insert(snd.maybe_affs, v)
-                    check = check + 1 
-                    end
-                  end
-                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                  snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Teradrim Skullbash")
-               end,
-    Pulp = function(target)
-           	snd.last_hit_limb = "torso"
-          	snd.last_limb_dmg = 8.6
-          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-            snd.onHit2({"Dodge", "Rebounding"})
-         end, 
+--Sentinel
+  ["Dhuriv"] = {
+    
   Impale = function(target, failed)
              if failed then
                snd.removeProneStates(true)
@@ -28344,419 +28817,218 @@ end</script>
                end
             end
           end,
-  Stonevice = function(target)
-                snd.target_cured("writhe_impaled")
-                snd.last_hit_limb = "torso"
-                snd.last_limb_dmg = 10
-                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-              end,
-  Barrage = function(target)
-              enableTrigger("Barrage hit confirmation")
+   Throatcrush = function(target)
+                    table.insert(snd.maybe_affs, "destroyed_throat")
+                    snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
+                  end,
+   Gouge = function(target)
+              table.insert(snd.maybe_affs, 1, "impatience")
+              snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
             end,
-  },
-  
-  ["Desiccation"] = {
-    Shred = function(target, where)
-                snd.last_hit_limb = where:gsub(" storm", "")
-                snd.last_limb_dmg = 7
-                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                snd.onHit2({"Dodge", "Parry", "Rebounding"})
-               end,
-    Shield = function(target)
-              snd.used.shield = true
-             end,
-    Curse = function(target)
-              snd.target_got("slough")
+   Heartbreaker = function(target)
+                    table.insert(snd.maybe_affs, "heartflutter")
+                    snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
+                  end,
+   Twirl = function(target)
+              table.insert(snd.maybe_affs, 1, "confusion")
+              snd.onHit2({"Dodge",}, "Sentinel")
             end,
-    Scourge = function(target, where)
-                snd.target_got(where.."_broken")
-              end,
-    
-    Trap = function(target)
-                snd.target_got("sand_trapped")
-              end,
-
-  },
-  
-  ["Animation"] = {
-        
-  },
---Carnifex
-  ["Savagery"] = {
-  
-  Skewer = function(target, failed)
-             if failed then
-               snd.removeProneStates(true)
-             else
-               snd.target_got("writhe_impaled")
-               if snd.hitting == "You" then
-                snd.target_impaled = true
-               end
-               theytumbling = false
-            end
+   Trip = function(target)
+            table.insert(snd.maybe_affs, 1, "fallen")
+            snd.onHit2({"Dodge"}, "Sentinel")
           end,
-    Raze = function(target, defense)
-              if defense == "shield" then snd.used.shield = false
-              elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
-              else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
-              end
+   Flourish = function(target)
+                  snd.onHit2({"Dodge", "Rebounding"}, "Sentinel")
+                end,
+   Slash = function(target)
+              snd.onHit2({"Dodge", "Rebounding"}, "Sentinel Slash")
             end,
-    Crush = function(target, conditional)
-              local aff = {["knees"] = "crushed_kneecaps", ["elbows"] = "crushed_elbows", ["chest"] = "cracked_ribs"}
-              if conditional == "chest" and snd.checkAff("cracked_ribs") then
-                table.insert(snd.maybe_affs, "crushed_chest")
-              else
-                table.insert(snd.maybe_affs, aff[conditional])
-              end
-              snd.onHit2({"Rebounding", "Dodge"}, "Carnifex")
-              if conditional == "knees" then tempTimer(11.5, [[snd.target_cured("crushed_kneecaps")]]) end
-              if conditional == "elbows" then tempTimer(7.5, [[snd.target_cured("crushed_elbows")]]) end
+   Stab = function(target)
+            snd.onHit2({"Dodge", "Rebounding"}, "Sentinel")
+          end,
+   Weaken = function(target)
+              enableTrigger("Weaken arms or legs")
+              snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
             end,
-    Doublebash = function(target)
-                   enableTrigger("Doublebash Hit Confirmation")
-                 end,
-    Batter = function(target)
-               table.insert(snd.maybe_affs, "blurry_vision")
-               snd.onHit2({"Rebounding", "Dodge"})
-              end,
-    Hook = function(target)
-              snd.target_got("fallen")
-            end,
-   Razehack = function(target, defense)
+   Crosscut = function(target)
+                if snd.checkAff("impairment") then
+                  table.insert(snd.maybe_affs, 1, "addiction")
+                else
+                 table.insert(snd.maybe_affs, 1, "impairment")
+                end
+                  snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
+                end,
+   Reave = function(target, conditional)
+          	if conditional == "shield" then
+          		snd.used.shield = false
+          	else
+          		snd.used.shield = false
+          		snd.used.rebounding = false
+          	end
+          end,           
+   Slam = function(target)
+            if not snd.checksomeAffs({"laxity", "epilepsy"}, 1) then
+              table.insert(snd.maybe_affs, 1, "laxity")
+              table.insert(snd.maybe_affs, 2, "epilepsy")
+            elseif snd.checkAff("laxity") then
+              table.insert(snd.maybe_affs, 1, "epilepsy")
+            else
+              table.insert(snd.maybe_affs, 1, "laxity")
+            end
+            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel Slam")
+          end,      
+   Blind = function(target)
+                if snd.checkAff("sight") then
+                  table.insert(snd.maybe_affs, 1, "blurry_vision")
+                else
+                 table.insert(snd.maybe_affs, 1, "sight")
+                end
+                  snd.onHit2({"Dodge", "Rebounding"}, "Sentinel")
+                end,            
+   Slice = function(target)
+            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
+          end,
+   Thrust = function(target)
+            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
+          end,  
+   Slit = function(target)
+            table.insert(snd.maybe_affs, "crippled_throat")
+            snd.onHit2({"Dodge", "Rebounding", "Parry"}, "Sentinel")
+          end,
+   Dualraze = function(target, defense)
                 if defense == "shield" then snd.used.shield = false end
                 if defense == "rebounding" then snd.used.rebounding = false end
                 if defense == "speed" then snd.target_got("no_speed") end
                 if defense == "failure" then snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false end
-                snd.onHit2({"Dodge", "Rebounding"})
               end,
-    Spinning = function(target)
-                  enableTrigger("Spinslash 2nd half")
-                  snd.onHit2({"Dodge", "Rebounding"}, "Carnifex")
-                end,
+  Pierce = function(target)
+            enableTrigger("Dhuriv Pierce/Sever")
+           end,
+  Sever = function(target)
+            enableTrigger("Dhuriv Pierce/Sever")
+           end,
   },
   
-  ["Deathlore"] = {
-        
-    Shield = function(target)
-               snd.used.shield = true
-             end,
-    Frailty = function(target)
-                snd.target_got("glasslimb")
-              end,
-    Distortion = function(target)
-                   snd.target_got("distortion")
-                 end,   
-    Wither = function(target)
-               enableTrigger("Wither Limb Messages")
-             end,
-    Wraith = function(target)
-               snd.target_got("soul_wraith")
-             end,
-    Poison = function(target)
-               snd.target_got("soul_poison")
-               if snd.hitting == "You" then
-                 snd.balance.soulpoison = false
-               end
-             end,
-    Disease = function(target)
-                snd.target_got("soul_disease")
-              end,
-    Implant = function(target)
-                enableTrigger("Soul Implant Give")
-                snd.target_got("soul_implant")
-              end,
-    Erode = function(target)
-              snd.used.shield = false
-              snd.used.rebounding = false
-              snd.target_cured("barrier")
-            end,
+  ["Woodlore"] = {
+    Daunt = function(target, animal)
+              local daunt_list = {
+              	["direwolf"] = "claustrophobia",
+              	["raloth"] = "agoraphobia",
+              	["crocodile"] = "loneliness",
+                ["cockatrice"] = "berserking",
+              }
+	           snd.target_got(daunt_list[animal])
+    end,
     
-  },
-  
-  ["Warhounds"] = {
-        
- Acidspit = function(target)
-              if snd.checkAff("weariness") then
-                snd.target_got("crippled")
-              else
-                snd.target_got("weariness")
-              end
-            end,
-
- Poisonclaw = function(target)
-                if snd.checkAff("blisters") then
-                  snd.target_got("limp_veins")
-                else
-                  snd.target_got("blisters")
-                end
-              end,
-
- Shock = function(target)
-            if snd.checkAff("epilepsy") then
-              snd.target_got("hallucinations")
-            else
-              snd.target_got("epilepsy")
-            end
-          end,
- Stare = function(target)
-            if snd.checkAff("berserking") then
-              snd.target_got("impairment")
-            else
-              snd.target_got("berserking")
-            end
-          end,
-
- Growl = function(target)
-            if snd.checkAff("dizziness") then
-              snd.target_got("recklessness")
-            else
-              snd.target_got("dizziness")
-            end
-          end,
-  
-  Shatter = function(target)
-              snd.used.shield = false
-            end,
-  Bite = function(target, limb)
-                 snd.last_hit_limb = limb
-                 snd.last_limb_dmg = 2.49
-                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                 enableTrigger("Sunder Parry")
-               end,
-  Contagion = function(target)
-              --loki
-              end,
-  Tundralhowl = function(target)
+    Icebreath = function(target)
                   snd.target_got("cold")
                 end,
-  Firebreath = function(target)
-                 snd.target_got("ablaze")
-               end,
-  Ululate = function(target)
-            if table.isMember(snd.players_here, snd.target) and snd.hitting ~= snd.target then
-              snd.target_got("blurry_vision")
-            end
-          end,
   },
   
---Monk
-  ["Tekura"] = {
-
-    Kipup = function(target)
-               snd.target_cured("fallen")
-             end,
-             
-    Sidekick = function(target)                
-                if snd.stance == "tiger" then
-                  snd.last_limb_dmg = 10.8
-              	else
-                  snd.last_limb_dmg = 9
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Snapkick = function(target)
-                if snd.stance == "tiger" or snd.stance == "cobra" then
-                  snd.last_limb_dmg = 10.8
-              	else
-              	 snd.last_limb_dmg = 9
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Moonkick = function(target)                
-                if snd.stance == "tiger" or snd.stance == "cobra" then
-                  snd.last_limb_dmg = 10.8
-              	else
-                  snd.last_limb_dmg = 9
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Whirlwind = function(target)
-                if snd.stance == "tiger" or snd.stance == "cobra" then
-                  if snd.checkAff("fallen") then 
-                    snd.last_limb_dmg = 12.5
-                  else
-                    snd.last_limb_dmg = 10.8
-                  end
-              	else
-                  if snd.checkAff("fallen") then 
-                    snd.last_limb_dmg = 12.5
-                  else
-                    snd.last_limb_dmg = 9
-                  end
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Axe = function(target)                
-                if snd.stance == "tiger" or snd.stance == "cobra" then
-                  snd.last_limb_dmg = 10.8
-              	else
-                  snd.last_limb_dmg = 9
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Sweepkick = function(target)
-              	snd.target_got("fallen")
-                snd.target_got("sore_ankle")
-              end,
-    Scythekick = function(target)
-              	snd.used.shield = false
-              end,
-    Cometkick = function(target)
-              	snd.last_limb_dmg = 5.5
-                snd.target_got("weak_grip")
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Hook = function(target)                
-                if snd.stance == "tiger" then
-                  snd.last_limb_dmg = 6.6
-              	else
-                  snd.last_limb_dmg = 5.5
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Uppercut = function(target)                
-                if snd.stance == "tiger" then
-                  snd.last_limb_dmg = 6.6
-              	else
-                  snd.last_limb_dmg = 5.5
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Hammerfist = function(target)                
-                if snd.stance == "tiger" or snd.stance == "cobra" then
-                  snd.last_limb_dmg = 6.6
-              	else
-                  snd.last_limb_dmg = 5.5
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Spear = function(target)
-                if snd.stance == "tiger" or snd.stance == "cobra" then
-                  snd.last_limb_dmg = 6.6
-              	else
-                  snd.last_limb_dmg = 5.5
-                end
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Palmstrike = function(target)
-                snd.last_limb_dmg = 3
-                enableTrigger("Monk Hit Tracking")
-              	snd.target_got("blurry_vision")
-              end,
-    Jumpkick = function(target)
-                snd.last_limb_dmg = 6
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Jab = function(target)
-              	snd.last_limb_dmg = 5
-                enableTrigger("Monk Hit Tracking")
-              end,
-    Throatstrike = function(target)
-                enableTrigger("Throatstrike confirmation hit")
-              end,
-    Bladehand = function(target)
-                enableTrigger("Turmoil confirmation hit")
-              end,
-    Slam = function(target)
-             snd.target_got("fallen") --Just incase
-           end,
-    Feint = function(target, limb)
-             snd.parried_limb = limb
-            end,
-    Wrench = function(target)
-               enableTrigger("Wrench confirmation hit")
-             end,
-
-  },
-  
-  ["Kaido"] = {
-    Cripple = function(target)
-               --
-              end,
-              
-    Restoration = function(target)
-                    snd.handleRestore()
-                  end,
-    Ripple = function(target)
-                snd.target_got("ripple")
-                snd.target_cured("turmoil")
-              end,
-
-  },
-  
-  ["Telepathy"] = {
-  
-    Disrupt = function(target, fail)
-                if not fail then
-                  snd.target_got("disrupted")
-                end
-              end,
+  ["Tracking"] = {
         
 
   },
   
---Syssin
-  ["Assassination"] = {
-    Bind = function(target)
-             snd.target_got("writhe_bind")
+--Shaman
+  ["Primality"] = {
+  
+    Slam = function(target, boosted)
+             if not boosted then
+               snd.target_got("fallen")
+             end
            end,
-    Doublestab = function(target)
-                  enableTrigger("Syssin Hit Confirmation")
-                 end,
-    Flay = function(target, condition)
-             enableTrigger("Syssin Hit Confirmation")
-             snd.used.shield = false
-             if condition:find("rebounding") then
-                snd.used.rebounding = false
-             end
-             if condition:find("fangbarrier") then
-                snd.used.rebounding = false
-                snd.used.paste = false
-             end
-             if condition:find("speed") then
-                snd.used.rebounding = false
-                snd.used.paste = false
-                snd.target_got("no_speed")
-             end
-             if condition:find("none") then
-                snd.used.rebounding = false
-                snd.used.paste = false
-                snd.used.shield = false
-             end
              
-            end,
-    Slit = function(target)
-                  enableTrigger("Syssin Hit Confirmation")
-                 end,
-                 
-    Bite = function(target, venom)
-            snd.used.paste = false
-            if venom ~= "camus" then
-             snd.target_got(snd.venomEffect(venom))
-            end
-          end,
+    Infest = function(target, boosted)
+             if not boosted then
+               snd.target_got("infested")
+             end
+           end,
+    Spines = function(target, boosted)
+             if not boosted then
+               snd.target_got("blighted")
+             end
+           end,
+    Overload = function(target, boosted)
+                snd.target_got("paresis")
+                snd.target_got("stupidity")
+              end,
+    Vitiate = function(target, boosted)
+             if boosted then
+               snd.target_got("plodding")
+             end
+             snd.target_got("lifebane")
+             if lifebane_timer then killTimer(lifebane_timer) end
+	           lifebane_timer = tempTimer(40,[[snd.target_cured("lifebane")]])
+           end,
+    Strangle = function(target, boosted)
+                snd.target_got("writhe_vines")
+              end,
 
-  },
-  
-  ["Subterfuge"] = {
-    -- Nothing currently necessary
-
-  },
-  
-  ["Hypnosis"] = {
-    Sleight = function(target, conditional)
-                if conditional == "Void" then
-                  snd.target_got("void")
-                end
-    end,     
-    Marks = function(target, conditional)
-                if conditional == "Numbness" then
-                  snd.target_got("numbed_skin")
-                  if not table.isMember(gmcp.Room.Info.details, "darkness") then
-                    tempTimer(15, [[snd.target_cured("numbed_skin")]])
+    Vinelash = function(target, boosted)
+                  if #snd.maybe_affs &gt;= 1 then
+                    snd.onHit2({})
                   end
-                end
-    end,   
+                end,
+    Leafstorm  = function(target, boosted)
+                  snd.used.shield = false
+                end,
+    Scourge = function(target, boosted)
+             if boosted then
+               snd.target_got("idiocy")
+             end
+             snd.target_got("vitalbane")
+           end,  
+    Stormbolt = function(target, boosted)
+                  if boosted then
+                    snd.target_got("stormbolt_cloud")
+                  end
+                end,
+    Sporulation = function(target)
+    --This never shows boosted message.
+                snd.target_got("impatience")
+                snd.target_got("confusion")
+              end,
+    Effusion = function(target)
+                snd.target_got("sight")
+                snd.target_got("hearing")
+                snd.target_got("sensitivity")
+              end,
+    Equivalence = function(target, boosted)
+    --This might be hidden from all except the Shaman, not sure
+             if boosted then
+               snd.target_got("justice")
+             end
+           end,  
+  },
+  
+  ["Shamanism"] = {
+    Premonition = function(target)
+                    snd.target_got("dread")
+                        if snd.hitting == "You" then
+                          snd.my_dread = true
+                          snd.their_dread = false
+                        else
+                          snd.my_dread = false
+                          snd.their_dread = true
+                        end
+                  end,
+    Divulgence = function(target)
+                  if #snd.maybe_affs &gt;= 1 then
+                    snd.onHit2({})
+                  end
+                end,
+    Omen = function(target)
+             snd.incomingomen = true
+             snd.message(matches[2].." has an omen incoming in 6 seconds!", "dendara")
+          end,
+        
+
+  },
+  
+  ["Naturalism"] = {
+        
+
   },
   
 --Shapeshifter
@@ -28985,181 +29257,87 @@ end</script>
               end,
   },
   
---Wayfarer
-  ["Tenacity"] = {
-    Sweep = function(target)
-              snd.target_got("fallen")
-            end,
-    Obstruct = function(target)
-                 snd.target_got("fallen")
-               end,
-    Devastate = function(target)
-                  enableTrigger("Tenacity Devastate")
-                  --Has specific lines for all cases, safer to use those than presume tracking is 100% right always
-                end,
-    Lob = function(target)
-            snd.onHit2({"Dodge"}, "Wayfarer")
-          end,
-    Bash = function(target)
-            if snd.checkAff("hearing") then
-               table.insert(snd.maybe_affs, "dizziness")
-          	else
-               table.insert(snd.maybe_affs, "hearing")
-          	end
-            snd.last_hit_limb = "head"
-            snd.last_limb_dmg = 9
-            snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-            snd.onHit2({"Rebounding", "Dodge", "Parry"})
-          end,
-    Slaughter = function(target)
-                table.insert(snd.maybe_affs, 1, snd.maybe_affs[2])
-                  snd.onHit2({"Dodge"})
-                  snd.onHit2({"Dodge"})
-                end,
-    Carve = function(target)
-            if snd.checkAff("vomiting") then
-               snd.target_got("fallen")
-          	end
-           table.insert(snd.maybe_affs, "vomiting")
-
-            snd.last_hit_limb = "torso"
-            snd.last_limb_dmg = 14
-            snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-            snd.onHit2({"Parry", "Rebounding", "Dodge"})
-          end,
-    Lacerate = function(target)
-                 table.insert(snd.maybe_affs, "haemophilia")
-                 snd.onHit2({"Rebounding", "Dodge", "Parry"})
-                end,
-    Chop = function(target)
-            enableTrigger("Tenacity Chop")
-             snd.onHit2({"Parry", "Rebounding", "Dodge"})
-          end,
-    Cripple = function(target)
-            enableTrigger("Tenacity Cripple")
-            snd.onHit2({"Parry", "Dodge"})
-          end,
-    Assault = function(target)
-            enableTrigger("Tenacity Assault")
-            snd.target_got("assault_damage")
-            tempTimer(2, [[snd.target_cured("assault_damage")]])
-            snd.onHit2({"Parry", "Dodge"})
-            table.insert(snd.last_affs, "assault_damage")
-          end,
-    Punish = function(target)
-                  enableTrigger("Tenacity Punish")
-                  --If only tenacity lines had targetting like others in the combat message
-                end,
-  },
-  ["Wayfaring"] = {
-        
-
-  },
-  
-  ["Fury"] = {
-    Warcry = function(target, boosted)
-                snd.target_got("hearing")
-                if boosted then snd.target_got("ringing ears") end
-             end,
-
-    Threaten = function(target, boosted)
-                snd.target_got("hatred")
-                if boosted then snd.target_got("masochism") end
-             end,
-
-    Shake = function(target, boosted)
-                snd.target_got("weariness")
-             end,
-
-    Halt = function(target, boosted)
-                snd.target_got("lethargy")
-             end,
-
-    Exhaust = function(target, boosted)
-                snd.target_got("exhausted")
-             end,
-             
-    Expunge = function(target, boosted)
-                --snd.handleExpunge()
-              end,
-    Shatter = function(target, boosted)
-             enableTrigger("Fury Shatter Second Aff")
-             if boosted then
-               snd.target_got("muddled")
-               tempTimer(4.9, [[if snd.checkAff("muddled") then snd.target_cured("muddled") end]])
+--Syssin
+  ["Assassination"] = {
+    Bind = function(target)
+             snd.target_got("writhe_bind")
+           end,
+    Doublestab = function(target)
+                  enableTrigger("Syssin Hit Confirmation")
+                 end,
+    Flay = function(target, condition)
+             enableTrigger("Syssin Hit Confirmation")
+             snd.used.shield = false
+             if condition:find("rebounding") then
+                snd.used.rebounding = false
              end
-           end,
-    Distract = function(target, boosted)
-                 snd.parried_limb = "none"
-              end,
-  },
-
---Random stuff
-  
-    ["Artifact"] = {
-    Strum = function(target)
-              snd.target_got("barrier")
+             if condition:find("fangbarrier") then
+                snd.used.rebounding = false
+                snd.used.paste = false
+             end
+             if condition:find("speed") then
+                snd.used.rebounding = false
+                snd.used.paste = false
+                snd.target_got("no_speed")
+             end
+             if condition:find("none") then
+                snd.used.rebounding = false
+                snd.used.paste = false
+                snd.used.shield = false
+             end
+             
             end,
-  },
-  ["Manipulation"] = {
-    Aegis = function(target)
-              snd.target_got("aegis")
-            end,
-  },
-  
-  ["Tattoos"] = {
-    Shield = function(target)
-               snd.used.shield = true
-             end,
-  
-  },
-  
-  ["Research"] = {
-    Disperse = function(target)
-                snd.removeProneStates()
-              end  
-  
-  },
-  ["Survival"] = {
-    Restoration = function(target)
-                    snd.handleRestore()
-                  end  
-  },
-  
-    ["Raloth"] = {
+    Slit = function(target)
+                  enableTrigger("Syssin Hit Confirmation")
+                 end,
+                 
+    Bite = function(target, venom)
+            snd.used.paste = false
+            if venom ~= "camus" then
+             snd.target_got(snd.venomEffect(venom))
+            end
+          end,
 
-      Trample = function(target)
-                enableTrigger("Raloth Trample")
-              end,
-  },
-    ["Relic"] = {
-
-      Entangle = function(target)
-                  snd.target_got("writhe_web")
-                end,
-      Webspray = function(target)
-                  snd.target_got("writhe_web")
-                end,
   },
   
---Revenant
-  ["Riving"] = {
-    Rage = function(target)  
-             snd.handleRage()
-           end,
-    Duplicity = function(target)
+  ["Subterfuge"] = {
+    -- Nothing currently necessary
+
+  },
+  
+  ["Hypnosis"] = {
+    Sleight = function(target, conditional)
+                if conditional == "Void" then
+                  snd.target_got("void")
+                end
+    end,     
+    Marks = function(target, conditional)
+                if conditional == "Numbness" then
+                  snd.target_got("numbed_skin")
+                  if not table.isMember(gmcp.Room.Info.details, "darkness") then
+                    tempTimer(15, [[snd.target_cured("numbed_skin")]])
+                  end
+                end
+    end,   
+  },
+  
+--Templar
+  ["Battlefury"] = {
+  
+    Doublestrike = function(target)
                     enableTrigger("Weapon Hit Confirmation")
                    end,
-    Fell = function(target)
-                    enableTrigger("Weapon Hit Confirmation")
-                  end,
-    Gouge = function(target)
+                   
+    Rend = function(target)
             if #snd.maybe_affs == 0 then
               table.insert(snd.maybe_affs, "rend")
             end
             snd.onHit2({"Rebounding", "Dodge"})
            end,
-    Transpierce = function(target, failed)
+    Rage = function(target)
+             snd.handleRage()
+           end,
+    Impale = function(target, failed)
                if failed then
                  snd.removeProneStates(true)
                else
@@ -29168,51 +29346,345 @@ end</script>
                   snd.target_impaled = true
                  end
               end
-            end,      
+            end,
+    Disembowel = function(target)
+                   snd.target_impaled = false
+                   snd.target_cured("writhe_impaled")
+                 end,
     Raze = function(target, defense)
               if defense == "shield" then snd.used.shield = false
               elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
               else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
               end
             end,
-   Deceive = function(target, defense)
+   Razestrike = function(target, defense)
                 if defense == "shield" then snd.used.shield = false end
                 if defense == "rebounding" then snd.used.rebounding = false end
                 if defense == "speed" then snd.target_got("no_speed") end
                 if defense == "failure" then snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false end
                 enableTrigger("Weapon Hit Confirmation")
               end,
-    Extirpate = function(target)
-                   snd.target_impaled = false
-                   snd.target_cured("writhe_impaled")
-                 end,
-    Jumpcut = function(target, what)
+    Lunge = function(target, what)
               if what == "impale" then
                 snd.target_got("writhe_impaled")
               end
               snd.target_got("fallen")
             end,
-    Initiate = function(target)
+    Charge = function(target)
                snd.target_got("fallen")
-             end,    
+             end,
   },
   
-  ["Manifestation"] = {
-      Parasite = function()
+  ["Righteousness"] = {
+      Withering = function()
                     snd.target_got("withering")
                   end,
-      Discord = function(target, aff)
+      Contort = function(target, aff)
                   snd.target_got(aff)
                 end,
 
   },
   
-  ["Chirography"] = {
-      Atdum = function()
-           enableTrigger("atdum confirmation")
-         end,      
+  ["Bladefire"] = {
+      Vorpal = function()
+                 enableTrigger("vorpal confirmation")
+               end,        
 
   },
+  
+--Teradrim
+  ["Terramancy"] = {
+    Gutsmash = function(target)
+                snd.last_hit_limb = "torso"
+                snd.last_limb_dmg = 11.99
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,
+    Facesmash = function(target)
+                snd.last_hit_limb = "head"
+                snd.last_limb_dmg = 12.99
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,
+    Overhand = function(target)
+                 snd.target_got("fallen")
+               end,
+    Batter = function(target, where)
+               snd.last_hit_limb = where
+               snd.last_limb_dmg = 13.75
+               snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+               snd.onHit2({"Dodge", "Parry", "Rebounding"})
+              end,
+    Shockwave = function(target)
+                  snd.target_got("fallen")
+                  enableTrigger("Shockwave limb breaks")
+                end,
+    Furor = function(target, where)
+             	snd.last_hit_limb = where
+            	snd.last_limb_dmg = 7.78
+            	snd.took_limb_dmg(where, snd.last_limb_dmg)
+              snd.onHit2({"Dodge", "Parry", "Rebounding"})
+            end,
+    Stoneblast = function(target)
+                  if snd.used.rebounding then
+                    snd.used.rebounding = false
+                  else
+                    snd.used.shield = false
+                  end
+                end,
+    Fracture = function(target, where)
+                 table.insert(snd.maybe_affs, where.."_broken")
+                 	snd.last_hit_limb = where
+                	snd.last_limb_dmg = 11.99
+                  if snd.limb_bruising[snd.last_hit_limb] ~= 0 then
+                    snd.last_limb_dmg = 11.99 + (snd.limb_bruising[snd.last_hit_limb]*4)
+                  end
+                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                  snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,  
+    Skullbash = function(target)
+                 	snd.last_hit_limb = "head"
+                	snd.last_limb_dmg = 17.65
+                  local afflist = {"stupidity", "indifference", "impatience"}
+                  local check = 0
+                  for _, v in pairs(afflist) do if snd.limb_bruising["head"] &gt; check then
+                    table.insert(snd.maybe_affs, v)
+                    check = check + 1 
+                    end
+                  end
+                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                  snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Teradrim Skullbash")
+               end,
+    Pulp = function(target)
+           	snd.last_hit_limb = "torso"
+          	snd.last_limb_dmg = 8.6
+          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Dodge", "Rebounding"})
+         end, 
+    Impale = function(target, failed)
+             if failed then
+               snd.removeProneStates(true)
+             else
+               snd.target_got("writhe_impaled")
+               if snd.hitting == "You" then
+                snd.target_impaled = true
+               end
+            end
+          end,
+    Stonevice = function(target)
+                snd.target_cured("writhe_impaled")
+                snd.last_hit_limb = "torso"
+                snd.last_limb_dmg = 10
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+              end,
+    Barrage = function(target)
+              enableTrigger("Barrage hit confirmation")
+            end,
+  },
+  
+  ["Desiccation"] = {
+    Shred = function(target, where)
+                snd.last_hit_limb = where:gsub(" storm", "")
+                snd.last_limb_dmg = 6.99
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,
+    Shield = function(target)
+              snd.used.shield = true
+             end,
+    Curse = function(target)
+              snd.target_got("slough")
+            end,
+    Scourge = function(target, where)
+                snd.target_got(where.."_broken")
+              end,
+    
+    Trap = function(target)
+                snd.target_got("sand_trapped")
+              end,
+
+  },
+  
+  ["Animation"] = {
+        
+  },
+  
+  ["Tiarna"] = {
+  Inculcate = function(target)
+            if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+              snd.target_got("slickness")
+              snd.target_got("disfigurement")
+            else
+              snd.target_got("magic_weakness")
+              snd.target_got("fire_weakness")
+              tempTimer(30, [[snd.target_cured("magic_weakness")]])
+              tempTimer(30, [[snd.target_cured("fire_weakness")]])
+           end
+         end,
+         
+ Shear = function(target)
+          enableTrigger("Tiarna Shear")
+          enableTrigger("Sunder Parry")
+          if #snd.maybe_affs &gt;= 1 then
+            snd.onHit2({"Parry",})
+          end
+         end,
+ Hive = function(target, shield)
+        if shield then
+          snd.used.shield = false
+        end
+        if #snd.maybe_affs &gt;= 1 then
+          snd.onHit2({})
+        end
+       end,
+   },
+  
+--Tidesage
+  ["Wavebreaking"] = {
+    Ram = function(target)
+                snd.last_hit_limb = "torso"
+                snd.last_limb_dmg = 11.99
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,
+    Crest = function(target)
+                snd.last_hit_limb = "head"
+                snd.last_limb_dmg = 12.99
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,
+    Breach = function(target)
+                 snd.target_got("fallen")
+               end,
+    Clobber = function(target, where)
+               snd.last_hit_limb = where
+               snd.last_limb_dmg = 13.75
+               snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+               snd.onHit2({"Dodge", "Parry", "Rebounding"})
+              end,
+    Capsize = function(target)
+                  snd.target_got("fallen")
+                  enableTrigger("Shockwave limb breaks")
+                end,
+    Pitch = function(target, where)
+             	snd.last_hit_limb = where
+            	snd.last_limb_dmg = 7.78
+            	snd.took_limb_dmg(where, snd.last_limb_dmg)
+              snd.onHit2({"Dodge", "Parry", "Rebounding"})
+            end,
+    Riptide = function(target)
+                  if snd.used.rebounding then
+                    snd.used.rebounding = false
+                  else
+                    snd.used.shield = false
+                  end
+                end,
+    Buckle = function(target, where)
+                 table.insert(snd.maybe_affs, where.."_broken")
+                 	snd.last_hit_limb = where
+                	snd.last_limb_dmg = 11.99
+                  if snd.limb_bruising[snd.last_hit_limb] ~= 0 then
+                    snd.last_limb_dmg = 11.99 + (snd.limb_bruising[snd.last_hit_limb]*4)
+                  end
+                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                  snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,  
+    Gybe = function(target)
+                 	snd.last_hit_limb = "head"
+                	snd.last_limb_dmg = 17.65
+                  local afflist = {"stupidity", "indifference", "impatience"}
+                  local check = 0
+                  for _, v in pairs(afflist) do if snd.limb_bruising["head"] &gt; check then
+                    table.insert(snd.maybe_affs, v)
+                    check = check + 1 
+                    end
+                  end
+                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                  snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Teradrim Skullbash")
+               end,
+    Wreck = function(target)
+           	snd.last_hit_limb = "torso"
+          	snd.last_limb_dmg = 8.6
+          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Dodge", "Rebounding"})
+         end, 
+    Harpoon = function(target, failed)
+             if failed then
+               snd.removeProneStates(true)
+             else
+               snd.target_got("writhe_impaled")
+               if snd.hitting == "You" then
+                snd.target_impaled = true
+               end
+            end
+          end,
+    Eviscerate = function(target)
+                snd.target_cured("writhe_impaled")
+                snd.last_hit_limb = "torso"
+                snd.last_limb_dmg = 10
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+              end,
+    Broadside = function(target)
+              enableTrigger("Barrage hit confirmation")
+            end,
+  },
+  
+  ["Inundation"] = {
+    Feelers = function(target, where)
+                snd.last_hit_limb = where:gsub(" panoptic", "")
+                snd.last_limb_dmg = 6.99
+                snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                snd.onHit2({"Dodge", "Parry", "Rebounding"})
+               end,
+    Harden = function(target)
+              snd.used.shield = true
+             end,
+    Terrors = function(target)
+              snd.target_got("slough")
+            end,
+    Unseen = function(target, where)
+                snd.target_got(where.."_broken")
+              end,
+    
+    Snare = function(target)
+                snd.target_got("sand_trapped")
+              end,
+
+  },
+  
+  ["Synthesis"] = {
+        
+  },
+   
+["Titan"] = {
+ Staredown = function(target)
+          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
+            snd.target_got("slickness")
+            snd.target_got("disfigurement")
+          else
+            snd.target_got("magic_weakness")
+            snd.target_got("fire_weakness")
+            tempTimer(30, [[snd.target_cured("magic_weakness")]])
+            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+         end
+       end,
+ Spear = function(target)
+          enableTrigger("Titan Spear")
+          enableTrigger("Sunder Parry")
+          if #snd.maybe_affs &gt;= 1 then
+            snd.onHit2({"Parry",})
+          end
+         end,
+ Corrode = function(target, shield)
+              if shield then
+                snd.used.shield = false
+              end
+              if #snd.maybe_affs &gt;= 1 then
+                snd.onHit2({})
+              end
+            end,
+   },
+  
 --Warden
   ["Warding"] = {
     Lacerate = function(target)
@@ -29368,512 +29840,320 @@ end</script>
 
   },
   
---Earthcaller
-  ["Subjugation"] = {
-  
-  Crush = function(target, limb)
-            snd.last_hit_limb = limb
-            enableTrigger("Crush Confirmation")
+--Wayfarer
+  ["Tenacity"] = {
+    Sweep = function(target)
+              snd.target_got("fallen")
+            end,
+    Obstruct = function(target)
+                 snd.target_got("fallen")
+               end,
+    Devastate = function(target)
+                  enableTrigger("Tenacity Devastate")
+                  --Has specific lines for all cases, safer to use those than presume tracking is 100% right always
+                end,
+    Lob = function(target)
+            snd.onHit2({"Dodge"}, "Wayfarer")
           end,
-  
-  Obliterate = function(target, limb)
-           	snd.last_hit_limb = limb
-          	snd.last_limb_dmg = 25
-          	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+    Bash = function(target)
+            if snd.checkAff("hearing") then
+               table.insert(snd.maybe_affs, "dizziness")
+          	else
+               table.insert(snd.maybe_affs, "hearing")
+          	end
+            snd.last_hit_limb = "head"
+            snd.last_limb_dmg = 9
+            snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Rebounding", "Dodge", "Parry"})
+          end,
+    Slaughter = function(target)
+                table.insert(snd.maybe_affs, 1, snd.maybe_affs[2])
+                  snd.onHit2({"Dodge"})
+                  snd.onHit2({"Dodge"})
+                end,
+    Carve = function(target)
+            if snd.checkAff("vomiting") then
+               snd.target_got("fallen")
+          	end
+           table.insert(snd.maybe_affs, "vomiting")
+
+            snd.last_hit_limb = "torso"
+            snd.last_limb_dmg = 14
+            snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+            snd.onHit2({"Parry", "Rebounding", "Dodge"})
+          end,
+    Lacerate = function(target)
+                 table.insert(snd.maybe_affs, "haemophilia")
+                 snd.onHit2({"Rebounding", "Dodge", "Parry"})
+                end,
+    Chop = function(target)
+            enableTrigger("Tenacity Chop")
+             snd.onHit2({"Parry", "Rebounding", "Dodge"})
+          end,
+    Cripple = function(target)
+            enableTrigger("Tenacity Cripple")
             snd.onHit2({"Parry", "Dodge"})
           end,
-  
-  Ribcage = function(target)
-           snd.used.shield = true
-         end,
-  
-  Dust = function(target)
-           snd.target_got("ablaze")
-           snd.target_got("angel_seared")
-           tempTimer(15, [[snd.target_cured("angel_seared")]])
-         end,
-  
-  Incisor = function(target, defense)
-            snd.used.rebounding = false
+    Assault = function(target)
+            enableTrigger("Tenacity Assault")
+            snd.target_got("assault_damage")
+            tempTimer(2, [[snd.target_cured("assault_damage")]])
+            snd.onHit2({"Parry", "Dodge"})
+            table.insert(snd.last_affs, "assault_damage")
           end,
-          
-  Raze = function(target, defense)
-            if defense == "shield" then snd.used.shield = false
-            elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
-            end
-          end,
-          
-  Subdue = function(target)
-             if snd.battle_aff ~= "none" then
-              snd.target_got(snd.battle_aff)
-            	table.insert(snd.last_affs, snd.battle_aff)
-             end
-             if snd.chasten_aff ~= "none" then
-              snd.target_got(snd.chasten_aff)
-            	table.insert(snd.last_affs, snd.chasten_aff)
-             end
-            end,
-  
-  Strike = function(target)
-            table.insert(snd.maybe_affs, "paresis")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  Punch = function(target)
-            table.insert(snd.maybe_affs, "weariness")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  Facesmash = function(target)
-                if not snd.checksomeAffs({"berserking", "sight"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "berserking")
-                  table.insert(snd.maybe_affs, 2, "sight")
-                elseif snd.checkAff("berserking") then
-                  table.insert(snd.maybe_affs, 1, "sight")
-                else
-                  table.insert(snd.maybe_affs, 1, "berserking")
-                end
-                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Facesmash")
-              end,
-  Slam = function(target)
-                if not snd.checksomeAffs({"asthma", "haemophilia"}, 1) then
-                  table.insert(snd.maybe_affs, 1, "asthma")
-                  table.insert(snd.maybe_affs, 2, "haemophilia")
-                elseif snd.checkAff("asthma") then
-                  table.insert(snd.maybe_affs, 1, "haemophilia")
-                else
-                  table.insert(snd.maybe_affs, 1, "asthma")
-                end
-                snd.onHit2({"Dodge", "Rebounding"}, "Luminary Slam")
-              end,
-  Horrification = function(target)
-            table.insert(snd.maybe_affs, "sight")
-            snd.onHit2({"Dodge", "Rebounding"})
-          end,
-  
-  },
-  
-  ["Apocalyptia"] = {
-    Hysteria = function(target)
-               snd.target_got("confusion")
-               snd.target_got("dizziness")
-             end,
-    Lull = function(target)
-               snd.target_got("peace")
-             end,
-    Reckoning = function(target)
-                  snd.target_got("hellsight")
+    Punish = function(target)
+                  enableTrigger("Tenacity Punish")
+                  --If only tenacity lines had targetting like others in the combat message
                 end,
-
   },
-  
-  ["Tectonics"] = {
-    Ashfall = function(target)
-                 snd.target_got("epilepsy")
-                end,
-                
-    Transfixion = function(target, blindness)
-                    snd.target_got("sight")
-                    if not blindness then  
-                     snd.target_got("writhe_transfix")
-                   end
-                  end,
-    Vent = function(target)
-                snd.target_got("berserking")
-                snd.target_got("hallucinations")
-              end,
-    Fault = function(target)
-             snd.target_got("faulted")
-             tempTimer(18.5, [[snd.target_cured("faulted")]])
-           end,
-    Spew = function(target)
-             snd.target_got("ablaze")
-             enableTrigger("Fervour Spew")
-           end,
-    Aftershock = function(target)
-             snd.target_got("aftershock")
-           end,
-  },
-  
-  ["Aetherial"] = {
-    Beam = function(target)
-      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-        snd.target_got("slickness")
-        snd.target_got("disfigurement")
-      else
-        snd.target_got("magic_weakness")
-        snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
-      end
-    end,
-    Volley = function(target)
-      enableTrigger("Aetherial Volley")
-      enableTrigger("Sunder Parry")
-      if #snd.maybe_affs &gt;= 1 then
-        snd.onHit2({"Parry",})
-      end
-    end,
-    Omission = function(target, shield)
-      if shield then
-        snd.used.shield = false
-      end
-      if #snd.maybe_affs &gt;= 1 then
-        snd.onHit2({})
-      end
-    end,
-   },
-   
--- Bard
-  ["Performance"] = {
-  
-  Pierce = function(target, defense)
-              if defense == "shield" then snd.used.shield = false
-              elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
-              else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
-              end
-            end,
-  
-  Tempo = function(target)
-          enableTrigger("Bard Hit Confirmation")
-          end,
-          
-  
-  Rhythm = function(target, conditional)
-            local rhythm_table = {
-            ["one"] = "paresis",
-            ["two"] = "shyness",
-            ["three"] = "besilence",}
-            snd.target_got(rhythm_table[conditional])
-            enableTrigger("Bard Rhythm Confirmation")
-           end,
-           
-  Needle = function(target, venom)
-            if target == "you" then return end
-            if venom == "miss" then snd.aff_gain("clumsiness") end
-            if not venom then
-              snd.needle = snd.venomEffect(snd.maybe_affs)
-            elseif venom ~= "dodge" or venom ~= "miss" then
-              if snd.needle == "none" then
-                snd.needle = snd.venomEffect(venom)
-                end
-              end
-            end,         
-  
-  
-  
-  Ridicule = function(target)
-             snd.target_got("self_loathing")
-             end,
-  
-  -- Seduce does nothing w/o happiness induce or scantily-clad, and the lovers_effect has a confirmation line for that. Not sure we need below.
---  Seduce = function(target)
---            snd.target_got("lovers_effect")
---            end,
-  
-  Quip = function(target)
-          snd.target_got("hatred")
-          end,
+  ["Wayfaring"] = {
         
-  Sock = function(target)
-          if snd.checkAff("dizziness") then
-             table.insert(snd.maybe_affs, "dazed")
-          else
-             table.insert(snd.maybe_affs, "dizziness")
-          end
-          snd.onHit2({"Dodge"}) 
-        end,
-  
-  
-  Crackshot = function(target)
-          snd.target_got("dizziness")
-          snd.target_got("perplexed")
-          end,
-  
-  Hiltblow = function(target)    
-              enableTrigger("Hiltblow Confirmation")
-              snd.onHit2({"Dodge", "Rebounding"}, "Bard Hiltblow")
-          end, 
-          
-  Tackle = function(target)
-        snd.target_got("fallen")
-        end,
 
-},
-
-  ["Weaving"] = { 
+  },
   
-  
-    Anelace = function(target, stab)
-            if stab then
-               snd.target_got("hollow")
-               snd.target_got("narcolepsy")
-             end
-            end,
-             
-    Headstitch = function(target)
-               snd.target_got("deadening")
-               snd.target_got("besilence")
+  ["Fury"] = {
+    Warcry = function(target, boosted)
+                snd.target_got("hearing")
+                if boosted then snd.target_got("ringing ears") end
              end,
 
-                  
-    Barbs = function(target)
-                  snd.target_got("manabarbs")
-                  snd.target_got(snd.globe_affs[snd.globecount])
-                  snd.globecount = snd.globecount-1
-                  if snd.globecount == 0 then
-                    snd.target_cured("globes")
+    Threaten = function(target, boosted)
+                snd.target_got("hatred")
+                if boosted then snd.target_got("masochism") end
+             end,
+
+    Shake = function(target, boosted)
+                snd.target_got("weariness")
+             end,
+
+    Halt = function(target, boosted)
+                snd.target_got("lethargy")
+             end,
+
+    Exhaust = function(target, boosted)
+                snd.target_got("exhausted")
+             end,
+             
+    Expunge = function(target, boosted)
+                --snd.handleExpunge()
+              end,
+    Shatter = function(target, boosted)
+             enableTrigger("Fury Shatter Second Aff")
+             if boosted then
+               snd.target_got("muddled")
+               tempTimer(4.9, [[if snd.checkAff("muddled") then snd.target_cured("muddled") end]])
+             end
+           end,
+    Distract = function(target, boosted)
+                 snd.parried_limb = "none"
+              end,
+  },
+  
+--Zealot
+  ["Zeal"] = {
+    Swagger = function(target)
+               snd.target_cured("paresis")
+               snd.target_cured("paralysis")
+             end,
+    Anklepin = function(target)
+               snd.target_got("sore_ankle")
+             end,
+    Jawcrack = function(target)
+               snd.target_got("stuttering")
+               snd.target_got("blurry_vision")
+             end,
+    Descent = function(target)
+               snd.target_got("backstrain")
+             end,                          
+    Wristlash = function(target)
+               snd.target_got("sore_wrist")
+             end,
+    Uprise = function(target)
+               snd.target_got("whiplash")
+             end,
+    Blitz = function(target, conditional)
+              if conditional == "start" then
+                enableTrigger("Blitz Affs")
+              else
+                disableTrigger("Blitz Affs")
+              end
+            end,
+    Palmforce = function(target)
+                  snd.target_got("fallen")
+                end,       
+    Dislocate = function(target, limb)
+                  table.insert(snd.maybe_affs, 1, limb.."_dislocated")
+                  snd.onHit2({"Dodge", "Parry"})
+                end,
+    Twinpress = function(target)
+                	table.insert(snd.maybe_affs, "stiffness")
+                	table.insert(snd.maybe_affs, "muscle_spasms")
+                  snd.onHit2({"Dodge"})
+                end,
+    Clawtwist = function(target)
+                    snd.last_hit_limb = "torso"
+                    snd.last_limb_dmg = 14
+                    snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                    snd.onHit2({"Parry", "Dodge"})
+                end,
+    Pummel = function(target, limb)
+                    snd.last_hit_limb = limb
+                    snd.last_limb_dmg = 9.5
+                    snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                    snd.onHit2({"Parry", "Dodge"})
+                end,
+    Wanekick = function(target, limb)
+                    snd.last_hit_limb = limb
+                    snd.last_limb_dmg = 9
+                    snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                    snd.onHit2({"Parry", "Dodge"})
+                end,
+    Risekick = function(target)
+                	snd.last_hit_limb = "torso"
+                	snd.last_limb_dmg = 5
+                	snd.took_limb_dmg("torso", snd.last_limb_dmg)
+                  snd.onHit2({"Parry", "Dodge"})
+                end,
+    Edgekick = function(target)
+                 	snd.last_hit_limb = "head"
+                	snd.last_limb_dmg = 3.49
+                	snd.took_limb_dmg("head", snd.last_limb_dmg)
+                  table.insert(snd.maybe_affs, 1, "crippled_throat")
+                  snd.onHit2({"Parry", "Dodge"})
+                end,
+    Sunkick = function(target)
+                snd.last_hit_limb = "head"
+              	snd.last_limb_dmg = 6
+              	snd.took_limb_dmg("head", snd.last_limb_dmg)
+                if not snd.checksomeAffs({"stupidity", "dizziness"}, 1) then
+                  table.insert(snd.maybe_affs, 1, "stupidity")
+                  table.insert(snd.maybe_affs, 2, "dizziness")
+                elseif snd.checkAff("stupidity") then
+                  table.insert(snd.maybe_affs, 1, "dizziness")
+                else
+                  table.insert(snd.maybe_affs, 1, "stupidity")
+                end
+                snd.onHit2({"Dodge", "Parry"}, "Sunkick")    
+              end,
+    Direblow = function(target)
+                -- enableTrigger("Direblow Hit Confirmation")
+                end,
+    Heelrush = function(target)
+                 enableTrigger("Heelrush")
+               end,
+                
+  },
+  
+  ["Purification"] = {
+  
+  Heatspear = function(target)
+                snd.target_got("heatspear")
+              end,
+
+  Scorch = function(target)
+             snd.target_got("ablaze")
+           end,
+  Rejection = function(target)
+                snd.used.rebounding = true
+              end,
+  Quicken = function(target)
+            snd.target_got("ablaze")
+            snd.flamestack = snd.flamestack + 3
+            if snd.class == "Zealot" then
+              cecho("\n"..snd.target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
+            end
+            end,
+  Pendulum = function(target, direction)
+              local pendulum_table = {--Create the table showing what limb references what
+              ["left arm"] = {["clockwise"] = "right arm", ["anti-clockwise"] = "left leg"},
+              ["right arm"] = {["clockwise"] = "right leg", ["anti-clockwise"] = "left arm"},
+              ["right leg"] = {["clockwise"] = "left leg", ["anti-clockwise"] = "right arm"},
+              ["left leg"] = {["clockwise"] = "left arm", ["anti-clockwise"] = "right leg"},
+              }
+              local limb_damage_copy = mmp.deepcopy(snd.limb_dmg) -- copy limb damage table so we can manipulate values while iterating current unchanged values
+              
+              for k, v in pairs(limb_damage_copy) do
+                if k ~= "total" and k ~= "head" and k ~= "torso" and v &gt; 0 then -- only check appendages and ones with damage
+                  snd.took_limb_dmg(pendulum_table[k][direction], v) -- add limb damage to new limb
+                  snd.took_limb_dmg(k, -v) -- remove damage from current limb
+
+                  local x = snd.limb_dmg[pendulum_table[k][direction]] -- check current amount of limb dmg
+                  if x &gt; 33.33 then -- check if its got a damage break
+                    if x &gt; 66.66 then -- check if its gotten mangled
+                      snd.limb_status[pendulum_table[k][direction]] = "mangled" -- if it has, update our snd.limb_status map
+                    else
+                      snd.limb_status[pendulum_table[k][direction]] = "broken" -- as above
                     end
-                  end,
-           
+                  end
                   
-    Runeband = function(target)
-              snd.target_got("runeband")
-              snd.runebandcount = 1
-              snd.bandclockwise = true
-              end,                            
-                
-    Bladestorm = function(target)
-              snd.target_got("bladestorm")
-              end,
-              
-    Ironcollar = function(target)
-             enableTrigger("Ironcollar Handling")
-             tempTimer(3, [[disableTrigger("Ironcollar Handling")]])
-             end, 
-                
-    Globes = function(target)            
-              snd.globecount = 3
-              snd.target_got("globes")
-              end,
-              
-    Mindbreak = function(target)
-              snd.target_got("migraine")
-              snd.target_got("squelched")
-              end,
-  }, 
+                  if snd.checkAff(k:gsub(" ", "_").."_broken") then -- we need to check for level one breaks as well
+                    snd.target_got(pendulum_table[k][direction]:gsub(" ", "_").."_broken")--add new limb break
+                    snd.target_cured(k:gsub(" ", "_").."_broken")--remove old
+                  end
+                end
+              end
+            end,
+  },
   
-  ["Astral"] = {
-    Huntresses = function(target)
-      snd.huntresses_used = true
-      tempTimer(90, [[snd.huntresses_used = false]])
-    end,
-    Contaminate = function(target)
-      enableTrigger("Astral Contaminate")
-      enableTrigger("Sunder Parry")
-      if #snd.maybe_affs &gt;= 1 then
-        snd.onHit2({"Parry",})
-      end
-    end,
-    Hamartia = function(target, shield)
-      snd.hamartia_used = true
-      if shield then
-        snd.used.shield = false
-      end
-      if #snd.maybe_affs &gt;= 1 then
-        snd.onHit2({})
-      end
-    end,    
-    Unmask = function(target)
-      if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-        snd.target_got("slickness")
-        snd.target_got("disfigurement")
-        snd.unmasked = true
-        tempTimer(25, [[snd.unmasked = false]])
-        snd.glory = snd.glory - 1
-      else
-        snd.target_got("magic_weakness")
-        snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
-        snd.glory = snd.glory - 1
-      end
-    end,    
-    Devour = function(target)
-      snd.glory = snd.glory - 2
-      snd.hamartia_used = false
-    end,  
-    Crescent = function(target)
-      snd.glory = snd.glory - 3
-    end,
-    
-   }, 
+  ["Psionics"] = {
+        Neutralise = function(target)
+                       snd.target_got("no_speed")
+                     end,
+                    
+        Deprival = function(target)
+                    snd.target_got("merciful")
+                    snd.target_got("dementia")
+                    snd.target_got("paranoia")
+                  end,
+  },
+
+--Random stuff
   
-  ["Tiarna"] = {
-  Inculcate = function(target)
-            if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-              snd.target_got("slickness")
-              snd.target_got("disfigurement")
-            else
-              snd.target_got("magic_weakness")
-              snd.target_got("fire_weakness")
-              tempTimer(30, [[snd.target_cured("magic_weakness")]])
-              tempTimer(30, [[snd.target_cured("fire_weakness")]])
-           end
-         end,
-         
- Shear = function(target)
-          enableTrigger("Tiarna Shear")
-          enableTrigger("Sunder Parry")
-          if #snd.maybe_affs &gt;= 1 then
-            snd.onHit2({"Parry",})
-          end
-         end,
- Hive = function(target, shield)
-        if shield then
-          snd.used.shield = false
-        end
-        if #snd.maybe_affs &gt;= 1 then
-          snd.onHit2({})
-        end
-       end,
-   },
-   
-["Titan"] = {
- Staredown = function(target)
-          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-            snd.target_got("slickness")
-            snd.target_got("disfigurement")
-          else
-            snd.target_got("magic_weakness")
-            snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
-         end
-       end,
- Spear = function(target)
-          enableTrigger("Titan Spear")
-          enableTrigger("Sunder Parry")
-          if #snd.maybe_affs &gt;= 1 then
-            snd.onHit2({"Parry",})
-          end
-         end,
- Corrode = function(target, shield)
-              if shield then
-                snd.used.shield = false
-              end
-              if #snd.maybe_affs &gt;= 1 then
-                snd.onHit2({})
-              end
+    ["Artifact"] = {
+    Strum = function(target)
+              snd.target_got("barrier")
             end,
-   },
-
-["Adherent"] = {
- Wither = function(target)
-          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-            snd.target_got("slickness")
-            snd.target_got("disfigurement")
-          else
-            snd.target_got("magic_weakness")
-            snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
-         end
-       end,
- Avatar = function(target)
-          enableTrigger("Adherent Avatar")
-          enableTrigger("Sunder Parry")
-          if #snd.maybe_affs &gt;= 1 then
-            snd.onHit2({"Parry",})
-          end
-         end,
- Tentacle = function(target, shield)
-              if shield then
-                snd.used.shield = false
-              end
-              if #snd.maybe_affs &gt;= 1 then
-                snd.onHit2({})
-              end
+  },
+  ["Manipulation"] = {
+    Aegis = function(target)
+              snd.target_got("aegis")
             end,
-   },
+  },
+  
+  ["Tattoos"] = {
+    Shield = function(target)
+               snd.used.shield = true
+             end,
+  
+  },
+  
+  ["Research"] = {
+    Disperse = function(target)
+                snd.removeProneStates()
+              end  
+  
+  },
+  ["Survival"] = {
+    Restoration = function(target)
+                    snd.handleRestore()
+                  end  
+  },
+  
+    ["Raloth"] = {
 
+      Trample = function(target)
+                enableTrigger("Raloth Trample")
+              end,
+  },
+    ["Relic"] = {
 
-["Sagani"] = {
- Flux = function(target)
-          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-            snd.target_got("slickness")
-            snd.target_got("disfigurement")
-          else
-            snd.target_got("magic_weakness")
-            snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
-         end
-       end,
- Carbonise = function(target)
-          enableTrigger("Sagani Carbonise")
-          enableTrigger("Sunder Parry")
-          if #snd.maybe_affs &gt;= 1 then
-            snd.onHit2({"Parry",})
-          end
-         end,
- Erode = function(target, shield)
-              if shield then
-                snd.used.shield = false
-              end
-              if #snd.maybe_affs &gt;= 1 then
-                snd.onHit2({})
-              end
-            end,
-   },
-
-
-["Chaos"] = {
- Warp = function(target)
-          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-            snd.target_got("slickness")
-            snd.target_got("disfigurement")
-          else
-            snd.target_got("magic_weakness")
-            snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
-         end
-       end,
-  Claw = function(target)
-          enableTrigger("Chaos Claw")
-          enableTrigger("Sunder Parry")
-          if #snd.maybe_affs &gt;= 1 then
-            snd.onHit2({"Parry",})
-          end
-         end,
- Shock = function(target, shield)
-              if shield then
-                snd.used.shield = false
-              end
-              if #snd.maybe_affs &gt;= 1 then
-                snd.onHit2({})
-              end
-            end,
-   },
-
-
-["Nocturn"] = {
- Corrupt = function(target)
-          if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
-            snd.target_got("slickness")
-            snd.target_got("disfigurement")
-          else
-            snd.target_got("magic_weakness")
-            snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
-         end
-       end,
- Lash = function(target)
-          enableTrigger("Nocturn Lash")
-          enableTrigger("Sunder Parry")
-          if #snd.maybe_affs &gt;= 1 then
-            snd.onHit2({"Parry",})
-          end
-         end,
- Haemoplague = function(target, shield)
-              if shield then
-                snd.used.shield = false
-              end
-              if #snd.maybe_affs &gt;= 1 then
-                snd.onHit2({})
-              end
-            end,
-   },
+      Entangle = function(target)
+                  snd.target_got("writhe_web")
+                end,
+      Webspray = function(target)
+                  snd.target_got("writhe_web")
+                end,
+  },
   
   
 }</script>
