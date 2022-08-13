@@ -86,6 +86,7 @@ send(" ")</script>
 							<script>snd.toggles.active = true
 snd.channeling = false
 cecho("&lt;green&gt;Darkside is ON!")
+snd.send("def")
 send(" ")</script>
 							<command></command>
 							<packageName></packageName>
@@ -380,11 +381,7 @@ end</script>
 						<regex></regex>
 						<Alias isActive="yes" isFolder="no">
 							<name>mount</name>
-							<script>if gmcp.Char.Status.name == "Rihrin" then
-  snd.mount = "93217" -- your horse's ID number
-else
-  snd.mount = "445797" -- your horse's ID number
-end
+							<script>snd.mount = "211387" -- your horse's ID number
 snd.send("qeb recall "..snd.mount..snd.sep.."recall mount"..snd.sep.."quickmount "..snd.mount)
 </script>
 							<command></command>
@@ -393,11 +390,7 @@ snd.send("qeb recall "..snd.mount..snd.sep.."recall mount"..snd.sep.."quickmount
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
 							<name>dismount</name>
-							<script>if gmcp.Char.Status.name == "Rihrin" then
-  snd.mount = "93217" -- your horse's ID number
-else
-  snd.mount = "445797" -- your horse's ID number
-end
+							<script>snd.mount = "211387" -- your horse's ID number
 snd.send("qeb qdmount"..snd.sep.."order "..snd.mount.." follow me")</script>
 							<command></command>
 							<packageName></packageName>
@@ -1293,7 +1286,7 @@ end
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>chocolates</name>
-						<script>snd.send("eat mint;eat hazelnut;eat caramel;eat strawberry;drink chalice;touch book")</script>
+						<script>snd.send("eat mint;eat hazelnut;eat strawberry;eat cherry;drink chalice;touch book")</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^choc$</regex>
@@ -1366,7 +1359,6 @@ if snd.which_path ~= "" then
   end
   
   expandAlias("aa")
-  enableTimer("Bashtotaltime")
 end</script>
 							<command></command>
 							<packageName></packageName>
@@ -1382,16 +1374,16 @@ end</script>
   snd.send("vermin")
 else
   snd.toggles.vermin = true
-  if snd.city == "Spinesreach" then
+  if gmcp.Room.Info.area == "Spinesreach" then
     snd.send("vermin"..snd.sep.."path track 11687")
     snd.which_path = "verminspines"
-  elseif snd.city == "Bloodloch" then
+  elseif gmcp.Room.Info.area == "Bloodloch" then
     snd.send("vermin"..snd.sep.."path track 9193")
     snd.which_path = "verminbloodloch"
-  elseif snd.city == "Duiran" then
+  elseif gmcp.Room.Info.area == "Duiran" then
     snd.send("vermin"..snd.sep.."path track 44060")
     snd.which_path = "verminduiran"	
-  elseif snd.city == "Enorian" then
+  elseif gmcp.Room.Info.area == "Enorian" then
     snd.send("vermin"..snd.sep.."path track 56484")
     snd.which_path = "verminenorian"	
   end
@@ -1761,16 +1753,16 @@ elseif snd.class == "Sciomancer" then
       end
     else
       if tonumber(gmcp.Char.Vitals.shadowprice) &lt; 2 then
-        snd.send("shadowprice gloom " ..snd.target..snd.sep.."cast fever "..snd.target..snd.sep.."absorb ylem")
+        snd.send("shadowprice gloom " ..snd.target..snd.sep.."cast fever "..snd.target)
       else
-        snd.send("cast fever " ..snd.target..snd.sep.."absorb ylem")
+        snd.send("cast fever " ..snd.target)
       end
     end
   end
   
 elseif snd.class == "Oneiromancer" then
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	if (hp &lt;= 60 or snd.have_aff("blackout")) and snd.shield_check() then
+	if (hp &lt;= 60 or snd.have_aff("blackout")) and snd.shield_check then
   	snd.send("touch shield")
   elseif snd.counterattack_active then
 			if snd.punisher then
@@ -1786,7 +1778,7 @@ elseif snd.class == "Oneiromancer" then
 	end
 elseif snd.class == "None" then
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	if (hp &lt;= 60 or snd.have_aff("blackout")) and snd.shield_check() then
+	if (hp &lt;= 60 or snd.have_aff("blackout")) and snd.shield_check then
   	snd.send("touch shield")
   elseif snd.counterattack_active then
 			if snd.punisher then
@@ -1797,7 +1789,7 @@ elseif snd.class == "None" then
 	elseif snd.pushattack then
 		snd.send("push "..snd.target)
 		snd.pushattack = false
-  elseif hp &lt;= 50 and snd.self_prone() then
+  elseif (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon")) and not snd.self_prone() then
     snd.send("qeb astral ambrosia")
 	else
     snd.send("qeb astral evert "..snd.target)
@@ -2575,7 +2567,7 @@ end</script>
 			   else
 				    string = "mind batter "..snd.target.." epilepsy dizziness stupidity"
 			   end
-       elseif snd.proned() then
+       elseif snd.proned() and not snd.checkAff("writhe_impaled") then
          string = "bbt "..snd.target
 		   end
     
@@ -10003,8 +9995,11 @@ local string = ""
  
 if not snd.waiting.queue then
 -- Alright, first we need to be sure we can hit them. Is shield up?
-  if snd.used.shield then
-    string = "touch hammer "..snd.target
+  if theytumbling then
+    string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
+  elseif snd.used.shield then
+    string = "order loyals kill "..snd.target..snd.sep .. "touch hammer " .. snd.target
+      
 -- We're checking for optimal conditions...
 -- We need them off resto balance..
 -- We need snd.zenith up, a torso about to break, a left leg about to break, and resto poultice off balance..
@@ -10022,10 +10017,10 @@ if not snd.waiting.queue then
   elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
     string = "flow "..snd.target.." wanekick right twinpress"
   elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
-    string = "flow "..snd.target.." wanekick left dislocate left leg"
+    string = "flow "..snd.target.." wanekick left wanekick left"
 -- Could we also meet the same conditions, but on the other limb we picked?
   elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
-    string = "flow "..snd.target.." wanekick right dislocate right leg"
+    string = "flow "..snd.target.." wanekick right wanekick right"
   else
     string = "flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]
   end
@@ -10087,9 +10082,9 @@ if snd.zenith then
     end
 end
  
---if not snd.checkAff("indifference") and not snd.zenith and not snd.checkAff("heatspear") and not snd.used.shield then
-  --  string = "psi dull "..snd.target
---end
+if not snd.checkAff("indifference") and not snd.zenith and not snd.checkAff("heatspear") and not snd.used.shield then
+    string = "psi dull "..snd.target
+end
  
 if not snd.zenith then
     if not rising_sun then
@@ -10146,8 +10141,8 @@ end
         string = "order loyals kill "..snd.target..snd.sep .. "psi tether "..snd.target
       elseif snd.used.shield then
         string = "order loyals kill "..snd.target..snd.sep .. "touch hammer " .. snd.target
---      elseif not snd.checkAff("indifference") and not snd.used.shield and tonumber(gmcp.Char.Vitals.psi) &gt; 50 then
-  --      string = "order loyals kill "..snd.target..snd.sep .. "psi dull "..snd.target
+      elseif not snd.checkAff("indifference") and not snd.used.shield and tonumber(gmcp.Char.Vitals.psi) &gt; 50 then
+        string = "order loyals kill "..snd.target..snd.sep .. "psi dull "..snd.target
       elseif snd.parried_limb ~= "torso" then
         string = "order loyals kill "..snd.target..snd.sep .. "flow " .. snd.target .. " clawtwist clawtwist"
       elseif snd.parried_limb ~= "head" then
@@ -10321,9 +10316,9 @@ if snd.class == "Zealot" then
       elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
         string = string.."flow "..snd.target.." wanekick right twinpress"
       elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
-        string = string.."flow "..snd.target.." wanekick left dislocate left leg"
+        string = string.."flow "..snd.target.." wanekick left wanekick left"
       elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
-        string = string.."flow "..snd.target.." wanekick right dislocate right leg"
+        string = string.."flow "..snd.target.." wanekick right wanekick right"
       else
         string = string.."flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]
       end
@@ -10489,9 +10484,9 @@ if snd.class == "Zealot" then
       elseif snd.zenith and not snd.checkAff("heatspear") and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
         string = string.."flow "..snd.target.." wanekick right twinpress"
       elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt; 33.33 and string.find(left, "leg") then
-        string = string.."flow "..snd.target.." wanekick left dislocate left leg"
+        string = string.."flow "..snd.target.." wanekick left wanekick left"
       elseif snd.zenith and snd.resto_limb ~= "none" and (snd.limb_dmg[right]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[right] &lt; 33.33 and string.find(right, "leg") then
-        string = string.."flow "..snd.target.." wanekick right dislocate right leg"
+        string = string.."flow "..snd.target.." wanekick right wanekick right"
       else
         string = string.."flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]
       end
@@ -17825,7 +17820,7 @@ end</script>
       --elseif snd.glory &gt;= 2 and not snd.unmasked then
       --  string = "astral unmask "..snd.target
       --  cecho("\n"..snd.glory)
-      elseif hp &lt;= 50 and not snd.self_prone() then
+      elseif (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon")) and not snd.self_prone() then
         string = "astral ambrosia"
       elseif snd.glory &gt;= 3 then
         string = "astral crescent "..snd.target
@@ -18310,11 +18305,7 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Wings 2</name>
-						<script>if gmcp.Char.Status.name == "Rihrin" then
-  snd.send("say Duanatharan")
-else
-  snd.send("say Voltda")
-end</script>
+						<script>snd.send("say Duanatharan")</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^say voltda$</regex>
@@ -19647,8 +19638,8 @@ end</script>
 						</Alias>
 					</AliasGroup>
 					<Alias isActive="yes" isFolder="no">
-						<name>Rihrin Path</name>
-						<script>expandAlias("bashpath illdon, tiyen, xaanhal, forgotten dome, a basilisk lair, dovan, maul")</script>
+						<name>Gold Path</name>
+						<script>expandAlias("bashpath illdon, tiyen, spiral, nal'jin, xaanhal, forgotten dome, clawhook, a basilisk lair, dramedo, bakal, ia'shal, forgotten depths, dovan, maul")</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^bash1$</regex>
