@@ -4625,7 +4625,7 @@ function snd.attack_function()
 		elseif not table.contains(snd.target_has, "writhe_armpitlock") and (limbs[limb] == "torso" or string.find(limbs[limb], "arm")) then
 		 mangled = limbs[limb]
 		end
-	 elseif snd.limb_status[limbs[limb]] == "broken" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
+	 elseif snd.limb_status[limbs[limb]] == "damaged" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
 	  if string.find(limbs[limb], "leg") or string.find(limbs[limb], "arm") then
 	   broken = limbs[limb]
 		end
@@ -4695,7 +4695,7 @@ function snd.attack_function()
 		elseif not table.contains(snd.target_has, "writhe_armpitlock") and (limbs[limb] == "torso" or string.find(limbs[limb], "arm")) then
 		 mangled = limbs[limb]
 		end
-	 elseif snd.limb_status[limbs[limb]] == "broken" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
+	 elseif snd.limb_status[limbs[limb]] == "damaged" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
 	  if string.find(limbs[limb], "leg") or string.find(limbs[limb], "arm") then
 	   broken = limbs[limb]
 		end
@@ -4761,7 +4761,7 @@ function snd.attack_function()
 		elseif not table.contains(snd.target_has, "writhe_armpitlock") and (limbs[limb] == "torso" or string.find(limbs[limb], "arm")) then
 		 mangled = limbs[limb]
 		end
-	 elseif snd.limb_status[limbs[limb]] == "broken" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
+	 elseif snd.limb_status[limbs[limb]] == "damaged" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
 	  if string.find(limbs[limb], "leg") or string.find(limbs[limb], "arm") then
 	   broken = limbs[limb]
 		end
@@ -4864,11 +4864,11 @@ if snd.class == "Shapeshifter" then
 					elseif not snd.checksomeAffs({"spleenrip","writhe_armpitlock"},1) and (limbs[limb] == "torso" or string.find(limbs[limb], "arm")) then
 				 		mangled = limbs[limb]
 					end
-			 	elseif snd.limb_status[limbs[limb]] == "broken" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then -- Updating the table with current breaks
+			 	elseif snd.limb_status[limbs[limb]] == "damaged" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then -- Updating the table with current breaks
 			  	if string.find(limbs[limb], "leg") or string.find(limbs[limb], "arm") then
 	   				broken = limbs[limb]
 					end
-	 			elseif snd.limb_status[limbs[limb]] == "broken" and snd.limb_dmg[limbs[limb]] &lt; 33.33 and crippled == "nothing" then -- Updating the table with current cripples
+	 			elseif snd.limb_status[limbs[limb]] == "damaged" and snd.limb_dmg[limbs[limb]] &lt; 33.33 and crippled == "nothing" then -- Updating the table with current cripples
 	  			if string.find(limbs[limb], "leg") or string.find(limbs[limb], "arm") then
 				 		crippled = limbs[limb]
 					end
@@ -4970,7 +4970,7 @@ end -- end the class if
 					elseif not table.contains(snd.target_has, "writhe_armpitlock") and (limbs[limb] == "torso" or string.find(limbs[limb], "arm")) then
 		 				mangled = limbs[limb]
 					end
-	 			elseif snd.limb_status[limbs[limb]] == "broken" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
+	 			elseif snd.limb_status[limbs[limb]] == "damaged" and snd.limb_dmg[limbs[limb]] &lt; 66.66 and broken == "nothing" then
 	  			if string.find(limbs[limb], "leg") or string.find(limbs[limb], "arm") and snd.parried_limb ~= limbs[limb] then
 	   				broken = limbs[limb]
 					end
@@ -18364,6 +18364,212 @@ end</script>
 								<packageName></packageName>
 								<regex>^supp$</regex>
 							</Alias>
+						</AliasGroup>
+						<AliasGroup isActive="yes" isFolder="yes">
+							<name>Ravager</name>
+							<script></script>
+							<command></command>
+							<packageName></packageName>
+							<regex></regex>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Affliction Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Immolation support</name>
+									<script>if snd.class == "Ravager" then
+  snd.starting_attack()
+
+  function snd.attack_function()
+    -- This checks for a present Firefist defense. This is used later during a Firefist check.
+    local firefist = false
+    if snd.defenses.def_ravage.state == "deffed" then
+      firefist = true
+    end
+    -- This checks for a present Zenith defense. It is used later in Zenith/Flow Handling.
+    local zenith = false
+    if snd.defenses.def_delirium.state == "deffed" then
+      zenith = true
+    end
+    -- This is a failsafe to take crispy off of a target that has cured ablaze.
+    if snd.checkAff("crispy") then
+      if not snd.checkaff("ablaze") then
+        snd.target_cured("crispy")
+      end
+    end
+    -- This uses crispy to check if they're at the right flame level.
+    local immolation_ready = false
+    if snd.checkAff("ablaze") then
+      if snd.checkAff("crispy") then
+        immolation_ready = true
+      end
+    end
+    -- In this mode, we're going to only rely on Purification. It's built to support a quick Immolate.
+    if not snd.waiting.queue then
+      if snd.used.shield then
+        string = "touch hammer " .. snd.target
+        -- OK, so if immolation is ready... we should cast it!	
+      elseif immolation_ready then
+        string = "invoke extinguish " .. snd.target
+        -- OK, so if immolation isn't ready, what next? Heatspear!
+      elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
+        string = "invoke lance " .. snd.target
+      else
+        string = "invoke torment " .. snd.target
+      end
+
+      if zenith then
+        if snd.used.shield then
+          string = "touch hammer " .. snd.target
+        elseif snd.parried_limb ~= "torso" then
+          string = "onslaught " .. snd.target .. " plexus plexus" .. snd.sep .. string
+        elseif snd.parried_limb ~= "left arm" then
+          string = "onslaught " .. snd.target .. " bully left bully left" .. snd.sep .. string
+        else
+          string = "onslaught " .. snd.target .. " bully right bully right" .. snd.sep .. string
+        end
+      end
+	
+      if gmcp.Char.Vitals.ability_bal == "1" then
+        string = "assail " .. snd.target .. " tenderise " .. snd.sep .. string
+      end
+    end
+
+    if not firefist then
+      if snd.checksomeAffs({"ablaze", "heatspear"}, 2) then
+        if zenith then
+          string = "invoke ravage"
+        else
+          string = "invoke delirium" .. snd.sep .. string
+        end
+      end
+    end
+
+    if immolation_ready then
+      string = "invoke extinguish " .. snd.target
+    end
+    if string ~= snd.last_attack and not snd.waiting.queue then
+      snd.last_attack = string
+      snd.attack(snd.last_attack)
+      snd.waiting.queue = true
+      tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+  end
+
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^fire$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Damage Offenses</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Bleed/Damage</name>
+									<script>if snd.class == "Ravager" then
+  snd.starting_attack()
+
+  function snd.attack_function()
+    local firefist = false
+    if snd.defenses.def_ravage.state == "deffed" then
+      firefist = true
+    end
+    local zenith = false
+    if snd.defenses.def_delirium.state == "deffed" then
+      zenith = true
+    end
+    if snd.checkAff("crispy") then
+      if not snd.checkaff("ablaze") then
+        snd.target_cured("crispy")
+      end
+    end
+    local immolation_ready = false
+    if snd.checkAff("ablaze") then
+      if snd.checkAff("crispy") then
+        immolation_ready = true
+      end
+    end
+    
+    if not snd.waiting.queue then
+      if snd.used.shield then
+        string = "touch hammer " .. snd.target
+      elseif snd.parried_limb ~= "torso" then
+        string = "onslaught " .. snd.target .. " plexus plexus"
+      elseif snd.parried_limb ~= "head" then
+        if not snd.checkAff("crippled_throat") then
+          string = "onslaught " .. snd.target .. " windpipe rampage head"
+        else
+          string = "onslaught " .. snd.target .. " concussion rampage head"
+        end
+      elseif snd.parried_limb ~= "left leg" and snd.parried_limb ~= "right leg" then
+        string = "onslaught " .. snd.target .. " kneecap left kneecap right"
+      elseif snd.parried_limb ~= "left leg" and snd.parried_limb == "right leg" then
+        string = "onslaught " .. snd.target .. " kneecap left kneecap left"
+      elseif snd.parried_limb ~= "right leg" and snd.parried_limb == "left leg" then
+        string = "onslaught " .. snd.target .. " kneecap right kneecap right"
+      else
+        if snd.parried_limb ~= "left arm" then
+          string = "onslaught " .. snd.target .. " bully left bully left"
+        end
+      end
+      
+      
+      if gmcp.Char.Vitals.ability_bal == "1" then
+        if snd.parried_limb ~= "head" and not snd.checkAff("blurry_vision") then
+          string = "assail " .. snd.target .. " slug " .. snd.sep .. string
+        else
+          string = "assail " .. snd.target .. " butcher " .. snd.sep .. string
+        end
+      end
+      
+      
+      if zenith then
+        if not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
+          string = string .. snd.sep .. "invoke lance " .. snd.target
+        elseif snd.checkAff("ablaze") then
+          string = string .. snd.sep .. "invoke intensify " .. snd.target
+        else
+          string = string .. snd.sep .. "invoke torment " .. snd.target
+        end
+      end
+      
+      if not firefist then
+        if snd.checksomeAffs({"ablaze", "heatspear"}, 2) then
+          if zenith then
+            string = "invoke ravage"
+          else
+            string = "invoke delirium" .. snd.sep .. string
+          end
+        end
+      end
+    
+      if immolation_ready then
+        string = "invoke extinguish " .. snd.target
+      end
+      
+      if string ~= snd.last_attack and not snd.waiting.queue then
+        snd.last_attack = string
+        snd.attack(snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
+    end
+  end
+
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^dmg$</regex>
+								</Alias>
+							</AliasGroup>
 						</AliasGroup>
 					</AliasGroup>
 					<AliasGroup isActive="yes" isFolder="yes">
