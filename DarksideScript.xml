@@ -1036,38 +1036,37 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>gmcp_item_remove</name>
 							<packageName></packageName>
-							<script>
-function gmcp_item_remove()
- v = gmcp.Char.Items.Remove.item
- if gmcp.Char.Items.Remove.location == "room" then
- 	if v == snd.bashing.target and snd.toggles.fasthunt then
-		snd.runBasher()
-	end
-	for item in pairs(snd.items) do
-	 for id in pairs(snd.items[item]) do
-	  if snd.items[item][id] == v.id then
-		 table.remove(snd.items[item], id)
-		 if #snd.items[item] == 0 then snd.items[item] = nil end
-		end
-	 end
-	end
-  snd.updateMonolith()
- elseif gmcp.Char.Items.List ~= nil then
-  if gmcp.Char.Items.List.location == "inv" then
-    if gmcp.Char.Vitals.wield_left ~= "empty" then
-      snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
-      snd.wielded.left.id = string.match(gmcp.Char.Vitals.wield_left, "%d+")
+							<script>function gmcp_item_remove()
+  v = gmcp.Char.Items.Remove.item
+  if gmcp.Char.Items.Remove.location == "room" then
+    if v == snd.bashing.target and snd.toggles.fasthunt then
+      snd.runBasher()
     end
-    if gmcp.Char.Vitals.wield_right ~= "empty" then
-      snd.wielded.right.name = string.match(gmcp.Char.Vitals.wield_right, "%a+")
-      snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
+    for item in pairs(snd.items) do
+      for id in pairs(snd.items[item]) do
+        if snd.items[item][id] == v.id then
+          table.remove(snd.items[item], id)
+          if #snd.items[item] == 0 then
+            snd.items[item] = nil
+          end
+        end
+      end
+    end
+    snd.updateMonolith()
+  elseif gmcp.Char.Items.List ~= nil then
+    if gmcp.Char.Items.List.location == "inv" then
+      if gmcp.Char.Vitals.wield_left ~= "empty" then
+        snd.wielded.left.name = string.match(gmcp.Char.Vitals.wield_left, "%a+")
+        snd.wielded.left.id = string.match(gmcp.Char.Vitals.wield_left, "%d+")
+      end
+      if gmcp.Char.Vitals.wield_right ~= "empty" then
+        snd.wielded.right.name = string.match(gmcp.Char.Vitals.wield_right, "%a+")
+        snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
+      end
     end
   end
- end
- snd.updateItems()
-end
-
-</script>
+  snd.updateItems()
+end</script>
 							<eventHandlerList>
 								<string>gmcp.Char.Items.Remove</string>
 							</eventHandlerList>
@@ -1075,8 +1074,7 @@ end
 						<Script isActive="yes" isFolder="no">
 							<name>gmcp_item_update</name>
 							<packageName></packageName>
-							<script>
-function gmcp_item_update()
+							<script>function gmcp_item_update()
  v = gmcp.Char.Items.Update.item
  --echo(v.name)
  if gmcp.Char.Items.Update.location == "inv" then
@@ -2033,8 +2031,7 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>core</name>
 							<packageName></packageName>
-							<script>
-function snd.core()
+							<script>function snd.core()
 if not snd.channeling then
  if snd.toggles.active then
     if snd.have_aff("asthma") and snd.have_aff("slickness") then
@@ -2599,21 +2596,13 @@ snd.method_priority = {
 						<Script isActive="yes" isFolder="no">
 							<name>queue</name>
 							<packageName></packageName>
-							<script>
-function snd.do_queue()
+							<script>function snd.do_queue()
   snd.queue = {}
   if not snd.channeling then
     if snd.toggles.active then
       if not snd.pipes_lit and snd.toggles.lighting then
           table.insert(snd.queue, "lighting")
       end
-      --if snd.healing_loaded and snd.toggles.healing then
-        -- for i in pairs(snd.afflictions) do
-        --  if snd.afflictions[i].state ~= "healed" then
-        --   table.insert(snd.queue, i)
-        --  end
-        -- end
-      --end
     if snd.defenses_loaded and snd.toggles.defenses then
       for k in pairs(snd.defenses) do
         if snd.defenses[k].state == "down" and snd.defenses[k].needit then
@@ -2664,6 +2653,9 @@ function snd.do_queue()
           snd.need_fitness = true
           table.insert(snd.queue, "fitness")
         end
+        if snd.toggles.parrying and snd.offense_loaded then -- remove the offense_loaded check if you want it to always parry
+          snd.parry()
+        end
         if ((hasSkill("Purge") and snd.class == "Carnifex") or (hasSkill("Annul") and snd.class == "Warden")) and snd.purge_check() then
           table.insert(snd.queue, "purge")
         end
@@ -2691,8 +2683,7 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>stuff</name>
 							<packageName></packageName>
-							<script>
-function snd.do_stuff()
+							<script>function snd.do_stuff()
  for _,i in ipairs(snd.priorities) do
   if table.contains(snd.queue, i) then
    if i == "queue" then
@@ -2710,16 +2701,16 @@ function snd.do_stuff()
 	 elseif i == "fitness" then
 	  snd.do_fitness()
 		snd.do_shrug()
+   elseif i == "rage" then
+    snd.do_rage()
 	 elseif i == "purge" then
 	  snd.do_purge()
 	 elseif i == "purify" then
 	 	snd.do_purify()
-	 elseif i == "aegis" then
-	 	snd.do_aegis()
-   elseif i == "rage" then
-    snd.do_rage()
    elseif i == "panacea" then
     snd.do_panacea()
+	 elseif i == "aegis" then
+	 	snd.do_aegis()
    elseif i == "reset_cures" then
     if snd.update_priority &gt; 0 then
       if snd.setting_priority == "burnt_skin 1" then
@@ -3189,8 +3180,7 @@ aff_faulted = {state = "healed", effect = "", cures = {}, assess = false, timer 
 							<Script isActive="yes" isFolder="no">
 								<name>give/take afflictions</name>
 								<packageName></packageName>
-								<script>
-function snd.aff_check()
+								<script>function snd.aff_check()
  for i in pairs(snd.afflictions) do
   if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "damaged") or string.find(i, "mangled") or string.find(i, "pre_restore") or i == "aff_concussion" then
    if getStopWatchTime(snd.afflictions[i].timer) &gt; 7 and snd.afflictions[i].state == "waiting" then
@@ -3214,8 +3204,7 @@ function snd.aff_gain(affliction)
    return
   end
  end
---  deleteLine()
- snd.message("You: &lt;red&gt;GOT&lt;blue&gt; "..affliction..".", "affliction")
+ snd.message("You: &lt;red&gt;GOT&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
  snd.aff_have(affliction)
  if affliction == "amnesia" then
   for i = 1,5 do
@@ -3312,7 +3301,7 @@ function snd.aff_diag(affliction)
 end
 
 function snd.aff_cure(affliction)
- snd.message("You: &lt;green&gt;HEAL&lt;blue&gt; "..affliction..".", "affliction")
+ snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
  snd.aff_remove(affliction)
  if snd.gui.enabled then 
   display_my_affs()
@@ -3368,8 +3357,7 @@ end</script>
 							<Script isActive="yes" isFolder="no">
 								<name>clear</name>
 								<packageName></packageName>
-								<script>
-function snd.clear_afflictions(type)
+								<script>function snd.clear_afflictions(type)
  snd.clear_affs = {}
  for i in pairs(snd.afflictions) do
   if snd.afflictions[i].cures[type] ~= nil then
@@ -3859,8 +3847,7 @@ Warden_fearless = {defense = "fearless", type = "normal", effect = "Protects aga
 							<Script isActive="yes" isFolder="no">
 								<name>give/take defenses</name>
 								<packageName></packageName>
-								<script>
-function snd.def_check()
+								<script>function snd.def_check()
  for i in pairs(snd.defenses) do
   if i == "def_speed" or i == "def_rebounding" or i == "def_deafness" or i == "def_fangbarrier" then
    if snd.defenses[i].state == "waiting" and getStopWatchTime(snd.defenses[i].timer) &gt;= 10 then
@@ -3938,6 +3925,285 @@ function snd.def_remove(defense)
  end
  snd.defenses[defense].state = "down"
 end</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>most defenses</name>
+								<packageName></packageName>
+								<script>snd.defenses_list =  {
+  ["Your hands are gripping your wielded items tightly."] = "gripping",
+  ["Your senses are magically heightened."] = "mindseye_tattoo",
+  ["You are diverting melee attacks."] = "divert_melee",
+  ["You are surrounded by a cloak of protection."] = "cloak_tattoo", 
+  ["You are utilising your bodily control to make yourself more fit."] = "fitness",
+  ["You are blind."] = "blindness",
+  ["You are deaf."] = "deafness",
+  ["You are feeling extremely energetic."] = "kola",
+  ["You are surrounded by a pocket of air."] = "waterbreathing",
+  ["Your mind has been touched by the essence of the Underking."] = "deathsight",
+  ["You have insomnia, and cannot easily go to sleep."] = "insomnia",
+  ["You possess the sight of the third eye."] = "thirdeye",
+  ["Your resistance to damage by poison has been increased."] = "venom",
+  ["You are tempered against fire damage."] = "frost",
+  ["You walk on a small cushion of air."] = "levitation",
+  ["Your sense of time is heightened, and your reactions are speeded."] = "speed",
+  ["You are insulated against the harsh cold."] = "caloric",
+  ["You are protected from hand-held weapons with an aura of rebounding."] = "rebounding",
+  ["You are dodging melee attacks."] = "dodge_melee",
+  ["Your vision is heightened to see in the dark."] = "nightsight",
+  ["Your mind is filled with clarity."] = "clarity",
+  ["You are completely fearless."] = "fearless",
+  ["Your soulstone is split to support your weapon, body, and armour."] = "soul_fracture",
+  ["Your soul has been fortified."] = "soul_fortify",
+  ["You have the safeguard of an Idreth."] = "safeguard",
+  ["You have the miasma of an Azudim."] = "miasma",
+  ["You have the warmth of a Yeleni."] = "warmth",
+  ["You are prepared to counterattack against physical aggression."] = "maingauche",
+  ["You are paced for bursts of exertion."] = "pacing",
+  ["You are sensing the heat of others."] = "heatsight",
+  ["You walk with the grace of the stars."] = "starburst",
+  ["You are extremely heavy and difficult to move."] = "density",
+  ["You are harvesting the souls of your victims."] = "soulharvest",
+  ["You are deriving pleasure from pain inflicted upon others."] = "reveling",
+  ["Your soulstone is embedded in your body."] = "soul_body",
+  ["Your weapons thirst for the souls of your enemies."] = "soulthirst",
+  ["A steady blast of air fans out from beneath your feet."] = "waterwalking",
+  ["You are fighting recklessly."] = "recklessness",
+  ["You are immune to normal weather."] = "weathering",
+  ["You have the bodyheat defence."] = "bodyheat",
+  ["Your body is well heated internally."] = "bodyheat",
+  ["You have the metabolism defence."] = "metabolism",
+  ["Your metabolism is at peak performance."] = "metabolism",
+  ["Your hide is thickened."] = "thickhide",
+  ["Your movements are supernaturally fast."] = "endurance",
+  ["Your bones have been hardened greatly."] = "harden",
+  ["You have the cornering defence."] = "corner",
+  ["You are cornering your opponents."] = "corner",
+  ["You are protected from the fangs of serpents."] = "fangbarrier",
+  ["You have been invigorated with strength."] = "vigor",
+  ["You are already invigorated."] = "vigor",
+  ["You are protected from light-based damage sources."] = "lightshield",
+  ["Your body is suffused with divinely-inspired resilience"] = "inspiration_constitution",
+  ["Your body is lifted with divinely-inspired dexterity."] = "inspiration_dexterity",
+  ["Your limbs are suffused with divinely-inspired strength."] = "inspiration_strength",
+  ["Your mind is suffused with divinely-inspired intelligence."] = "inspiration_intelligence",
+  ["A shield of flame protects you from blazing fires."] = "fireblock",
+  ["Your skin is toughened."] = "toughness",
+  ["You are resisting magical damage."] = "resistance",
+  ["You will substitute your soul with another upon dying."] = "soul_substitute",
+  ["Your actions are cloaked in secrecy."] = "shroud",
+  ["You are seeking the souls of the hidden."] = "soul_spiritsight",
+  ["The ward of the Syssin protects your body."] = "warding",
+  ["You have the finesse defence."] = "finesse",
+  ["You are already wielding your weapons with finesse."] = "finesse",
+  ["You will deliver your blade with trained finesse."] = "finesse",
+  ["Cobra-like, you weave back and forth to dodge blows."] = "weaving",
+  ["You are watching the shadows."] = "shadowsight",
+  ["You are shimmering with a ghostly light."] = "ghost",
+  ["You will slip into the shadows after killing."] = "shadowslip",
+  ["Phased slightly out of reality, you are effectively untouchable."] = "phase",
+  ["You will call upon your fortitude in need."] = "vitality",
+  ["You are regenerating lost health through the power of Kaido."] = "kaido_regeneration",
+  ["You are using your superior constitution to prevent nausea."] = "constitution",
+  ["Your mind is split, allowing constant meditation."] = "split_mind",
+  ["Your blood is steeled against poisons."] = "kaido_immunity",
+  ["Your regeneration is boosted."] = "boosted_regen",
+  ["Your skin is hard and tough, like the bark of an oak tree."] = "barkskin",
+  ["You are concealed from the view of others."] = "conceal",
+  ["You are hardened against the cold."] = "hardiness",
+  ["Your flexibility allows you to unentangle more easily."] = "flexibility",
+  ["You are sapping the life energy of others."] = "lifesap",
+  ["You have masked your scent to others."] = "maskedscent",
+  ["Your tree tattoo glows with enhanced power."] = "greenheart",
+  ["You are dedicating your attention to concise movements."] = "endure",
+  ["You have the booming voice of a mountaineer."] = "mountaineer",
+  ["You are shrouded by a cloud of dust."] = "dustcoat",
+  ["You are masking your pain."] = "resilience",
+  ["You reign supreme upon the wasteland."] = "desolation",
+  ["You are focusing on circulating your blood more efficiently."] = "circulation",
+  ["Your senses are attuned to the environment."] = "blindsense",
+  ["The states of your body and mind are joined."] = "linked",
+  ["You embrace your core oneness."] = "oneness",
+  ["Your mind is dampened against psychic attack."] = "sublimation",
+  ["You have heightened your ability to repair tissue and organs."] = "ameliorate",
+  ["Your internal core is in a state of hyper production."] = "catabolism",
+  ["Your skin is as hard as iron."] = "ironskin",
+  ["You are fleet of foot."] = "fleetfoot",
+  ["You are prepared to repel deadly blows."] = "axe_repel",
+  ["You are tracking the bloodtrails left by your targets."] = "bloodtrails",
+  ["You are supporting your allies with your battlechant."] = "battlechant",
+  ["Your limb-shattering blows incite fear in your enemies."] = "brutality",
+  ["You have adopted a defensive position."] = "phalanx",
+  ["You are harnessing your inner rage."] = "dauntless",
+  ["You are ready to deflect incoming incoming projectiles."] = "axe_avert",
+  ["You will strike down those who flee in terror."] = "axe_obstruct",
+  ["You are attuned to the music of the spheres."] = "spheres",
+  ["Your golem is standing steadfast."] = "steadfast",
+  ["You are listening for underground movement."] = "earthsense",
+  ["You have embraced your earthen form."] = "earthenform",
+  ["You have gained the earthenform defence."] = "earthenform",
+  ["You are attempting to bounce your attempts off parried blows."] = "ricochet",
+  ["You are preparing to entwine your flail against hostile weapons."] = "entwine",
+  ["Your soul is entwined around your golem's."] = "twinsoul",
+  ["Your soul is resonating with the earth."] = "earth_resonance",
+  ["Your flail imbued with the raw force of the desert."] = "imbue_erosion",
+  ["Your arms have been bound in stone."] = "stonebind",
+  ["You have imbued the fury of the Earthen into your flail."] = "imbue_stonefury",
+  ["You are channeling the will of the Earthen."] = "imbue_will",
+  ["You are focusing your energy into sweltering your sands."] = "sand_swelter",
+  ["Gnashing your tongue, your mouth salivates with fluid."] = "salivate",
+  ["Your coat of fur has been thickened."] = "thickfur",
+  ["You are bracing from attacks."] = "bracing",
+  ["Your soul is swathed in secrecy."] = "soulmask",
+  ["You are striking with great force."] = "bruteforce",
+  ["You are blocking exits with tenacity."] = "stalwart",
+  ["The Eclipse is looming to mask your Sun and Moon."] = "eclipse",
+  ["You are bathed in the glorious protection of decaying flesh."] = "putrefaction",
+  ["You have sworn vengeance upon those who would slay you."] = "vengeance",
+  ["You are emanating an aura of death harmful to those around you."] = "deathaura",
+  ["Your being is protected by the soulcage."] = "soulcage",
+  ["You are circulating your blood erratically to hide your vitals."] = "blurred",
+  ["You are exuding an aura of trepidation upon those you despise."] = "trepidation",
+  ["Your flesh is fortified against damage."] = "fortify",
+  ["You are eluding your opponents' blows."] = "elusion",
+  ["You have enhanced your vision to be able to see traces of lifeforce."] = "lifevision",
+  ["You detect the movements of nearby mortals."] = "lifescent",
+  ["Your body is steeled against magical energies."] = "corpus_warding",
+  ["Your corpse is already steeled against magical attack."] = "corpus_warding",
+  ["Your blood is concentrated."] = "concentrate",
+  ["Your blood already courses with increased viscosity."] = "concentrate",
+  ["Your movements are supernaturally fast."] = "celerity",
+  ["The cold of the grave has filled your body."] = "gravechill",
+  ["You have made a deal with the Devil."] = "devilpact",
+  ["You are protected by the intimidating presence of the Hierophant."] = "hierophant",
+  ["Your speed is increased by the Chariot."] = "chariot",
+  ["You share a deepened bond with your familiar."] = "spiritbond",
+  ["A protective rune guards you from harm."] = "protection",
+  ["You are discerning the spirit of others."] = "shaman_spiritsight",
+  ["You have been gifted with the bloom of life."] = "lifebloom",
+  ["A ball of lightning wards your limbs."] = "shaman_warding",
+  ["Your arms burn with the lines of your spirit focus."] = "focalmark",
+  ["Your body has been tempered by the strength of your Inner Fire."] = "tempered_body",
+  ["You move with extraordinary haste."] = "haste",
+  ["You possess mighty swagger in your actions."] = "swagger",
+  ["You have splintered your spirit into multiple."] = "disunion",
+  ["You are trying to deflect incoming arrows."] = "deflection",
+  ["You are rebuking those who would harm your appendages."] = "rebuke",
+  ["You are obscured by a cloak of light."] = "suncloak",
+  ["You are lithe and nimble, ready to adapt."] = "litheness",
+  ["You are bending ranged magical attacks on itself."] = "bending",
+  ["Your mind is sparked with new found curiosity."] = "mindspark",
+  ["You are unnaturally keen."] = "potence_intelligence",
+  ["You are unnaturally resilient."] = "potence_constitution",
+  ["You are unnaturally agile."] = "potence_dexterity",
+  ["You are unnaturally strong."] = "potence_strength",
+  ["You have flown into a battle rage."] = "herculeanrage",
+  ["Your sagacious mind empowers the moon tattoo."] = "sagacity",
+  ["You are preparing arcane missiles."] = "missiles",
+  ["You are protected by a thin layer of magic."] = "arcaneskin",
+  ["You have the countercurrent defence."] = "countercurrent",
+  ["You are blurring the edges of your form."] = "blurring",
+  ["You are surrounded in a mantle of pure shadow."] = "shadow_mantle",
+  ["You are focusing on precise spellcasting."] = "rigor",
+  ["You have the shadow_engulf defence."] = "shadow_engulf",
+  ["You are prepared to discharge energy."] = "discharge",
+  ["You are wreathed in an aura of toxicity."] = "nexus",
+  ["Your fiery soul has reached its zenith of power."] = "zenith",
+  ["An impermeable aegis of ley energy protects you."] = "manipulation_aegis",
+  ["Your flame tattoo is glowing faintly."] = "flame_tattoo",
+  ["You are surrounded by a nearly invisible magical shield."] = "shield_tattoo",
+  ["You are glowing with a radiant light."] = "shine",
+  ["You are striding through the forests with ease."] = "foreststride",
+  ["You are lipreading to overcome deafness."] = "lipreading",
+  ["You have been granted the speed of the Divine."] = "divine_speed",
+  ["You have insight into the thoughts of others."] = "insight",
+  ["You are watching both the skies and trees above you for any movement."] = "overwatch",
+  ["You are utilising hypersight."] = "hypersight",
+  ["You will seek opportunities to tend to your wounds."] = "initiative",
+  ["An ancestral spirit is displacing the souls of your foes."] = "displacement",
+  ["An ancestral invocation fortifies your weapon, body, and armor."] = "invocation",
+  ["You are attuned to the flow of battle."] = "battleflow",
+  ["You are claiming victory over your foes."] = "ancest_victory",
+  ["An ancestor has agreed to intervene upon the time of your death."] = "intervention",
+  ["You are resolved to carry out your duties."] = "severity",
+  ["You are punctuating your attacks with thunderous roars."] = "roaring",
+  ["You have received the ancestral safeguard blessing."] = "ancest_blessing_safeguard",
+  ["Your fortitude is bolstered by the ancestors."] = "ancestral_bolster",
+  ["Your strength has been bolstered."] = "homage",
+  ["You will wreak defiant vengeance on your killer."] = "defiance",
+  ["Your aura is concealed by a redoubt."] = "redoubt",
+  ["You are infused with the glacial cold of the Astral."] = "glaciation",
+  ["Your memory will live on by the grace of the Astral."] = "remembrance",
+  ["You are protected by an aura of heated pressure."] = "heatshield",
+  ["You are protected from fire by tectonic activity."] = "smothering",
+  ["You are emitting waves of pressure."] = "seismicity",
+  ["You have made a pact with a faerie."] = "faerie",
+  ["You are shielded from disfigurement by a well-placed fan."] = "fan",
+  ["Your speed is increased by the agile crane."] = "crane",
+  ["Clouds linger to obscure your sphere and hypercube."] = "cloud",
+  ["You are projecting an aura of intoxication."] = "intoxication",
+  ["You are sheathed against harm by a thin layer of light."] = "sheath",
+  ["Your music induces a euphoric reaction in those around you."] = "euphonia",
+  ["Your mind and body are in equilibrium."] = "equipoise",
+  ["Your music produces discordant recoil in those around you."] = "discordance",
+  ["You stand upon the guided road of destiny."] = "destiny",
+  ["You are surrounded by occasional glimmers of colour."] = "aurora",
+  ["Your limbs have been stretched."] = "stretching",
+  ["You currently possess charm and charisma."] = "charisma",
+  ["Your inner tempo can act upon a half beat."] = "halfbeat",
+  ["You are enveloped in a layer of permafrost."] = "permafrost",
+  ["You are remaining steady by dint of your sea legs."] = "sealegs",
+  ["You have adopted the stance of the wavebreaker."] = "wavebreaking",
+  ["You are maintaining a tidal flux to redirect your weapon strikes."] = "tideflux",
+  ["Your life is bonded to that of your elemental."] = "lifebond",
+  ["You are recuperating on steady shore."] = "shore_leave",
+  ["Briny barnacles cover the length of your arms."] = "encrusted",
+  ["You are working in tandem with your elemental."] = "elemental_engulf",
+  ["Freezing fog envelops your selkachoar with its power."] = "expose_brume",
+  ["Your weapon is exposed to icy rime."] = "expose_rime",
+  ["Your fog is creating a beguiling siren's song."] = "sirensong",
+  ["You are seeing through the many eyes of the fog."] = "panoptic",
+  ["You are attuned to fluctuations with the fog."] = "fluctuations",
+  ["The fog is obscuring your movements."] = "obscure",
+  ["Your experiment is suffering attacks for you."] = "interposition",
+  ["Your conduit is producing a billowing black smoke."] = "obfuscation",
+  ["You are sharply cognisant of your opponent's symptoms."] = "cognisance",
+  ["You will be resuscitated when near-death."] = "resuscitation",
+  ["You are using your conduit as a protective crutch."] = "conduit_crutch",
+  ["You are taking advantage of the high tide."] = "hightide",
+  ["Your body has been fortified for relentless pursuit."] = "relentless",
+  ["Your enhanced acuity is detecting nearby movement."] = "acuity",
+  ["You have brought about a state of transience."] = "transience",
+  ["You are prepared to entrench at your bunker."] = "entrench",
+  ["You are maintaining an ascetic outlook."] = "ascetic",
+  ["Your light will retaliate with holy vengeance."] = "retaliation",
+  ["You are suppressing signs of your vitality."] = "suppressed",
+  ["A vinculum is anchoring your soul."] = "vinculum",
+  ["Pain is granting you a sense of ruthless resolve."] = "ruthlessness",
+  ["You are impenetrable; incoming arrows will do no harm."] = "impenetrable",
+  ["You are preparing to withstand a critical mass."] = "criticality",
+  ["Perdition will restore you should you fall."] = "unfinished",
+  ["You have become intoxicated upon carnage."] = "exhilarate",
+  ["Your reflexes are honed to a razor-sharp level."] = "reflexes",
+  ["Contempt and spite drive your body onwards."] = "contempt",
+  ["Your bloodlust powers your restless velocity."] = "velocity",
+  ["You are untouchable; ranged magics are nothing before you."] = "untouchable",
+  ["Your ego is inflated beyond even its normally high limits."] = "inflated",
+  ["You are observing your victim with predatory insticts."] = "predation",
+  ["Your thoughts are consumed by sweet, agonising delirium."] = "delirium",
+  ["Hellish flames coat your fists."] = "ravage",
+  ["Your resolve strengthens you against foul magics."] = "resolved",
+  ["You are transcending normal limitations."] = "transcendence",
+  ["You are blessed with miraculous constitution."] = "ardour_constitution",
+  ["You are blessed with miraculous strength."] = "ardour_strength",
+  ["You are blessed with miraculous intelligence."] = "ardour_intelligence",
+  ["You are blessed with miraculous dexterity."] = "ardour_dexterity",
+  ["Your constitution is bolstered by an Earthen battle hymn"] = "battlehymn_constitution",
+  ["Your intelligence is bolstered by an Earthen battle hymn"] = "battlehymn_intelligence",
+  ["Your dexterity is bolstered by an Earthen battle hymn"] = "battlehymn_dexterity",
+  ["Your strength is bolstered by an Earthen battle hymn"] = "battlehymn_strength",
+}
+ </script>
 								<eventHandlerList />
 							</Script>
 						</ScriptGroup>
@@ -18996,13 +19262,17 @@ function snd.templar_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if hp &gt; 60 then
-      battack = battack.. " sacrifice sacrifice"
-    elseif snd.punisher then
-      battack = battack.. "jig"
+  if snd.counterattack_active then
+    if snd.punisher then
+      battack = battack..snd.sep.."jig"
     else
-      battack = battack.. "touch shield"
+      battack = battack..snd.sep.."touch shield"
+    end
+  elseif hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
+      battack = battack..snd.sep.."battlefury dsw "..snd.bashing.target.." sacrifice sacrifice"
+    else
+      battack = battack..snd.sep.."battlefury dsk "..snd.bashing.target.." sacrifice sacrifice"
     end
 	elseif snd.pushattack then
 		battack = battack.. "push "..snd.bashing.target
@@ -19010,9 +19280,9 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 	elseif snd.toggles.newbie then
 		battack = battack.. "strikebash "..snd.bashing.target
   elseif snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
-    battack = battack.. "battlefury dsw "..snd.bashing.target
+    battack = battack.. "dsw "..snd.bashing.target
   else
-  	battack = battack.. "battlefury dsk "..snd.bashing.target
+  	battack = battack.. "dsk "..snd.bashing.target
 	end
   
 end
@@ -19021,23 +19291,27 @@ function snd.revenant_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if hp &gt; 60 then
-      battack = battack.. " duskosa duskosa"
-    elseif snd.punisher then
-      battack = battack.. "jig"
+  if snd.counterattack_active then
+    if snd.punisher then
+      battack = battack..snd.sep.."jig"
     else
-      battack = battack.. "touch shield"
+      battack = battack..snd.sep.."touch shield"
+    end
+  elseif hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then  
+    if snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
+      battack = battack..snd.sep.."fell "..snd.bashing.target.." duskosa duskosa"
+    else
+      battack = battack..snd.sep.."dpl "..snd.bashing.target.." duskosa duskosa"
     end
 	elseif snd.pushattack then
-		battack = battack.. "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
 	elseif snd.toggles.newbie then
-		battack = battack.. "rivebash "..snd.bashing.target
+		battack = battack..snd.sep.."rivebash "..snd.bashing.target
   elseif snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
-    battack = battack.. "riving fell "..snd.bashing.target
+    battack = battack..snd.sep.."fell "..snd.bashing.target
   else
-  	battack = battack.. "riving duplicity "..snd.bashing.target
+  	battack = battack..snd.sep.."dpl "..snd.bashing.target
 	end
  
 end
@@ -19047,56 +19321,42 @@ function snd.luminary_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."angel aura me"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
-      battack = "jig"
+      battack = battack..snd.sep.."jig"
     else
-      battack = "angel aura me"
+      battack = battack..snd.sep.."angel aura me"
     end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
 	elseif snd.toggles.lightning then
-  	battack = "evoke lightning "..snd.bashing.target
+  	battack = battack..snd.sep.."evoke lightning "..snd.bashing.target
  	else
-  	battack = "smite "..snd.bashing.target
+  	battack = battack..snd.sep.."smite "..snd.bashing.target
  	end
+  
 end
 
 function snd.earthcaller_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."OSSO RIBCAGE me"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
-      battack = "jig"
+      battack = battack..snd.sep.."jig"
     else
-      battack = "OSSO RIBCAGE me"
+      battack = battack..snd.sep.."OSSO RIBCAGE me"
     end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   elseif snd.toggles.lightning then
-  	battack = "TECTONIC ASHFALL "..snd.bashing.target
+  	battack = battack..snd.sep.."TECTONIC ASHFALL "..snd.bashing.target
  	else
-  	battack = "quash "..snd.bashing.target.." secret"
+  	battack = battack..snd.sep.."quash "..snd.bashing.target.." secret"
  	end
+  
 end
 
 function snd.monk_bash()
@@ -19105,25 +19365,17 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
   if mp &gt;= 30 and hp &lt;= 75 and snd.transmutation then
-    battack = "transmute mana 1000"..snd.sep
+    battack = battack..snd.sep.."transmute mana 1000"..snd.sep
     tempTimer(2,[[snd.transmutation = true]])
   end
   
   if not snd.numbness_used then
     if hp &lt;= 70 then
-        battack = battack.."numb"..snd.sep
+        battack = battack..snd.sep.."numb"..snd.sep
     end
   end
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19133,15 +19385,15 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   elseif snd.stance ~= "scorpion" and not snd.toggles.cobra then
-    battack = battack.."scs"..snd.sep
+    battack = battack..snd.sep.."scs"..snd.sep
   elseif snd.toggles.cobra then
     if snd.stance ~= "cobra" then
-      battack = battack.."cbs"
+      battack = battack..snd.sep.."cbs"
     else
-      battack = battack.."combo "..snd.bashing.target.." sdk sdk"
+      battack = battack..snd.sep.."combo "..snd.bashing.target.." sdk sdk"
     end
   else 
-    battack = battack.."combo "..snd.bashing.target.." sdk ucp ucp"
+    battack = battack..snd.sep.."combo "..snd.bashing.target.." sdk ucp ucp"
   end
 
 end
@@ -19153,25 +19405,17 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 
   if snd.familiar and snd.balance.morph then
     if snd.shamanpet == "bear" then
-      battack = "order spirit passive"..snd.sep.."familiar morph spider"..snd.sep
+      battack = battack..snd.sep.."order spirit passive"..snd.sep.."familiar morph spider"..snd.sep
     elseif snd.shamanpet == "spider" then
-      battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep
+      battack = battack..snd.sep.."order spirit passive"..snd.sep.."familiar morph bear"..snd.sep
     else
-      battack = "order spirit passive"..snd.sep.."familiar morph bear"..snd.sep
+      battack = battack..snd.sep.."order spirit passive"..snd.sep.."familiar morph bear"..snd.sep
     end
   else
-    battack = "familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"..snd.sep
+    battack = battack..snd.sep.."familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"..snd.sep
   end
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19182,26 +19426,19 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 		snd.pushattack = false
   else
     if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt; 3 then
-      battack = battack.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+      battack = battack..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
     else
-      battack = battack.."commune lightning "..snd.bashing.target
+      battack = battack..snd.sep.."commune lightning "..snd.bashing.target
     end 
   end
+  
 end
 
 function snd.sentinel_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19211,27 +19448,20 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   elseif snd.toggles.newbie then
-  	battack = "dhuriv combo "..snd.bashing.target.." slash stab"
+  	battack = battack..snd.sep.."dhuriv combo "..snd.bashing.target.." slash stab"
  	else
-  	battack = "dhuriv combo "..snd.bashing.target.." crosscut thrust"
+  	battack = battack..snd.sep.."dhuriv combo "..snd.bashing.target.." crosscut thrust"
  	end
+  
 end
 
 function snd.wayfarer_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
-      battack = battack..snd.sep.."jig"
+      battack = battack..snd.sep.."fury sustain"
     else
       battack = battack..snd.sep.."touch shield"
     end
@@ -19239,23 +19469,16 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = "axe chop "..snd.bashing.target
+    battack = battack..snd.sep.."fury sustain"..snd.sep.."axe chop "..snd.bashing.target
 	end
+  
 end
 
 function snd.syssin_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19266,40 +19489,33 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		snd.pushattack = false
   elseif not snd.toggles.newbie then
  		if snd.defenses.def_hiding.state == "deffed" then
-	 		battack = "backstab "..snd.bashing.target
+	 		battack = battack..snd.sep.."backstab "..snd.bashing.target
 		else
-   		battack = "bite "..snd.bashing.target.." camus"
+   		battack = battack..snd.sep.."bite "..snd.bashing.target.." camus"
 		end
  	else
   	if snd.defenses.def_hiding.state == "deffed" then
 	 		if snd.wielding("dirk") then
-	  		battack = "backstab "..snd.bashing.target
+	  		battack = battack..snd.sep.."backstab "..snd.bashing.target
 	 		else
-	  		battack = "quickwield right dirk"..snd.sep.."backstab "..snd.bashing.target
+	  		battack = battack..snd.sep.."quickwield right dirk"..snd.sep.."backstab "..snd.bashing.target
 	 		end
 		else
 	 		if snd.wielding("whip") then
-	  		battack = "garrote "..snd.bashing.target
+	  		battack = battack..snd.sep.."garrote "..snd.bashing.target
 	 		else
-    		battack = "quickwield left whip"..snd.sep.."garrote "..snd.bashing.target
+    		battack = battack..snd.sep.."quickwield left whip"..snd.sep.."garrote "..snd.bashing.target
 	 		end
 		end
  	end
+  
 end
 
 function snd.shapeshifter_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19309,23 +19525,16 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = "combo "..snd.bashing.target.." slash slash"
+    battack = battack..snd.sep.."combo "..snd.bashing.target.." slash slash"
 	end
+  
 end
 
 function snd.indorani_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19335,23 +19544,16 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = "flick bonedagger at "..snd.bashing.target
+    battack = battack..snd.sep.."flick bonedagger at "..snd.bashing.target
 	end
+  
 end
 
 function snd.oneiromancer_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19361,23 +19563,16 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = "impel athame at "..snd.bashing.target
+    battack = battack..snd.sep.."impel athame at "..snd.bashing.target
 	end
+  
 end
 
 function snd.carnifex_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19387,23 +19582,16 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = "hammer doublebash "..snd.bashing.target
+    battack = battack..snd.sep.."hammer doublebash "..snd.bashing.target
   end
+  
 end
 
 function snd.warden_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19413,8 +19601,9 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = "warden maul "..snd.bashing.target
+    battack = battack..snd.sep.."warden maul "..snd.bashing.target
   end
+  
 end
 
 function snd.archivist_bash()
@@ -19422,19 +19611,11 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 bioessence = tonumber(gmcp.Char.Vitals.bio) 
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if not snd.knit then
-      battack = "bio knitting"
+      battack = battack..snd.sep.."bio knitting"
 		elseif not snd.balance.ethereal then
-			battack = "bio ethereal"
+			battack = battack..snd.sep.."bio ethereal"
     elseif snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19443,11 +19624,8 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 	elseif snd.pushattack then
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
-	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
-		snd.pushattack = false
 	else
-    battack = "incite crux "..snd.bashing.target
+    battack = battack..snd.sep.."incite crux "..snd.bashing.target
 	end
 end
 
@@ -19500,25 +19678,15 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
     tempTimer(2,[[snd.cauterize = true]])
   end
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 then
-    if mp &gt;= 50 and snd.shield_check and not snd.punisher then
-      battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-    elseif mp &gt;= 50 and not snd.shield_check and not snd.punisher then
-      battack = battack..snd.sep.."clot 500"..snd.sep.."seethe"
-    elseif not snd.shield_check and not snd.punisher then
-      battack = battack..snd.sep.."touch shield"
-    else
-      battack = battack..snd.sep.."seethe"
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
     if snd.punisher then
-      if wp &gt;= 45 and mp &gt;= 50 then
+      if wp &gt;= 35 and mp &gt;= 30 then
         battack = battack..snd.sep.."seethe"
       else
         battack = battack..snd.sep.."jig"
       end
     else
-      if wp &gt;= 45 and mp &gt;= 50 then
+      if wp &gt;= 35 and mp &gt;= 30 then
         battack = battack..snd.sep.."seethe"
       else
         battack = battack..snd.sep.."touch shield"
@@ -19528,7 +19696,7 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    battack = battack.."onslaught "..snd.bashing.target.." bully bully"
+    battack = battack..snd.sep.."onslaught "..snd.bashing.target.." bully bully"
   end
 
 end
@@ -19537,28 +19705,25 @@ function snd.praenomen_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."touch shield"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
-      battack = "jig"
-    elseif snd.balance.mend and hasSkill("Mending") then
-			battack = "mend"
+      if wp &gt;= 45 and mp &gt;= 50 and snd.balance.mend and hasSkill("Mending") then
+        battack = battack..snd.sep.."mend"
+      else
+        battack = battack..snd.sep.."jig"
+      end
+    elseif wp &gt;= 45 and mp &gt;= 50 and snd.balance.mend and hasSkill("Mending") then
+			battack = battack..snd.sep.."mend"
     else
-      battack = "touch shield"
+      battack = battack..snd.sep.."touch shield"
     end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
 	else
-		battack = "frenzy "..snd.bashing.target
+		battack = battack..snd.sep.."frenzy "..snd.bashing.target
 	end
+  
 end
 
 function snd.akkari_bash()
@@ -19566,24 +19731,10 @@ function snd.akkari_bash()
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
   wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 then
-    if mp &gt;= 50 and snd.shield_check and not snd.punisher then
-      battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-    elseif mp &gt;= 50 and not snd.shield_check and not snd.punisher and snd.balance.mend and hasSkill("Vivify") then
-      battack = battack..snd.sep.."clot 500"..snd.sep.."vivify"
-    elseif not snd.shield_check and not snd.punisher then
-      battack = battack..snd.sep.."touch shield"
-    else
-      if snd.reflection_charge &gt; 0 and not snd.reflected then
-			  battack = battack..snd.sep.."point wand at me"
-      else
-        battack = battack..snd.sep.."respiration"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
-			   battack = "point wand at me"
+			   battack = battack..snd.sep.."point wand at me"
       elseif wp &gt;= 45 and mp &gt;= 50 and snd.balance.mend and hasSkill("Vivify") then
         battack = battack..snd.sep.."vivify"
       else
@@ -19597,11 +19748,12 @@ function snd.akkari_bash()
       end
     end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
 	else
-		battack = "denounce "..snd.bashing.target
+		battack = battack..snd.sep.."denounce "..snd.bashing.target
 	end
+  
 end
 
 function snd.teradrim_bash()
@@ -19609,15 +19761,7 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
 mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."sand shield me"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
     else
@@ -19627,9 +19771,9 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   elseif snd.balance.momentum and endur&lt;=45 then
-    battack = "earth momentum "..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
+    battack = battack..snd.sep.."earth momentum "..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
   else 
-    battack = "earth batter "..snd.bashing.target..snd.sep.."golem recover"
+    battack = battack..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
   end
 end
 
@@ -19640,36 +19784,29 @@ function snd.ascendril_bash()
     snd.reflected = false
   end
   
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."touch shield"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
-			   battack = "cast reflection"
+			   battack = battack..snd.sep.."cast reflection"
       else
-        battack = "jig"
+        battack = battack..snd.sep.."jig"
       end
     else
-      battack = "touch shield"
+      battack = battack..snd.sep.."touch shield"
     end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
     if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "air"  then
-   		battack = "cast frostblade "..snd.bashing.target
+   		battack = battack..snd.sep.."cast frostblade "..snd.bashing.target
     elseif gmcp.Char.Vitals.resonance == "water" then
-   		battack = "cast firelash "..snd.bashing.target
+   		battack = battack..snd.sep.."cast firelash "..snd.bashing.target
     elseif gmcp.Char.Vitals.resonance == "fire" then
-    	battack = "cast windlance "..snd.bashing.target
+    	battack = battack..snd.sep.."cast windlance "..snd.bashing.target
     end
 	end
+  
 end
 
 function snd.sciomancer_bash()
@@ -19679,44 +19816,101 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
     snd.reflected = false
   end
   
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."touch shield"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
-			   battack = "cast reflection"
+			   battack = battack..snd.sep.."cast reflection"
       else
-        battack = "jig"
+        battack = battack..snd.sep.."jig"
       end
     else
-      battack = "touch shield"
+      battack = battack..snd.sep.."touch shield"
     end
 	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
 	elseif snd.toggles.newbie then
-  	  battack = "cast ruin "..snd.bashing.target
+  	  battack = battack..snd.sep.."cast ruin "..snd.bashing.target
  	else
 		if table.contains(gmcp.Char.Defences.List, "shadow_mantle") then
       if tonumber(gmcp.Char.Vitals.shadowprice) &lt; 4 then
-        battack = "shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
+        battack = battack..snd.sep.."shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
       else
-        battack = "cast fever " ..snd.bashing.target
+        battack = battack..snd.sep.."cast fever " ..snd.bashing.target
       end
     else
       if tonumber(gmcp.Char.Vitals.shadowprice) &lt; 2 then
-        battack = "shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
+        battack = battack..snd.sep.."shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
       else
-        battack = "cast fever " ..snd.bashing.target
+        battack = battack..snd.sep.."cast fever " ..snd.bashing.target
       end
     end
  	end
+  
+end
+
+function snd.bard_bash()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if snd.punisher then
+      battack = battack..snd.sep.."jig"
+    else
+      battack = battack..snd.sep.."sing song of youth"
+    end
+	elseif snd.pushattack then
+		battack = battack..snd.sep.."push "..snd.bashing.target
+		snd.pushattack = false
+	else
+    if tonumber(gmcp.Char.Vitals.dithering) &gt; 0 then
+		  battack = battack..snd.sep.."tempo "..snd.bashing.target
+    else
+      battack = battack..snd.sep.."weave tearing "..snd.bashing.target
+    end
+	end
+  
+end
+
+function snd.tidesage_bash()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if snd.punisher then
+      battack = battack..snd.sep.."jig"
+    else
+      battack = battack..snd.sep.."fog harden me"
+    end
+	elseif snd.pushattack then
+		battack = battack..snd.sep.."push "..snd.bashing.target
+		snd.pushattack = false
+  else
+    battack = battack..snd.sep.."tide clobber "..snd.bashing.target
+    if snd.defenses.def_hightide.state == "down" then
+      battack = battack..snd.sep.."synth recuperate"
+    end
+  end
+  
+end
+
+function snd.alchemist_bash()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if snd.punisher then
+      battack = battack..snd.sep.."jig"
+    else
+      battack = battack..snd.sep.."touch shield"
+    end
+	elseif snd.pushattack then
+		battack = battack..snd.sep.."push "..snd.bashing.target
+		snd.pushattack = false
+  else
+		battack = battack..snd.sep.."alchemy catalyse"..snd.sep.."alchemy virulent "..snd.bashing.target
+	end
+  
 end
 
 function snd.astral_bash()
@@ -19762,92 +19956,7 @@ function snd.astral_bash()
     end
  	end
 end
-
-
-function snd.bard_bash()
-hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."touch shield"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
-    if snd.punisher then
-      battack = "jig"
-    else
-      battack = "sing song of youth"
-    end
-	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
-		snd.pushattack = false
-	else
-    if tonumber(gmcp.Char.Vitals.dithering) &gt; 0 then
-		  battack = "tempo "..snd.bashing.target
-    else
-      battack = "weave tearing "..snd.bashing.target
-    end
-	end
-end
-
-function snd.tidesage_bash()
-hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."fog harden me"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
-    if snd.punisher then
-      battack = battack..snd.sep.."jig"
-    else
-      battack = battack..snd.sep.."fog harden me"
-    end
-	elseif snd.pushattack then
-		battack = battack..snd.sep.."push "..snd.bashing.target
-		snd.pushattack = false
-  else
-    battack = battack..snd.sep.."tide clobber "..snd.bashing.target
-    if snd.defenses.def_hightide.state == "down" then
-      battack = battack..snd.sep.."synth recuperate"
-    end
-  end
-end
-
-function snd.alchemist_bash()
-hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = battack..snd.sep.."clot 500"..snd.sep.."touch shield"
-      else
-        battack = battack..snd.sep.."clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 then
-    if snd.punisher then
-      battack = battack..snd.sep.."jig"
-    else
-      battack = battack..snd.sep.."touch shield"
-    end
-	elseif snd.pushattack then
-		battack = battack..snd.sep.."push "..snd.bashing.target
-		snd.pushattack = false
-  else
-		battack = "alchemy catalyse"..snd.sep.."alchemy virulent "..snd.bashing.target
-	end
-end</script>
+</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="no" isFolder="no">
