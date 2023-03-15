@@ -440,6 +440,7 @@ snd.toparry = snd.toparry or "none"
 snd.heelrush = snd.heelrush or "none"
 snd.counterattack_active = snd.counterattack_active or false
 snd.ylem_check = snd.ylem_check or false
+snd.melting = false
 
 snd.delete_prompt = snd.delete_prompt or false
 
@@ -966,11 +967,13 @@ end
   if
     snd.toggles.attacking and snd.offense_loaded and snd.check_aegis() and snd.toggles.aegis
     and (snd.count(snd.people_hitting_me) &gt;= 3 or snd.aff_tally() &gt;= 5 or hp &lt; 50)
+    and (tonumber(gmcp.Char.Vitals.residual) &gt;= 60 
+    or (tonumber(gmcp.Char.Vitals.residual) &gt;= 30 and snd.defenses.def_milestones_half_residual.state == "deffed"))
   then
     snd.need_aegis = true
   else
     snd.need_aegis = false
-  end
+  end 
 end</script>
 							<eventHandlerList>
 								<string>gmcp.Char.Vitals</string>
@@ -983,10 +986,17 @@ end</script>
 function gmcp_items()
  if gmcp.Char.Items.List.location == "room" then
   snd.items = {}
+  snd.agros = {}
   for _, v in ipairs(gmcp.Char.Items.List.items) do
    if not snd.items[v.name] then snd.items[v.name] = {} end
-   table.insert(snd.items[v.name], v.id)
-  end
+   if v.icon == "face-angry-horns" then
+    if not snd.agros[v.name] then snd.agros[v.name] = {} end
+      table.insert(snd.agros[v.name], v.id) --insert to agros table
+      table.insert(snd.items[v.name], 1, v.id) --insert at start of table
+    else
+     table.insert(snd.items[v.name], v.id) --insert at end of table
+   end
+  end 
   snd.updateMonolith()
  elseif gmcp.Char.Items.List.location == "inv" then
   snd.wielded = {left =  {name="", id=""}, right = {name="", id=""}}
@@ -999,10 +1009,17 @@ function gmcp_items()
     snd.wielded.right.id = string.match(gmcp.Char.Vitals.wield_right, "%d+")
   end
  end
+ for item in pairs(snd.items) do
+    if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then
+      table.insert(snd.gathering, "sovereigns")
+    elseif table.contains(snd.possible_items, item) or table.contains(snd.global_items, item) then
+      for id in pairs(snd.items[item]) do
+        table.insert(snd.gathering, snd.items[item][id])
+      end
+    end
+  end
  snd.updateItems()
-end
-
---snd.mastersearchadder()</script>
+end</script>
 							<eventHandlerList>
 								<string>gmcp.Char.Items.List</string>
 							</eventHandlerList>
@@ -1158,7 +1175,35 @@ end</script>
 	shadow_people:clear()
 
 	local spiritpeoplehere = {}
+  
+  if gmcp.Char.Status.name == "Rhesk" then
+  
 	for name, val in pairs(snd.players_here) do
+		if val and (table.isMember(snd.rheskallies, val) or table.isMember(snd.rheskallies, val)) then 
+			table.insert(spiritpeoplehere, val) 
+		end
+	end
+	
+	local shadowpeoplehere = {}
+	for name, val in pairs(snd.players_here) do
+		if val and (table.isMember(snd.rheskenemies, val) or table.isMember(snd.rheskenemies, val)) then
+			table.insert(shadowpeoplehere, val) 
+		end
+	end
+	
+	if #spiritpeoplehere &gt;= 1 then
+	 spirit_people:echo("&lt;center&gt;"..table.concat(spiritpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+	 snd.spirit_targets = spiritpeoplehere
+  end
+	
+	if #shadowpeoplehere &gt;= 1 then
+	 shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
+	 snd.shadow_targets = shadowpeoplehere
+  end
+  
+  else
+  
+  for name, val in pairs(snd.players_here) do
 		if val and (table.isMember(snd.spirit, val) or table.isMember(snd.randomspirit, val)) then 
 			table.insert(spiritpeoplehere, val) 
 		end
@@ -1179,6 +1224,8 @@ end</script>
 	if #shadowpeoplehere &gt;= 1 then
 	 shadow_people:echo("&lt;center&gt;"..table.concat(shadowpeoplehere, "&lt;br&gt;").."&lt;/center&gt;")
 	 snd.shadow_targets = shadowpeoplehere
+  end
+  
   end
 	
 end</script>
@@ -1236,22 +1283,21 @@ end</script>
 --demonnic.chat:append(snd.channel_list[channel], text)
 
 	snd.channel_list = {
-	["newbie"] = "Misc",
-	["market"] = "Misc",
-	["web"] = "Web",
-	["ct"] = "City",
-	["cnt"] = "City",
-  ["emotes"] = "Local",
-	["gt"] = "Guild",
-	["gts"] = "Guild",
-	["clt"] = "Clans",
-	["tell"] = "Tells",
-	["says"] = "Local",
-	["ot"] = "Order",
-  ["cot"] = "Order",
-  ["congregation"] = "Order",
-  ["leaders"] = "Misc",
-}
+    ["newbie"] = "Misc",
+    ["market"] = "Misc",
+    ["web"] = "Web",
+    ["ct"] = "City",
+    ["cnt"] = "City",
+    ["emotes"] = "Local",
+    ["gt"] = "Guild",
+    ["gts"] = "Guild",
+    ["clt"] = "Clans",
+    ["tell"] = "Tells",
+    ["says"] = "Local",
+    ["ot"] = "Order",
+    ["cot"] = "Order",
+    ["congregation"] = "Order",
+  }
 
 	if channel == "web" and snd.toggles.listening and table.contains(snd.callers, talker) then
       text = text:lower()
@@ -2319,7 +2365,7 @@ snd.priorities =
     "def_soul_body",
     "def_weathering",
     "def_bodyheat",
-    "def_metabolize",
+    "def_metabolism",
     "def_endurance",
     "def_thickhide",
     "def_corner",
@@ -2939,10 +2985,12 @@ aff_indifference = {state = "healed", effect = "", cures = {salve = "epidermal t
 aff_infernal_seal = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infernal_shroud = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infested = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_acidic_ink = {state = "healed", effect = "It's ink. You wait it out.", cures = {}, assess = false, timer = createStopWatch()},
 aff_insomnia = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_itchy = {state = "healed", effect = "tree has to cure this first always", cures = { tree = "send" }, assess = false, timer = createStopWatch()},
 aff_intimidated = {state = "healed", effect = "can't heal above 90%", cures = {}, assess = false, timer = createStopWatch()},
 aff_justice = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_kneel = {state = "healed", effect = "hurts you if you walk too far from ravager", cures = {}, assess = false, timer = createStopWatch()},
 aff_laxity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_leeched_aura = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_arm_amputated = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
@@ -3559,7 +3607,7 @@ def_houndmark = {defense = "houndmark", type = "yellow", effect = "hounds go zoo
 --Shapeshifter
 def_weathering = {defense = "weathering", type = "normal", effect = "Cold resistance", balance = {special = "weathering"}, state = "down", needit = false, timer = createStopWatch(), skill = "Weathering"},
 def_bodyheat = {defense = "bodyheat", type = "normal", effect = "Protects against chill", balance = {needyequilibriumtake = "bodyheat"}, state = "down", needit = false, timer = createStopWatch(), skill = "Bodyheat"},
-def_metabolize = {defense = "metabolism", type = "normal", effect = "Increase strength", balance = {balancetake = "metabolize on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Metabolize"},
+def_metabolism = {defense = "metabolism", type = "normal", effect = "Increase strength", balance = {balancetake = "metabolize on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Metabolize"},
 def_endurance = {defense = "celerity", type = "normal", effect = "Faster movement", balance = {needybalancetake = "endurance"}, state = "down", needit = false, timer = createStopWatch(), skill = "Endurance"},
 def_thickhide = {defense = "thickhide", type = "normal", effect = "Physical protection", balance = {balancetake = "thickhide"}, state = "down", needit = false, timer = createStopWatch(), skill = "Thickhide"},
 def_corner = {defense = "cornering", type = "normal", effect = "Increase dodge chance", balance = {needybalancetake = "corner on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Cornering"},
@@ -3890,6 +3938,7 @@ function snd.def_have(defense)
     end
    end
   end
+  snd.def_needed = false
 end
 
 function snd.def_def(defense)
@@ -3916,6 +3965,7 @@ function snd.def_take(defense)
  if snd.defenses[defense].state == "deffed" then
 --  deleteLine()
   snd.message("You: &lt;red&gt;LOSE &lt;white&gt;"..defense..".", "defense")
+  snd.def_needed = true
  end
  snd.def_remove(defense)
 end
@@ -3925,6 +3975,7 @@ function snd.def_remove(defense)
   defense = "def_"..defense
  end
  snd.defenses[defense].state = "down"
+ snd.def_needed = true
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -3975,6 +4026,8 @@ end</script>
   ["Your body is well heated internally."] = "bodyheat",
   ["You have the metabolism defence."] = "metabolism",
   ["Your metabolism is at peak performance."] = "metabolism",
+  ["You are already metabolizing your food faster than usual."] = "metabolism",
+  ["You are already moving at supernatural speed."] = "endurance",
   ["Your hide is thickened."] = "thickhide",
   ["Your movements are supernaturally fast."] = "endurance",
   ["Your bones have been hardened greatly."] = "harden",
@@ -9049,12 +9102,12 @@ snd.areas = {
 
 {area = "Bloodloch", level = "globes only", targets = {"a massive elemental"}},
 {area = "Duiran", level = "globes only", targets = {"a massive elemental"}},
-{area = "Enorian", level = "globes only", targets = {"a massive elemental"}},
+{area = "the city of Enorian", level = "globes only", targets = {"a massive elemental"}},
 {area = "Esterport", level = "globes only", targets = {"a massive elemental"}},
 {area = "Spinesreach", level = "globes only", targets = {"a massive elemental"}},
 {area = "the neighborhoods of Enorian", level = "globes only", targets = {"a massive elemental"}},
 {area = "the neighborhoods of Duiran", level = "globes only", targets = {"a massive elemental"}},
-{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
+--{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
 {area = "the Holy Impire of Sehal", level = "newbie", targets = {"a soulless pixie", "a stern Imp warrior", "a boisterous Imp boy", "a charming Imp girl", "a fluffy white sheep", "a fuzzy grey rabbit"}, items = {}},
 {area = "the Valley of Lodi", level = "newbie", targets = {"a cave bat", "a sheep", "a white hen", "a juvenile wildcat", "an adult wildcat"}, items = {}},
 {area = "the village of Gorshire", level = "newbie", targets = {"a guard pig", "a portly gnome sentry", "a gnome man", "a gnome woman", "a little gnome boy", "a gnome sentry", "a little gnome girl", "a skinny gnome sentry", "a deputy constable", "a lithe weasel", "a large grey goose", "a large gray goose"}, items = {}},
@@ -9127,7 +9180,7 @@ snd.areas = {
 {area = "Dovan Hollow", level = "95+", targets = {"a gaunt Aslinn slaver", "a scarred Aslinn slaver", "a sinewy Aslinn slaver", "a haughty Caentoi slaver", "a hulking Ursal brute", "a grim Aslinn slaver"}},
 {area = "the Feral Caves", level = "95+", targets = {"a small green blob", "a slimy green blob", "a massive green blob", "a gigantic green blob"}},
 {area = "The Forgotten Mausoleum", level = "95+", targets = {"a reanimated Dwarf woman", "a rotting Dwarf archer", "a decomposing Dwarf", "a robed reanimated Dwarf"}},
-{area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a box jellyfish", "a vicious copperhead snake", "a dark green alligator", "a white goose", "an oversized tortoise", "a blue crab", "a black bear", "a white-tailed deer", "a lithe cougar", "a spotted jaguar", "a ragged coyote", "a great white stag", "a diseased raccoon", "a black and white badger", "a spotted leopard", "a striped tiger", "a howler monkey", "a large capybara", "an enormous elephant", "a water buffalo", "a Horkvali butcher", "a small ocelot", "a long billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a Troll guard", "a Troll cook", "a Nazetu officer", "a thick boa constrictor", "a brown-furred bat", "an ebon crow", "a silverback gorilla", "a venomous bushmaster", "a long-billed toucan",}},
+{area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a box jellyfish", "a vicious copperhead snake", "a white goose", "an oversized tortoise", "a dark green alligator", "a blue crab", "a black bear", "a white-tailed deer", "a lithe cougar", "a spotted jaguar", "a ragged coyote", "a great white stag", "a diseased raccoon", "a black and white badger", "a small ocelot", "a large capybara", "a howler monkey", "a spotted leopard", "a striped tiger", "an enormous elephant", "a water buffalo", "a Horkvali butcher", "a long billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a Troll guard", "a Troll cook", "a Nazetu officer", "a thick boa constrictor", "a brown-furred bat", "an ebon crow", "a silverback gorilla", "a venomous bushmaster", "a long-billed toucan",}},
 {area = "Xaanhal", level = "really high", targets = {"an arrogant Xorani master at arms", "a helpless Xorani nestling", "a suspicious Xorani patrol", "a wiry Xorani guard", "a cautious Xorani guard", "a merciless Xorani warrior", "a willowy nest guardian", "a bejeweled Xorani harem girl", "Caelakan, an arrogant prince", "Kithan, a young Xorani girl"}, items = {"a fragment of a mosaic"}},
 {area = "Trapped within a mirror", level = "Quest", targets = {"a fragment of living glass"}},
 {area = "the Teshen Caldera", level = "40-60? Maybe", targets  = {"a Teshen raider", "a Teshen scout", "a Teshen reaver", "a Teshen worker"}},
@@ -9145,10 +9198,13 @@ snd.areas = {
 {area = "the Village of Torston", level = "40+", targets = {"a mottled brown frog", "a venomous water snake", "a vicious snapping turtle", "a fierce crocodile", "an irritated crow", "a tall Horkvali woman", "a wary Xorani guard", "a stalwart Horkvali guard", "Estok, the guard captain", "a dusky-skinned Grook man", "a plump white grub", "a dark-skinned Grook woman", "a carefree Grook boy", "the impish outcast, Qezirath", "a frail Xorani man", "a little Grook girl", "Lesiv, the Torstonite chieftain"}},
 {area = "the Cathedral of Gloaming", level = "35-40", targets = {"a Dwarven priest"}},
 {area = "the Vilimo Fields", level = "35-40", targets = {"Nysaac", "a field harvester", "a field monitor", "a decaying donkey", "Laoghaire, the monitor", "Maeron, the Quartermaster", "Administrator Kamakshi", "a semi-conscious young woman", "a semi-conscious young man","a semi-conscious elderly man", "a semi-conscious elderly woman", "a semi-conscious man", "a semi-conscious woman", "an undead bloodhound", "a field hauler", "a spectral minion"}},
-{area = "the Mannaseh Swamp", level = "99+", targets = {"a savage mutant pumpkin", "a malformed stalker", "a miscreated avian", "an ichorous miscreation", "a hulking miscreation", "an amphibious malformation",}},
+{area = "the Mannaseh Swamp", level = "99+", targets = {"a savage mutant pumpkin", "a skittering miscreation", "a malformed stalker", "a miscreated avian", "an ichorous miscreation", "an amphibious malformation",}},
 {area = "the Village of Craneskull", level = "35-40", targets = {"a savage mutant pumpkin", "a muddy Trollish child", "a slender mud adder", "a rugged Trollish man", "a plump Trollish woman", "a lumbering Troll guard", "an elderly Troll priest", "a lean guard hound", "a traitorous Mitrine hunter","a black ram", "a militant Troll warrior", "a Troll ritualist", "an arachnid Chiav guard", "an arachnid Chiav enforcer", "an arachnid Chiav archer","an immense Trollish chieftain", "a lanky, Trollish witch doctor"}},
 {area = "the Maestral Shoals", level = "99+", targets = {"a tattered skrell", "a leathery skrell", "an emaciated skrell","a sinewy skrell lurker", "a skittish sandpiper", "a large, ill-tempered crab", "a glossy red crab", "a mottled crab"}},
-{area = "the Underbelly", level = "99+", targets ={"a pale skrell whelp", "a desiccated Utari zombie", "a massive grey rat", "a dire, plagued rat", "an erratic Tarpen cultist", "a mangy Caentoi cultist", "an Utari cultist with grim facial markings", "a glazed-eye zombie Aslinn", "a ravenous skrell", "a venomous skrell whelp", "a feral vakmut", "a malnourished vakmut", "a snarling vakmut hound", "a grey-skinned skrell whelp", "a simple peasant", "a drooling zombie Tarpen", "a massive, tan%-shelled whelk", "a gigantic black rat", "a jagged Golban ghast", "a gigantic white rat", "a hunched, bone-fisted Golban zombie", "a hulking Ursal ghast", "a slavering vakmut", "a crawling, ravenous Aslinn ghast",}},
+{area = "Maestral's Barrier Reef", level = "99+", targets = {"a school of long fin reef minnows", "a savage, scarred skrell","a sharp-toothed skrell", "a skrell hatchling","an Albedian codfish", "a bony Delvian boxfish", "a pot-bellied seahorse", "a school of neon tetra fish", "a hulking skrell matriarch", "a puffer fish", "a bottom-feeding flatfish"}},
+{area = "Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa", level = "99+", targets = {"a four-winged ayvarin", "a predatory kashnalda", "a swift vukon"}},
+{area = "the Underbelly", level = "99+", targets ={"a pale skrell whelp", "a desiccated Utari zombie", "a massive grey rat", "a dire, plagued rat", "an erratic Tarpen cultist", "a mangy Caentoi cultist", "an Utari cultist with grim facial markings", "a glazed-eye zombie Aslinn", "a ravenous skrell", "a venomous skrell whelp", "a feral vakmut", "a malnourished vakmut", "a snarling vakmut hound", "a grey-skinned skrell whelp", "a simple peasant", "a drooling zombie Tarpen", "a massive, tan-shelled whelk", "a gigantic black rat", "a jagged Golban ghast", "a gigantic white rat", "a hunched, bone-fisted Golban zombie", "a hulking Ursal ghast", "a slavering vakmut", "a crawling, ravenous Aslinn ghast",}},
+{area = "a deep underground cavern", level = "99+", targets = {"a Chaos-warped Chiav guard", "a Chaos-warped gargantuan carrier centipede", "a Chaos-warped egg-laying spider", "a demonic Chaos-warped spider"}},
 {area = "Mount Hubride", level = "55-60", targets = {"a troll warrior", "a rugged roll miner", "a female troll villager", "a small, troll child", "a male troll villager"}},
 {area = "Mount Heylai", level = "55-60", targets = {"a young dwarf", "an adolescent dwarf", "an armored dwarf", "a dwarf geared up for battle", "a dwarven warrior", "a dwarven miner", "a female dwarven villager", "a dwarven girl", "a dwarven boy"}},
 {area = "the Siroccian Tunnels", level = "65-75", targets = {"a lurking shadow", "a spatial anomaly", "a crystal-encrusted golem", "a massive striped worm", "a disembodied soul", "a voracious blind-fish"}},
@@ -9160,7 +9216,6 @@ snd.areas = {
 {area = "the beaches of Liris", level = "5+", targets = {"a small, red crab", "a red hermit crab", "a slimy red-shelled snail", "a blue-shelled snail", "an orange-and-yellow stripped starfish", "a gargantuan crab", "a yellow-finned bream fish"}},
 {area = "the Western Tundra", level = "40+", targets = {"a fur-clad troll worker", "a squat penguin", "a hunter clad in furs", "a massive orgyuk", "a bull mugyik", "a dusky mugyik", "a female mugyik", "a white mugyik calf"}},
 {area = "the Ilhavon Forest", level = "40+", targets = {"a burrowing owl", "a golden scale rattlesnake", "a lumbering brown bear", "a plump duck", "a loosely clad Trollish woman", "a scarred Trollish man", "a blackbird", "a bear cub", "a giant pugnax crab", "a catfish", "a lake trout", "a school of fish", "an eerily glowing jellyfish", "a harpoon scorpion", "a dull brown lamprey", "a large buck", "a white tailed doe", "a young foal", "a moth", "a gargantuan cicada", "a magpie", "a frazzled-looking possum"}},
-{area = "the Dakhota hills", level = "25+", targets = {"a striped sea krait", "a brown rockling", "a grey wolf"}},
 {area = "Siha Dylis", level = "30-35", targets = {"Krrtig, the goblin guard captain", "Tithy, the burial guard", "a goblin batrider",  "a goblin man", "a goblin woman", "a kobold male", "a kobold woman", "Head Foreman Cadric", "Foreman Dugan", "Lissta, a kobold spirit-mage",  "Deela, a kobold spirit-mage", "Mo, a kobold spirit-mage", "Riku, a goblin boy", "a disoriented cave bat", "a small red squirrel", "Maggie, a goblin woman", "Trak, a goblin boy"}},
 {area = "the Barony of Dun Valley", level = "40-45", targets = {"a black and tan bloodhound", "a capybara", "an insignificant lime caterpillar",  "a dangerous water snake", "a male gorilla", "a spotted jaguar", "a poisonous snake", "a squirming white grub", "a tree frog", "a speckled, brown turtle",  "an opossum", "a slender mud adder", "a katydid", "a greyish green crocodile", "the Great Bull Elephant", "a crab", "a large red crab", "a school of piranha", "a raccoon", "a rune-covered lodestone golem", "a muscular mountain lion", "a bighorn sheep"}},
 {area = "the Hlugnic Labyrinth", level = "70+", targets = {"a rune-covered lodestone golem", "an enormous spinelash fish", "a Hlugnic runeguard",  "a warden of the Hlugnic clans", "a boisterous Hlugna man", "Deorkaan, the Hlugna smithy", "a burly, stone-fisted laborer", "Foreman Grummosh"}},
@@ -9176,7 +9231,7 @@ snd.areas = {
 {area = "the forgotten depths of Mount Helba", level = "99", targets = {"a towering fungal abomination", "a withered fungal abomination"}},
 {area = "a basilisk lair", level = "100+", targets = {"the basilisk queen", "a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
 {area = "the Bakal Chasm", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
-{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi" }},
+{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
 {area = "the Welto Trench", level = "good luck", targets = {"a black hunter shark", "a spotted bull shark", "a scarred hunter shark", "a brown hunter shark", "a scarred welto shark", "a striped hunter shark", "a great white welto shark", "a brown bull shark", "a bronze tiger shark", "a black bull shark", "a spotted tiger shark", "a bronze tiger shark", "a grey hunter shark", "a bronze welto shark", "a brown tiger shark", "a storm-wing harpy", "a spotted welto shark", "a striped welto shark", "a striped tiger shark", "a striped bull shark", "a spotted hunter shark", "a black tiger shark", "a great white bull shark", "a menacing torvok", "a brown welto shark", "a great white tiger shark", "a menacing torvok", "a great white hunter shark", "a great white welto shark", "a bronze bull shark", "a grey tiger shark", "a bronze hunter shark", "a spotted hunter shark", "a scarred tiger shark", "a black welto shark", "a grey bull shark", "a striped welto shark", "a grey welto shark", "a black welto shark", "a scarred bull shark", "a blacktip shark", "a box jellyfish", "a giant manta ray", "a deep water serpent", "a stone crab"}},
 {area = "Eftehl Island", level = "100+", targets = {"a vibrantly pink flamingo", "a large sea turtle", "a steel-grey barracuda", "a sleek hammerhead shark", "a ghost of a castle servant", "a ghost of a castle guard", "a lumbering ogre ghost", "a ghost of a castle kitchen worker"}, items = {},},{area = "Tak-re", level = "99+", targets = {"a vicious, mutated shark", "a vicious, mutated shark", "a hundred-strings jellyfish", "a horrifically deformed woodpecker", "a warped squirrel", "a mutated deer", }, items = {},},
 {area = "Kkirrrr'shi Hive", level = "99+", targets = {"a feral Hokkali soldier", "a twisted Hokkali hunter", "a rabid Hokkali drone", "a hideous Hokkali Queensguard", "a freshly spawned Hokkali ambusher",}, items = {},},
@@ -16329,6 +16384,137 @@ v57944 = "49581"
   v50866 = "50868",
   v50868 = "50559"
   },
+  ["Maestral's Barrier Reef"] = {
+  v29384 = "29385",
+  v29385 = "29387",
+  v29386 = "29384",
+  v29387 = "29390",
+  v29388 = "29386",
+  v29389 = "29388",
+  v29390 = "29393",
+  v29391 = "29389",
+  v29392 = "29391",
+  v29393 = "pthcity",
+  v29394 = "29397",
+  v29396 = "29394",
+  v29397 = "29392",
+  v29398 = "29396",
+  v29399 = "29402",
+  v29400 = "29399",
+  v29401 = "29400",
+  v29402 = "29398",
+  v29403 = "29401",
+  v29405 = "29403",
+  v29406 = "29408",
+  v29407 = "29406",
+  v29408 = "29405",
+  v29409 = "29410",
+  v29410 = "29412",
+  v29411 = "29409",
+  v29412 = "29418",
+  v29413 = "29411",
+  v29414 = "29413",
+  v29415 = "29414",
+  v29416 = "29415",
+  v29417 = "29416",
+  v29418 = "29407",
+  v29419 = "29417",
+  v29420 = "29419",
+  v29428 = "29420",
+  v29429 = "29428",
+  v29430 = "29429",
+  v29431 = "29430",
+  v29432 = "29431",
+  v35528 = "29432",
+  v35529 = "35528",
+  v35530 = "35529",
+  v35531 = "35530",
+  v35532 = "35531",
+  v35533 = "35532",
+  v35534 = "35536",
+  v35535 = "35534",
+  v35536 = "35537",
+  v35537 = "35533",
+  v35539 = "35535",
+  v35540 = "35539",
+  v35541 = "35540"
+  },
+  ["Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa"] = {
+    v73321 = "74269",
+    v73345 = "73353",
+    v73353 = "73357",
+    v73357 = "73358",
+    v73358 = "73369",
+    v73369 = "74414",
+    v73372 = "73321",
+    v73374 = "73372",
+    v73417 = "73374",
+    v73482 = "73417",
+    v73518 = "74366",
+    v73838 = "73938",
+    v73839 = "73935",
+    v73935 = "73838",
+    v73936 = "74520",
+    v73938 = "73936",
+    v74164 = "74165",
+    v74165 = "74167",
+    v74167 = "74168",
+    v74168 = "74177",
+    v74177 = "74272",
+    v74188 = "74859",
+    v74189 = "74188",
+    v74192 = "74189",
+    v74193 = "74192",
+    v74269 = "74193",
+    v74272 = "73518",
+    v74343 = "74345",
+    v74345 = "74356",
+    v74346 = "73482",
+    v74356 = "74527",
+    v74361 = "74393",
+    v74363 = "74367",
+    v74366 = "74363",
+    v74367 = "74674",
+    v74368 = "74462",
+    v74369 = "74389",
+    v74389 = "74391",
+    v74391 = "74392",
+    v74392 = "73345",
+    v74393 = "74464",
+    v74394 = "74466",
+    v74397 = "74394",
+    v74414 = "74164",
+    v74462 = "74397",
+    v74463 = "74368",
+    v74464 = "74463",
+    v74466 = "74467",
+    v74467 = "74472",
+    v74470 = "74369",
+    v74471 = "74564",
+    v74472 = "74678",
+    v74477 = "74478",
+    v74478 = "74479",
+    v74479 = "74480",
+    v74480 = "74471",
+    v74519 = "74522",
+    v74520 = "74525",
+    v74521 = "74343",
+    v74522 = "74521",
+    v74525 = "74519",
+    v74527 = "74346",
+    v74564 = "74618",
+    v74618 = "74669",
+    v74669 = "73839",
+    v74674 = "74361",
+    v74678 = "74679",
+    v74679 = "74680",
+    v74680 = "74477",
+    v74856 = "75023",
+    v74857 = "74856",
+    v74858 = "74857",
+    v74859 = "74858",
+    v75023 = "pthcity"
+  },
   ["the Maul"] = {
     v50236 = "50237",
     v50237 = "50238",
@@ -18785,6 +18971,188 @@ v57944 = "49581"
     v58044 = "58045",
     v58045 = "58031"
   },
+  ["the Underbelly"] = {
+    v49440 = "48072",
+    v48072 = "48071",
+v48071 = 	"48070",
+v48070 = 	"49438",
+v49438 = 	"49439",
+v49439 = 	"48073",
+v48073 = 	"48074",
+v48074 = 	"48075",
+v48075 = 	"48076",
+v48076 = 	"48081",
+v48081 = 	"48077",
+v48077 = 	"48079",
+v48079 = 	"48080",
+v48080 = 	"49445",
+v49445 = 	"49446",
+v49446 = 	"49444",
+v49444 = 	"49443",
+v49443 = 	"49447",
+v49447 = 	"49448",
+v49448 = 	"49449",
+v49449 = 	"49450",
+v49450 = 	"48082",
+v48082 = 	"48078",
+v48078 = 	"48083",
+v48083 = 	"48084",
+v48084 = 	"49454",
+v49454 = 	"49452",
+v49452 = 	"49451",
+v49451 = 	"48086",
+v48086 = 	"73432",
+v73432 = 	"54133",
+v54133 = 	"54134",
+v54134 = 	"53730",
+v53730 = 	"54135",
+v54135 = 	"53733",
+v53733 = 	"53735",
+v53735 = 	"53740",
+v53740 = 	"53741",
+v53741 = 	"53742",
+v53742 = 	"53744",
+v53744 = 	"53745",
+v53745 = 	"53746",
+v53746 = 	"53984",
+v53984 = 	"53985",
+v53985 = 	"53986",
+v53986 = 	"53748",
+v53748 = 	"53987",
+v53987 = 	"53988",
+v53988 = 	"53989",
+v53989 = 	"53990",
+v53990 = 	"53991",
+v53991 = 	"53993",
+v53993 = 	"53992",
+v53992 = 	"53994",
+v53994 = 	"53995",
+v53995 = 	"49453",
+v49453 = 	"48085",
+v48085 = 	"48087",
+v48087 = 	"48088",
+v48088 = 	"48089",
+v48089 = 	"48090",
+v48090 = 	"48091",
+v48091 = 	"48092",
+v48092 = 	"48093",
+v48093 = 	"48094",
+v48094 = 	"48095",
+v48095 = 	"49469",
+v49469 = 	"49468",
+v49468 = 	"49470",
+v49470 = 	"49471",
+v49471 = 	"49472",
+v49472 = 	"49473",
+v49473 = 	"49474",
+v49474 = 	"49475",
+v49475 = 	"49476",
+v49476 = 	"49478",
+v49478 = 	"49477",
+v49477 = 	"48096",
+v48096 = 	"48097",
+v48097 = 	"48098",
+v48098 = 	"48099",
+v48099 = 	"49456",
+v49456 = 	"49457",
+v49457 = 	"49459",
+v49459 = 	"74076",
+v74076 = 	"49460",
+v49460 = 	"49461",
+v49461 = 	"49462",
+v49462 = 	"49463",
+v49463 = 	"49464",
+v49464 = 	"48100",
+v48100 = 	"48101",
+v48101 = 	"48102",
+v48102 = 	"48103",
+v48103 = 	"48104",
+v48104 = 	"49465",
+v49465 = 	"49466",
+v49466 = 	"49467",
+v49467 = 	"38271",
+v38271 = 	"52593",
+v52593 = 	"52592",
+v52592 = 	"52590",
+v52590 = 	"49537",
+v49537 = 	"50790",
+v50790 = 	"51785",
+v51785 = 	"52225",
+v52225 = 	"52591",
+v52591 = 	"52589",
+v52589 = 	"52587",
+v52587 = 	"52588",
+v52588 = 	"52226",
+v52226 = 	"52228",
+v52228 = 	"52230",
+v52230 = 	"52231",
+v52231 = 	"52232",
+v52232 = 	"52233",
+v52233 = 	"52234",
+v52234 = 	"52586",
+v52586 = 	"52594",
+v52594 = 	"52596",
+v52596 = 	"52597",
+v52597 = 	"52610",
+v52610 = 	"52595",
+v52595 = 	"51354",
+v51354 = 	"51353",
+v51353 = 	"51351",
+v51351 = 	"51352",
+v51352 = 	"51349",
+v51349 = 	"51348",
+v51348 = 	"51344",
+v51344 = 	"51346",
+v51346 = 	"51347",
+v51347 = 	"51345",
+v51345 = 	"51336",
+v51336 = 	"51343",
+v51343 = 	"51350",
+v51350 = 	"51339",
+v51339 = 	"51341",
+v51341 = 	"51342",
+v51342 = 	"51340",
+v51340 = 	"51338",
+v51338 = 	"51337",
+v51337 = 	"74070",
+v74070 = 	"51332",
+v51332 = 	"51311",
+v51311 = 	"51310",
+v51310 = 	"51312",
+v51312 = 	"51308",
+v51308 = 	"51309",
+v51309 = 	"51331",
+v51331 = 	"51329",
+v51329 = 	"51330",
+v51330 = 	"51328",
+v51328 = 	"51325",
+v51325 = 	"51307",
+v51307 = 	"51306",
+v51306 = 	"51305",
+v51305 = 	"51301",
+v51301 = 	"51302",
+v51302 = 	"51303",
+v51303 = 	"51304",
+v51304 = 	"51300",
+v51300 = 	"51289",
+v51289 = 	"51290",
+v51290 = 	"51291",
+v51291 = 	"51292",
+v51292 = 	"51293",
+v51293 = 	"51294",
+v51294 = 	"51295",
+v51295 = 	"51296",
+v51296 = 	"51297",
+v51297 = 	"51299",
+v51299 = 	"51288",
+v51288 = 	"51287",
+v51287 = 	"49441",
+v49441 = 	"49442",
+v49442 = 	"49440",
+v49440 = 	"pthcity"
+
+  
+  },
   ["the village of Bihrkaen"] = {
     v3846 = "56892",
     v56647 = "56648",
@@ -19044,7 +19412,7 @@ snd.global_items = {
 "an amaurosis pill",
 "a panacea pill",
 "a thanatonin pill",
-"a paste pill",
+"a hardening paste",
 "a stimulant pill",
 "a kawhe pill",
 "a waterbreathing pill",
@@ -19068,7 +19436,7 @@ snd.global_items = {
 "a stack of 2 opiate pills",
 "a stack of 2 ototoxin pills",
 "a stack of 2 amaurosis pills",
-"a stack of 2 paste pills",
+"a stack of 2 hardening pastes",
 "a stack of 2 stimulant pills",
 "a stack of 2 kawhe pills",
 "a stack of 2 waterbreathing pills",
@@ -19088,7 +19456,7 @@ snd.global_items = {
 "a stack of 3 opiate pills",
 "a stack of 3 ototoxin pills",
 "a stack of 3 amaurosis pills",
-"a stack of 3 paste pills",
+"a stack of 3 hardening pastes",
 "a stack of 3 stimulant pills",
 "a stack of 3 kawhe pills",
 "a stack of 3 waterbreathing pills",
@@ -19108,7 +19476,7 @@ snd.global_items = {
 "a stack of 4 opiate pills",
 "a stack of 4 ototoxin pills",
 "a stack of 4 amaurosis pills",
-"a stack of 4 paste pills",
+"a stack of 4 hardening pastes",
 "a stack of 4 stimulant pills",
 "a stack of 4 kawhe pills",
 "a stack of 4 waterbreathing pills",
@@ -19128,7 +19496,7 @@ snd.global_items = {
 "a stack of 5 opiate pills",
 "a stack of 5 ototoxin pills",
 "a stack of 5 amaurosis pills",
-"a stack of 5 paste pills",
+"a stack of 5 hardening pastes",
 "a stack of 5 stimulant pills",
 "a stack of 5 kawhe pills",
 "a stack of 5 waterbreathing pills",
@@ -19148,7 +19516,7 @@ snd.global_items = {
 "a stack of 6 opiate pills",
 "a stack of 6 ototoxin pills",
 "a stack of 6 amaurosis pills",
-"a stack of 6 paste pills",
+"a stack of 6 hardening pastes",
 "a stack of 6 stimulant pills",
 "a stack of 6 kawhe pills",
 "a stack of 6 waterbreathing pills",
@@ -19187,7 +19555,7 @@ snd.global_targets = {
 "a jagged citrine eld",
 "a crackling lightning eld",
 "a crystalline opal eld",
-"a crudely-formed silver eld",
+"a crudely formed silver eld",
 "an amorphous red eld",
 "an immature jade eld",
 "a meager golden eld",
@@ -19271,8 +19639,20 @@ snd.global_targets = {
 					<Script isActive="yes" isFolder="no">
 						<name>run basher</name>
 						<packageName></packageName>
-						<script>function snd.runBasher()
+						<script>local function getTarget(tab)
+  for _, targ in pairs(snd.possible_targets) do
+    if tab[targ] and tab[targ][1] then
+      return tab[targ][1], targ
+    end
+  end
+  for _, targ in pairs(snd.global_targets) do
+    if tab[targ] and tab[targ][1] then
+      return tab[targ][1], targ
+    end
+  end
+end
 
+function snd.runBasher()
   snd.gathering = {}
   snd.bashing.targeted = false
   snd.bashing.target_priority = 10000
@@ -19280,58 +19660,59 @@ snd.global_targets = {
   for item in pairs(snd.items) do
     if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then
       table.insert(snd.gathering, "sovereigns")
-    elseif
-      (string.find(item, "the corpse of") and not string.find(item, "staked")) or
-      table.contains(snd.possible_items, item) or
-      table.contains(snd.global_items, item)
-    then
+    elseif table.contains(snd.possible_items, item) or table.contains(snd.global_items, item) then
       for id in pairs(snd.items[item]) do
         table.insert(snd.gathering, snd.items[item][id])
       end
-    elseif
-      (table.contains(snd.possible_targets, item) or table.contains(snd.global_targets, item)) and
-      #snd.items[item] &gt;= 1
-    then
-      for targ in pairs(snd.possible_targets) do
-        if snd.possible_targets[targ] == item and targ &lt; snd.bashing.target_priority then
-          snd.bashing.targeted = true
-          if snd.toggles.generics then
-            snd.bashing.target = generic_bashing_name(snd.possible_targets[targ])
-            if snd.bashing.target ~= snd.bashing.old_target then
-              if snd.toggles.calling then snd.send("wt target: "..snd.bashing.target) end
-              snd.bashing.old_target = snd.bashing.target
-            end
-          else
-            snd.bashing.target = snd.items[item][1]
-            snd.bashing.target_priority = targ
-          end   
-        end
-      end
-      for targ in pairs(snd.global_targets) do
-        if snd.global_targets[targ] == item and targ &lt; snd.bashing.target_priority then
-          snd.bashing.targeted = true
-          snd.bashing.target = snd.items[item][1]
-          snd.bashing.target_priority = targ
-        end        --if
-      end      --for
-    end    --elseif
-  end  --for
-  --if #snd.gathering &gt;= 1 then
-  -- snd.loot_it()
-  --end
-  if not snd.bashing.targeted then
+    --elseif
+      --(string.find(item, "the corpse of") and not string.find(item, "staked")) or
+     -- (string.find(item, "the remains of") and not string.find(item, "staked"))
+    --then
+      --for id in pairs(snd.items[item]) do
+      --  table.insert(snd.corpses, snd.items[item][id])
+      --end
+    end
+  end
+  local targetID, targetName = getTarget(snd.agros)
+  if not targetID then
+    targetID, targetName = getTarget(snd.items)
+  end
+  if not targetID then
+    --if snd.toggles.bashing then snd.toggle("bashing") end
     snd.toggles.bashing = false
     if bot.going then
       expandAlias("move", false)
       --  tempTimer(1.5, [[expandAlias("move")]])
     end
-  else
-    snd.counterattack_active = false
-    snd.probed = false
-    snd.punisher = false
-    if snd.toggles.calling and snd.bashing.old_target ~= snd.bashing.target and snd.bashing.target ~= "none" then
-      snd.send("wt target: " .. snd.bashing.target)
+    snd.core()
+    return
+  end
+    
+  --target acquired!
+  snd.bashing.targeted = true
+  if snd.toggles.generics then
+    --generic logic
+    snd.bashing.target = generic_bashing_name(targetName)
+    if snd.bashing.target ~= snd.bashing.old_target then
+      --if snd.toggles.calling then snd.send("wt target: "..snd.bashing.target) end --comment this out to keep from calling web targets
+      snd.bashing.old_target = snd.bashing.target
     end
+  else
+    --non generic logic
+    snd.bashing.target = targetID
+  end
+  --if #snd.gathering &gt;= 1 then
+  -- snd.loot_it()
+  --end
+  snd.counterattack_active = false
+  snd.probed = false
+  snd.punisher = false
+  if
+    snd.toggles.calling and
+    snd.bashing.old_target ~= snd.bashing.target and
+    snd.bashing.target ~= "none"
+  then
+    --snd.send("wt target: " .. snd.bashing.target)  -- comment this out to keep from calling web targets
   end
   snd.core()
 end</script>
@@ -19704,14 +20085,20 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
+    elseif hp &lt;= 55 then
+      battack = "fling priestess at me"..snd.sep.."recoup"
     else
-      battack = battack..snd.sep.."touch shield"
+      battack = battack..snd.sep.."touch shield"..snd.sep.."recoup"
     end
 	elseif snd.pushattack then
-		battack = battack..snd.sep.."push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target..snd.sep.."recoup"
 		snd.pushattack = false
   else
-    battack = battack..snd.sep.."flick bonedagger at "..snd.bashing.target
+    if snd.wielded.left.name =="bonedagger" or snd.wielded.right.name == "bonedagger" then
+      battack = battack..snd.sep.."flick bonedagger at "..snd.bashing.target..snd.sep.."recoup"
+    else
+      battack = "decay "..snd.bashing.target..snd.sep.."recoup"
+    end
 	end
   
 end
@@ -19723,14 +20110,20 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       battack = battack..snd.sep.."jig"
+    elseif hp &lt;= 55 then
+      battack = "unfurl flower at me"..snd.sep.."recoup"
     else
-      battack = battack..snd.sep.."touch shield"
+      battack = battack..snd.sep.."touch shield"..snd.sep.."recoup"
     end
 	elseif snd.pushattack then
-		battack = battack..snd.sep.."push "..snd.bashing.target
+		battack = battack..snd.sep.."push "..snd.bashing.target..snd.sep.."recoup"
 		snd.pushattack = false
   else
-    battack = battack..snd.sep.."impel athame at "..snd.bashing.target
+    if snd.wielded.left.name == "athame" or snd.wielded.right.name == "athame" then
+      battack = battack..snd.sep.."impel athame at "..snd.bashing.target..snd.sep.."recoup"
+    else
+      battack = "starlight "..snd.bashing.target..snd.sep.."recoup"
+    end
 	end
   
 end
@@ -19803,9 +20196,13 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 
   if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 and snd.cauterize and mp &gt;= 15 then
-    battack = "enact cauterize me"..snd.sep
-    snd.cauterize = false
-    tempTimer(2,[[snd.cauterize = true]])
+    if not snd.punisher and snd.shield_check then
+      battack = "touch shield"..snd.sep
+    else
+      battack = "enact cauterize me"..snd.sep
+      snd.cauterize = false
+      tempTimer(2,[[snd.cauterize = true]])
+    end
   end
   
   if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
@@ -20960,6 +21357,10 @@ snd.bashing_area_beginning_rooms ={
   ["the Bakal Chasm"] = "61011",
   ["a basilisk lair"] = "68354",
   ["Clawhook Range"] = "49546",
+  ["the Maestral Shoals"] = "48770",
+  ["Maestral's Barrier Reef"] = "29384",
+  ["the Underbelly"] = "49440",
+  ["Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa"] = "73321",
 }</script>
 							<eventHandlerList />
 						</Script>
@@ -25266,62 +25667,60 @@ end</script>
 					<Script isActive="yes" isFolder="no">
 						<name>load defenses</name>
 						<packageName></packageName>
-						<script>
-snd.defenses_loaded = true
+						<script>snd.defenses_loaded = true
 
 function snd.load_def(option)
-
- if snd.def_options[option] ~= nil then
-  snd.message("Loading defense options for: &lt;green&gt;"..option.."&lt;white&gt;.", "echo")
-  send(" ")
-  snd.less_defs = {}
-	if gmcp.Char.Status.race == "Azudim"  or gmcp.Char.Status.race == "Astral Noble" then
-  	snd.def_options[option]["def_miasma"] = "on"
-  elseif gmcp.Char.Status.race == "Yeleni" then
-  	snd.def_options[option]["def_warmth"] = "on"
-  elseif gmcp.Char.Status.race == "Idreth" then
-  	snd.def_options[option]["def_safeguard"] = "on"
-	end
-  
-  local my_def_choice_and_generic_defenses = {}
-    if option ~= ("none" or "None") then
-       my_def_choice_and_generic_defenses = table.union(snd.def_options.general_defs, snd.def_options[option])
-    else
-     -- my_def_choice_and_generic_defenses = {}
-       my_def_choice_and_generic_defenses = table.union(snd.def_options.general_defs, snd.def_options["none"])
+  if snd.def_options[option] ~= nil then
+    snd.message("Loading defense options for: &lt;green&gt;" .. option .. "&lt;white&gt;.", "echo")
+    send(" ")
+    snd.less_defs = {}
+    if gmcp.Char.Status.race == "Azudim" then
+      snd.def_options[option]["def_miasma"] = "on"
+    elseif gmcp.Char.Status.race == "Yeleni" then
+      snd.def_options[option]["def_warmth"] = "on"
+    elseif gmcp.Char.Status.race == "Idreth" then
+      snd.def_options[option]["def_safeguard"] = "on"
     end
-
-  for i in pairs(snd.defenses) do
-  
-   snd.defenses[i].needit = false
-   for h in pairs(my_def_choice_and_generic_defenses) do
-
-      if my_def_choice_and_generic_defenses[h] == "once" and (hasSkill(snd.defenses[h].skill) or snd.assumed_class ~= nil) then
-         if h == i then
-          if snd.defenses[i].state ~= "deffed" then
-           snd.defenses[i].needit = true
-           table.insert(snd.less_defs, i)
+    local my_def_choice_and_generic_defenses = {}
+    if option ~= "none" then
+      my_def_choice_and_generic_defenses =
+        table.union(snd.def_options.general_defs, snd.def_options[option])
+    else
+      my_def_choice_and_generic_defenses = {}
+    end
+    for i in pairs(snd.defenses) do
+      snd.defenses[i].needit = false
+      for h in pairs(my_def_choice_and_generic_defenses) do
+        if
+          my_def_choice_and_generic_defenses[h] == "once" and
+          (hasSkill(snd.defenses[h].skill) or snd.assumed_class ~= nil)
+        then
+          if h == i then
+            if snd.defenses[i].state ~= "deffed" then
+              snd.defenses[i].needit = true
+              table.insert(snd.less_defs, i)
+            end
           end
-         end
-      elseif my_def_choice_and_generic_defenses[h] == "on" and (hasSkill(snd.defenses[h].skill) or snd.assumed_class ~= nil) then
-       if h == i then
-  		 	if i == "def_vitality" then
-  				if snd.balance.vitality then
-  					snd.defenses[i].needit = true
-  				end
-  			else
-        	snd.defenses[i].needit = true
-  			end
+        elseif
+          my_def_choice_and_generic_defenses[h] == "on" and (hasSkill(snd.defenses[h].skill) or snd.assumed_class ~= nil)
+        then
+          if h == i then
+            if i == "def_vitality" then
+              if snd.balance.vitality then
+                snd.defenses[i].needit = true
+              end
+            else
+              snd.defenses[i].needit = true
+            end
+          end
+        end
       end
     end
-   end
+  else
+    snd.message("No such defense option as &lt;red&gt;" .. option .. "&lt;white&gt;!", "echo")
+    send(" ")
   end
- else
-  snd.message("No such defense option as &lt;red&gt;"..option.."&lt;white&gt;!", "echo")
-  send(" ")
- end
-end
-</script>
+end</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
@@ -25337,7 +25736,7 @@ none = {
 general_defs = {
 def_thirdeye = "on",
 def_mindseye_tattoo = "on",
-def_cloak_tattoo = "on",
+--def_cloak_tattoo = "on",
 def_kola = "on",
 def_deathsight = "on",
 def_insomnia = "on",
@@ -25444,7 +25843,7 @@ def_homage = "on",
 shapeshifter = {
 def_weathering = "on",
 def_bodyheat = "once",
-def_metabolize = "once",
+def_metabolism = "once",
 def_endurance = "once",
 def_thickhide = "once",
 --def_corner = "once",
@@ -25454,7 +25853,7 @@ def_thickhide = "once",
 wolf = {
 def_weathering = "on",
 def_bodyheat = "once",
-def_metabolize = "once",
+def_metabolism = "once",
 def_endurance = "once",
 def_thickhide = "once",
 def_corner = "once",
@@ -25465,7 +25864,7 @@ def_harden = "once",
 bear = {
 def_weathering = "on",
 def_bodyheat = "once",
-def_metabolize = "once",
+def_metabolism = "once",
 def_endurance = "once",
 def_thickhide = "once",
 def_bracing = "once",
@@ -25646,10 +26045,11 @@ def_litheness = "on",
 def_bending = "on",
 def_disunion = "on",
 def_clarity = "on",
-def_resurgence = "on",
+--def_resurgence = "on",
 def_discharge = "on",
 def_deflection = "on",
 def_mindspark = "on",
+def_cloak_tattoo = "on",
 
 },
 
@@ -25808,6 +26208,7 @@ snd.enemies = {}
 snd.allies = {}
 snd.hitting = "none"
 snd.aff_list = {}
+snd.def_needed = false
 
 -- Firstaid assistance stuff
 
@@ -26484,7 +26885,6 @@ end
 
 function snd.took_limb_dmg(limb, amount)
   if limb and amount then
-    if snd.checkAff("assault_damage") and amount &gt; 0 then amount = amount + 3; snd.target_cured("assault_damage") end
     
     snd.limb_dmg[limb] = snd.limb_dmg[limb] + amount
     if snd.limb_dmg[limb] &lt; 0 then
@@ -26530,6 +26930,9 @@ function snd.took_limb_dmg(limb, amount)
 end
 
 function snd.target_got(affliction)
+  if snd.illusion_found then
+    return
+  end
   local target_display_table = {}
   affliction = snd.affNameCheck(affliction)
 
@@ -26605,7 +27008,10 @@ function snd.target_got(affliction)
 end
 
 function snd.target_cured(affliction)
-
+  if snd.illusion_found then
+    return
+  end
+  
   local target_display_table = {}
   local target_aff_check = {}
   
@@ -27191,8 +27597,9 @@ snd.locking = false
  snd.target_has_aura = true
  snd.need_leech_aura = true
  snd.need_deform = true
- snd.flamestack = 0
- snd.immolation_ready = false
+ snd.welt_ready = "none"
+  snd.flamestack = 0
+  snd.immolation_ready = false
  snd.gorged = ""
  snd.gravity = 0
  snd.thorncount = 0
@@ -27529,7 +27936,7 @@ end</script>
                end
             end,
     Rekindle = function(target, limb)
-                    snd.took_limb_dmg(-15, limb)
+                    snd.took_limb_dmg(limb, -15)
                   end,
     Censure = function(target, lightly)
             snd.onHit2({"Dodge", "Rebounding"})
@@ -28309,6 +28716,9 @@ end</script>
               snd.used.rebounding = false
               snd.target_cured("barrier")
             end,
+    Substitute = function(target)
+                snd.reset_target()
+            end,
     
   },
   
@@ -28531,6 +28941,9 @@ end</script>
     Aftershock = function(target)
              snd.target_got("aftershock")
            end,
+    Reformation = function(target)
+                snd.reset_target()
+            end,
   },  
   
 --Indorani
@@ -28753,6 +29166,9 @@ end</script>
              snd.target_got("ablaze")
              enableTrigger("Illumination Fire")
            end,
+    Rebirth = function(target)
+                snd.reset_target()
+            end,
   },
   
 --Monk
@@ -28971,6 +29387,9 @@ end</script>
                         snd.onHit2({"Rebounding", "Dodge"})
                       end
                      end,
+    Remembrance = function(target)
+                snd.reset_target()
+            end,
   },
   
   ["Hyalincuru"] = {
@@ -28979,8 +29398,8 @@ end</script>
                   if not dodge then
                     local aff = snd.maybe_affs[1]
                     if snd.cardshapes.oneiromancer[aff].card == "sphere" then
-                      if aff == "sensitivity" and not snd.have_aff("deafness") then
-                        aff = "deafness"
+                      if aff == "sensitivity" and not snd.have_aff("hearing") then
+                        aff = "hearing"
                       end
                       snd.target_got(aff)
                     end
@@ -29045,7 +29464,7 @@ end</script>
             end,
     Quetzal = function(target, attack)
               if attack == "Croon" then
-                snd.target_got("deafness")
+                snd.target_got("hearing")
               end
             end,          
 
@@ -29064,7 +29483,7 @@ end</script>
                end
             end,
     Reconstruct = function(target, limb)
-                    snd.took_limb_dmg(-15, limb)
+                    snd.took_limb_dmg(limb, -15)
                   end,
     Gash = function(target, lightly)
             snd.onHit2({"Dodge", "Rebounding"})
@@ -29836,32 +30255,33 @@ end</script>
   ["Vocalizing"] = {
     Baying = function(target, conditional)
     
-              if howl_conversion[conditional] == nil then return end
-          
-              local howl_conversion = {
+            local howl_conversion = {
+              ["piercing"] = "hearing",
               ["paralyzing"] = "paresis",
               ["baleful"] = "impairment",
-              ["rousing"] = "bravado",
+              ["rousing"] = "recklessness",
               ["distasteful"] = "anorexia",
               ["forceful"] = "fallen",
               ["mind-numbing"] = "stupidity",
               ["stomach-turning"] = "vomiting",
-              ["claustrophobic"] = "claustraphobia",
+              ["claustrophobic"] = "claustrophobia",
               ["muddling"] = "peace",
               ["hypnotic"] = "hypersomnia",
-              ["deranged"] = "hallucination",
+              ["deranged"] = "hallucinations",
               ["lethargic"] = "lethargy",
-              ["ringing"] = "tinnitus",
+              ["ringing"] = "ringing_ears",
               ["blurring"] = "blurry_vision",
               ["debilitating"] = "weariness",
               ["berserking"] = "berserking",
               ["angry"] = "hatred",
+              ["disturbing"] = "disrupted",
               ["befuddling"] = "confusion",
               ["deep"] = "plodding",
               ["dumbing"] = "idiocy",
-              ["wailing"] = "",
               }
+              if howl_conversion[conditional] ~= nil then
                 snd.target_got(howl_conversion[conditional])
+              end
               end,
   },
   
@@ -30418,6 +30838,9 @@ end</script>
               snd.target_cured("barrier")
               snd.target_cured("aegis")
             end,
+    Intervention = function(target)
+                snd.reset_target()
+            end,
               
   },
   
@@ -30721,6 +31144,9 @@ end</script>
   Pendulum = function(target, direction)
               snd.pendulum()
             end,
+    Resurgence = function(target)
+                snd.reset_target()
+            end,
   },
   
   ["Psionics"] = {
@@ -30853,6 +31279,9 @@ end</script>
   Bedevil = function(target, direction)
               snd.pendulum()
             end,
+    Unfinished = function(target)
+                snd.reset_target()
+            end,
   },
   
   ["Egotism"] = {
@@ -30885,10 +31314,13 @@ end</script>
     Shield = function(target)
                snd.used.shield = true
              end,
+    Starburst = function(target)
+                snd.reset_target()
+            end,
   
   },
   
-  ["Research"] = {
+  ["Refining"] = {
     Disperse = function(target)
                 snd.removeProneStates()
               end  
@@ -30908,12 +31340,22 @@ end</script>
   },
     ["Relic"] = {
 
-      Entangle = function(target)
+      Entangle = function(target, cond)
+                  if cond == "evasion" then
+                  else
                   snd.target_got("writhe_web")
+                  end
                 end,
-      Webspray = function(target)
+      Webspray = function(target, cond)
+                  if cond == "evasion" then
+                  else
                   snd.target_got("writhe_web")
+                  end
                 end,
+                
+      Tailstrike = function(target)
+                snd.onHit2({"Dodge"})
+              end,
   },
   
   
@@ -31821,6 +32263,7 @@ snd.randomshadow = {}
 "Edira",
 "Wurnys",
 "Malcanthet",
+"Arista",
 "Elene",
 "Taelyndara",
 "Orhm",
@@ -32651,6 +33094,7 @@ snd.randomshadow = {}
 "Kezef",
 "Lanara",
 "Ase",
+"Vaessa",
 "Deandra",
 "Damonicus",
 "Bryn",
@@ -33020,7 +33464,6 @@ snd.randomshadow = {}
 "Cinnamae",
 "Ecikoria",
 "Anai",
-"Arista",
 "Bressan",
 "Jakir",
 "Shambunath",
@@ -33167,7 +33610,6 @@ snd.randomshadow = {}
 "Procyon",
 "Velana",
 "Varrilix",
-"Kaius",
 "Erion",
 "Gerro",
 "Rilok",
@@ -33396,12 +33838,12 @@ snd.randomshadow = {}
 							<name>snd.rheskallies</name>
 							<packageName></packageName>
 							<script>snd.rheskallies = {
+"Rhesk",
 "Myrnma",
 "Amarylis",
 "Enamari",
 "Wyliame",
 "Kezef",
-"Damonicus",
 "Alystrine",
 "Annerissa",
 "Benedicto",
@@ -33411,22 +33853,33 @@ snd.randomshadow = {}
 "Aloli",
 "Mahar",
 "Eliadon",
+"Yeras",
 "Inthirath",
 "Roux",
 "Dreugan",
+"Amarita",
+"Scandland",
+"Ranae",
 "Nimiphi",
 "Enebish",
 "Vaessa",
 "Vino",
 "Ashram",
+"Osian",
+"Zima",
 "Rasani",
+"Del",
+"Fuere",
 "Kylan",
 "Talonnb",
+"Aolin",
 "Jeromy",
 "Czcienn",
 "Jami",
 "Church",
+"Urekun",
 "Nieven",
+"Sotir",
 "Procyon",
 "Kaiara",
 "Xenaden",
@@ -33450,7 +33903,6 @@ snd.randomshadow = {}
 "Orunmila",
 "Ayastia",
 "Undirnath",
-"Renault",
 "Eoros",
 "Emhyra",
 "Nkala",
@@ -33478,19 +33930,35 @@ snd.randomshadow = {}
 "Sekeres",
 "Devin",
 "Ase",
+"Valeria",
+"Straid",
+"Damonicus",
+"Pneuman",
 
 "Azami",
 "Gribbit",
+"Linnaeus",
+"Arista",
 "Nispy",
 "Qem",
+"Kaius",
 "Glach",
 "Feichin",
+"Haleth",
+"Khambeaux",
+"Renault",
 "Aeryx",
+"Borminchia",
+"Llancarfan",
+"Folke",
+"Talabose",
 "Callidora",
+"Gundor",
 "Pargu",
 "Dierjiano",
 "Teramasce",
 "Kiershu",
+"Ruhi",
 "Sitoun",
 "Lorne",
 "Ultra",
@@ -34289,7 +34757,6 @@ snd.randomshadow = {}
 "Xereth",
 "Tyriik",
 "Auraro",
-"Amarita",
 "Tatia",
 "Haleigh",
 "Claire",
@@ -34321,6 +34788,131 @@ snd.randomshadow = {}
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
+					<Script isActive="yes" isFolder="no">
+						<name>Group Syssin</name>
+						<packageName></packageName>
+						<script>function groupSyssin()
+
+snd.hypno_stack = {
+  "impatience",
+  "impatience",
+  "impatience",
+  
+}
+
+local touse = {}
+local tohit = {}
+local string = ""
+local call = ""
+local extraaff = "delphinium"
+
+ if snd.target_locked() then
+  venoms = {
+		"left_leg_broken",
+		"right_leg_broken",
+		"hearing",
+		"sensitivity",
+		"voyria"
+  }
+  elseif snd.hypno == "running" then
+    venoms = {
+      "paresis",
+      "asthma",
+      "slickness",
+      "anorexia", 
+      "stupidity",     
+      "dizziness",
+      "weariness",
+      "clumsiness",
+      "allergies",
+      "hearing",
+    }
+  else
+    venoms  = {
+      "asthma",
+      "paresis",
+      "slickness",
+      "anorexia",
+      "stupidity",
+      "shyness",
+      "weariness",
+      "sight",
+      "hearing",
+      "slickness",
+      "anorexia",
+  }
+ end
+  
+if not snd.can_arms() then 
+	string = "bedazzle "..snd.target
+	elseif snd.target_locked() and snd.checkAff("sensitivity") then
+		if snd.used.paste then
+			string = "quickwield left whip"..snd.sep.."flay "..snd.target
+		else
+			string = "bite "..snd.target.." camus"
+		end
+	else
+    
+	for i in pairs(venoms) do
+		if not snd.checkAff(venoms[i]) then
+			if not table.contains(touse, venoms[i]) then
+				table.insert(touse, venoms[i])
+			end
+		end
+	end
+  
+	for aff in pairs(touse) do
+		table.insert(tohit, snd.effects[touse[aff]])
+	end 
+ 
+ 	if snd.used.shield or snd.used.rebounding then
+		string = "quickwield left whip"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
+		call = "wt Afflicting "..snd.target..": "..tohit[1]
+  else 
+		string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+		call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
+	end
+
+
+  if snd.hypno == "open" or snd.hypno == "none" then
+		if #snd.hypno_stack &gt;= snd.last_hypno + 1 then 
+			snd.hyp = snd.last_hypno+1 
+			if snd.hypno == "none" then 
+				string = string..snd.sep.."hypnotise "..snd.target 
+			end
+				string = string..snd.sep.."suggest "..snd.target.." "..snd.hypno_stack[snd.hyp]
+		elseif snd.hypno == "open" then 
+			string = "seal "..snd.target.." 3" ..snd.sep.. "snap " ..snd.target
+		end
+	elseif snd.hypno == "running" then 
+		string = string..snd.sep.."hypnotise "..snd.target
+	end
+	end
+  
+ 	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" then
+		if snd.target_locked() then
+			string = string..snd.sep.."shadow sleight pall "..snd.target
+    elseif tohit[1] == "anorexia" or tohit[2] == "anorexia" then
+      string = string..snd.sep.."shadow sleight abrasions "..snd.target
+		else
+			string = string..snd.sep.."shadow sleight dissipate "..snd.target
+		end
+	end
+  
+  if SelfScan ({"aeon", "paresis", "asthma", "impatience", "slickness", "anorexia",}, 3) and snd.balance.shrug == true then
+    string = "shrug venom"
+  end 
+ 
+ if snd.toggles.affcalling and not snd.target_gone and (call ~= nil or call ~= "") then  
+    send("queue eqbal " ..string.. ""..snd.sep..""..call)
+  else
+    send("queue eqbal " ..string)
+ end
+ 
+end
+</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Ylem</name>
@@ -34373,8 +34965,10 @@ v56942 = "1602",
 v1602 = "19344",
 v19344 = "62798",
 v62798 = "1433",
-v1433 = "3018",
-v3018 = "36865",
+v1433 = "36677",
+v36677 = "3018",
+v3018 = "16438",
+v16438 = "36865",
 v36865 = "6",
 v6 = "32237",
 v32237 = "26841",
@@ -34401,23 +34995,24 @@ v71926 = "19810",
 v19810 = "71554",
 v71554 = "31552",
 v31552 = "19987",
-v19987 = "64288",
+v19987 = "9510",
+v9510 = "19576",
+v19576 = "64288",
 v64288 = "55101",
 v55101 = "17034",
 v17034 = "18462",
 v18462 = "62996",
-v62996 = "25671",
-v25671 = "19562",
-v19562 = "4163",
+v62996 = "73508",
+v73508 = "4163",
 v4163 = "3276",
 v3276 = "63351",
 v63351 = "20932",
 v20932 = "20281",
-v20281 = "15820",
+v20281 = "71815",
+v71815 = "15820",
 v15820 = "70916",
 v70916 = "21908",
-v21908 = "53660",
-v53660 = "51157",
+v21908 = "51157",
 v51157 = "62383",
 v62383 = "18082",
 v18082 = "49875",
@@ -34432,11 +35027,9 @@ v18467 = "63763",
 v63763 = "14439",
 v14439 = "63730",
 v63730 = "20855",
-v20855 = "54699",
---v8795 = "8703",
---v8703 = "33348",
---v33348 = "58675",
---v58675 = "54699",
+v20855 = "8795",
+v8795 = "58675",
+v58675 = "54699",
 v54699 = "13425",
 v13425 = "59187",
 v59187 = "22824",
@@ -34454,24 +35047,28 @@ v4740 = "61928",
 v61928 = "4808",
 v4808 = "65189",
 v65189 = "49749",
-v49749 = "11830",
-v11830 = "60181",
-v60181 = "36271",
-v36271 = "36677",
-v36677 = "1012",
-v1012 = "71074",
+v49749 = "64608",
+v64608 = "64478",
+v64478 = "64396",
+v64396 = "11794",
+v11794 = "60181",
+v60181 = "11860",
+v11860 = "74377",
+v74377 = "36271",
+v36271 = "1012",
+v1012 = "3496",
+v3496 = "71074",
 v71074 = "58789",
 v58789 = "17612",
 v17612 = "62102",
-v62102 = "64479",
-v64479 = "64370",
-v64370 = "276",
+v62102 = "276",
 v276 = "16426",
 v16426 = "10812",
 v10812 = "34760",
-v34760 = "1000",
-v1000 = "1773",
-v1773 = "3106",
+v34760 = "72513",
+v72513 = "1000",
+v1000 = "1774",
+v1774 = "3106",
 v3106 = "11634",
 v11634 = "11988",
 v11988 = "11994",
@@ -34479,19 +35076,16 @@ v11994 = "56435",
 v56435 = "25408",
 v25408 = "59862",
 v59862 = "18434",
-v18434 = "334",
-v334 = "11412",
+v18434 = "11412",
 v11412 = "19854",
 v19854 = "31576",
-v31576 = "60142",
-v60142 = "55276",
+v31576 = "55276",
 v55276 = "58912",
 v58912 = "20835",
 v20835 = "21286",
 v21286 = "22866",
 v22866 = "23202",
-v23202 = "24628",
-v24628 = "57559",
+v23202 = "57559",
 v57559 = "4964",
 v4964 = "2036",
 v2036 = "38894",
@@ -34503,8 +35097,7 @@ v24548 = "5028",
 v5028 = "3887",
 v3887 = "57334",
 v57334 = "9853",
-v9853 = "15761",
-v15761 = "59609",
+v9853 = "59609",
 v59609 = "53230",
 v53230 = "10086",
 v10086 = "16584",
