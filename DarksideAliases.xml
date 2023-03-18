@@ -333,13 +333,6 @@ snd.goggle_update()
 							<regex>^toggle goggles$</regex>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
-							<name>Gag Things</name>
-							<script>snd.toggle("nontargetgags")</script>
-							<command></command>
-							<packageName></packageName>
-							<regex>^toggle non target gagging$</regex>
-						</Alias>
-						<Alias isActive="yes" isFolder="no">
 							<name>rock city</name>
 							<script>if snd.toggles.rockharvest then
   snd.rock_on = true
@@ -1998,6 +1991,7 @@ else
 end
 
 if snd.class == "Ascendril" then send("simultaneity") end
+if snd.class == "Bloodborn" then send("prowess") end
 if snd.class == "Archivist" then snd.send("incite lens") end
 if snd.class == "Sciomancer" then snd.send("channel shadow") end
 if snd.class == "Teradrim" then snd.send("golem call") end
@@ -12727,8 +12721,7 @@ function snd.attack_function()
     string = "fog inundate"
   end
   
-    string = string..snd.sep.."quickassess "..snd.target
-  
+ 
   
   if string ~= snd.last_attack and not snd.waiting.queue then
    snd.last_attack = string
@@ -13317,6 +13310,228 @@ end</script>
 									<packageName></packageName>
 									<regex>^gaff$</regex>
 								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Akkari Attack Template</name>
+									<script>if snd.class == "Akkari" then -- set this to the class this alias is for
+snd.starting_attack()
+function snd.attack_function()
+	if not snd.waiting.queue then
+		-- declare some important variables
+ local string = ""
+ local touse = {}
+ local gashaff = {}
+ local call = ""
+ local fcall = ""
+ local scall = ""
+ local paff = "none"
+ local saff_one = "none"
+ local saff_two = "none"
+ local pattack = ""
+ local sattack = ""
+ local extraaff = "amnesia"
+
+
+ snd.primary_aff = {
+    --"effused_blood",
+
+		}
+
+snd.secondary_aff = {
+    "remorse",
+    "contrition",
+    }
+
+snd.akkari_host()
+snd.akkari_attend()
+
+  for i in pairs(snd.primary_aff) do
+    if not snd.checkAff(snd.primary_aff[i]) 
+ --   and not (snd.used.rebounding and table.isMember(snd.censure_affs, snd.primary_aff[i]))
+
+    and not (snd.primary_aff[i] == "paresis" and snd.checkAff("paralysis")) 
+    then
+					if not table.contains(gashaff, snd.primary_aff[i]) then
+						table.insert(gashaff, snd.primary_aff[i])
+					end
+    end
+  end
+
+  if table.isMember(snd.censure_affs, gashaff[1]) then
+      if gashaff[1] == "sight" then
+     	pattack = "wipe left"..snd.sep.."censure "..snd.target.." lenient "..snd.effects[gashaff[1]]..snd.sep
+      else
+    	pattack = "wipe left"..snd.sep.."censure "..snd.target.." "..snd.effects[gashaff[1]]..snd.sep
+      end
+      fcall = "Afflicting "..snd.target..": "..gashaff[1].." "
+  elseif table.isMember(snd.akkari_bal_affs, gashaff[1]) then
+      if gashaff[1] == "black_bile" then
+      pattack = "denounce "..snd.target.." corruption"..snd.sep
+      fcall = ""
+      else
+      pattack = snd.akkari_bal_attacks[gashaff[1]].." "..snd.target..snd.sep
+      end
+  elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+      pattack = snd.akkari_eq_attacks[gashaff[1]].." "..snd.target..snd.sep
+  else
+      pattack = "denounce "..snd.target..snd.sep
+	end
+
+    	for i in pairs(snd.secondary_aff) do
+				if not (snd.checkAff(snd.secondary_aff[i]) or snd.secondary_aff[i] == gashaff[1] or (gashaff[1] == "sight" and snd.secondary_aff[1] == "hearing")) then
+					if not table.contains(touse, snd.secondary_aff[i]) then
+						table.insert(touse, snd.secondary_aff[i])
+					end
+				end
+			end
+
+      if touse[2] == "sight" then
+        table.remove(touse, table.index_of(touse, "sight"))
+      end
+
+      if touse[2] == "hearing" then
+        table.remove(touse, table.index_of(touse, "hearing"))
+      end
+
+			while #touse &lt; 3 do
+				table.insert(touse, extraaff)
+			end
+
+
+  if gashaff[1] == "sight" then
+    if touse[1] == "sight" then
+      table.remove(touse, table.index_of(touse, "sight"))
+    end
+    if touse[1] == "hearing" then
+      table.remove(touse, table.index_of(touse, "hearing"))
+    end
+    sattack = "dictate "..touse[1].." "..snd.target..snd.sep
+    if touse[1] == "remorse" or touse[1] == "contrition" then
+    else
+    scall = "Whispering "..snd.target..": "..touse[1]
+    end
+  elseif touse[1] == "sight" then
+    sattack = "spirit attend "..snd.target..snd.sep
+  elseif touse[1] == "hearing" then
+    sattack = "spirit attend "..snd.target..snd.sep
+  elseif touse[1] == "blood_poison" then
+    sattack = "spirit bane "..snd.target..snd.sep
+  else
+    if (touse[2] == "hearing" or touse[2] == "sight") then
+      if snd.can_proclaim then
+        sattack = "proclaim "..touse[1].." "..touse[3]..snd.sep
+      else
+        sattack = "dictate "..touse[1].." "..touse[3].." "..snd.target..snd.sep
+      end
+        if touse[1] == "remorse" or touse[1] == "contrition" then
+        else
+        scall = "Whispering: "..touse[1].." "..touse[3]
+        end
+    else
+      if snd.can_proclaim then
+        sattack = "proclaim "..touse[1].." "..touse[2]..snd.sep
+      else    
+        sattack = "dictate "..touse[1].." "..touse[2].." "..snd.target..snd.sep
+      end
+      if touse[1] == "remorse" or touse[1] == "contrition" then
+      else
+      scall = "Whispering "..snd.target..": "..touse[1].." "..touse[2]
+      end
+    end
+
+
+  end
+
+
+    if snd.used.shield and snd.used.rebounding then
+      string = "denounce "..snd.target..snd.sep.."spirit provoke "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.used.shield then
+      string = "denounce "..snd.target..snd.sep..sattack
+      fcall = ""
+    elseif snd.mana_percent &lt; 35 then
+      string = "dumavai "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.mana_percent &lt; 44 and snd.checkAff("blood_rune") then
+      string = "spirit vilify"..snd.sep.."dumavai "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.checkAff("writhe_transfix") and not snd.checkAff("feast") and gmcp.Char.Status.spec == "Dosan" then
+      string = "spirit exorcise "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.checkAff("no_paste") and (snd.checkAff("feast") or snd.can_deliver()) then
+      string = "deliver "..snd.target..snd.sep..sattack
+      fcall = ""
+    elseif snd.used.rebounding and table.isMember(snd.censure_affs, gashaff[1]) then
+        string = "denounce "..snd.target.." corruption"..snd.sep..sattack
+        fcall = ""
+        --fcall = "Afflicting "..snd.target..": black_bile"
+    elseif snd.checkAff("impatience") and snd.checksomeAffs({"sadness", "confusion",}, 2) 
+    and gmcp.Char.Status.spec == "Naarak" and not snd.checkAff("blood_curse") then
+      string = "spirit anathema "..snd.target
+      fcall = ""
+      scall = ""
+    elseif gmcp.Char.Status.spec == "Naarak" and snd.can_inquisition and 
+    ((snd.aff_count_mental() == 12 or (snd.checkAff("blood_curse") and snd.aff_count_mental() == 10))
+    or
+    (snd.checkAff("blood_rune") and (snd.aff_count_mental() == 9 or (snd.checkAff("blood_curse") and snd.aff_count_mental() == 7))))
+    then
+      string = "spirit inquisition "..snd.target
+      fcall = ""
+      scall = ""
+    elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+      string = pattack
+      fcall = ""
+      scall = ""
+    else
+      string = pattack..snd.sep..sattack
+    end
+
+
+    if not snd.loyalsattacking then
+    string = "order loyals attack "..snd.target..snd.sep..string
+    end
+
+    string  = "contemplate "..snd.target..snd.sep..string..snd.sep
+
+    if fcall ~= "" then
+      call = "wt "..fcall
+    end
+
+    if scall ~= "" then
+      if call ~= "" then
+      call = call..snd.sep.."wt "..scall
+      else
+      call = "wt "..scall
+      end
+    end
+
+
+		-- check if we need to prepend an affliction call
+	  if snd.toggles.affcalling and not snd.target_gone and (call ~= nil or call ~= "") then
+		string = call..snd.sep..string
+    end
+
+
+		-- we don't want to resend our existing attack, so check against that
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			-- if we've got a new attack now, 
+			snd.last_attack = string
+			snd.attack(snd.last_attack)
+			-- manage the anti-spam check below
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
+	end
+end
+snd.attack_function() -- make sure to actually send the attack once on use!
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^what$</regex>
+								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
 								<name>Wielding</name>
@@ -13348,6 +13563,1053 @@ end</script>
 									<regex>^lure (\w+)$</regex>
 								</Alias>
 							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Limbs</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Group Limbs</name>
+									<script>snd.current_offense = "gli"
+if snd.class == "Akkari" then -- set this to the class this alias is for
+snd.starting_attack()
+function snd.attack_function()
+	if not snd.waiting.queue then
+		-- declare some important variables
+ local string = ""
+ local touse = {}
+ local gashaff = {}
+ local call = ""
+ local fcall = ""
+ local scall = ""
+ local paff = "none"
+ local saff_one = "none"
+ local saff_two = "none"
+ local pattack = ""
+ local sattack = ""
+ local extraaff = "amnesia"
+
+
+ snd.primary_aff = {
+    --"effused_blood",
+    "blood_rune",
+    "left_leg_broken",
+    "right_leg_broken",
+    "left_arm_broken",
+    "right_arm_broken",
+    "paresis",
+    "stupidity",
+    "anorexia",
+    "asthma",
+    "slickness",
+    "sight",    
+    "blood_curse",
+    "black_bile",
+		}
+
+snd.secondary_aff = {
+    "remorse",
+    "contrition",
+    "stupidity",
+    "impatience",
+    "epilepsy",
+    "berserking",
+    "loneliness",
+    "confusion",
+    "peace",
+    "recklessness",
+    "dementia",
+    "paranoia",
+    "anorexia",
+    "vertigo",
+    "masochism",
+    "agoraphobia",
+    "indifference",
+    "amnesia",
+    }
+
+snd.akkari_host()
+snd.akkari_attend()
+
+  for i in pairs(snd.primary_aff) do
+    if not snd.checkAff(snd.primary_aff[i]) 
+    and not (snd.primary_aff[i] == "paresis" and snd.checkAff("paralysis")) 
+    then
+					if not table.contains(gashaff, snd.primary_aff[i]) then
+						table.insert(gashaff, snd.primary_aff[i])
+					end
+    end
+  end
+
+  if table.isMember(snd.censure_affs, gashaff[1]) then
+      if gashaff[1] == "sight" then
+     	pattack = "wipe left"..snd.sep.."censure "..snd.target.." lenient "..snd.effects[gashaff[1]]..snd.sep
+      else
+    	pattack = "wipe left"..snd.sep.."censure "..snd.target.." "..snd.effects[gashaff[1]]..snd.sep
+      end
+      fcall = "Afflicting "..snd.target..": "..gashaff[1].." "
+  elseif table.isMember(snd.akkari_bal_affs, gashaff[1]) then
+      if gashaff[1] == "black_bile" then
+      pattack = "denounce "..snd.target.." corruption"..snd.sep
+      else
+      pattack = snd.akkari_bal_attacks[gashaff[1]].." "..snd.target..snd.sep
+      end
+  elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+      pattack = snd.akkari_eq_attacks[gashaff[1]].." "..snd.target..snd.sep
+  else
+      pattack = "denounce "..snd.target..snd.sep
+      fcall = ""
+	end
+
+    	for i in pairs(snd.secondary_aff) do
+				if not (snd.checkAff(snd.secondary_aff[i]) or snd.secondary_aff[i] == gashaff[1] or (gashaff[1] == "sight" and snd.secondary_aff[1] == "hearing")) then
+					if not table.contains(touse, snd.secondary_aff[i]) then
+						table.insert(touse, snd.secondary_aff[i])
+					end
+				end
+			end
+
+      if touse[2] == "sight" then
+        table.remove(touse, table.index_of(touse, "sight"))
+      end
+
+      if touse[2] == "hearing" then
+        table.remove(touse, table.index_of(touse, "hearing"))
+      end
+
+			while #touse &lt; 3 do
+				table.insert(touse, extraaff)
+			end
+
+
+  if gashaff[1] == "sight" then
+    if touse[1] == "sight" then
+      table.remove(touse, table.index_of(touse, "sight"))
+    end
+    if touse[1] == "hearing" then
+      table.remove(touse, table.index_of(touse, "hearing"))
+    end
+    sattack = "dictate "..touse[1].." "..snd.target..snd.sep
+    if touse[1] == "remorse" or touse[1] == "contrition" then
+    else
+    scall = "Whispering "..snd.target..": "..touse[1]
+    end
+  elseif touse[1] == "sight" then
+    sattack = "spirit attend "..snd.target..snd.sep
+  elseif touse[1] == "hearing" then
+    sattack = "spirit attend "..snd.target..snd.sep
+  elseif touse[1] == "blood_poison" then
+    sattack = "spirit bane "..snd.target..snd.sep
+  else
+    if (touse[2] == "hearing" or touse[2] == "sight") then
+      if snd.can_proclaim then
+        sattack = "proclaim "..touse[1].." "..touse[3]..snd.sep
+      else
+        sattack = "dictate "..touse[1].." "..touse[3].." "..snd.target..snd.sep
+      end
+        scall = "Whispering: "..touse[1].." "..touse[3]
+    else
+      if snd.can_proclaim then
+        sattack = "proclaim "..touse[1].." "..touse[2]..snd.sep
+      else    
+        sattack = "dictate "..touse[1].." "..touse[2].." "..snd.target..snd.sep
+      end
+      if touse[1] == "remorse" or touse[1] == "contrition" then
+      else
+      scall = "Whispering "..snd.target..": "..touse[1].." "..touse[2]
+      end
+    end
+
+
+  end
+
+
+    if snd.used.shield and snd.used.rebounding then
+      string = "denounce "..snd.target..snd.sep.."spirit provoke "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.used.shield then
+      string = "denounce "..snd.target..snd.sep..sattack
+      fcall = ""
+    elseif snd.mana_percent &lt; 35 then
+      string = "dumavai "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.mana_percent &lt; 44 and snd.checkAff("blood_rune") then
+      string = "spirit vilify"..snd.sep.."dumavai "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.used.rebounding and table.isMember(snd.censure_affs, gashaff[1]) then
+        string = "denounce "..snd.target.." corruption"..snd.sep..sattack
+        fcall = ""
+    elseif snd.checkAff("impatience") and snd.checksomeAffs({"sadness", "confusion",}, 2) 
+    and gmcp.Char.Status.spec == "Naarak" and not snd.checkAff("blood_curse") then
+      string = "spirit anathema "..snd.target
+      fcall = ""
+      scall = ""
+    elseif gmcp.Char.Status.spec == "Naarak" and snd.can_inquisition and 
+    ((snd.aff_count_mental() == 12 or (snd.checkAff("blood_curse") and snd.aff_count_mental() == 10))
+    or
+    (snd.checkAff("blood_rune") and (snd.aff_count_mental() == 9 or (snd.checkAff("blood_curse") and snd.aff_count_mental() == 7))))
+    then
+      string = "spirit inquisition "..snd.target
+      fcall = ""
+      scall = ""
+    elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+      string = pattack
+      fcall = ""
+      scall = ""
+    else
+      string = pattack..snd.sep..sattack
+    end
+
+
+    if not snd.loyalsattacking then
+    string = "order loyals attack "..snd.target..snd.sep..string
+    end
+
+    string  = "contemplate "..snd.target..snd.sep..string
+
+
+    if fcall ~= "" then
+      call = "wt "..fcall
+    end
+
+    if scall ~= "" then
+      if call ~= "" then
+      call = call..snd.sep.."wt "..scall
+      else
+      call = "wt "..scall
+      end
+    end
+
+
+		-- check if we need to prepend an affliction call
+	  if snd.toggles.affcalling and not snd.target_gone and (call ~= nil or call ~= "") then
+		string = call..snd.sep..string
+    end
+
+
+		-- we don't want to resend our existing attack, so check against that
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			-- if we've got a new attack now, 
+			snd.last_attack = string
+      cecho("\n&lt;white&gt;"..string)
+			snd.attack(snd.last_attack)
+			-- manage the anti-spam check below
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
+	end
+end
+snd.attack_function() -- make sure to actually send the attack once on use!
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limbs$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Group Lock</name>
+									<script>snd.current_offense = "glo"
+if snd.class == "Akkari" then -- set this to the class this alias is for
+snd.starting_attack()
+function snd.attack_function()
+	if not snd.waiting.queue then
+		-- declare some important variables
+ local string = ""
+ local touse = {}
+ local gashaff = {}
+ local call = ""
+ local fcall = ""
+ local scall = ""
+ local paff = "none"
+ local saff_one = "none"
+ local saff_two = "none"
+ local pattack = ""
+ local sattack = ""
+ local extraaff = "amnesia"
+
+if snd.target_locked() then
+ snd.primary_aff = {
+  "sight",
+  "writhe_transfix",
+  "paresis",
+  "stupidity",
+  "anorexia",
+  "asthma",
+  "slickness",
+  "no_paste", 
+  "blood_curse",
+  "black_bile",
+ }
+else
+ snd.primary_aff = {
+  --  "effused_blood",
+   -- "blood_rune",
+    "paresis",
+    "stupidity",
+    "anorexia",
+    "asthma",
+    "slickness",
+    "no_paste", 
+    "blood_curse",
+    "black_bile",
+		}
+  end
+
+if snd.target_locked() then
+  snd.secondary_aff = {
+    "impatience",
+    "confusion",
+    "indifference",
+    "remorse",
+    "contrition",
+    "stupidity",
+    "confusion",
+    "epilepsy",
+    "berserking",
+    "sight",
+    "loneliness",
+    "peace",
+    "recklessness",
+    "dementia",
+    "paranoia",
+    "anorexia",
+    "vertigo",
+    "masochism",
+    "agoraphobia",
+    "amnesia",
+  }
+else  
+if snd.cureset == "Archivist" or snd.cureset == "Shaman" or snd.cureset == "Ascendril" or snd.cureset == "Sciomancer" then
+snd.secondary_aff = {
+    "remorse",
+    "contrition",
+    "stupidity",
+    "impatience",
+    "confusion",
+    "epilepsy",
+    "berserking",
+    "sight",
+    "loneliness",
+    "peace",
+    "recklessness",
+    "dementia",
+    "paranoia",
+    "anorexia",
+    "vertigo",
+    "masochism",
+    "agoraphobia",
+    "indifference",
+    "amnesia",
+    }
+else
+snd.secondary_aff = {
+    "remorse",
+    "contrition",
+    "stupidity",
+    "impatience",
+    "epilepsy",
+    "berserking",
+    "sight",
+    "loneliness",
+    "confusion",
+    "peace",
+    "recklessness",
+    "dementia",
+    "paranoia",
+    "anorexia",
+    "vertigo",
+    "masochism",
+    "agoraphobia",
+    "indifference",
+    "amnesia",
+    }
+end
+end
+
+snd.akkari_host()
+snd.akkari_attend()
+
+  for i in pairs(snd.primary_aff) do
+    if not snd.checkAff(snd.primary_aff[i]) 
+ --   and not (snd.used.rebounding and table.isMember(snd.censure_affs, snd.primary_aff[i]))
+
+    and not (snd.primary_aff[i] == "paresis" and snd.checkAff("paralysis")) 
+    then
+					if not table.contains(gashaff, snd.primary_aff[i]) then
+						table.insert(gashaff, snd.primary_aff[i])
+					end
+    end
+  end
+
+  if table.isMember(snd.censure_affs, gashaff[1]) then
+      if gashaff[1] == "sight" then
+     	pattack = "wipe left"..snd.sep.."censure "..snd.target.." lenient "..snd.effects[gashaff[1]]..snd.sep
+      else
+    	pattack = "wipe left"..snd.sep.."censure "..snd.target.." "..snd.effects[gashaff[1]]..snd.sep
+      end
+      fcall = "Afflicting "..snd.target..": "..gashaff[1].." "
+  elseif table.isMember(snd.akkari_bal_affs, gashaff[1]) then
+      if gashaff[1] == "black_bile" then
+      pattack = "denounce "..snd.target.." corruption"..snd.sep
+      else
+      pattack = snd.akkari_bal_attacks[gashaff[1]].." "..snd.target..snd.sep
+      end
+  elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+      pattack = snd.akkari_eq_attacks[gashaff[1]].." "..snd.target..snd.sep
+  else
+      pattack = "denounce "..snd.target..snd.sep
+	end
+
+    	for i in pairs(snd.secondary_aff) do
+				if not (snd.checkAff(snd.secondary_aff[i]) or snd.secondary_aff[i] == gashaff[1] or (gashaff[1] == "sight" and snd.secondary_aff[1] == "hearing")) then
+					if not table.contains(touse, snd.secondary_aff[i]) then
+						table.insert(touse, snd.secondary_aff[i])
+					end
+				end
+			end
+
+      if touse[2] == "sight" then
+        table.remove(touse, table.index_of(touse, "sight"))
+      end
+
+      if touse[2] == "hearing" then
+        table.remove(touse, table.index_of(touse, "hearing"))
+      end
+
+			while #touse &lt; 3 do
+				table.insert(touse, extraaff)
+			end
+
+
+  if gashaff[1] == "sight" then
+    if touse[1] == "sight" then
+      table.remove(touse, table.index_of(touse, "sight"))
+    end
+    if touse[1] == "hearing" then
+      table.remove(touse, table.index_of(touse, "hearing"))
+    end
+    sattack = "dictate "..touse[1].." "..snd.target..snd.sep
+    if touse[1] == "remorse" or touse[1] == "contrition" then
+    else
+    scall = "Whispering "..snd.target..": "..touse[1]
+    end
+  elseif touse[1] == "sight" then
+    sattack = "spirit attend "..snd.target..snd.sep
+  elseif touse[1] == "hearing" then
+    sattack = "spirit attend "..snd.target..snd.sep
+  elseif touse[1] == "blood_poison" then
+    sattack = "spirit bane "..snd.target..snd.sep
+  else
+    if (touse[2] == "hearing" or touse[2] == "sight") then
+      if snd.can_proclaim then
+        sattack = "proclaim "..touse[1].." "..touse[3]..snd.sep
+      else
+        sattack = "dictate "..touse[1].." "..touse[3].." "..snd.target..snd.sep
+      end
+        if touse[1] == "remorse" or touse[1] == "contrition" then
+        else
+        scall = "Whispering: "..touse[1].." "..touse[3]
+        end
+    else
+      if snd.can_proclaim then
+        sattack = "proclaim "..touse[1].." "..touse[2]..snd.sep
+      else    
+        sattack = "dictate "..touse[1].." "..touse[2].." "..snd.target..snd.sep
+      end
+      if touse[1] == "remorse" or touse[1] == "contrition" then
+      else
+      scall = "Whispering "..snd.target..": "..touse[1].." "..touse[2]
+      end
+    end
+
+
+  end
+
+
+    if snd.used.shield and snd.used.rebounding then
+      string = "denounce "..snd.target..snd.sep.."spirit provoke "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.used.shield then
+      string = "denounce "..snd.target..snd.sep..sattack
+      fcall = ""
+    elseif snd.mana_percent &lt; 35 then
+      string = "dumavai "..snd.target
+    elseif snd.mana_percent &lt; 44 and snd.checkAff("blood_rune") then
+      string = "spirit vilify"..snd.sep.."dumavai "..snd.target
+      fcall = ""
+      scall = ""
+    elseif snd.used.rebounding and table.isMember(snd.censure_affs, gashaff[1]) then
+        string = "denounce "..snd.target.." corruption"..snd.sep..sattack
+        fcall = ""
+    elseif snd.checkAff("impatience") and snd.checksomeAffs({"sadness", "confusion",}, 2) 
+    and gmcp.Char.Status.spec == "Naarak" and not snd.checkAff("blood_curse") then
+      string = "spirit anathema "..snd.target
+      fcall = ""
+      scall = ""
+    elseif gmcp.Char.Status.spec == "Naarak" and snd.can_inquisition and 
+    ((snd.aff_count_mental() == 12 or (snd.checkAff("blood_curse") and snd.aff_count_mental() == 10))
+    or
+    (snd.checkAff("blood_rune") and (snd.aff_count_mental() == 9 or (snd.checkAff("blood_curse") and snd.aff_count_mental() == 7))))
+    then
+      string = "spirit inquisition "..snd.target
+      fcall = ""
+      scall = ""
+    elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+      string = pattack
+      fcall = ""
+      scall = ""
+    else
+      string = pattack..snd.sep..sattack
+      if table.isMember(snd.censure_affs, gashaff[1]) then
+      end
+    end
+
+
+    if not snd.loyalsattacking then
+    string = "order loyals attack "..snd.target..snd.sep..string
+    end
+
+    string  = "contemplate "..snd.target..snd.sep..string..snd.sep
+
+    if fcall ~= "" then
+      call = "wt "..fcall
+    end
+
+    if scall ~= "" then
+      if call ~= "" then
+      call = call..snd.sep.."wt "..scall
+      else
+      call = "wt "..scall
+      end
+    end
+
+		-- check if we need to prepend an affliction call
+	  if snd.toggles.affcalling and not snd.target_gone and (call ~= nil or call ~= "") then
+		string = call..snd.sep..string
+    end
+
+
+		-- we don't want to resend our existing attack, so check against that
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			-- if we've got a new attack now, 
+			snd.last_attack = string
+            cecho("\n&lt;white&gt;"..string)
+			snd.attack(snd.last_attack)
+			-- manage the anti-spam check below
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
+	end
+end
+snd.attack_function() -- make sure to actually send the attack once on use!
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^glo$</regex>
+								</Alias>
+							</AliasGroup>
+						</AliasGroup>
+						<AliasGroup isActive="yes" isFolder="yes">
+							<name>Runecarver</name>
+							<script></script>
+							<command></command>
+							<packageName></packageName>
+							<regex></regex>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Affliction</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Afflictions</name>
+									<script>if snd.class == "Runecarver" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ if not snd.waiting.queue then
+	if snd.used.shield then
+   	string = string.."hex imperil "..snd.target
+  elseif not snd.checkAff("gloom") then
+		if hasSkill("Malady") then
+			if gmcp.Char.Vitals.spiritpact &lt; "2" then
+				string = string.."spiritpact despair "..snd.target..snd.sep.."hex fever "..snd.target
+			else
+				string = string.."hex despair "..snd.target
+			end
+		else
+			if gmcp.Char.Vitals.spiritpact &lt; "2" then
+				string = string.."shadowprice despair "..snd.target
+			else
+				string = string.."spiritpact despair "..snd.target
+			end
+		end
+	elseif not snd.checksomeAffs({"clumsiness", "weariness", "lethargy", "paresis"}, 1) then
+		if gmcp.Char.Vitals.spiritpact &lt; "2" then
+			string = string.."spiritpact enervate "..snd.target
+		else
+			string = string.."hex enervate "..snd.target
+		end
+  elseif snd.checkAff("sight") and not snd.checkAff("voidtrapped") then
+		string = string.."hex mystify " ..snd.target..snd.sep
+	elseif not snd.checksomeAffs({"vomiting", "haemophilia"}, 1) and hasSkill("Malady") then
+		string = string.."hex fever "..snd.target
+  else
+   	string = string.."hex jinx "..snd.target
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^aff$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sorta 1v1 Build</name>
+									<script>if snd.class == "Runecarver" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ if not snd.waiting.queue then
+ 
+ local shadestring = "order myconid kill "..snd.target..snd.sep
+ 
+ local shadowprice = tonumber(gmcp.Char.Vitals.spiritpact)
+ 
+		local total_aff_count = 0
+    for aff in pairs(snd.all_affs) do
+        if table.contains(snd.target_has, snd.all_affs[aff]) then
+            total_aff_count = total_aff_count + 1
+        end
+    end
+ 
+ local scourgecount = 0 
+   for aff in pairs(snd.scourge_affs) do
+     if table.contains(snd.target_has, snd.scourge_affs[aff]) then
+       scourgecount = scourgecount + 1
+     end
+   end
+
+	if tonumber(snd.repay) &lt; 2 and hp &gt; 60 and shadowprice &gt; 0 then
+		string = string.."hex obeisance" ..snd.sep
+	end 
+
+ 
+	if snd.used.shield then
+		if shadowprice &lt; "2" then
+   		string = string.."spiritpact imperil "..snd.target..snd.sep
+		elseif snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."spiritpact imperil "..snd.target..snd.sep
+		else
+			string = string.."hex imperil "..snd.target
+		end
+	
+	elseif not snd.checkAff("imbued") and gmcp.Char.Vitals.morass ~= "" then
+		string = string..shadestring.."spore inoculate "..snd.target..snd.sep
+	elseif snd.gravity == 0 and gmcp.Char.Vitals.morass ~= "" and not snd.checkAff("impede") then
+		string = string..shadestring.."spore ensnare "..snd.target..snd.sep
+	elseif snd.gravity &gt;= 0 and gmcp.Char.Vitals.morass ~= "" and not snd.checkAff("impede") then
+		string = string..shadestring.."spore infect "..snd.target..snd.sep
+	elseif not snd.checkAff("rot_benign") then
+		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."spiritpact revile " ..snd.target..snd.sep
+		elseif shadowprice &lt; "3" then
+			string = string.."spiritpact revile " ..snd.target..snd.sep
+		else
+			string = string.."hex revile " ..snd.target..snd.sep
+		end
+	elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") then
+		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."spiritpact mystify " ..snd.target..snd.sep
+		elseif shadowprice &lt; "3" then
+			string = string.."spiritpact mystify " ..snd.target..snd.sep
+		end
+	elseif snd.balance.shadowsphere and not snd.checkAff("woe_curse") and total_aff_count &gt; 4 then
+		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."spiritpact woe " ..snd.target..snd.sep
+		elseif shadowprice &lt; "3" then
+			string = string.."spiritpact woe " ..snd.target..snd.sep
+		else
+			string = string.."hex woe " ..snd.target..snd.sep
+		end
+	elseif not snd.checkAff("gloom") then
+		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+			string = string..shadestring.."spiritpact despair "..snd.target
+		elseif shadowprice &lt; "3" then
+			string = string..shadestring.."spiritpact despair "..snd.target	
+		else
+			string = string..shadestring.."hex despair "..snd.target
+		end
+	elseif scourgecount &lt; 5 and snd.checkAff("woe_curse") then
+		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+			string = string.."spiritpact jinx " ..snd.target..snd.sep
+		elseif shadowprice &lt; "3" then
+			string = string.."spiritpact jinx " ..snd.target..snd.sep
+		else
+			string = string.."hex jinx " ..snd.target..snd.sep
+		end
+	elseif snd.checksomeAffs({"haemophilia", "nyctophobia"}, 2) then
+		if not snd.checksomeAffs({"dementia", "exhausted"}, 1) then
+			if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
+				string = string.."spiritpact anathemise " ..snd.target..snd.sep
+			elseif shadowprice &lt; "3" then
+				string = string.."spiritpact anathemise " ..snd.target..snd.sep
+			else
+				string = string.."hex anathemise " ..snd.target..snd.sep
+			end
+		else
+			string = string.."hex anathemise " ..snd.target..snd.sep
+		end
+	elseif not snd.checksomeAffs({"vomiting", "haemophilia"}, 1) then
+		string = string.."hex fever "..snd.target
+	elseif not snd.checksomeAffs({"clumsiness", "paresis"}, 1) then
+		string = string.."hex enervate "..snd.target
+	elseif snd.checkAff("sight") and not snd.checkAff("voidtrapped") then
+		string = string.."hex mystify " ..snd.target..snd.sep
+	else
+		string = string.."hex enervate " ..snd.target..snd.sep
+	end
+	
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^kll$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Group Aff</name>
+									<script>if snd.class == "Runecarver" then
+  snd.starting_attack()
+    function snd.attack_function()
+     if not snd.waiting.queue then
+      local string = ""
+      local gstring = ""
+      local call = ""
+      local astring = ""
+      local paystring = ""
+    	local health = 100*(gmcp.Char.Vitals.maxhp)
+      
+      cecho("&lt;red&gt;\n"..snd.gravity.." " ..tonumber(gmcp.Char.Vitals.spiritpact))
+    		
+    	if not snd.checksomeAffs({"impede","imbued"}, 2) and not snd.used.shield then 
+        gstring = "spore inoculate " ..snd.target..snd.sep.."spore infect " ..snd.target..snd.sep 
+      else 
+        gstring = "" 
+      end
+      if snd.repay == false and tonumber(gmcp.Char.Vitals.spiritpact) &gt;= 3 and not snd.checkAff("gloom") then 
+        paystring = "hex obeisance"..snd.sep 
+      elseif snd.spay == false and tonumber(gmcp.Char.Vitals.spiritpact) == 4 then
+        paystring = "hex obeisance"..snd.sep
+      else 
+        paystring = "" 
+      end
+    
+    	if snd.used.shield then
+        if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+          astring = astring.."spiritpact imperil "..snd.target..snd.sep
+          else
+       	astring = astring.."hex imperil "..snd.target..snd.sep
+        end
+    	elseif not snd.checkAff("voidgaze") and tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+          astring = astring.."spiritpact mystify "..snd.target..snd.sep
+      elseif not snd.checksomeAffs({"nyctophobia","haemophilia"},2) then
+          astring = astring.."hex anathemise " ..snd.target..snd.sep     
+      elseif not snd.checksomeAffs({"vomiting","haemophilia"},1) then
+        if not snd.checkAff("gloom") and tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+          astring = astring.."spiritpact despair " ..snd.target..snd.sep.."hex fever " ..snd.target..snd.sep
+        else
+          astring = astring.."hex fever " ..snd.target..snd.sep
+        end
+      elseif not snd.checksomeAffs({"clumsiness","weariness","lethargy","paresis"},2) then
+        if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 3 and not snd.checkAff("gloom") then
+          astring = astring.."spiritpact despair " ..snd.target..snd.sep.."spiritpact enervate " ..snd.target..snd.sep
+        elseif tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+          astring = astring.."spiritpact enervate " ..snd.target..snd.sep
+        else
+          astring = astring.."hex enervate " ..snd.target..snd.sep
+        end
+       else
+        if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+          astring = astring.."spiritpact anathemise " ..snd.target..snd.sep
+          else
+          string = astring.."hex anathemise " ..snd.target..snd.sep
+        end
+      end
+      if string ~= snd.last_attack and not snd.waiting.queue then
+      string = paystring..gstring..astring
+       snd.last_attack = string
+       snd.attack(snd.last_attack)
+       snd.waiting.queue = true
+       tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
+     end
+  end
+  snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^gaff$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Damage</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Basic Damage</name>
+									<script>if snd.class == "Runecarver" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ if not snd.waiting.queue then
+	if snd.used.shield then
+   	string = string.."hex imperil "..snd.target
+  elseif snd.checkAff("writhe_transfix") then
+		if not snd.checkAff("gloom") then
+			if hasSkill("Malady") then
+				if gmcp.Char.Vitals.spiritpact &lt; "2" then
+					string = string.."spiritpact despair "..snd.target..snd.sep.."hex fever "..snd.target
+				else
+					string = string.."hex despair "..snd.target
+				end
+			else
+				if gmcp.Char.Vitals.spiritpact &lt; "2" then
+					string = string.."spiritpact despair "..snd.target
+				else
+					string = string.."hex despair "..snd.target
+				end
+			end
+		end
+  else
+   		if hasSkill("Bewitch") and snd.balance.sorcery_transfix then
+				string = string.."runecarve bewitch "..snd.target
+			else
+				string = string.."hex rot "..snd.target
+			end
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^dmg$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Sciomancer Group Dmg</name>
+									<script>if snd.class == "Runecarver" then
+snd.starting_attack()
+function snd.attack_function()
+ if not snd.waiting.queue then
+  local string = ""
+  local gstring = ""
+  local call = ""
+  local astring = ""
+  local paystring = ""
+	local health = 100*(gmcp.Char.Vitals.maxhp)
+  
+  	cecho("&lt;red&gt;\n"..snd.gravity.." " ..tonumber(gmcp.Char.Vitals.spiritpact))
+		
+--			if not snd.checksomeAffs({"impede","imbued"}, 2) and not snd.used.shield then gstring = "spore inoculate " ..snd.target..snd.sep.."spore infect " ..snd.target..snd.sep else gstring = "" end
+      if snd.repay == false and tonumber(gmcp.Char.Vitals.spiritpact) &gt;= 3 and not snd.checkAff("gloom") then paystring = "hex obeisance"..snd.sep elseif snd.spay == false and tonumber(gmcp.Char.Vitals.spiritpact) == 4 then paystring = "hex obeisance"..snd.sep else paystring = "" end
+
+	if snd.used.shield then
+    if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+      astring = astring.."spiritpact imperil "..snd.target..snd.sep
+      else
+   	astring = astring.."hex imperil "..snd.target..snd.sep
+    end
+	elseif not snd.checkAff("voidgaze") and tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+      astring = astring.."spiritpact mystify "..snd.target..snd.sep
+  elseif not snd.checksomeAffs({"nyctophobia","haemophilia"},2) then
+      astring = astring.."cast anathemise " ..snd.target..snd.sep     
+  elseif not snd.checksomeAffs({"vomiting","haemophilia"},1) then
+    if not snd.checkAff("gloom") and tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+      astring = astring.."spiritpact despair " ..snd.target..snd.sep.."hex fever " ..snd.target..snd.sep
+    else
+      astring = astring.."hex fever " ..snd.target..snd.sep
+    end
+  elseif not snd.checksomeAffs({"clumsiness","weariness","lethargy","paresis"},2) then
+    if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 3 and not snd.checkAff("gloom") then
+      astring = astring.."spiritpact despair " ..snd.target..snd.sep.."spiritpact enervate " ..snd.target..snd.sep
+    elseif tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+      astring = astring.."spiritpact enervate " ..snd.target..snd.sep
+    else
+      astring = astring.."hex enervate " ..snd.target..snd.sep
+    end
+   else
+    if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+      astring = astring.."spiritpact anathemise " ..snd.target..snd.sep
+      else
+      string = astring.."cast anathemise " ..snd.target..snd.sep
+  end
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+  string = paystring..astring
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^gdmg$</regex>
+								</Alias>
+							</AliasGroup>
+							<AliasGroup isActive="yes" isFolder="yes">
+								<name>Limb</name>
+								<script></script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+								<Alias isActive="yes" isFolder="no">
+									<name>Limbs</name>
+									<script>if snd.class == "Runecarver" then
+  snd.starting_attack()
+  function snd.attack_function()
+    local string = ""
+    if not snd.waiting.queue then
+      limbs = {"left leg", "right leg", "left arm", "right arm"}
+      for limb in pairs(limbs) do
+      -- ignore last hit and any limbs being resto'd
+        if
+          limbs[limb] ~= snd.last_hit_limb and
+          limbs[limb] ~= snd.resto_limb
+        then
+          if targ == "nothing" then
+            targ = limbs[limb]
+          end
+        end
+      end
+
+	if snd.used.shield then
+   string = string.."hex imperil "..snd.target
+	elseif gmcp.Char.Vitals.morass == "" then
+		if hasSkill("Colonisation") then
+			string = string.."spore colonise clutchgill"
+		else
+			string = string.."spore germinate"
+		end
+  elseif snd.gravity &lt; 5 then
+		string = string.."spore ensnare "..snd.target
+  else
+		if not snd.checkAff(" broken"..targ) then
+			string = string.."spore degrade "..snd.target..targ
+		else
+			if hasSkill("Bewitch") and snd.balance.sorcery_transfix  then
+				string = string.."runecarve bewitch "..snd.target
+			else
+				string = string.."hex numb "..snd.target
+			end
+		end
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^limbs$</regex>
+								</Alias>
+								<Alias isActive="yes" isFolder="no">
+									<name>Group Limbs</name>
+									<script>if snd.class == "Runecarver" then
+snd.starting_attack()
+function snd.attack_function()
+ local string = ""
+ if not snd.waiting.queue then
+ limbs = {"left leg", "right leg", "left arm", "right arm"}
+	if snd.used.shield then
+   string = string.."hex imperil "..snd.target
+	elseif gmcp.Char.Vitals.morass == "" then
+		string = string.."gravity genesis tether"
+  elseif snd.gravity &lt; 5 then
+		string = string.."spore ensnare "..snd.target
+  else
+		if not snd.checkAff("left_leg_broken") then
+			string = string.."spore degrade "..snd.target.." left leg"
+		elseif not snd.checkAff("right_leg_broken") then
+			string = string.."spore degrade "..snd.target.." right leg"
+		elseif not snd.checkAff("left_arm_broken") then
+			string = string.."spore degrade "..snd.target.." left arm"
+		elseif not snd.checkAff("right_arm_broken") then
+			string = string.."spore degrade "..snd.target.." right arm"
+		elseif snd.balance.sorcery_transfix then
+			string = string.."runecarve bewitch "..snd.target
+		end
+  end
+  if string ~= snd.last_attack and not snd.waiting.queue then
+   snd.last_attack = string
+   snd.attack(snd.last_attack)
+   snd.waiting.queue = true
+   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+  end
+ end
+end
+snd.attack_function()
+end</script>
+									<command></command>
+									<packageName></packageName>
+									<regex>^glimbs$</regex>
+								</Alias>
+							</AliasGroup>
+							<Alias isActive="yes" isFolder="no">
+								<name>Sing Summon</name>
+								<script>
+if snd.class == "Runecarver" then
+  snd.send("qeb spore colonise clutchgill hartsblood stormstem ravencap greycrown")
+ end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^sing1$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Gravity Cannon</name>
+								<script>
+if snd.class == "Runecarver" then
+  snd.send("qeb spore mortify "..snd.target)
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^gc$</regex>
+							</Alias>
 						</AliasGroup>
 					</AliasGroup>
 					<AliasGroup isActive="yes" isFolder="yes">
@@ -13410,20 +14672,20 @@ function snd.attack_function()
         if not snd.checkAff("patterns") then
            string = "geo pattern "..snd.target..snd.sep
         elseif snd.checkAff("patterns") and snd.balance.madness then
-           string = "empower jhako"..snd.sep.."elicit madness "..snd.target..snd.sep.."quickassess "..snd.target
+           string = "empower jhako"..snd.sep.."elicit madness "..snd.target..snd.sep
         elseif snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 1) then
-           --string = "geo impress rod"..snd.sep.."incite hex "..snd.target..snd.sep.."quickassess "..snd.target
-           string = "goggle scan "..snd.target..snd.sep.."geo impress rod"..snd.sep.."incite crux "..snd.target..snd.sep..biostring..biostring.."quickassess "..snd.target   
+           --string = "geo impress rod"..snd.sep.."incite hex "..snd.target
+           string = "goggle scan "..snd.target..snd.sep.."geo impress rod"..snd.sep.."incite crux "..snd.target..snd.sep..biostring..biostring
         end
  
       elseif snd.my_incite == "Crescent" then
-        string = "geo impress rod"..snd.sep.."incite crux "..snd.target..snd.sep..biostring..snd.sep..biostring..snd.sep.."quickassess "..snd.target  
+        string = "geo impress rod"..snd.sep.."incite crux "..snd.target..snd.sep..biostring..snd.sep..biostring..snd.sep
                     
      elseif snd.my_incite ~= "" and snd.crescentable then
-       string = "geo impress star"..snd.sep.."incite crescent " ..snd.target..snd.sep.."quickassess "..snd.target 
+       string = "geo impress star"..snd.sep.."incite crescent " ..snd.target..snd.sep
        
      else
-      string = "geo impress star"..snd.sep.."incite crux "..snd.target..snd.sep..biostring..snd.sep..biostring..snd.sep.."quickassess "..snd.target 
+      string = "geo impress star"..snd.sep.."incite crux "..snd.target..snd.sep..biostring..snd.sep..biostring..snd.sep
     end 
         
   end
@@ -13435,7 +14697,7 @@ function snd.attack_function()
   end
  end
 end
-send("quickassess " ..snd.target)
+
 snd.attack_function()
 end</script>
 									<command></command>
@@ -15513,7 +16775,7 @@ function snd.attack_function()
 		string = string..shadestring.."gravity grip "..snd.target..snd.sep
 	elseif snd.gravity &gt;= 0 and gmcp.Char.Vitals.singularity ~= "" and not snd.checkAff("impede") then
 		string = string..shadestring.."gravity impede "..snd.target..snd.sep
-	elseif not snd.checkAff("shaderot_benign") then
+	elseif not snd.checkAff("rot_benign") then
 		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
 			string = string.."shadowprice rot " ..snd.target..snd.sep
 		elseif shadowprice &lt; "3" then
@@ -15884,14 +17146,20 @@ end</script>
 							</AliasGroup>
 							<Alias isActive="yes" isFolder="no">
 								<name>Sing Summon</name>
-								<script>snd.send("qeb gravity genesis tether weight absorb attunement pulsar")</script>
+								<script>
+if snd.class == "Sciomancer" then
+snd.send("qeb gravity genesis tether weight absorb attunement pulsar")
+end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^sing1$</regex>
 							</Alias>
 							<Alias isActive="yes" isFolder="no">
 								<name>Gravity Cannon</name>
-								<script>snd.send("qeb gravity cannon "..snd.target)</script>
+								<script>
+if snd.class == "Sciomancer" then
+snd.send("qeb gravity cannon "..snd.target)
+end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^gc$</regex>
@@ -17993,7 +19261,7 @@ if not snd.waiting.queue then
  local battle = "none"
  local chasten = "none"
  local tohit = {}
- local string = "quickassess "..snd.target..snd.sep.."contemplate " .. snd.target .. snd.sep 
+ local string = "contemplate " .. snd.target .. snd.sep 
  local missing = snd.missingAff("stupidity/paresis/anorexia/asthma", "/")
  local total_aff_count = 0
  local mental_aff_count = 0 
@@ -18475,7 +19743,7 @@ if not snd.waiting.queue then
  local battle = "none"
  local chasten = "none"
  local tohit = {}
- local string = "quickassess "..snd.target..snd.sep.."contemplate " .. snd.target .. snd.sep 
+ local string = "contemplate " .. snd.target .. snd.sep 
  local missing = snd.missingAff("stupidity/paresis/anorexia/asthma", "/")
  local total_aff_count = 0
  local mental_aff_count = 0 
@@ -20607,10 +21875,10 @@ tempTimer(5, [[send("firstaid priority weariness 4##firstaid priority deadening 
 tempTimer(5.5, [[send("firstaid priority torso_bruised_moderate 5##firstaid priority head_bruised_moderate 5##firstaid priority gloom 5##firstaid priority blighted 5##firstaid priority blood_curse 5##firstaid priority blood_poison 5##firstaid priority confusion 5##firstaid priority idiocy 5##firstaid priority mental_disruption 5##firstaid priority merciful 5##firstaid priority physical_disruption 5##firstaid priority plodding 5##firstaid priority squelched 6")]])
 tempTimer(6, [[send("firstaid priority shivering 6##firstaid priority frozen 6##firstaid priority gorged 6##firstaid priority effused_blood 6##firstaid priority blurry_vision 6##firstaid priority smashed_throat 6##firstaid priority cracked_ribs 6##firstaid priority whiplash 6##firstaid priority backstrain 6##firstaid priority collapsed_lung 6##firstaid priority left_arm_dislocated 6##firstaid priority left_leg_dislocated 6##firstaid priority right_arm_dislocated 6##firstaid priority right_leg_dislocated 6##firstaid priority sore_wrist 6")]])
 tempTimer(6.5, [[send("firstaid priority sore_ankle 6##firstaid priority muscle_spasms 6##firstaid priority heatspear 6##firstaid priority sensitivity 6##firstaid priority rend 6##firstaid priority epilepsy 6##firstaid priority masochism 6##firstaid priority loneliness 6##firstaid priority haemophilia 6##firstaid priority lethargy 6##firstaid priority vomiting 6##firstaid priority impairment 6##firstaid priority crippled 6##firstaid priority allergies 6")]])
-tempTimer(7, [[send("firstaid priority shaderot_heat 6##firstaid priority shaderot_wither 6##firstaid priority ablaze 7##firstaid priority hypothermia 7##firstaid priority stuttering 7##firstaid priority crippled_throat 7##firstaid priority mauled_face 7##firstaid priority deepwound 7##firstaid priority stiffness 7##firstaid priority stupidity 7##firstaid priority heartflutter 7")]])
+tempTimer(7, [[send("firstaid priority rot_heat 6##firstaid priority rot_wither 6##firstaid priority ablaze 7##firstaid priority hypothermia 7##firstaid priority stuttering 7##firstaid priority crippled_throat 7##firstaid priority mauled_face 7##firstaid priority deepwound 7##firstaid priority stiffness 7##firstaid priority stupidity 7##firstaid priority heartflutter 7")]])
 tempTimer(7.5, [[send("firstaid priority justice 7##firstaid priority lovers_effect 7##firstaid priority laxity 7##firstaid priority egocentric 7##firstaid priority exhausted 7##firstaid priority dread 7##firstaid priority burnt_eyes 8##firstaid priority lightwound 8##firstaid priority dementia 8##firstaid priority paranoia 8##firstaid priority dizziness 8##firstaid priority shyness 8##firstaid priority right_leg_bruised_moderate 5##firstaid priority right_arm_bruised_moderate 5##firstaid priority left_arm_bruised_moderate 5")]])
 tempTimer(8, [[send("firstaid priority fear 8##firstaid priority sadness 9##firstaid priority addiction 9##firstaid priority self-pity 9##firstaid priority commitment_fear 9##firstaid priority hubris 9##firstaid priority body_odor 9##firstaid priority magnanimity 9##firstaid priority generosity 10##firstaid priority superstition 10##firstaid priority blisters 10##firstaid priority oiled 10##firstaid priority void 11##firstaid priority weakvoid 11##firstaid priority embedded_axe 12")]])
-tempTimer(8.5, [[send("firstaid priority shaderot_body 6##firstaid priority shaderot_benign 6##firstaid priority shaderot_spirit 6##firstaid priority hallucinations 7##firstaid priority hypersomnia 7##firstaid priority hatred 7##firstaid priority peace 7##firstaid priority berserking 7##firstaid priority dissonance 8##firstaid priority agoraphobia 8##firstaid priority vertigo 8##firstaid priority claustrophobia 8##firstaid priority faintness 8##firstaid priority nyctophobia 3##firstaid priority vinethorns 3")]])
+tempTimer(8.5, [[send("firstaid priority rot_body 6##firstaid priority rot_benign 6##firstaid priority rot_spirit 6##firstaid priority hallucinations 7##firstaid priority hypersomnia 7##firstaid priority hatred 7##firstaid priority peace 7##firstaid priority berserking 7##firstaid priority dissonance 8##firstaid priority agoraphobia 8##firstaid priority vertigo 8##firstaid priority claustrophobia 8##firstaid priority faintness 8##firstaid priority nyctophobia 3##firstaid priority vinethorns 3")]])
 enableTimer("Firstaidstatustimer")
 
   if not snd.prestore then

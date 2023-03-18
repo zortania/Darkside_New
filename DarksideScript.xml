@@ -184,9 +184,14 @@
 						<script>
 snd = snd or {}
 
-speedWalkCounter = 0
+setConsoleBufferSize("main", 100000, 1000)
 
-setConsoleBufferSize("main", 100000, 1000)</script>
+snd.gui = snd.gui or {
+  enabled = true,
+  }
+ 
+
+fish = fish or {}</script>
 						<eventHandlerList />
 					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
@@ -202,12 +207,11 @@ setConsoleBufferSize("main", 100000, 1000)</script>
 						<Script isActive="yes" isFolder="no">
 							<name>options</name>
 							<packageName></packageName>
-							<script>snd.sep = "##" -- important! CONFIG SEPARATOR value
+							<script>snd.sep = snd.sep or "##" -- important! CONFIG SEPARATOR value
 snd.version = "5.10"
 
-snd.sep = snd.sep or "\\" -- important! CONFIG SEPARATOR value
 snd.class = snd.class or "" -- your class, used for bashing
-snd.limb_dmg_done = 8.41 -- really only for Templars
+snd.limb_dmg_done = snd.limb_dmg_done or 6.5 -- really only for Templars
 snd.faction = snd.faction or "" -- your faction, spirit or shadow
 snd.mount = snd.mount or "276905" -- your horse's ID number
 
@@ -298,8 +302,7 @@ end
 						<Script isActive="yes" isFolder="no">
 							<name>vitals</name>
 							<packageName></packageName>
-							<script>
-snd.balance = {
+							<script>snd.balance = snd.balance or {
 fitness = true,
 shrug = true,
 battle = true,
@@ -348,7 +351,8 @@ sorcery_transfix = true,
   leech = true,
   shadowsphere = true,
   unbroken = true,
-
+  soulcage = true,
+  wand = true,
 }
 
 snd.waiting = snd.waiting or {
@@ -380,7 +384,7 @@ melting = false,
 nimbleness = false,
 }
 
-snd.limb_damage = {
+snd.my_limb_damage = snd.my_limb_damage or {
 head = 0,
 torso = 0,
 ["left arm"] = 0,
@@ -389,16 +393,16 @@ torso = 0,
 ["right leg"] = 0
 }
 
-snd.parrying = "none"
-snd.pipes_lit = false
-snd.emptypipe = "none"
-snd.smokedpipe = "none"
+snd.parrying = snd.parrying or "none"
+snd.pipes_lit = snd.pipes_lit or false
+snd.emptypipe = snd.emptypipe or "none"
+snd.smokedpipe = snd.smokedpipe or "none"
 
 snd.sent = {
 
 }
 
-snd.cur = {
+snd.cur = snd.cur or {
 herb = "",
 drink = "",
 vial = "",
@@ -406,7 +410,7 @@ salve = "",
 pipe = ""
 }
 
-snd.last = {
+snd.last = snd.last or {
 elixir = "",
 herb = "",
 smoke = "",
@@ -768,6 +772,7 @@ snd.landmarks = {
   
   if snd.class == "Sciomancer" then
     snd.defenses.def_rigor = snd.alternative_class_defenses.Sciomancer_rigor
+    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Sciomancer_empowered_moon
   end
   
    if snd.class == "Indorani" then
@@ -776,6 +781,18 @@ snd.landmarks = {
   
    if snd.class == "Oneiromancer" then
     snd.defenses.def_shroud = snd.alternative_class_defenses.Oneiromancer_shroud
+  end
+  
+   if snd.class == "Ascendril" then
+    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Ascendril_empowered_moon
+  end
+  
+   if snd.class == "Bloodborn" then
+    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Bloodborn_empowered_moon
+  end
+  
+   if snd.class == "Runecarver" then
+    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Runecarver_empowered_moon
   end
   
   if snd.class == "Templar" then
@@ -886,9 +903,7 @@ end
       --Set current area
     end
   end
-end
-
-</script>
+end</script>
 							<eventHandlerList>
 								<string>gmcp.Room.Info</string>
 							</eventHandlerList>
@@ -1438,7 +1453,7 @@ function snd.message(string, type)
     elseif type == "reset" then
       color = "brown"
     elseif type == "affliction" then
-      color = "blue"
+      color = "DeepSkyBlue"
     elseif type == "dendara" then
       color = "green"
     else
@@ -1458,12 +1473,10 @@ end
 
 function snd.attack_hit(attack, target)
  snd.message("You: &lt;green&gt;HIT&lt;magenta&gt; "..attack.."&lt;white&gt; "..target.."&lt;magenta&gt;!", "atk")
- snd.reflected = false
 end
 
 function snd.got_hit(attack, attacker)
  snd.message(attacker..": &lt;red&gt;HIT&lt;magenta&gt; "..attack.."&lt;white&gt; you&lt;magenta&gt;!", "atk")
- snd.reflected = false
 end
 
 function snd.third_hit(attack, attacker, target)
@@ -1478,87 +1491,121 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>able</name>
 							<packageName></packageName>
-							<script>
-function snd.functional()
- if snd.have_aff("stun") or
-    snd.have_aff("petrified") or
-    snd.have_aff("asleep") then
+							<script>function snd.functional()
+  if snd.have_aff("stun") or snd.have_aff("petrified") or snd.have_aff("asleep") then
     return false
- else
+  else
     return true
- end
+  end
 end
 
 function snd.wielding(weapon)
- if snd.weaponType(snd.wielded.left.name) == weapon or
-    snd.weaponType(snd.wielded.right.name) == weapon then
-	  return true
- else
+  if
+    snd.weaponType(snd.wielded.left.name) == weapon or
+    snd.weaponType(snd.wielded.right.name) == weapon
+  then
+    return true
+  else
     return false
- end
+  end
 end
 
 function snd.full_balance()
- if gmcp.Char == nil then return false end
- if gmcp.Char.Vitals.balance == "1" and
+  if gmcp.Char == nil then
+    return false
+  end
+  if
+    gmcp.Char.Vitals.balance == "1" and
     gmcp.Char.Vitals.equilibrium == "1" and
     gmcp.Char.Vitals.left_arm == "1" and
     gmcp.Char.Vitals.right_arm == "1" and
     not snd.waiting.balance and
-    not snd.waiting.equilibrium then
+    not snd.waiting.equilibrium
+  then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.have_aff(affliction)
- if not string.find(affliction, "aff_") then
-  affliction = "aff_"..affliction
- end
- if snd.afflictions[affliction] == nil then
-  return false
- end
- if snd.afflictions[affliction].state ~= "healed" then
-    return true
- else
+  if not string.find(affliction, "aff_") then
+    affliction = "aff_" .. affliction
+  end
+  if snd.afflictions[affliction] == nil then
     return false
- end
+  end
+  if snd.afflictions[affliction].state ~= "healed" then
+    return true
+  else
+    return false
+  end
 end
 
 function snd.aff_tally()
- count = 0
- for aff in pairs(snd.afflictions) do
-  if snd.have_aff(aff) then
-	 if snd.afflictions[aff]["cures"]["herb"] ~= nil or snd.afflictions[aff]["cures"]["salve"] ~= nil or snd.afflictions[aff]["cures"]["smoke"] ~= nil then
-	  count = count+1
-	 end
-	end
- end
- return count
+  count = 0
+  for aff in pairs(snd.afflictions) do
+    if snd.have_aff(aff) then
+      if
+        snd.afflictions[aff]["cures"]["herb"] ~= nil or
+        snd.afflictions[aff]["cures"]["salve"] ~= nil or
+        snd.afflictions[aff]["cures"]["smoke"] ~= nil
+      then
+        count = count + 1
+      end
+    end
+  end
+  return count
+end
+
+function snd.aff_tally_specific(afflictions, number)
+  --aff_tally checks all affs, aff_tally_specific requires you send it the specific affs you want to check
+  if number == 0 then
+    return true
+  end
+  if number == nil then
+    number = 1
+  end
+  if type(afflictions) == "string" then
+    return snd.have_aff(afflictions)
+  elseif type(afflictions) == "table" then
+    local count = 0
+    for i, v in ipairs(afflictions) do
+      if snd.have_aff(v) then
+        count = count + 1
+        if count &gt;= number then
+          return true
+        end
+      end
+    end
+    -- if the count of how many returned true didn't meet or exceed the number given, return false
+    return false
+  end
 end
 
 function snd.not_aff(affliction)
- if not string.find(affliction, "aff_") then
-  affliction = "aff_"..affliction
- end
- if snd.afflictions[affliction].state == "healed" then
+  if not string.find(affliction, "aff_") then
+    affliction = "aff_" .. affliction
+  end
+  if snd.afflictions[affliction].state == "healed" then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_cast()
- if snd.full_balance() and
+  if
+    snd.full_balance() and
     snd.functional() and
     snd.not_aff("paralysis") and
-		snd.not_aff("pacifism") and
-    gmcp.Char.Vitals.prone == "0" then
+    snd.not_aff("pacifism") and
+    gmcp.Char.Vitals.prone == "0"
+  then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_tattoo()
@@ -1570,67 +1617,67 @@ function snd.can_tattoo()
 end
 
 function snd.can_eat()
- if snd.not_aff("anorexia") and
-    snd.not_aff("destroyed_throat") then
+  if snd.not_aff("anorexia") and snd.not_aff("destroyed_throat") then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_apply()
- if snd.not_aff("slickness") then
+  if snd.not_aff("slickness") then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_smoke()
- if snd.not_aff("asthma") then
+  if snd.not_aff("asthma") then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_focus()
- if snd.not_aff("impatience") and
-    snd.not_aff("muddled") then
+  if snd.not_aff("impatience") and snd.not_aff("muddled") then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_fitness()
-if snd.not_aff("destroyed_throat") and
+  if
+    snd.not_aff("destroyed_throat") and
     hasSkill("Fitness") and
-		snd.balance.fitness then
+    snd.balance.fitness
+  then
     return true
- else
+  else
     return false
- end
+  end
 end
 
 function snd.can_shrug()
- if snd.class == "Syssin" and
-    hasSkill("Shrugging") and
-		snd.balance.shrug then
-		return true
- else
+  if snd.class == "Syssin" and hasSkill("Shrugging") and snd.balance.shrug then
+    return true
+  else
     return false
- end
+  end
 end
 
 function snd.can_rage()
- if (snd.class == "Templar" or snd.class == "Revenant" or snd.class == "Shapeshifter") and
+  if
+    (snd.class == "Templar" or snd.class == "Revenant" or snd.class == "Shapeshifter") and
     hasSkill("Rage") and
-		snd.balance.rage then
-		return true
- else
+    snd.balance.rage
+  then
+    return true
+  else
     return false
- end
+  end
 end
 
 
@@ -1755,23 +1802,24 @@ end
 						<Script isActive="yes" isFolder="no">
 							<name>movement</name>
 							<packageName></packageName>
-							<script>
-function snd.get_moving()
- hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
- 	if snd.can_path and snd.can_cast() and hp &gt;= 85 and snd.moving_to ~= "none" then
-		if snd.toggles.gallop and gmcp.Char.Vitals.mounted == "0" then
-	 		expandAlias("mnt", false)
-	 		snd.send("path find "..snd.moving_to..snd.sep.."path go gallop")
-		elseif snd.toggles.dash then
-	 		snd.send("path find "..snd.moving_to..snd.sep.."path go dash")
-		else
-	 		snd.send("path track "..snd.moving_to)
-		end
-  	snd.moving_to = "none"
-		if ylm.active and ylm.next_zone == "city" then
- 			ylm.active = false
-		end
- 	end
+							<script>function snd.get_moving()
+  hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
+  if snd.can_path and snd.can_cast() and hp &gt;= 85 and snd.moving_to ~= "none" then
+    if snd.toggles.gallop then
+      if gmcp.Char.Vitals.mounted == "0" then
+        expandAlias("mnt", false)
+      end
+      snd.send("path find " .. snd.moving_to .. snd.sep .. "path go gallop")
+    elseif snd.toggles.dash then
+      snd.send("path find " .. snd.moving_to .. snd.sep .. "path go dash")
+    else
+      snd.send("path track " .. snd.moving_to)
+    end
+    snd.moving_to = "none"
+    if ylm.active and ylm.next_zone == "city" then
+      ylm.active = false
+    end
+  end
 end
 
 function snd.parseDir(direction)
@@ -1801,78 +1849,79 @@ function snd.parseDir(direction)
 end
 
 function snd.swapDir(direction)
- directions = {
-  north = "south",
-	south = "north",
-	east = "west",
-	west = "east",
-	northeast = "southwest",
-	southwest = "northeast",
-	northwest = "southeast",
-	southeast = "northwest",
-	["in"] = "out",
-	out = "in",
-	up = "down",
-	down = "up",
- }
- return directions[direction]
+  directions =
+    {
+      north = "south",
+      south = "north",
+      east = "west",
+      west = "east",
+      northeast = "southwest",
+      southwest = "northeast",
+      northwest = "southeast",
+      southeast = "northwest",
+      ["in"] = "out",
+      out = "in",
+      up = "down",
+      down = "up",
+    }
+  return directions[direction]
 end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>no target</name>
 							<packageName></packageName>
-							<script>
-function snd.no_target()
- --deleteLine()
- --snd.message("Need new targets!")
- if snd.offense_loaded then
-  snd.target_gone = true
-  snd.get_new_target()
- end
- if snd.bashing_loaded then
-  snd.untarget()
-  snd.waiting.balance = false
-  snd.waiting.equilibrium = false
-  snd.bashing.target_priority = 10000
- end
+							<script>function snd.no_target()
+  --deleteLine()
+  --snd.message("Need new targets!")
+  if snd.offense_loaded then
+    snd.target_gone = true
+    snd.get_new_target()
+  end
+  if snd.bashing_loaded then
+    snd.untarget()
+    snd.waiting.balance = false
+    snd.waiting.equilibrium = false
+    snd.bashing.target_priority = 10000
+  end
 end
 
 function snd.untarget()
- snd.bashing.engaged = false
- snd.bashing.targeted = false
-
- snd.last_attack = "none"
- 
- if snd.bashing.stopping then
-  snd.message("Bashing OFF!")
-  snd.toggles.bashing = false
-  snd.bashing.stopping = false
- end
- 
+  snd.bashing.engaged = false
+  snd.bashing.targeted = false
+  snd.last_attack = "none"
+  if snd.bashing.stopping then
+    snd.message("Bashing OFF!")
+    if snd.toggles.bashing then
+      snd.toggle("bashing")
+    end
+    snd.bashing.stopping = false
+  end
 end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>reset me</name>
 							<packageName></packageName>
-							<script>
-function snd.reset_me()
- for i in pairs(snd.afflictions) do
-  snd.aff_remove(i)
- end
- for i in pairs(snd.defenses) do
-  snd.def_remove(i)
- end
- snd.parrying = "none"
+							<script>function snd.reset_me()
+  for i in pairs(snd.afflictions) do
+    snd.aff_remove(i)
+  end
+  for i in pairs(snd.defenses) do
+    snd.def_remove(i)
+  end
+  for i in pairs(snd.balance) do
+    snd.balance[i] = true
+  end
+  snd.parrying = "none"
+  snd.crescentable = true
 end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
 							<name>misc</name>
 							<packageName></packageName>
-							<script>
-function snd.changeClass()
+							<script>function snd.changeClass()
  if snd.assumed_class ~= nil then
   snd.class = snd.assumed_class
  else
@@ -1933,27 +1982,13 @@ function snd.weaponType(weapon)
 end
 
 function snd.skillrankcheck(rank)
-	local skillranks = {
-	  "Transcendent",
-		"Mythical",
-		"Fabled",
-		"Virtuoso",
-		}
-		
-		for _, v in pairs(skillranks) do
-			if string.find(rank, v) then
-				return true
-			end
-		end		
-end
-
-
-
-
-
-
-
-</script>
+  local skillranks = {"Transcendent", "Mythical", "Fabled", "Virtuoso"}
+  for _, v in pairs(skillranks) do
+    if string.find(rank, v) then
+      return true
+    end
+  end
+end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -2037,7 +2072,7 @@ function snd.goggle_update()
       snd.defenses["def_"..k].skill = goggle_defenses[k].non_goggle_skill
     end
   end
-end 
+end  
 
 function snd.are_we_with_grouped()
     local good2go = true
@@ -2078,40 +2113,34 @@ end</script>
 							<name>core</name>
 							<packageName></packageName>
 							<script>function snd.core()
-if not snd.channeling then
- if snd.toggles.active then
-    if snd.have_aff("asthma") and snd.have_aff("slickness") then
-      snd.need_fitness = true
-    else
-      snd.need_fitness = false
-    end
-    if snd.toggles.parrying and snd.offense_loaded then
-      snd.parry()
-    end
-    if snd.emptypipe ~= "none" and not snd.waiting.lighting and snd.can_cast() then
-      snd.send("outc "..snd.emptypipe..snd.sep.."put "..snd.emptypipe.." in emptypipe")
-	    snd.waiting.lighting = true
-	    tempTimer(snd.delay(), [[snd.waiting.lighting = false]])
-    end
-    snd.def_check()
-    snd.aff_check()
-    if snd.update_priority &gt; 0 then
-      if snd.setting_priority == "burnt_skin 1" then
-        snd.update_priority = 0
+  if not snd.channeling then
+    if snd.toggles.active then
+      if snd.emptypipe ~= "none" and not snd.waiting.lighting and snd.can_cast() then
+        snd.send("outc " .. snd.emptypipe .. snd.sep .. "put " .. snd.emptypipe .. " in emptypipe")
+        snd.waiting.lighting = true
+        tempTimer(snd.delay(), [[snd.waiting.lighting = false]])
       end
-      snd.firstaidresetlistnone()
-    end
-    if snd.healing_loaded then
-      if snd.have_aff("asleep") and snd.toggles.standing then
+  
+      snd.def_check()
+      snd.aff_check()
+  
+      if snd.update_priority &gt; 0 then
+        if snd.setting_priority == "burnt_skin 1" then
+          snd.update_priority = 0
+        end
+        snd.firstaidresetlistnone()
+      end
+    
+      if snd.toggles.active and snd.healing_loaded and snd.have_aff("asleep") and snd.toggles.standing then
         snd.send("wake")
       end
-    end
-    if snd.functional() then
-      snd.do_queue()
-      snd.do_stuff()
+    
+      if snd.functional() then
+        snd.do_queue()
+        snd.do_stuff()
+      end
     end
   end
-end
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -2175,8 +2204,8 @@ snd.priorities =
     "aff_heartflutter",
     "aff_slough",
     "def_firefly_tattoo",
-    "aff_shaderot_body",
-    "aff_shaderot_wither",
+    "aff_rot_body",
+    "aff_rot_wither",
     "aff_baldness",
     "aff_clumsiness",
     "aff_hypochondria",
@@ -2199,8 +2228,8 @@ snd.priorities =
     "aff_dissonance",
     "aff_infested",
     "aff_itchy",
-    "aff_shaderot_heat",
-    "aff_shaderot_spirit",
+    "aff_rot_heat",
+    "aff_rot_spirit",
     "aff_accursed",
     "aff_agony",
     "aff_body_odor",
@@ -2322,7 +2351,7 @@ snd.priorities =
     "aff_blurry_vision",
     "aff_burnt_eyes",
     "aff_gloom",
-    "aff_shaderot_benign",
+    "aff_rot_benign",
     "aff_frozen",
     "aff_shivering",
     "aff_disrupted",
@@ -2349,6 +2378,9 @@ snd.priorities =
     "aff_dazed",
     "aff_embedded_axe",
     
+    "def_victimise",
+    "def_panoply",
+    "def_forestall",
     "def_gripping",
     "def_vigor",
     "def_divert_melee",
@@ -2412,7 +2444,7 @@ snd.priorities =
     "def_shadow_engulf",
     "def_shadow_mantle",
     "def_blurring",
-    "def_sagacity",
+    "def_empowered_moon",
     "def_thirdeye",
     "def_blindness",
     "def_deafness",
@@ -3118,11 +3150,11 @@ aff_self_loathing = {state = "healed", effect = "Lose balance and fall down", cu
 ["aff_self_pity"] = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_seduction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sensitivity = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_shaderot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_shaderot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_shaderot_heat = {state = "healed", effect = "shaderot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_shaderot_spirit = {state = "healed", effect = "shaderot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_shaderot_wither = {state = "healed", effect = "shaderot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_benign = {state = "healed", effect = "rot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_body = {state = "healed", effect = "rot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_heat = {state = "healed", effect = "rot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_spirit = {state = "healed", effect = "rot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_wither = {state = "healed", effect = "rot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_shadow_coat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadow_weakness = {state = "healed", effect = "more dmg from shadow source", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadowbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3221,6 +3253,22 @@ aff_inhibited = {state = "healed", effect = "", cures = {}, assess = false, time
 --Earthcaller
 aff_aftershocks = {state = "healed", effect = "gain affs if earthcaller seismicity hits you", cures = {}, assess = false, timer = createStopWatch()},
 aff_faulted = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+
+--Runecarver
+aff_inoculated = {state = "healed", effect = "auto gravity from scio spells", cures = {}, assess = false, timer = createStopWatch()},
+aff_fungal_invasion = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
+aff_preymark = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_woe_curse = {state = "healed", effect = "hides scio affs and generally a bad time", cures = {}, assess = false, timer = createStopWatch()},
+aff_mystified = {state = "healed", effect = "stuck prone for a bit via voidgaze", cures = {}, assess = false, timer = createStopWatch()},
+
+--Bloodborn
+aff_excess_choleric = {state = "healed", effect = "emberbrand - ablaze on all spells", cures = {}, assess = false, timer = createStopWatch()},
+aff_excess_melancholic = {state = "healed", effect = "thunderbrand - health damage, slower pills", cures = {}, assess = false, timer = createStopWatch()},
+aff_frostbite = {state = "healed", effect = "leads to frostbrand", cures = {}, assess = false, timer = createStopWatch()},
+aff_excess_phlegm = {state = "healed", effect = "frostbrand - continually freezes over time", cures = {}, assess = false, timer = createStopWatch()},
+aff_corroded_limb = {state = "healed", effect = "extra limb damage if hit by yellowbile spell", cures = {}, assess = false, timer = createStopWatch()},
+aff_bile_covered = {state = "healed", effect = "dmg over time", cures = {}, assess = false, timer = createStopWatch()},
+aff_phlegm_frozen = {state = "healed", effect = "gives an additional cold damage proc on cold damage receive", cures = {}, assess = false, timer = createStopWatch()},
 
 }</script>
 								<eventHandlerList />
@@ -3405,7 +3453,8 @@ end</script>
 							<Script isActive="yes" isFolder="no">
 								<name>clear</name>
 								<packageName></packageName>
-								<script>function snd.clear_afflictions(type)
+								<script>
+function snd.clear_afflictions(type)
  snd.clear_affs = {}
  for i in pairs(snd.afflictions) do
   if snd.afflictions[i].cures[type] ~= nil then
@@ -3796,13 +3845,11 @@ def_sand_swelter = {defense = "sand_swelter", type = "normal", effect = "Your sa
 
 --Ascendril
 def_missiles = {defense = "missiles", type = "normal", effect = "PvE damage", balance = {balanceequilibriumtake = "cast missiles on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Missiles" },
-def_sagacity = {defense = "sagacity", type = "normal", effect = "extra mana recovery", balance = {balanceequilibriumtake = "cast sagacity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Sagacity" },
 def_arcaneskin = {defense = "arcaneskin", type = "normal", effect = "Increased cutting/blunt resistances", balance = {balanceequilibrium = "cast arcaneskin"}, state = "down", needit = false, timer = createStopWatch(), skill = "Arcaneskin"},
 def_countercurrent = {defense = "countercurrent", type = "normal", effect = "chance to resist venoms", balance = {balanceequilibrium = "cast countercurrent"}, state = "down", needit = false, timer = createStopWatch(), skill = "Countercurrent"},
 def_stalled = {defense = "stalled", type = "normal", effect = "holding an attack", balance = {balanceequilibrium = ""}, state = "down", needit = false, timer = createStopWatch(), skill = "Stall"},
 
 --Sciomancer
-def_rigor  = {defense = "rigor", type = "normal", effect = "WP drain but better crit chance", balance = {balanceequilibriumtake = "cast rigor on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Rigor" },
 def_shadow_engulf   = {defense = "shadow_engulf", type = "normal", effect = "Mask your movements", balance = {balanceequilibriumtake = "cast engulf on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Engulf" },
 def_shadow_mantle  = {defense = "shadow_mantle", type = "normal", effect = "Reduce damage taken from elements", balance = {balanceequilibriumtake = "cast mantle"}, state = "down", needit = false, timer = createStopWatch(), skill = "Mantle" },
 def_blurring  = {defense = "blurring", type = "normal", effect = "Better diverting", balance = {balanceequilibriumtake = "cast blurring"}, state = "down", needit = false, timer = createStopWatch(), skill = "Blurring" },
@@ -3871,6 +3918,18 @@ def_fog_obscure  = {defense = "fog_obscure", type = "SeaGreen", effect = "Become
 def_fluctuations  = {defense = "fluctuations", type = "SeaGreen", effect = "Your fog informs you of who moves in and out", balance = {balanceequilibriumtake = "fog fluctuations on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Fluctuations" },
 def_hightide = {defense = "hightide", type = "SeaGreen", effect = "Strike faster during high tide", balance = {}, state = "down", needit = false, timer = createStopWatch(), skill = "Hightide" },
 
+--Bloodborn
+def_victimise = {defense = "victimise", type = "normal", effect = "PvE damage", balance = {balanceequilibriumtake = "unleash victimise on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Victimise" },
+def_panoply = {defense = "panoply", type = "normal", effect = "Increased cutting/blunt resistances", balance = {balanceequilibrium = "unleash panoply"}, state = "down", needit = false, timer = createStopWatch(), skill = "Panoply"},
+def_forestall = {defense = "forestall", type = "normal", effect = "chance to resist venoms", balance = {balanceequilibrium = "unleash forestall"}, state = "down", needit = false, timer = createStopWatch(), skill = "Forestall"},
+def_arrhythmia = {defense = "arrhythmia", type = "normal", effect = "holding an attack", balance = {balanceequilibrium = ""}, state = "down", needit = false, timer = createStopWatch(), skill = "Arrhythmia"},
+
+--Runecarver
+def_prowess = {defense = "prowess", type = "normal", effect = "WP drain but better crit chance", balance = {balanceequilibriumtake = "runecarv prowess on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Prowess" },
+def_hex_stalk = {defense = "hex_stalk", type = "normal", effect = "Mask your movements", balance = {balanceequilibriumtake = "hex stalk "}, state = "down", needit = false, timer = createStopWatch(), skill = "Stalk" },
+def_hex_preservation = {defense = "hex_preservation", type = "normal", effect = "Reduce damage taken from elements", balance = {balanceequilibriumtake = "hex preserve"}, state = "down", needit = false, timer = createStopWatch(), skill = "Preserve" },
+def_ironbark  = {defense = "ironbark", type = "normal", effect = "Better diverting", balance = {balanceequilibriumtake = "runecarve ironbark"}, state = "down", needit = false, timer = createStopWatch(), skill = "Ironbark" },
+
 }
 
 snd.alternative_class_defenses = {
@@ -3886,6 +3945,10 @@ Templar_maingauche = {defense = "maingauche", type = "normal", effect = "Chance 
 Sciomancer_rigor = {defense = "rigor", type = "normal", effect = "WP drain but better crit chance", balance = {balanceequilibriumtake = "cast rigor on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Rigor"},
 Warden_rigor = {defense = "rigor", type = "normal", effect = "Cheap Furor.", balance = {needybalancetake = "warden rigor"}, state = "down", needit = false, timer = createStopWatch(), skill = "Rigor"},
 Warden_fearless = {defense = "fearless", type = "normal", effect = "Protects against fear affliction.", balance = {special = "warden fortitude"}, state = "down", needit = false, timer = createStopWatch(), skill = "Fortitude"},
+Ascendril_empowered_moon = {defense = "empowered_moon", type = "normal", effect = "extra mana recovery", balance = {balanceequilibriumtake = "cast sagacity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Sagacity" },
+Bloodborn_empowered_moon = {defense = "empowered_moon", type = "normal", effect = "extra mana recovery", balance = {balanceequilibriumtake = "unleash acumen"}, state = "down", needit = false, timer = createStopWatch(), skill = "Acumen" },
+Sciomancer_empowered_moon = {defense = "empowered_moon", type = "normal", effect = "extra mana recovery", balance = {balanceequilibriumtake = "cast sagacity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Sagacity" },
+Runecarver_empowered_moon = {defense = "empowered_moon", type = "normal", effect = "extra mana recovery", balance = {balanceequilibriumtake = "runecarve mysticism"}, state = "down", needit = false, timer = createStopWatch(), skill = "Mysticism" },
 
 }
 
@@ -4152,7 +4215,7 @@ end</script>
   ["You are unnaturally agile."] = "potence_dexterity",
   ["You are unnaturally strong."] = "potence_strength",
   ["You have flown into a battle rage."] = "herculeanrage",
-  ["Your sagacious mind empowers the moon tattoo."] = "sagacity",
+  ["Your sagacious mind empowers the moon tattoo."] = "empowered_moon",
   ["You are preparing arcane missiles."] = "missiles",
   ["You are protected by a thin layer of magic."] = "arcaneskin",
   ["You have the countercurrent defence."] = "countercurrent",
@@ -4256,6 +4319,14 @@ end</script>
   ["Your intelligence is bolstered by an Earthen battle hymn"] = "battlehymn_intelligence",
   ["Your dexterity is bolstered by an Earthen battle hymn"] = "battlehymn_dexterity",
   ["Your strength is bolstered by an Earthen battle hymn"] = "battlehymn_strength",
+  ["You will forestall poisonous harm."] = "forestall",
+["Your moon tattoo is being empowered."] = "empowered_moon",
+["You are encased in arcane armour unseen."] = "panoply",
+["You will victimise your foes with terrible magic."] = "victimise",
+  ["Your predatory prowess enhances your malediction."] = "prowess",
+  ["The Broodmother's secrecy masks your steps."] = "hex_stalk",
+  ["The Warden's blessing preserves you."] = "hex_preservation",
+  ["Phantasmal ironbark girds your form."] = "ironbark",
 }
  </script>
 								<eventHandlerList />
@@ -9229,7 +9300,7 @@ snd.areas = {
 {area = "the Karak Forest", level = "95+", targets = {"a speckled ptarmigan", "a regally-mantled red hart", "a black mountain hare", "a svelte red hind"}},
 {area = "the Maul", level = "99", targets = {"a gaunt Aslinn guard", "an Aslinn slave catcher", "a snarling vakmut warhound", "a ravenous vakmut warhound", "a lithe Aslinn houndmaster", "a wary Aslinn slaver", "a wretched Aslinn slaver", "a cruel Aslinn guard", "a menacing Aslinn gladiator", "a scarred Aslinn gladiator"}},
 {area = "the forgotten depths of Mount Helba", level = "99", targets = {"a towering fungal abomination", "a withered fungal abomination"}},
-{area = "a basilisk lair", level = "100+", targets = {"the basilisk queen", "a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
+{area = "a basilisk lair", level = "100+", targets = {"a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
 {area = "the Bakal Chasm", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
 {area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
 {area = "the Welto Trench", level = "good luck", targets = {"a black hunter shark", "a spotted bull shark", "a scarred hunter shark", "a brown hunter shark", "a scarred welto shark", "a striped hunter shark", "a great white welto shark", "a brown bull shark", "a bronze tiger shark", "a black bull shark", "a spotted tiger shark", "a bronze tiger shark", "a grey hunter shark", "a bronze welto shark", "a brown tiger shark", "a storm-wing harpy", "a spotted welto shark", "a striped welto shark", "a striped tiger shark", "a striped bull shark", "a spotted hunter shark", "a black tiger shark", "a great white bull shark", "a menacing torvok", "a brown welto shark", "a great white tiger shark", "a menacing torvok", "a great white hunter shark", "a great white welto shark", "a bronze bull shark", "a grey tiger shark", "a bronze hunter shark", "a spotted hunter shark", "a scarred tiger shark", "a black welto shark", "a grey bull shark", "a striped welto shark", "a grey welto shark", "a black welto shark", "a scarred bull shark", "a blacktip shark", "a box jellyfish", "a giant manta ray", "a deep water serpent", "a stone crab"}},
@@ -19727,6 +19798,7 @@ snd.class_list = {
 {class = "Luminary", func = function(current) snd.luminary_bash() end}, 
 {class = "Earthcaller", func = function(current) snd.earthcaller_bash() end}, 
 {class = "Ascendril", func = function(current) snd.ascendril_bash() end},
+{class = "Bloodborn", func = function(current) snd.bloodborn_bash() end},
 {class = "Zealot", func = function(current) snd.zealot_bash() end}, 
 {class = "Ravager", func = function(current) snd.ravager_bash() end}, 
 {class = "Shaman", func = function(current) snd.shaman_bash() end}, 
@@ -19748,6 +19820,7 @@ snd.class_list = {
 {class = "Warden", func = function(current) snd.warden_bash() end},
 {class = "Bard", func = function(current) snd.bard_bash() end},
 {class = "Alchemist", func = function(current) snd.alchemist_bash() end},
+{class = "Runecarver", func = function(current) snd.runecarver_bash() end},
 {class = "None", func = function(current) snd.astral_bash() end},
 }
 
@@ -20372,6 +20445,37 @@ function snd.ascendril_bash()
 	end
   
 end
+function snd.bloodborn_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  if snd.reflection_charge == 3 then
+    snd.reflected = false
+  end
+  
+	if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if snd.punisher then
+      if snd.reflection_charge &gt; 0 and not snd.reflected then
+			   battack = battack..snd.sep.."unleash geminate"
+      else
+        battack = battack..snd.sep.."jig"
+      end
+    else
+      battack = battack..snd.sep.."touch shield"
+    end
+	elseif snd.pushattack then
+		battack = battack..snd.sep.."push "..snd.bashing.target
+		snd.pushattack = false
+  else
+    if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "yellow"  then
+   		battack = battack..snd.sep.."humour flense "..snd.bashing.target
+    elseif gmcp.Char.Vitals.resonance == "phlegm" then
+   		battack = battack..snd.sep.."humour disgorge "..snd.bashing.target
+    elseif gmcp.Char.Vitals.resonance == "black" then
+    	battack = battack..snd.sep.."humour befoul "..snd.bashing.target
+    end
+	end
+  
+end
 
 function snd.sciomancer_bash()
 hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
@@ -20519,6 +20623,46 @@ function snd.astral_bash()
     	battack = "astral evert "..snd.bashing.target
     end
  	end
+end
+
+function snd.runecarver_bash()
+hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  if snd.reflection_charge == 3 then
+    snd.reflected = false
+  end
+  
+  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
+    if snd.punisher then
+      if snd.reflection_charge &gt; 0 and not snd.reflected then
+			   battack = battack..snd.sep.."runecarve branch"
+      else
+        battack = battack..snd.sep.."jig"
+      end
+    else
+      battack = battack..snd.sep.."touch shield"
+    end
+	elseif snd.pushattack then
+		battack = battack..snd.sep.."push "..snd.bashing.target
+		snd.pushattack = false
+	elseif snd.toggles.newbie then
+  	  battack = battack..snd.sep.."hex enervate "..snd.bashing.target
+ 	else
+		if table.contains(gmcp.Char.Defences.List, "hex_preservation") then
+      if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex fever "..snd.bashing.target
+      else
+        battack = battack..snd.sep.."hex fever " ..snd.bashing.target
+      end
+    else
+      if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 2 then
+        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex fever "..snd.bashing.target
+      else
+        battack = battack..snd.sep.."hex fever " ..snd.bashing.target
+      end
+    end
+ 	end
+  
 end
 </script>
 						<eventHandlerList />
@@ -22471,261 +22615,320 @@ end</script>
 
 	snd.firstaidcuretrack = {}
   -- level 1
-  -- pipe
-  snd.firstaidcuretrack.aeon = "1"  
-  -- salves
-	snd.firstaidcuretrack.anorexia = "1"
-	snd.firstaidcuretrack.indifference = "1"
-	snd.firstaidcuretrack.destroyed_throat = "1"
+  -- none
+  snd.firstaidcuretrack.anorexia = "2"
+  snd.firstaidcuretrack.destroyed_throat = "2"
+  snd.firstaidcuretrack.gorged = "2"
   -- pills
-	snd.firstaidcuretrack.crippled_body = "1"
-	snd.firstaidcuretrack.paresis = "1"
-	snd.firstaidcuretrack.paralysis = "1"
+  snd.firstaidcuretrack.paralysis = "2"
   -- special
-  snd.firstaidcuretrack.asleep = "1"
-  snd.firstaidcuretrack.voyria = "1"
-	snd.firstaidcuretrack.writhe_gunk = "1"
-  snd.firstaidcuretrack.writhe_grappled = "1"
-  snd.firstaidcuretrack.writhe_stasis = "1"
-  snd.firstaidcuretrack.writhe_web = "1"
-  snd.firstaidcuretrack.writhe_vines = "1"
-  snd.firstaidcuretrack.writhe_bind = "1"
-  snd.firstaidcuretrack.writhe_transfix = "1"
-  snd.firstaidcuretrack.writhe_ropes = "1"
-  snd.firstaidcuretrack.writhe_impaled = "1"
-  snd.firstaidcuretrack.writhe_thighlock = "1"
-  snd.firstaidcuretrack.armpitlock = "1"
-  snd.firstaidcuretrack.necklock = "1"
-  snd.firstaidcuretrack.dazed = "1"
-  snd.firstaidcuretrack.writhe_hoist = "1"
-  snd.firstaidcuretrack.lure = "1"
-  snd.firstaidcuretrack.itchy = "1"
+  snd.firstaidcuretrack.asleep = "2"
+  snd.firstaidcuretrack.fear = "2"
+  snd.firstaidcuretrack.itchy = "2"
 
-  -- level 2
-  -- pipe
-	snd.firstaidcuretrack.slickness = "2"
-	snd.firstaidcuretrack.hellsight = "2" 
-  -- pill
-	snd.firstaidcuretrack.asthma = "2"
-	snd.firstaidcuretrack.ringing_ears = "2"
-  snd.firstaidcuretrack.limp_veins = "2"
-	-- salves
-  snd.firstaidcuretrack.head_mangled = "2"
-	snd.firstaidcuretrack.crushed_chest = "2"
-  snd.firstaidcuretrack.burnt_skin = "2"
-  snd.firstaidcuretrack.head_bruised_critical = "2"
-  -- special
-  snd.firstaidcuretrack.disrupted = "2"
+  -- level 3
+  -- pipe none
+  -- salves
+  snd.firstaidcuretrack.head_mangled = "3"
+  snd.firstaidcuretrack.crushed_chest = "3"
+  snd.firstaidcuretrack.burnt_skin = "3"
+  snd.firstaidcuretrack.ice_encased = "3"
   
-	-- level 3
-  -- pipe
-  snd.firstaidcuretrack.withering = "3"
-  -- salve
-  snd.firstaidcuretrack.left_arm_amputated = "3"
-  snd.firstaidcuretrack.right_arm_amputated = "3"
-  snd.firstaidcuretrack.left_leg_amputated = "3"
-  snd.firstaidcuretrack.right_leg_amputated = "3"
-  snd.firstaidcuretrack.left_arm_damaged = "3"
-  snd.firstaidcuretrack.right_arm_damaged = "3"
-  snd.firstaidcuretrack.left_leg_damaged = "3"		
-  snd.firstaidcuretrack.right_leg_damaged = "3"
-  snd.firstaidcuretrack.right_leg_mangled = "3"
-  snd.firstaidcuretrack.left_leg_mangled = "3"
-  snd.firstaidcuretrack.right_arm_mangled = "3"
-  snd.firstaidcuretrack.left_arm_mangled = "3"	
-  snd.firstaidcuretrack.left_leg_bruised_critical = "3"
-  snd.firstaidcuretrack.right_leg_bruised_critical = "3"
-  snd.firstaidcuretrack.right_arm_bruised_critical = "3"
-  snd.firstaidcuretrack.left_arm_bruised_critical = "3"
-  snd.firstaidcuretrack.torso_bruised_critical = "3"
-  snd.firstaidcuretrack.voidgaze = "3"
-  -- pill
-	snd.firstaidcuretrack.clumsiness = "3"	
-	snd.firstaidcuretrack.slough = "3"
-	snd.firstaidcuretrack.thin_blood = "3"		
-	snd.firstaidcuretrack.nyctophobbia = "3"	
-	-- special
-  snd.firstaidcuretrack.vinethorns = "3"
-  -- level 4
-  -- pipe
-	snd.firstaidcuretrack.disfigurement = "4"
-	snd.firstaidcuretrack.migraine = "4"
-  -- salve
-  snd.firstaidcuretrack.left_leg_broken = "4"
-  snd.firstaidcuretrack.right_leg_broken = "4"
-  snd.firstaidcuretrack.right_arm_broken = "4"
-  snd.firstaidcuretrack.left_arm_broken = "4"
-  snd.firstaidcuretrack.firstaid_predict_arms = "4"
-  snd.firstaidcuretrack.firstaid_predict_legs = "4"
-  snd.firstaidcuretrack.firstaid_predict_any_limb = "4"
-  snd.firstaidcuretrack.torso = "4"
-  snd.firstaidcuretrack.pretorso = "1" 
-  -- pill
-	snd.firstaidcuretrack.baldness = "4"
-	snd.firstaidcuretrack.hypochondria = "4"
-	snd.firstaidcuretrack.impatience = "4"
-	snd.firstaidcuretrack.infested = "4"
-	snd.firstaidcuretrack.mirroring = "4"
-	snd.firstaidcuretrack.pacifism = "4"
-	snd.firstaidcuretrack.patterns = "4"
-	snd.firstaidcuretrack.recklessness = "4"
-	snd.firstaidcuretrack.weariness = "4"
+ -- pill
+  snd.firstaidcuretrack.asthma = "3" 
+-- special
+   snd.firstaidcuretrack.voyria = "3"
+  snd.firstaidcuretrack.writhe_impaled = "3"
   
-  -- level 5
-	-- pipe
-  snd.firstaidcuretrack.deadening = "5"
+  -- 4
+  -- pipe
+  snd.firstaidcuretrack.aeon = "4"  
   -- salve
-  snd.firstaidcuretrack.spinal_rip = "5"
-  snd.firstaidcuretrack.head_damaged = "5"
-  snd.firstaidcuretrack.torso_damaged = "5"
-  snd.firstaidcuretrack.torso_mangled = "5"
-  snd.firstaidcuretrack.left_arm_bruised = "5"
-  snd.firstaidcuretrack.right_arm_bruised = "5"
-  snd.firstaidcuretrack.left_leg_bruised = "5"
-  snd.firstaidcuretrack.right_leg_bruised = "5"
-  snd.firstaidcuretrack.head_bruised = "5"
-  snd.firstaidcuretrack.torso_bruised = "5"
-  snd.firstaidcuretrack.left_leg_bruised_moderate = "5"
-  snd.firstaidcuretrack.right_leg_bruised_moderate = "5"
-  snd.firstaidcuretrack.right_arm_bruised_moderate = "5"
-  snd.firstaidcuretrack.left_arm_bruised_moderate = "5"
-  snd.firstaidcuretrack.torso_bruised_moderate = "5"
-  snd.firstaidcuretrack.head_bruised_moderate = "5"
+  snd.firstaidcuretrack.head_bruised_critical = "4"
+  snd.firstaidcuretrack.left_leg_bruised_critical = "4"
+  snd.firstaidcuretrack.right_leg_bruised_critical = "4"
+  snd.firstaidcuretrack.right_arm_bruised_critical = "4"
+  snd.firstaidcuretrack.left_arm_bruised_critical = "4"
+  snd.firstaidcuretrack.torso_bruised_critical = "4" 
+--pill
+  snd.firstaidcuretrack.physical_disruption = "4"
+  snd.firstaidcuretrack.mental_disruption = "4"
+  snd.firstaidcuretrack.paresis = "4"  
+  snd.firstaidcuretrack.rot_body = "4"  
+--special
+  snd.firstaidcuretrack.writhe_thighlock = "4"  
+  snd.firstaidcuretrack.writhe_armpitlock = "4"  
+  snd.firstaidcuretrack.writhe_necklock = "4" 
+  snd.firstaidcuretrack.writhe_hoist = "4"  
+  snd.firstaidcuretrack.writhe_lure = "4"   
+  
+-- 5
+--pipe
+  snd.firstaidcuretrack.slickness = "5"
+  
+--salves
+  snd.firstaidcuretrack.hypothermia = "5"
+  snd.firstaidcuretrack.cracked_ribs = "5"  
   snd.firstaidcuretrack.gloom = "5"
-  -- pill
-	snd.firstaidcuretrack.blighted = "5"
-	snd.firstaidcuretrack.blood_curse = "5"
-	snd.firstaidcuretrack.blood_poison = "5"
-	snd.firstaidcuretrack.confusion = "5"
-	snd.firstaidcuretrack.idiocy = "5"
-	snd.firstaidcuretrack.mental_disruption = "5"
-	snd.firstaidcuretrack.merciful = "5"
-	snd.firstaidcuretrack.physical_disruption = "5"
-	snd.firstaidcuretrack.plodding = "5"
-	snd.firstaidcuretrack.agony = "5"
-  snd.firstaidcuretrack.accursed = "5"	
-	--special 
-  --none
-	
-  -- level 6
-  -- pipe
-  snd.firstaidcuretrack.squelched = "6"
-  -- salve
-	snd.firstaidcuretrack.shivering = "6"
-	snd.firstaidcuretrack.frozen = "6"	  
-	snd.firstaidcuretrack.gorged = "6"
-  snd.firstaidcuretrack.blurry_vision = "6"
-  snd.firstaidcuretrack.smashed_throat = "6"
- 	snd.firstaidcuretrack.cracked_ribs = "6"
-	snd.firstaidcuretrack.whiplash = "6"
-  snd.firstaidcuretrack.backstrain = "6"
-	snd.firstaidcuretrack.collapsed_lung = "6"
-	snd.firstaidcuretrack.left_arm_dislocated = "6"
-	snd.firstaidcuretrack.left_leg_dislocated = "6"
-	snd.firstaidcuretrack.right_arm_dislocated = "6"
-	snd.firstaidcuretrack.right_leg_dislocated = "6"
-	snd.firstaidcuretrack.sore_wrist = "6"
-	snd.firstaidcuretrack.sore_ankle = "6"
-	snd.firstaidcuretrack.muscle_spasms = "6"
- 	snd.firstaidcuretrack.heatspear = "6"     
-  -- pill 
-  snd.firstaidcuretrack.sensitivity = "6"
-  snd.firstaidcuretrack.rend = "6"
-  snd.firstaidcuretrack.epilepsy = "6"
-  snd.firstaidcuretrack.masochism = "6"
-  snd.firstaidcuretrack.loneliness = "6"
-  snd.firstaidcuretrack.haemophilia = "6"
-  snd.firstaidcuretrack.lethargy = "6"
-  snd.firstaidcuretrack.vomiting = "6"
-  snd.firstaidcuretrack.impairment = "6"
-  snd.firstaidcuretrack.crippled = "6"
-	snd.firstaidcuretrack.allergies = "6"
-	snd.firstaidcuretrack.shaderot_body = "6"
-	snd.firstaidcuretrack.shaderot_benign = "6"
-	snd.firstaidcuretrack.shaderot_spirit = "6"
-	snd.firstaidcuretrack.shaderot_heat = "6"
-	snd.firstaidcuretrack.shaderot_wither = "6"
-  -- special none
+  snd.firstaidcuretrack.voidgaze = "5"
+-- pill
+  snd.firstaidcuretrack.slough = "5"
+  snd.firstaidcuretrack.blood_curse = "5"
+  snd.firstaidcuretrack.blood_poison = "5" 
+  snd.firstaidcuretrack.thin_blood = "5"
+  snd.firstaidcuretrack.mirroring = "5" 
+--special
+  snd.firstaidcuretrack.writhe_gunk = "5"
+  snd.firstaidcuretrack.writhe_grappled = "5" 
+  snd.firstaidcuretrack.writhe_web = "5"   
+  snd.firstaidcuretrack.writhe_vines = "5"  
+  snd.firstaidcuretrack.writhe_bind = "5"   
+   snd.firstaidcuretrack.writhe_transfix = "5"
+  snd.firstaidcuretrack.writhe_ropes = "5" 
+
+--6
+--pipe
+  snd.firstaidcuretrack.besilence = "6"
+-- salve
+  snd.firstaidcuretrack.left_leg_amputated = "6"
+  snd.firstaidcuretrack.right_leg_amputated = "6"
+  snd.firstaidcuretrack.left_leg_damaged = "6"
+  snd.firstaidcuretrack.right_leg_damaged = "6" 
+  snd.firstaidcuretrack.right_leg_mangled = "6"
+  snd.firstaidcuretrack.left_leg_mangled = "6"  
+-- pill
+  snd.firstaidcuretrack.stupidity = "6"
+  snd.firstaidcuretrack.impatience = "6" 
+  snd.firstaidcuretrack.stormtouched = "6"   
+  snd.firstaidcuretrack.patterns = "6"  
+-- special
+  snd.firstaidcuretrack.writhe_stasis = "6"  
+
+--7
+-- pipe
+  snd.firstaidcuretrack.hellsight = "7" 
+  snd.firstaidcuretrack.withering = "7"
+--salve
+  snd.firstaidcuretrack.left_arm_amputated = "7"
+  snd.firstaidcuretrack.right_arm_amputated = "7"
+  snd.firstaidcuretrack.left_arm_damaged = "7"
+  snd.firstaidcuretrack.right_arm_damaged = "7"
+  snd.firstaidcuretrack.right_arm_mangled = "7"
+  snd.firstaidcuretrack.left_arm_mangled = "7"
+-- pill
+  snd.firstaidcuretrack.sensitivity = "7" 
+  snd.firstaidcuretrack.recklessness = "7"
+  snd.firstaidcuretrack.nyctophobbia = "7"  
+  snd.firstaidcuretrack.accursed = "7"
+  snd.firstaidcuretrack.agony = "7"
   
-  -- level 7
-	-- pipe noen
-  -- salve
-  snd.firstaidcuretrack.ablaze = "7"
-	snd.firstaidcuretrack.hypothermia = "7"	
-  snd.firstaidcuretrack.stuttering = "7"
-	snd.firstaidcuretrack.crippled_throat = "7"
-  snd.firstaidcuretrack.mauled_face = "7"
-  snd.firstaidcuretrack.deepwound = "7"
-  snd.firstaidcuretrack.stiffness = "7"
-  snd.firstaidcuretrack.weak_group = "7"
-  snd.firstaidcuretrack.leftarm = "7"
-  snd.firstaidcuretrack.preleftarm = "20"
-  snd.firstaidcuretrack.rightarm = "7"
-  snd.firstaidcuretrack.prerightarm = "20" 
-  snd.firstaidcuretrack.rightleg = "7"
-  snd.firstaidcuretrack.prerightleg = "20"
-  snd.firstaidcuretrack.leftleg = "7"
-  snd.firstaidcuretrack.preleftleg = "20"  
-  -- pill  
-  snd.firstaidcuretrack.stupidity = "7"
-  snd.firstaidcuretrack.heartflutter = "7"
-  snd.firstaidcuretrack.hallucinations = "7"
-  snd.firstaidcuretrack.hypersomnia = "7"
-  snd.firstaidcuretrack.hatred = "7"
-  snd.firstaidcuretrack.peace = "7"
-	snd.firstaidcuretrack.berserking = "7"
-  snd.firstaidcuretrack.justice = "7"
-  snd.firstaidcuretrack.lovers_effect = "7"
-  snd.firstaidcuretrack.laxity = "7"
-	snd.firstaidcuretrack.egocentric = "7"
-	snd.firstaidcuretrack.exhausted = "7"
-	-- special
-  snd.firstaidcuretrack.dread = "7"	
-  -- level 8
-	-- salves
-	snd.firstaidcuretrack.head = "8"
-  snd.firstaidcuretrack.prehead = "15"
-	snd.firstaidcuretrack.burnt_eyes = "8"	
-	snd.firstaidcuretrack.lightwound = "8"
-  -- pill  
-  snd.firstaidcuretrack.dementia = "8"
-  snd.firstaidcuretrack.paranoia = "8"
-  snd.firstaidcuretrack.dizziness = "8"
-  snd.firstaidcuretrack.shyness = "8"
-  snd.firstaidcuretrack.dissonance = "8"
-	snd.firstaidcuretrack.agoraphobia = "8"
-  snd.firstaidcuretrack.vertigo = "8"
-	snd.firstaidcuretrack.claustrophobia = "8"
-	snd.firstaidcuretrack.faintness = "8"
-	-- special
-  snd.firstaidcuretrack.fear = "8"
-	
-  -- level 9
+  --8
+  --pipe
+  snd.firstaidcuretrack.migraine = "8"
+  --salve
+  snd.firstaidcuretrack.shivering = "8"
+  snd.firstaidcuretrack.frozen = "8"   
+  snd.firstaidcuretrack.mauled_face = "8"  
   -- pill
-  snd.firstaidcuretrack.sadness = "9"
-  snd.firstaidcuretrack.addiction = "9"
-  snd.firstaidcuretrack.self_pity = "9"
-	snd.firstaidcuretrack.commitment_fear = "9"
-	snd.firstaidcuretrack.hubris = "9"
-	snd.firstaidcuretrack.body_odor = "9"
-  snd.firstaidcuretrack.magnanimity = "9"
-  snd.firstaidcuretrack.worrywart = "9"
-	
-  -- level 10	
-	-- pill
-  snd.firstaidcuretrack.generosity = "10"
-  snd.firstaidcuretrack.superstition = "10"
-  snd.firstaidcuretrack.blisters = "10"
-	-- special
-  snd.firstaidcuretrack.oiled = "10"
-  -- level 11
-  -- salve	
-  snd.firstaidcuretrack.void = "11"
-  snd.firstaidcuretrack.weakvoid = "11"
+  snd.firstaidcuretrack.heartflutter = "8"
+  snd.firstaidcuretrack.confusion = "8"
+  snd.firstaidcuretrack.epilepsy = "8"
+  snd.firstaidcuretrack.dissonance = "8"
+  snd.firstaidcuretrack.lethargy = "8"   
+  snd.firstaidcuretrack.rot_wither = "8"  
+  
+  --9
+  --pipe
+  snd.firstaidcuretrack.disfigurement = "9"
+  snd.firstaidcuretrack.squelched = "9"
+  -- salve
+  snd.firstaidcuretrack.ablaze = "9"
+  snd.firstaidcuretrack.firstaid_predict_any_limb = "9"  
+  -- pill
+  snd.firstaidcuretrack.clumsiness = "9" 
+  snd.firstaidcuretrack.weariness = "9"
+  snd.firstaidcuretrack.berserking = "9"
+  snd.firstaidcuretrack.laxity = "9"  
+  snd.firstaidcuretrack.faintness = "9"  
+  snd.firstaidcuretrack.hollow = "9"
+  snd.firstaidcuretrack.perplexed = "9"
+  -- special
+  snd.firstaidcuretrack.disrupted = "9" 
+  snd.firstaidcuretrack.dazed = "9"  
+
+  -- 10
+  --pipe
+  snd.firstaidcuretrack.deadening = "10" 
+  -- Salve
+  snd.firstaidcuretrack.left_leg_broken = "10"
+  snd.firstaidcuretrack.right_leg_broken = "10"    
+  snd.firstaidcuretrack.firstaid_predict_legs = "10"
+  --pill
+  snd.firstaidcuretrack.limp_veins = "10"  
+  snd.firstaidcuretrack.masochism = "10"  
+  snd.firstaidcuretrack.haemophilia = "10"
+  snd.firstaidcuretrack.vomiting = "10" 
+  snd.firstaidcuretrack.allergies = "10"
+  snd.firstaidcuretrack.ringing_ears = "10" 
+  --special
+  snd.firstaidcuretrack.vinethorns = "10"
+  snd.firstaidcuretrack.dread = "10"     
+
+  --11
+  --salve
+  snd.firstaidcuretrack.right_arm_broken = "11"
+  snd.firstaidcuretrack.left_arm_broken = "11"
+  snd.firstaidcuretrack.firstaid_predict_arms = "11"        
+  --pill
+  snd.firstaidcuretrack.dizziness = "11"
+  snd.firstaidcuretrack.crippled = "11"  
+  snd.firstaidcuretrack.crippled_body = "11"
+  snd.firstaidcuretrack.merciful = "11"  
+  --special
+  snd.firstaidcuretrack.oiled = "11"
+
+  --12
+  --salve
+  snd.firstaidcuretrack.head_damaged = "12"
+  snd.firstaidcuretrack.collapsed_lung = "12"
+  --pill
+  snd.firstaidcuretrack.dementia = "12"
+  snd.firstaidcuretrack.paranoia = "12"
+  snd.firstaidcuretrack.hallucinations = "12"
+  snd.firstaidcuretrack.addiction = "12"
+  snd.firstaidcuretrack.impairment = "12"
+  
+  --13
+  --salve
+  snd.firstaidcuretrack.left_leg_dislocated = "13"
+  snd.firstaidcuretrack.right_leg_dislocated = "13"
+  --pill
+  snd.firstaidcuretrack.hypochondria = "13"
+  snd.firstaidcuretrack.agoraphobia = "13"
+  snd.firstaidcuretrack.loneliness = "13" 
+  snd.firstaidcuretrack.vertigo = "13"  
+  snd.firstaidcuretrack.claustrophobia = "13" 
+  snd.firstaidcuretrack.justice = "13"  
+  snd.firstaidcuretrack.blisters = "13"  
+  snd.firstaidcuretrack.self_loathing = "13"
+  --14
+  --salve
+  snd.firstaidcuretrack.left_arm_dislocated = "14"
+  snd.firstaidcuretrack.right_arm_dislocated = "14"   
+--pill
+  snd.firstaidcuretrack.hatred = "14"
+  snd.firstaidcuretrack.rend = "14" 
+  snd.firstaidcuretrack.blighted = "14"   
+  snd.firstaidcuretrack.infested = "14"  
+  snd.firstaidcuretrack.egocentric = "14" 
+  snd.firstaidcuretrack.magnanimity = "14" 
+  snd.firstaidcuretrack.exhausted = "14"  
+  snd.firstaidcuretrack.rot_heat = "14" 
+  snd.firstaidcuretrack.narcolepsy = "14" 
+  --15
+  --salve
+  snd.firstaidcuretrack.spinal_rip = "15"
+  snd.firstaidcuretrack.torso_damaged = "15"
+  snd.firstaidcuretrack.torso_mangled = "15"
+  snd.firstaidcuretrack.deepwound = "15"   
+  snd.firstaidcuretrack.heatspear = "15"  
+  --pill
+  snd.firstaidcuretrack.hypersomnia = "15"  
+  snd.firstaidcuretrack.shyness = "15"
+  snd.firstaidcuretrack.pacifism = "15"  
+  snd.firstaidcuretrack.peace = "15"  
+  snd.firstaidcuretrack.generosity = "15"
+  snd.firstaidcuretrack.lovers_effect = "15"  
+  snd.firstaidcuretrack.superstition = "15"  
+  snd.firstaidcuretrack.misery = "15"  
+  --16
+  --salve
+  snd.firstaidcuretrack.left_leg_bruised_moderate = "16"
+  snd.firstaidcuretrack.right_leg_bruised_moderate = "16"    
+  snd.firstaidcuretrack.right_arm_bruised_moderate = "16"
+  snd.firstaidcuretrack.left_arm_bruised_moderate = "16"
+  snd.firstaidcuretrack.torso_bruised_moderate = "16"
+  snd.firstaidcuretrack.head_bruised_moderate = "16"
+  --pill
+  snd.firstaidcuretrack.rot_benign = "16"
+  snd.firstaidcuretrack.rot_spirit = "16"
+  
+  --17
+  --salve
+  snd.firstaidcuretrack.left_arm_bruised = "17"
+  snd.firstaidcuretrack.right_arm_bruised = "17"
+  snd.firstaidcuretrack.left_leg_bruised = "17"
+  snd.firstaidcuretrack.right_leg_bruised = "17"    
+  snd.firstaidcuretrack.head_bruised = "17"
+  snd.firstaidcuretrack.torso_bruised = "17"   
+  --pill
+  snd.firstaidcuretrack.sadness = "17" 
+  snd.firstaidcuretrack.self_pity = "17"     
+  snd.firstaidcuretrack.baldness = "17" 
+  snd.firstaidcuretrack.commitment_fear = "17" 
+  snd.firstaidcuretrack.hubris = "17"  
+  snd.firstaidcuretrack.body_odor = "17"  
+  snd.firstaidcuretrack.worrywart = "17"  
+
+  --18
+  --salve
+  snd.firstaidcuretrack.indifference = "18"
+  snd.firstaidcuretrack.blurry_vision = "18"    
+  snd.firstaidcuretrack.smashed_throat = "18" 
+  -- pill
+  snd.firstaidcuretrack.plodding = "18" 
+  snd.firstaidcuretrack.idiocy = "18"
+
+  --19
+  --salve
+  snd.firstaidcuretrack.whiplash = "19"
+  snd.firstaidcuretrack.backstrain = "19"
+  snd.firstaidcuretrack.sore_wrist = "19"
+  snd.firstaidcuretrack.sore_ankle = "19"
+  snd.firstaidcuretrack.muscle_spasms = "19"
+  snd.firstaidcuretrack.stiffness = "19"  
+  snd.firstaidcuretrack.weak_group = "19"    
+
+  --20
+  --salve
+  snd.firstaidcuretrack.stuttering = "20"
+  snd.firstaidcuretrack.crippled_throat = "20"
+  snd.firstaidcuretrack.burnt_eyes = "20"
+  snd.firstaidcuretrack.lightwound = "20"  
+   
+  --21
+  --salve
+  snd.firstaidcuretrack.void = "21"
+  snd.firstaidcuretrack.weakvoid = "21"
+
+  --22
+  --salve
+  snd.firstaidcuretrack.rightleg = "22"
+  snd.firstaidcuretrack.prerightleg = "20"
+  snd.firstaidcuretrack.leftleg = "22"
+  snd.firstaidcuretrack.preleftleg = "20"  
+
+
+  --23
+  --salve
+  snd.firstaidcuretrack.head = "23"
+  snd.firstaidcuretrack.prehead = "20"
+  snd.firstaidcuretrack.leftarm = "23"
+  snd.firstaidcuretrack.preleftarm = "20"
+  snd.firstaidcuretrack.rightarm = "23"
+  snd.firstaidcuretrack.prerightarm = "20"
+
+  --24
+  --salve
+  snd.firstaidcuretrack.torso = "24"
+  snd.firstaidcuretrack.pretorso = "20"    
+  --25
+  --salve
+  snd.firstaidcuretrack.effused_blood = "25"  
+  
+ -- not updated
   -- Things we don't want cured unless other
   snd.firstaidcuretrack.embedded_axe = "12"
-  
-  snd.firstaidcuretrack.effused_blood = "25"
 	
 end
 </script>
@@ -22775,17 +22978,22 @@ if snd.toggles.active then
     send("firstaid stormtouched off")
 	
 	elseif snd.class_hitting == "zealot" and (snd.count(snd.people_hitting_me)) &lt; 2 then
-		snd.firstaidclassZealot()	
+		snd.firstaidassZealot()	
     send("firstaid use focus on")
     send("firstaid stormtouched off")
 	
 	elseif snd.class_hitting == "ravager" and (snd.count(snd.people_hitting_me)) &lt; 2 then
-		snd.firstaidclassRavager()	
+		snd.firstaidassRavager()	
     send("firstaid use focus on")
     send("firstaid stormtouched off")
 		
 	elseif snd.class_hitting == "ascendril" and (snd.count(snd.people_hitting_me)) &lt; 2 then
 		snd.firstaidassAscendril()
+    send("firstaid use focus on")
+    send("firstaid stormtouched off")	
+		
+	elseif snd.class_hitting == "bloodborn" and (snd.count(snd.people_hitting_me)) &lt; 2 then
+		snd.firstaidassBloodborn()
     send("firstaid use focus on")
     send("firstaid stormtouched off")	
 		
@@ -22836,7 +23044,16 @@ if snd.toggles.active then
     else
       send("firstaid use focus off")
     end
-    send("firstaid stormtouched off")			
+    send("firstaid stormtouched off")		
+		
+	elseif snd.class_hitting == "runecarver" and (snd.count(snd.people_hitting_me)) &lt; 2 then
+		snd.firstaidassRunecarver()	
+    if not snd.have_aff("gloom") then
+      send("firstaid use focus on")
+    else
+      send("firstaid use focus off")
+    end
+    send("firstaid stormtouched off")		
 		
 	elseif snd.class_hitting == "shifter" and (snd.count(snd.people_hitting_me)) &lt; 2 then
 		snd.firstaidassShifter()	
@@ -23129,6 +23346,67 @@ function snd.firstaidassAscendril()  -- curing based on class being attacked by
 	snd.firstaidchangecure = false  -- keep last	
 end
 
+function snd.firstaidassBloodborn()  -- curing based on class being attacked by
+	if snd.firstaidcuretrack.anorexia ~= "2" then
+		send("firstaid priority anorexia 2")
+	end	  
+  if snd.firstaidcuretrack.indifference ~= "3" then
+		send("firstaid priority indifference 3")
+	end	 
+  if snd.firstaidcuretrack.gorged ~= "3" then
+		send("firstaid priority gorged 3")
+	end	 
+	if snd.firstaidcuretrack.frozen ~= "4" then
+		send("firstaid priority frozen 4")
+	end	 
+	if snd.firstaidcuretrack.torso ~= "4" and snd.firstaidcuretrack.pretorso ~= "1" then
+		 send("FIRSTAID PRIORITY PRESTORE torso 1% 4")
+	end  
+	if snd.firstaidcuretrack.hypothermia ~= "5" then
+		send("firstaid priority hypothermia 5")
+	end	
+	if snd.firstaidcuretrack.left_leg_broken ~= "5" then
+		send("firstaid priority left_leg_broken 5")
+	end	
+	if snd.firstaidcuretrack.right_leg_broken ~= "5" then
+		send("firstaid priority right_leg_broken 5")
+	end	
+	if snd.firstaidcuretrack.shivering ~= "6" then
+		send("FIRSTAID PRIORITY shivering 6")
+	end
+	if snd.firstaidcuretrack.ice_encased ~= "6" then
+		send("FIRSTAID PRIORITY ice_encased 6")
+	end  
+	if snd.firstaidcuretrack.ablaze ~= "7" then
+		send("FIRSTAID PRIORITY ablaze 7")
+	end
+	if snd.firstaidcuretrack.left_arm_broken ~= "8" then
+		send("firstaid priority left_arm_broken 8")
+	end	  
+	if snd.firstaidcuretrack.right_arm_broken ~= "8" then
+		send("firstaid priority right_arm_broken 8")
+	end	  
+	if snd.firstaidcuretrack.head_damaged ~= "9" then
+		send("FIRSTAID PRIORITY head_damaged 9")
+	end
+	if snd.firstaidcuretrack.head_mangled ~= "9" then
+		send("FIRSTAID PRIORITY head_mangled 9")
+	end
+	if snd.firstaidcuretrack.rightleg ~= "11" and snd.firstaidcuretrack.prerightleg ~= "17" then
+		send("FIRSTAID PRIORITY PRESTORE right leg 17% 11")
+	end  
+	if snd.firstaidcuretrack.leftleg ~= "11" and snd.firstaidcuretrack.preleftleg ~= "17" then
+		send("FIRSTAID PRIORITY PRESTORE left leg 17% 11")
+	end  
+  if snd.firstaidcuretrack.leftarm ~= "12" or snd.firstaidcuretrack.preleftarm ~= "17" then
+		send("FIRSTAID PRIORITY PRESTORE left arm 17% 12")
+	end
+	if snd.firstaidcuretrack.rightarm ~= "12" and snd.firstaidcuretrack.prerightarm ~= "17" then
+		send("FIRSTAID PRIORITY PRESTORE right arm 17% 12")
+	end
+	snd.firstaidchangecure = false  -- keep last	
+end
+
 function snd.firstaidassIndorani()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.paresis ~= "3" then
 		send("firstaid priority paresis 3")
@@ -23186,9 +23464,75 @@ function snd.firstaidassMonk()  -- curing based on class being attacked by
 end
 
 function snd.firstaidassSentinel()  -- curing based on class being attacked by
-	if snd.firstaidcuretrack.paresis ~= "1" then
-		send("firstaid priority paresis 1")
-	end	
+	if snd.firstaidcuretrack.burnt_skin ~= "1" then
+    send("firstaid priority burnt_skin 1")
+  end 
+  if snd.firstaidcuretrack.anorexia ~= "2" then
+    send("firstaid priority anorexia 2")
+  end 
+  if snd.firstaidcuretrack.destroyed_throat ~= "2" then
+    send("firstaid priority destroyed_throat 2")
+  end
+  if snd.firstaidcuretrack.frozen ~= "3" then
+    send("firstaid priority frozen 3")
+  end
+  if snd.firstaidcuretrack.indifference ~= "3" then
+    send("firstaid priority indifference 3")
+  end 
+  if snd.firstaidcuretrack.head_mangled ~= "4" then
+    send("firstaid priority head_mangled 4")
+  end 
+  if snd.firstaidcuretrack.left_arm_broken ~= "5" then
+    send("firstaid priority left_arm_broken 5")
+  end 
+  if snd.firstaidcuretrack.left_leg_broken ~= "6" then
+    send("firstaid priority left_leg_broken 6")
+  end 
+  if snd.firstaidcuretrack.right_leg_broken ~= "6" then
+    send("firstaid priority right_leg_broken 6")
+  end 
+  if snd.firstaidcuretrack.crippled_throat ~= "7" and (snd.class == "Praenomen" or snd.class == "Akkari") then
+    send("firstaid priority crippled_throat 7")
+  end   
+  if snd.firstaidcuretrack.shivering ~= "8" then
+    send("firstaid priority shivering 8")
+  end  
+  if snd.firstaidcuretrack.right_arm_broken ~= "9" then
+    send("firstaid priority right_arm_broken 9")
+  end
+  if snd.firstaidcuretrack.firstaid_predict_arms ~= "9" then
+    send("firstaid priority firstaid_predict_arms 9")
+  end
+  if snd.firstaidcuretrack.firstaid_predict_legs ~= "9" then
+    send("firstaid priority firstaid_predict_legs 9")
+  end
+  if snd.firstaidcuretrack.firstaid_predict_any_limb ~= "9" then
+    send("firstaid priority firstaid_predict_any_limb 9")
+  end
+  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
+    send("firstaid priority left_arm_damaged 10")
+  end
+  if snd.firstaidcuretrack.left_leg_damaged ~= "11" then
+    send("firstaid priority left_leg_damaged 11")
+  end
+  if snd.firstaidcuretrack.right_leg_damaged ~= "11" then
+    send("firstaid priority right_leg_damaged 11")
+  end
+  if snd.firstaidcuretrack.right_arm_damaged ~= "12" then
+    send("firstaid priority right_arm_damaged 12")
+  end
+  if snd.firstaidcuretrack.left_arm_mangled ~= "13" then
+    send("firstaid priority left_arm_mangled 13")
+  end
+  if snd.firstaidcuretrack.left_leg_mangled ~= "14" then
+    send("firstaid priority left_leg_mangled 14")
+  end
+  if snd.firstaidcuretrack.right_leg_mangled ~= "14" then
+    send("firstaid priority right_leg_mangled 14")
+  end
+  if snd.firstaidcuretrack.right_arm_mangled ~= "15" then
+    send("firstaid priority right_arm_mangled 15")
+  end  
 	snd.firstaidchangecure = false  -- keep last	
 end
 
@@ -23297,7 +23641,7 @@ function snd.firstaidassZealot()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.head ~= "24" and snd.firstaidcuretrack.prehead ~= "15" then
   send("FIRSTAID PRIORITY PRESTORE head 15% 24")
 	end  	
-  if snd.firstaidcuretrack.blurry_vision ~= "26" and (snd.class == "Archivist" or snd.class == "Shaman" or snd.class == "Alchemist" or snd.class == "Ascendril" or snd.class == "Sciomancer") then
+  if snd.firstaidcuretrack.blurry_vision ~= "26" and (snd.class == "Archivist" or snd.class == "Shaman" or snd.class == "Alchemist" or snd.class == "Ascendril" or snd.class == "Bloodborn" or snd.class == "Sciomancer" or snd.class == "Runecarver") then
 		send("firstaid priority blurry_vision 26")
 	end	
   
@@ -23409,7 +23753,7 @@ function snd.firstaidassRavager()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.head ~= "24" and snd.firstaidcuretrack.prehead ~= "15" then
   send("FIRSTAID PRIORITY PRESTORE head 15% 24")
 	end  	
-  if snd.firstaidcuretrack.blurry_vision ~= "26" and (snd.class == "Archivist" or snd.class == "Shaman" or snd.class == "Alchemist" or snd.class == "Ascendril" or snd.class == "Sciomancer") then
+  if snd.firstaidcuretrack.blurry_vision ~= "26" and (snd.class == "Archivist" or snd.class == "Shaman" or snd.class == "Alchemist" or snd.class == "Ascendril" or snd.class == "Bloodborn" or snd.class == "Sciomancer" or snd.class == "Runecarver") then
 		send("firstaid priority blurry_vision 26")
 	end	
   
@@ -24018,11 +24362,11 @@ function snd.firstaidassSciomancer()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.asthma ~= "2" then
 		send("firstaid priority asthma 2")
 	end
-	if snd.firstaidcuretrack.shaderot_body ~= "3" then
-		send("firstaid priority shaderot_body 3")
+	if snd.firstaidcuretrack.rot_body ~= "3" then
+		send("firstaid priority rot_body 3")
 	end
-	if snd.firstaidcuretrack.shaderot_wither ~= "3" then
-		send("firstaid priority shaderot_wither 3")
+	if snd.firstaidcuretrack.rot_wither ~= "3" then
+		send("firstaid priority rot_wither 3")
 	end
 	if snd.firstaidcuretrack.dementia ~= "4" then
 		send("firstaid priority dementia 4")
@@ -24039,8 +24383,8 @@ function snd.firstaidassSciomancer()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.blindness ~= "8" then
 		send("firstaid priority defence blindness 8")
 	end   
-  if snd.firstaidcuretrack.shaderot_heat ~= "9" then
-		send("firstaid priority shaderot_heat 9")
+  if snd.firstaidcuretrack.rot_heat ~= "9" then
+		send("firstaid priority rot_heat 9")
 	end   
   if snd.firstaidcuretrack.clumsiness ~= "10" then
 		send("firstaid priority clumsiness 10")
@@ -24051,11 +24395,142 @@ function snd.firstaidassSciomancer()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.weariness ~= "12" then
 		send("firstaid priority weariness 12")
 	end 
-  if snd.firstaidcuretrack.shaderot_spirit ~= "13" then
-		send("firstaid priority shaderot_spirit 13")
+  if snd.firstaidcuretrack.rot_spirit ~= "13" then
+		send("firstaid priority rot_spirit 13")
 	end 
-  if snd.firstaidcuretrack.shaderot_benign ~= "14" then
-		send("firstaid priority shaderot_benign 14")
+  if snd.firstaidcuretrack.rot_benign ~= "14" then
+		send("firstaid priority rot_benign 14")
+	end  
+  if snd.firstaidcuretrack.agoraphobia ~= "15" then
+		send("firstaid priority agoraphobia 15")
+	end 
+  if snd.firstaidcuretrack.loneliness ~= "16" then
+		send("firstaid priority loneliness 16")
+	end 
+  if snd.firstaidcuretrack.blindness ~= "26" then
+		send("firstaid priority defence blindness reset")
+	end 
+  if snd.firstaidcuretrack.vertigo ~= "17" then
+		send("firstaid priority vertigo 17")
+	end 
+  if snd.firstaidcuretrack.claustrophobia ~= "18" then
+		send("firstaid priority claustrophobia 18")
+	end
+  if snd.firstaidcuretrack.commitment_fear ~= "19" then
+		send("firstaid priority commitment_fear 19")
+	end
+  if snd.firstaidcuretrack.haemophilia ~= "20" then
+		send("firstaid priority haemophilia 20")
+	end
+  if snd.firstaidcuretrack.exhausted ~= "21" then
+		send("firstaid priority exhausted 21")
+	end
+  if snd.firstaidcuretrack.stupidity ~= "22" then
+		send("firstaid priority stupidity 22")
+	end
+  if snd.firstaidcuretrack.dizziness ~= "23" then
+		send("firstaid priority dizziness 23")
+	end
+  if snd.firstaidcuretrack.dissonance ~= "24" then
+		send("firstaid priority dissonance 24")
+	end
+  if snd.firstaidcuretrack.frozen ~= "3" then
+		send("firstaid priority frozen 3")
+	end    
+  if snd.firstaidcuretrack.voidgaze ~= "5" then
+		send("firstaid priority voidgaze 5")
+	end    
+  if snd.firstaidcuretrack.left_leg_broken ~= "6" then
+		send("firstaid priority left_leg_broken 6")
+	end 
+ 	if snd.firstaidcuretrack.right_leg_broken ~= "6" then
+		send("firstaid priority right_leg_broken 6")
+	end 
+ 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
+		send("firstaid priority left_arm_broken 7")
+	end 
+ 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
+		send("firstaid priority right_arm_broken 7")
+	end  
+	if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
+		send("firstaid priority left_leg_damaged 9")
+	end   
+  if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
+		send("firstaid priority right_leg_damaged 9")
+	end   
+  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
+		send("firstaid priority left_arm_damaged 10")
+	end 
+  if snd.firstaidcuretrack.right_arm_damaged ~= "10" then
+		send("firstaid priority right_arm_damaged 10")
+	end 
+	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
+		send("firstaid priority left_leg_mangled 11")
+	end   
+  if snd.firstaidcuretrack.right_leg_mangled ~= "11" then
+		send("firstaid priority right_leg_mangled 11")
+	end   
+  if snd.firstaidcuretrack.left_arm_mangled ~= "12" then
+		send("firstaid priority left_arm_mangled 12")
+	end 
+  if snd.firstaidcuretrack.right_arm_mangled ~= "12" then
+		send("firstaid priority right_arm_mangled 12")
+	end 
+  if snd.firstaidcuretrack.shivering ~= "18" then
+		send("firstaid priority shivering 18")
+	end 
+  if snd.firstaidcuretrack.gloom ~= "20" then
+		send("firstaid priority gloom 20")
+	end 
+  
+	snd.firstaidchangecure = false  -- keep last	
+end
+
+function snd.firstaidassRunecarver()  -- curing based on class being attacked by
+	if snd.firstaidcuretrack.paralysis ~= "1" then
+		send("firstaid priority paralysis 1")
+	end
+	if snd.firstaidcuretrack.asthma ~= "2" then
+		send("firstaid priority asthma 2")
+	end
+	if snd.firstaidcuretrack.rot_body ~= "3" then
+		send("firstaid priority rot_body 3")
+	end
+	if snd.firstaidcuretrack.rot_wither ~= "3" then
+		send("firstaid priority rot_wither 3")
+	end
+	if snd.firstaidcuretrack.dementia ~= "4" then
+		send("firstaid priority dementia 4")
+	end
+	if snd.firstaidcuretrack.paresis ~= "5" then
+		send("firstaid priority paresis 5")
+	end
+	if snd.firstaidcuretrack.lethargy ~= "6" then
+		send("firstaid priority lethargy 6")
+	end 
+	if snd.firstaidcuretrack.vomiting ~= "7" then
+		send("firstaid priority vomiting 7")
+	end 
+	if snd.firstaidcuretrack.blindness ~= "8" then
+		send("firstaid priority defence blindness 8")
+	end   
+  if snd.firstaidcuretrack.rot_heat ~= "9" then
+		send("firstaid priority rot_heat 9")
+	end   
+  if snd.firstaidcuretrack.clumsiness ~= "10" then
+		send("firstaid priority clumsiness 10")
+	end  
+  if snd.firstaidcuretrack.nyctophobia ~= "11" then
+		send("firstaid priority nyctophobia 11")
+	end 
+  if snd.firstaidcuretrack.weariness ~= "12" then
+		send("firstaid priority weariness 12")
+	end 
+  if snd.firstaidcuretrack.rot_spirit ~= "13" then
+		send("firstaid priority rot_spirit 13")
+	end 
+  if snd.firstaidcuretrack.rot_benign ~= "14" then
+		send("firstaid priority rot_benign 14")
 	end  
   if snd.firstaidcuretrack.agoraphobia ~= "15" then
 		send("firstaid priority agoraphobia 15")
@@ -24154,6 +24629,9 @@ function snd.firstaidassPraenomen()  -- curing based on class being attacked by
 	end
  	if snd.firstaidcuretrack.paresis ~= "3" then
 		send("firstaid priority paresis 3")
+	end
+  if snd.firstaidcuretrack.blindness ~= "3" then
+		send("firstaid priority defence blindness 3")
 	end 
   if snd.firstaidcuretrack.weariness ~= "5" then
 		send("firstaid priority weariness 5")
@@ -24220,6 +24698,9 @@ function snd.firstaidassAkkari()  -- curing based on class being attacked by
 	end
  	if snd.firstaidcuretrack.paresis ~= "3" then
 		send("firstaid priority paresis 3")
+	end
+  if snd.firstaidcuretrack.blindness ~= "3" then
+		send("firstaid priority defence blindness 3")
 	end 
   if snd.firstaidcuretrack.weariness ~= "5" then
 		send("firstaid priority weariness 5")
@@ -24277,23 +24758,23 @@ function snd.firstaidassShaman()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.impatience ~= "2" then
 		send("firstaid priority impatience 2")
 	end 
-  if snd.firstaidcuretrack.paranoia ~= "3" then
-		send("firstaid priority paranoia 3")
+  if snd.firstaidcuretrack.paranoia ~= "4" then
+		send("firstaid priority paranoia 4")
 	end
-  if snd.firstaidcuretrack.deafness ~= "3" then
-		send("firstaid priority defence deafness 3")
-	end 
   if snd.firstaidcuretrack.stormtouched ~= "4" then
 		send("firstaid priority stormtouched 4")
 	end
-  if snd.firstaidcuretrack.agoraphobia ~= "5" then
-		send("firstaid priority agoraphobia 5")
+  if snd.firstaidcuretrack.agoraphobia ~= "3" then
+		send("firstaid priority agoraphobia 3")
 	end
   if snd.firstaidcuretrack.claustrophobia ~= "5" then
 		send("firstaid priority claustrophobia 5")
 	end
   if snd.firstaidcuretrack.shyness ~= "6" then
 		send("firstaid priority shyness 6")
+	end
+  if snd.firstaidcuretrack.stupidity ~= "6" then
+		send("firstaid priority stupidity 6")
 	end
   if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Syssin") then
     if snd.firstaidcuretrack.clumsiness ~= "5" then
@@ -24304,8 +24785,17 @@ function snd.firstaidassShaman()  -- curing based on class being attacked by
   		send("firstaid priority clumsiness 7")
   	end     
   end
+  if snd.firstaidcuretrack.infested ~= "7" then
+		send("firstaid priority defence infested 7")
+	end
+  if snd.firstaidcuretrack.peace ~= "8" then
+		send("firstaid priority defence peace 8")
+	end
   if snd.firstaidcuretrack.blindness ~= "8" then
 		send("firstaid priority defence blindness 8")
+	end 
+  if snd.firstaidcuretrack.deafness ~= "9" then
+		send("firstaid priority defence deafness 9")
 	end 
   
 	snd.firstaidchangecure = false  -- keep last	
@@ -24350,9 +24840,55 @@ function snd.firstaidassAlchemist()  -- curing based on class being attacked by
 end
 
 function snd.firstaidassBard()  -- curing based on class being attacked by
-	if snd.firstaidcuretrack.paresis ~= "3" then
-		send("firstaid priority paresis 3")
-	end	
+  if snd.firstaidcuretrack.paralysis ~= "1" then
+    send("firstaid priority paralysis 1")
+  end
+  if snd.firstaidcuretrack.perplexed ~= "2" then
+    send("firstaid priority perplexed 2")
+  end
+  if snd.firstaidcuretrack.shyness ~= "3" then
+    send("firstaid priority shyness 3")
+  end 
+  if snd.firstaidcuretrack.thin_blood ~= "4" then
+    send("firstaid priority thin_blood 4")
+  end 
+  if snd.firstaidcuretrack.worrywart ~= "5" then
+    send("firstaid priority worrywart 5")
+  end 
+  if snd.firstaidcuretrack.misery ~= "6" then
+    send("firstaid priority misery 6")
+  end 
+  if snd.firstaidcuretrack.hollow ~= "7" then
+    send("firstaid priority hollow 7")
+  end 
+  if snd.firstaidcuretrack.narcolepsy ~= "8" then
+    send("firstaid priority narcolepsy 8")
+  end 
+  if snd.firstaidcuretrack.self_loathing ~= "8" then
+    send("firstaid priority self_loathing 8")
+  end 
+  if snd.firstaidcuretrack.slickness ~= "9" then
+    send("firstaid priority slickness 9")
+  end 
+  if snd.firstaidcuretrack.stupidity ~= "10" then
+    send("firstaid priority stupidity 10")
+  end  
+  if snd.firstaidcuretrack.dizziness ~= "10" then
+    send("firstaid priority dizziness 10")
+  end  
+  if snd.firstaidcuretrack.magnanimity ~= "11" then
+    send("firstaid priority magnanimity 11")
+  end  
+  if snd.firstaidcuretrack.faintness ~= "12" then
+    send("firstaid priority faintness 12")
+  end  
+ 			-- "paresis", setup for if not archivist, etc 
+  if snd.firstaidcuretrack.addiction ~= "13" then
+    send("firstaid priority addiction 13")
+  end 
+  if snd.firstaidcuretrack.allergies ~= "14" then
+    send("firstaid priority allergies 14")
+  end 	
 	snd.firstaidchangecure = false  -- keep last	
 end
 
@@ -24368,7 +24904,7 @@ end</script>
 									<name>Firstaid defense</name>
 									<packageName></packageName>
 									<script>function snd.firstaiddefenceset()
-	tempTimer(2, [[send("firstaid priority defence insulation 7##firstaid priority defence density 1##firstaid priority defence temperance 4##firstaid priority defence levitation 3##firstaid priority defence speed 2##firstaid priority defence antivenin 5##firstaid priority defence fangbarrier 1##firstaid priority defence insomnia 1##firstaid priority defence instawake 3##firstaid priority defence waterbreathing 3##firstaid priority defence deafness 4##firstaid priority defence blindness 3")]])	
+	tempTimer(2, [[send("firstaid priority defence insulation 21##firstaid priority defence density 1##firstaid priority defence temperance 4##firstaid priority defence levitation 3##firstaid priority defence speed 2##firstaid priority defence antivenin 5##firstaid priority defence fangbarrier 1##firstaid priority defence insomnia 1##firstaid priority defence instawake 3##firstaid priority defence waterbreathing 3##firstaid priority defence deafness 4##firstaid priority defence blindness 3")]])	
 
 end</script>
 									<eventHandlerList />
@@ -24378,22 +24914,8 @@ end</script>
 									<packageName></packageName>
 									<script>
 function snd.firstaidclass()  -- priority based on class being used, must add to firstaidresetlistnone
-	if snd.class == "None" and not snd.firstaidclassset then
+	if (snd.class == "None" or snd.class == "Shaman" or snd.class == "Alchemist" or snd.class == "Archivist" or snd.class == "Sciomancer" or snd.class == "Runecarver" or snd.class == "Teradrim" or snd.class == "Tidesage") and not snd.firstaidclassset then
 		snd.firstaidcuretrack.paresis = "1"
-		snd.firstaidclassset = true
-		
-	elseif (snd.class == "Shaman" or snd.class == "Alchemist") and not snd.firstaidclassset then
-		snd.firstaidcuretrack.paresis = "1"
-		snd.firstaidclassset = true
-		
-	elseif snd.class == "Archivist" and not snd.firstaidclassset then
-		snd.firstaidcuretrack.paresis = "1"
-		snd.firstaidclassset = true
-		
-	elseif (snd.class == "Teradrim" or snd.class == "Tidesage") and not snd.firstaidclassset then
-		if not (snd.class_hitting == "indorani" or snd.class_hitting == "oneiromancer") then
-      snd.firstaidcuretrack.paresis = "1"
-    end
 		snd.firstaidclassset = true
 		
 	elseif (snd.class == "Revenant" or snd.class == "Templar") and not snd.firstaidclassset then
@@ -24421,722 +24943,671 @@ end</script>
 									<script>
 function snd.firstaidresetlistnone()
 
+  
+  --defences
   if snd.firstaidcuretrack.blindness ~= "3" then
     snd.setting_priority = "defence blindness 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end
+  -- add in checks for all base set and to set it back to normal - for non Aetolia but what i set
+  -- pills 1
   if snd.firstaidcuretrack.crippled_body ~= "1" then
-		snd.setting_priority = "crippled_body 1"
-    snd.update_priority = 1
+    snd.setting_priority = "crippled_body 1"
   end
   if snd.firstaidcuretrack.paralysis ~= "1" then
-		snd.setting_priority = "paralysis 1"
-    snd.update_priority = 1
+    snd.setting_priority = "paralysis 1"
   end
+  --salves 1
   if snd.firstaidcuretrack.burnt_skin ~= "1" then
-		snd.setting_priority = "burnt_skin 1"
-    snd.update_priority = 1
-  end
+    snd.setting_priority = "burnt_skin 1"
+snd.update_priority = 1 
+ end
+  -- special 1
+  if snd.firstaidcuretrack.asleep ~= "1" then
+    snd.setting_priority = "asleep 1"
+snd.update_priority = 1 
+ end
+  if snd.firstaidcuretrack.fear ~= "1" then
+    snd.setting_priority = "fear 1"
+snd.update_priority = 1 
+ end
+  if snd.firstaidcuretrack.itchy ~= "1" then
+    snd.setting_priority = "itchy 1"
+  end 
   if snd.firstaidcuretrack.writhe_hoist ~= "1" then
     snd.setting_priority = "writhe_hoist 1"
-    snd.update_priority = 1
   end
+  
+  -- pills 2
+  
   if snd.firstaidcuretrack.asthma ~= "2" then
-		snd.setting_priority = "asthma 2"
-    snd.update_priority = 1
+    snd.setting_priority = "asthma 2"
   end
   if snd.firstaidcuretrack.ringing_ears ~= "2" then
-		snd.setting_priority = "ringing_ears 2"
-    snd.update_priority = 1
+    snd.setting_priority = "ringing_ears 2"
   end
   if snd.firstaidcuretrack.clumsiness ~= "2" then
-		snd.setting_priority = "clumsiness 2"
-    snd.update_priority = 1
+    snd.setting_priority = "clumsiness 2"
   end
+  -- salves 2
   if snd.firstaidcuretrack.destroyed_throat ~= "2" then
-		snd.setting_priority = "destroyed_throat 2"
-    snd.update_priority = 1
-  end
+    snd.setting_priority = "destroyed_throat 2"
+snd.update_priority = 1 
+ end  
   if snd.firstaidcuretrack.anorexia ~= "2" then
-		snd.setting_priority = "anorexia 2"
-    snd.update_priority = 1
-  end
+    snd.setting_priority = "anorexia 2"
+snd.update_priority = 1 
+ end
+  if snd.firstaidcuretrack.gorged ~= "2" then
+    snd.setting_priority = "gorged 2"
+snd.update_priority = 1 
+ end
+  -- special 2
   if snd.firstaidcuretrack.writhe_impaled ~= "2" then
     snd.setting_priority = "writhe_impaled 2"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.frozen ~= "3" then
+snd.update_priority = 1 
+ end
+  -- salves 3
+	if snd.firstaidcuretrack.frozen ~= "3" then
 		snd.setting_priority = "frozen 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.indifference ~= "3" then
+	end  
+	if snd.firstaidcuretrack.indifference ~= "3" then
 		snd.setting_priority = "indifference 3"
-    snd.update_priority = 1
-  end
+	end  
   if snd.firstaidcuretrack.crushed_chest ~= "3" then
-		snd.setting_priority = "crushed_chest 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.paresis ~= "3" and not (snd.class == "Shaman" or snd.class == "Archivist" or snd.class == "Alchemist") then
+    snd.setting_priority = "crushed_chest 3"
+  end 
+  -- pills 3
+	if snd.firstaidcuretrack.paresis ~= "3" and not (snd.class == "Shaman" or snd.class == "Archivist" or snd.class == "Alchemist" or snd.class == "Sciomancer" or snd.class == "Runecarver") then
 		snd.setting_priority = "paresis 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.slough ~= "3" then
+	end
+	if snd.firstaidcuretrack.slough ~= "3" then
 		snd.setting_priority = "slough 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.thin_blood ~= "3" then
+	end
+	if snd.firstaidcuretrack.thin_blood ~= "3" then
 		snd.setting_priority = "thin_blood 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.soulfire ~= "3" then
-		snd.setting_priority = "soulfire 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.nyctophobia ~= "3" then
+	end
+	if snd.firstaidcuretrack.accursed ~= "3" then
+		snd.setting_priority = "accursed 3"
+	end
+	if snd.firstaidcuretrack.nyctophobia ~= "3" then
 		snd.setting_priority = "nyctophobia 3"
-    snd.update_priority = 1
-  end
+	end
+  -- special 3
   if snd.firstaidcuretrack.writhe_web ~= "3" then
     snd.setting_priority = "writhe_web 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end  
   if snd.firstaidcuretrack.writhe_armpitlock ~= "3" then
     snd.setting_priority = "writhe_armpitlock 3"
-    snd.update_priority = 1
   end
   if snd.firstaidcuretrack.writhe_necklock ~= "3" then
     snd.setting_priority = "writhe_necklock 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end  
   if snd.firstaidcuretrack.writhe_thighlock ~= "3" then
     snd.setting_priority = "writhe_thighlock 3"
-    snd.update_priority = 1
-  end
+  end 
   if snd.firstaidcuretrack.writhe_transfix ~= "3" then
     snd.setting_priority = "writhe_transfix 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end 
   if snd.firstaidcuretrack.writhe_bind ~= "3" then
     snd.setting_priority = "writhe_bind 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end
   if snd.firstaidcuretrack.writhe_gunk ~= "3" then
     snd.setting_priority = "writhe_gunk 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end
   if snd.firstaidcuretrack.writhe_ropes ~= "3" then
     snd.setting_priority = "writhe_ropes 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end
   if snd.firstaidcuretrack.writhe_vines ~= "3" then
     snd.setting_priority = "writhe_vines 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end
   if snd.firstaidcuretrack.writhe_grappled ~= "3" then
     snd.setting_priority = "writhe_grappled 3"
-    snd.update_priority = 1
-  end
+snd.update_priority = 1 
+ end
   if snd.firstaidcuretrack.writhe_stasis ~= "3" then
     snd.setting_priority = "writhe_stasis 3"
-    snd.update_priority = 1
+snd.update_priority = 1 
+ end
+  if snd.firstaidcuretrack.voyria ~= "3" then
+    snd.setting_priority = "voyria 3"
+snd.update_priority = 1 
+ end
+  -- salves 4 
+  
+  -- pipes
+  if snd.firstaidcuretrack.aeon ~= "4" and not snd.have_aff("anorexia") then
+    snd.setting_priority = "aeon 4" 
+  elseif snd.firstaidcuretrack.aeon ~= "5" and snd.have_aff("slickness") then
+    snd.setting_priority = "aeon 5" 
   end
-  if snd.firstaidcuretrack.head_mangled ~= "4" then
-		snd.setting_priority = "head_mangled 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.baldness ~= "4" then
+
+  -- pills 4
+  
+	if snd.firstaidcuretrack.baldness ~= "4" then
 		snd.setting_priority = "baldness 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.hypochondria ~= "4" then
+	end
+	if snd.firstaidcuretrack.hypochondria ~= "4" then
 		snd.setting_priority = "hypochondria 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.impatience ~= "4" then
+	end
+	if snd.firstaidcuretrack.impatience ~= "4" then
 		snd.setting_priority = "impatience 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.infested ~= "4" then
+	end
+	if snd.firstaidcuretrack.infested ~= "4" then
 		snd.setting_priority = "infested 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.mirroring ~= "4" then
+	end
+	if snd.firstaidcuretrack.mirroring ~= "4" then
 		snd.setting_priority = "mirroring 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.pacifism ~= "4" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	end
+	if snd.firstaidcuretrack.pacifism ~= "4" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "pacifism 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.patterns ~= "4" then
+	end
+	if snd.firstaidcuretrack.patterns ~= "4" then
 		snd.setting_priority = "patterns 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.weariness ~= "4" then
+	end
+
+	if snd.firstaidcuretrack.weariness ~= "4" then
 		snd.setting_priority = "weariness 4"
-    snd.update_priority = 1
-  end
+	end
+  -- special 4
   if snd.firstaidcuretrack.vinethorns ~= "4" then
     snd.setting_priority = "vinethorns 4"
-    snd.update_priority = 1
   end
-  if snd.firstaidcuretrack.left_leg_bruised_critical ~= "5" then
+  -- pipes 5
+  if snd.firstaidcuretrack.slickness ~= "4" and snd.have_aff("anorexia") then
+    snd.setting_priority = "slickness 4" 
+  elseif snd.firstaidcuretrack.slickness ~= "5" then
+    snd.setting_priority = "slickness 5" 
+  end
+  -- salves 5
+	if snd.firstaidcuretrack.left_leg_bruised_critical ~= "5" then
 		snd.setting_priority = "left_leg_bruised_critical 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_leg_bruised_critical ~= "5" then
+	end  
+	if snd.firstaidcuretrack.right_leg_bruised_critical ~= "5" then
 		snd.setting_priority = "right_leg_bruised_critical 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.left_arm_bruised_critical ~= "5" then
+	end  
+	if snd.firstaidcuretrack.left_arm_bruised_critical ~= "5" then
 		snd.setting_priority = "left_arm_bruised_critical 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_arm_bruised_critical ~= "5" then
+	end 
+	if snd.firstaidcuretrack.right_arm_bruised_critical ~= "5" then
 		snd.setting_priority = "right_arm_bruised_critical 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.torso_bruised_critical ~= "5" then
+	end 
+	if snd.firstaidcuretrack.torso_bruised_critical ~= "5" then
 		snd.setting_priority = "torso_bruised_critical 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.head_bruised_critical ~= "5" then
+	end
+	if snd.firstaidcuretrack.head_bruised_critical ~= "5" then
 		snd.setting_priority = "head_bruised_critical 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.blighted ~= "5" then
+	end
+  -- pills 5
+	if snd.firstaidcuretrack.blighted ~= "5" then
 		snd.setting_priority = "blighted 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.blood_curse ~= "5" then
+	end
+	if snd.firstaidcuretrack.blood_curse ~= "5" then
 		snd.setting_priority = "blood_curse 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.blood_poison ~= "5" then
+	end
+	if snd.firstaidcuretrack.blood_poison ~= "5" then
 		snd.setting_priority = "blood_poison 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.confusion ~= "5" then
+	end
+	if snd.firstaidcuretrack.confusion ~= "5" then
 		snd.setting_priority = "confusion 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.idiocy ~= "5" then
+	end
+	if snd.firstaidcuretrack.idiocy ~= "5" then
 		snd.setting_priority = "idiocy 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.mental_disruption ~= "5" then
+	end
+	if snd.firstaidcuretrack.mental_disruption ~= "5" then
 		snd.setting_priority = "mental_disruption 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.merciful ~= "5" then
+	end
+	if snd.firstaidcuretrack.merciful ~= "5" then
 		snd.setting_priority = "merciful 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.physical_disruption ~= "5" then
+	end
+	if snd.firstaidcuretrack.physical_disruption ~= "5" then
 		snd.setting_priority = "physical_disruption 5"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.plodding ~= "5" then
+	end
+	if snd.firstaidcuretrack.plodding ~= "5" then
 		snd.setting_priority = "plodding 5"
-    snd.update_priority = 1
-  end
+	end
+  -- pipes
+  if snd.firstaidcuretrack.hellsight ~= "6" then
+    snd.setting_priority = "hellsight 6"
+snd.update_priority = 1 
+ end  
+  -- salves 6
+  if snd.firstaidcuretrack.head_mangled ~= "6" then
+    snd.setting_priority = "head_mangled 6"
+snd.update_priority = 1 
+ end
   if snd.firstaidcuretrack.left_leg_bruised_moderate ~= "6" then
 		snd.setting_priority = "left_leg_bruised_moderate 6"
-    snd.update_priority = 1
-  end
+	end  
   if snd.firstaidcuretrack.right_leg_bruised_moderate ~= "6" then
 		snd.setting_priority = "right_leg_bruised_moderate 6"
-    snd.update_priority = 1
-  end
+	end
   if snd.firstaidcuretrack.left_arm_bruised_moderate ~= "6" then
 		snd.setting_priority = "left_arm_bruised_moderate 6"
-    snd.update_priority = 1
-  end
+	end    
   if snd.firstaidcuretrack.right_arm_bruised_moderate ~= "6" then
 		snd.setting_priority = "right_arm_bruised_moderate 6"
-    snd.update_priority = 1
-  end
+	end 
   if snd.firstaidcuretrack.torso_bruised_moderate ~= "6" then
 		snd.setting_priority = "torso_bruised_moderate 6"
-    snd.update_priority = 1
-  end
+	end 
   if snd.firstaidcuretrack.head_bruised_moderate ~= "6" then
 		snd.setting_priority = "head_bruised_moderate 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.allergies ~= "6" then
+	end 
+  -- pills 6
+	if snd.firstaidcuretrack.allergies ~= "6" then
 		snd.setting_priority = "allergies 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.crippled ~= "6" then
+	end
+	if snd.firstaidcuretrack.crippled ~= "6" then
 		snd.setting_priority = "crippled 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.epilepsy ~= "6" then
+	end
+	if snd.firstaidcuretrack.epilepsy ~= "6" then
 		snd.setting_priority = "epilepsy 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.haemophilia ~= "6" then
+	end
+	if snd.firstaidcuretrack.haemophilia ~= "6" then
 		snd.setting_priority = "haemophilia 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.impairment ~= "6" then
+	end
+	if snd.firstaidcuretrack.impairment ~= "6" then
 		snd.setting_priority = "impairment 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.lethargy ~= "6" then
+	end
+	if snd.firstaidcuretrack.lethargy ~= "6" then
 		snd.setting_priority = "lethargy 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.loneliness ~= "6" then
+	end
+	if snd.firstaidcuretrack.loneliness ~= "6" then
 		snd.setting_priority = "loneliness 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.masochism ~= "6" then
+	end
+	if snd.firstaidcuretrack.masochism ~= "6" then
 		snd.setting_priority = "masochism 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.recklessness ~= "6" then
+	end
+	if snd.firstaidcuretrack.recklessness ~= "6" then
 		snd.setting_priority = "recklessness 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.rend ~= "6" then
+	end
+	if snd.firstaidcuretrack.rend ~= "6" then
 		snd.setting_priority = "rend 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.stormtouched ~= "6" then
+	end
+	if snd.firstaidcuretrack.stormtouched ~= "6" then
 		snd.setting_priority = "stormtouched 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.sensitivity ~= "6" then
+	end
+	if snd.firstaidcuretrack.sensitivity ~= "6" then
 		snd.setting_priority = "sensitivity 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.vomiting ~= "6" then
+	end
+	if snd.firstaidcuretrack.vomiting ~= "6" then
 		snd.setting_priority = "vomiting 6"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.left_leg_broken ~= "4" then
-		snd.setting_priority = "left_leg_broken 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_leg_broken ~= "4" then
-		snd.setting_priority = "right_leg_broken 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.left_arm_broken ~= "4" then
-		snd.setting_priority = "left_arm_broken 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_arm_broken ~= "4" then
-		snd.setting_priority = "right_arm_broken 4"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.firstaid_predict_arms ~= "7" then
-		snd.setting_priority = "firstaid_predict_arms 3"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.firstaid_predict_legs ~= "3" then
+	end
+
+  -- pipes
+  if snd.firstaidcuretrack.withering ~= "7" then
+    snd.setting_priority = "withering 7"
+snd.update_priority = 1 
+ end 
+  -- salves 7
+  if snd.firstaidcuretrack.left_leg_broken ~= "7" then
+    snd.setting_priority = "left_leg_broken 7"
+  end 
+ 	if snd.firstaidcuretrack.right_leg_broken ~= "7" then
+		snd.setting_priority = "right_leg_broken 7"
+	end 
+ 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
+		snd.setting_priority = "left_arm_broken 7"
+	end 
+ 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
+		snd.setting_priority = "right_arm_broken 7"
+	end 
+ 	if snd.firstaidcuretrack.firstaid_predict_arms ~= "7" then
+		snd.setting_priority = "firstaid_predict_arms 7"
+	end   
+ 	if snd.firstaidcuretrack.firstaid_predict_legs ~= "7" then
 		snd.setting_priority = "firstaid_predict_legs 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.firstaid_predict_any_limb ~= "3" then
+	end 
+ 	if snd.firstaidcuretrack.firstaid_predict_any_limb ~= "7" then
 		snd.setting_priority = "firstaid_predict_any_limb 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.berserking ~= "7" then
+	end  
+  -- pills 7
+	if snd.firstaidcuretrack.berserking ~= "7" then
 		snd.setting_priority = "berserking 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.egocentric ~= "7" then
+	end
+	if snd.firstaidcuretrack.egocentric ~= "7" then
 		snd.setting_priority = "egocentric 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.exhausted ~= "7" then
+	end
+	if snd.firstaidcuretrack.exhausted ~= "7" then
 	  snd.setting_priority = "exhausted 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.hallucinations ~= "7" then
+	end
+	if snd.firstaidcuretrack.hallucinations ~= "7" then
 		snd.setting_priority = "hallucinations 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.hatred ~= "7" then
+	end
+	if snd.firstaidcuretrack.hatred ~= "7" then
 		snd.setting_priority = "hatred 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.heartflutter ~= "7" then
+	end
+	if snd.firstaidcuretrack.heartflutter ~= "7" then
 		snd.setting_priority = "heartflutter 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.hypersomnia ~= "7" then
+	end
+	if snd.firstaidcuretrack.hypersomnia ~= "7" then
 		snd.setting_priority = "hypersomnia 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.justice ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	end
+	if snd.firstaidcuretrack.justice ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "justice 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.laxity ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	end
+	if snd.firstaidcuretrack.laxity ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "laxity 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.lovers_effect ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	end
+	if snd.firstaidcuretrack.lovers_effect ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "lovers_effect 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.peace ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	end
+	if snd.firstaidcuretrack.peace ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "peace 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.stupidity ~= "7" then
+	end
+	if snd.firstaidcuretrack.stupidity ~= "7" then
 		snd.setting_priority = "stupidity 7"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.left_leg_dislocated ~= "8" then
+	end
+  -- pipes 8
+  if snd.firstaidcuretrack.besilence ~= "8" then
+    snd.setting_priority = "besilence 8"
+snd.update_priority = 1 
+ end   
+  -- salves 8
+  if snd.firstaidcuretrack.ice_encased ~= "8" then
+    snd.setting_priority = "ice_encased 8"
+snd.update_priority = 1 
+ end 
+	if snd.firstaidcuretrack.left_leg_dislocated ~= "8" then
 		snd.setting_priority = "left_leg_dislocated 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_leg_dislocated ~= "8" then
+	end  
+	if snd.firstaidcuretrack.right_leg_dislocated ~= "8" then
 		snd.setting_priority = "right_leg_dislocated 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.left_arm_dislocated ~= "8" then
+	end 
+	if snd.firstaidcuretrack.left_arm_dislocated ~= "8" then
 		snd.setting_priority = "left_arm_dislocated 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_arm_dislocated ~= "8" then
+	end 
+	if snd.firstaidcuretrack.right_arm_dislocated ~= "8" then
 		snd.setting_priority = "right_arm_dislocated 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.agoraphobia ~= "8" then
+	end 
+  -- pills 8
+	if snd.firstaidcuretrack.agoraphobia ~= "8" then
 		snd.setting_priority = "agoraphobia 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.claustrophobia ~= "8" then
+	end
+	if snd.firstaidcuretrack.claustrophobia ~= "8" then
 		snd.setting_priority = "claustrophobia 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.dementia ~= "8" then
+	end
+	if snd.firstaidcuretrack.dementia ~= "8" then
 		snd.setting_priority = "dementia 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.dissonance ~= "8" then
+	end
+	if snd.firstaidcuretrack.dissonance ~= "8" then
 		snd.setting_priority = "dissonance 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.dizziness ~= "8" then
+	end
+	if snd.firstaidcuretrack.dizziness ~= "8" then
 		snd.setting_priority = "dizziness 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.faintness ~= "8" then
+	end
+	if snd.firstaidcuretrack.faintness ~= "8" then
 		snd.setting_priority = "faintness 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.paranoia ~= "8" then
+	end
+	if snd.firstaidcuretrack.paranoia ~= "8" then
 		snd.setting_priority = "paranoia 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.shyness ~= "8" then
+	end
+	if snd.firstaidcuretrack.shyness ~= "8" then
 		snd.setting_priority = "shyness 8"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.vertigo ~= "8" then
+	end
+	if snd.firstaidcuretrack.vertigo ~= "8" then
 		snd.setting_priority = "vertigo 8"
-    snd.update_priority = 1
-  end
+	end
+  -- pipes 9
+  if snd.firstaidcuretrack.disfigurement ~= "9" and (snd.class == "Carnifex" or snd.class == "Earthcaller" or snd.class == "Luminary" or snd.class == "Indorani" or snd.class == "Praenomen" or snd.class == "Ravager" or snd.class == "Teradrim" or snd.class == "Shaman" or snd.class == "Warden" or snd.class == "Sentinel" or snd.class == "Oneiromancer" or snd.class == "Sciomancer" or snd.class == "Ascendril" or snd.class == "Bloodborn" or snd.class == "Runecarver") then
+    snd.setting_priority = "disfigurement 9"
+  elseif snd.firstaidcuretrack.disfigurement ~= "13" and (snd.class == "Monk" or snd.class == "Syssin" or snd.class == "Bard" or snd.class == "Archivist" or snd.class == "Revenant" or snd.class == "Templar" or snd.class == "Shapeshifter" or snd.class == "Wayfarer") then
+    snd.setting_priority = "disfigurement 13"
+snd.update_priority = 1 
+ end  
+  -- salves 9
   if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
-		snd.setting_priority = "left_leg_damaged 9"
-    snd.update_priority = 1
-  end
-  if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
+    snd.setting_priority = "left_leg_damaged 9"
+snd.update_priority = 1 
+ end
+	if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
 		snd.setting_priority = "right_leg_damaged 9"
-    snd.update_priority = 1
 	end 
 	if snd.firstaidcuretrack.left_arm_damaged ~= "9" then
 		snd.setting_priority = "left_arm_damaged 9"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.right_arm_damaged ~= "9" then
 		snd.setting_priority = "right_arm_damaged 9"
-    snd.update_priority = 1
 	end  
 	if snd.firstaidcuretrack.head_damaged ~= "9" then
 		snd.setting_priority = "head_damaged 9"
-    snd.update_priority = 1
 	end 
 	if snd.firstaidcuretrack.torso_damaged ~= "9" then
 		snd.setting_priority = "torso_damaged 9"
-    snd.update_priority = 1
 	end 
   -- pills 9
 	if snd.firstaidcuretrack.addiction ~= "9" then
 		snd.setting_priority = "addiction 9"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.body_odor ~= "9" then
 		snd.setting_priority = "body_odor 9"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.commitment_fear ~= "9" then
 		snd.setting_priority = "commitment_fear 9"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.hubris ~= "9" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "hubris 9"
-    snd.update_priority = 1
 	end
-  if snd.firstaidcuretrack.worrywart ~= "9" then
-    snd.setting_priority = "worrywart 9"
-    snd.update_priority = 1
-  end
 	if snd.firstaidcuretrack.magnanimity ~= "9" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "magnanimity 9"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.sadness ~= "9" then
 		snd.setting_priority = "sadness 9"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.self_pity ~= "9" then
-		snd.setting_priority = "self_pity 9"
-    snd.update_priority = 1
+		snd.setting_priority = "self-pity 9"
 	end
+  -- pipes 10
+  if snd.firstaidcuretrack.migraine ~= "10" then
+    snd.setting_priority = "migraine 10"
+snd.update_priority = 1 
+ end
   -- salves 10
-	if snd.firstaidcuretrack.left_arm_mangled ~= "10" then
-		snd.setting_priority = "left_arm_mangled 10"
-    snd.update_priority = 1
-	end
+  if snd.firstaidcuretrack.left_arm_mangled ~= "10" then
+    snd.setting_priority = "left_arm_mangled 10"
+  end
 	if snd.firstaidcuretrack.right_arm_mangled ~= "10" then
 		snd.setting_priority = "right_arm_mangled 10"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.left_leg_mangled ~= "10" then
 		snd.setting_priority = "left_leg_mangled 10"
-    snd.update_priority = 1
 	end   
 	if snd.firstaidcuretrack.right_leg_mangled ~= "10" then
 		snd.setting_priority = "right_leg_mangled 10"
-    snd.update_priority = 1
 	end  
 	if snd.firstaidcuretrack.torso_mangled ~= "10" then
 		snd.setting_priority = "torso_mangled 10"
-    snd.update_priority = 1
 	end 
   -- pills 10
 	if snd.firstaidcuretrack.blisters ~= "10" then
 		snd.setting_priority = "blisters 10"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.generosity ~= "10" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "generosity 10"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.superstition ~= "10" and not (snd.class == "Revenant" or snd.class == "Templar") then
 		snd.setting_priority = "superstition 10"
-    snd.update_priority = 1
 	end
+  -- pipes 11
+  if snd.firstaidcuretrack.squelched ~= "11" then
+    snd.setting_priority = "squelched 11"
+snd.update_priority = 1 
+ end
   -- salves 11
 	if snd.firstaidcuretrack.left_leg_amputated ~= "11" then
 		snd.setting_priority = "left_leg_amputated 11"
-    snd.update_priority = 1
 	end  
 	if snd.firstaidcuretrack.right_leg_amputated ~= "11" then
 		snd.setting_priority = "right_leg_amputated 11"
-    snd.update_priority = 1
 	end    
 	if snd.firstaidcuretrack.left_arm_amputated ~= "11" then
 		snd.setting_priority = "left_arm_amputated 11"
-    snd.update_priority = 1
 	end    
 	if snd.firstaidcuretrack.right_arm_amputated ~= "11" then
 		snd.setting_priority = "right_arm_amputated 11"
-    snd.update_priority = 1
-	end   
+	end 
+  -- pipes 12
+  if snd.firstaidcuretrack.deadening ~= "12" then
+    snd.setting_priority = "deadening 12"
+snd.update_priority = 1 
+ end  
   -- salves 12
 	if snd.firstaidcuretrack.spinal_rip ~= "12" then
 		snd.setting_priority = "spinal_rip 12"
-    snd.update_priority = 1
 	end  
   -- salves 13
 	if snd.firstaidcuretrack.voidgaze ~= "13" then
 		snd.setting_priority = "voidgaze 13"
-    snd.update_priority = 1
 	end 
   -- salves 14
 	if snd.firstaidcuretrack.left_leg_bruised ~= "14" then
 		snd.setting_priority = "left_leg_bruised 14"
-    snd.update_priority = 1
 	end 
 	if snd.firstaidcuretrack.right_leg_bruised ~= "14" then
 		snd.setting_priority = "right_leg_bruised 14"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.left_arm_bruised ~= "14" then
 		snd.setting_priority = "left_arm_bruised 14"
-    snd.update_priority = 1
 	end
 	if snd.firstaidcuretrack.right_arm_bruised ~= "14" then
 		snd.setting_priority = "right_arm_bruised 14"
-    snd.update_priority = 1
 	end  
 	if snd.firstaidcuretrack.head_bruised ~= "14" then
 		snd.setting_priority = "head_bruised 14"
-    snd.update_priority = 1
 	end     
 	if snd.firstaidcuretrack.torso_bruised ~= "14" then
 		snd.setting_priority = "torso_bruised 14"
-    snd.update_priority = 1
 	end    
   -- salves 15
   if snd.firstaidcuretrack.mauled_face ~= "15" then
 		snd.setting_priority = "mauled_face 15"
-    snd.update_priority = 1
 	end  
   if snd.firstaidcuretrack.heatspear ~= "15" then
 		snd.setting_priority = "heatspear 15"
-    snd.update_priority = 1
 	end 
   -- salves 16
   if snd.firstaidcuretrack.lightwound ~= "16" then
 		snd.setting_priority = "lightwound 16"
-    snd.update_priority = 1
 	end     
   if snd.firstaidcuretrack.ablaze ~= "16" then
 		snd.setting_priority = "ablaze 16"
-    snd.update_priority = 1
 	end   
 
   -- salves 17
   if snd.firstaidcuretrack.hypothermia ~= "17" then
 		snd.setting_priority = "hypothermia 17"
-    snd.update_priority = 1
 	end
   -- salves 18
   if snd.firstaidcuretrack.shivering ~= "18" then
 		snd.setting_priority = "shivering 18"
-    snd.update_priority = 1
-	end    
+	end 
   -- salves 19
   if snd.firstaidcuretrack.gloom ~= "19" then
 		snd.setting_priority = "gloom 19"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.cracked_ribs ~= "19" then
 		snd.setting_priority = "cracked_ribs 19"
-    snd.update_priority = 1
 	end  
   -- salves 20
   if snd.firstaidcuretrack.deepwound ~= "20" then
 		snd.setting_priority = "deepwound 20"
-    snd.update_priority = 1
 	end 
+  
+  if snd.firstaidcuretrack.narcolepsy ~= "20" then
+    snd.setting_priority = "narcolepsy 20"
+  end 
   -- salves 21
   
   -- salves 22
   if snd.firstaidcuretrack.whiplash ~= "22" then
 		snd.setting_priority = "whiplash 22"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.backstrain ~= "22" then
 		snd.setting_priority = "backstrain 22"
-    snd.update_priority = 1
 	end      
   if snd.firstaidcuretrack.sore_wrist ~= "22" then
 		snd.setting_priority = "sore_wrist 22"
-    snd.update_priority = 1
 	end  
   -- salves 23
   if snd.firstaidcuretrack.muscle_spasms ~= "23" then
 		snd.setting_priority = "muscle_spasms 23"
-    snd.update_priority = 1
 	end  
   if snd.firstaidcuretrack.stiffness ~= "23" then
 		snd.setting_priority = "stiffness 23"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.collapsed_lung ~= "23" then
 		snd.setting_priority = "collapsed_lung 23"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.sore_ankle ~= "23" then
 		snd.setting_priority = "sore_ankle 23"
-    snd.update_priority = 1
 	end   
   if snd.firstaidcuretrack.weak_grip ~= "23" then
 		snd.setting_priority = "weak_grip 23"
-    snd.update_priority = 1
 	end 
   -- salves 24
   if snd.firstaidcuretrack.leftarm ~= "24" or snd.firstaidcuretrack.preleftarm ~= "20" and not snd.canprerestorenow then
     snd.setting_priority = "PRESTORE left arm 20% 24" 
-    snd.update_priority = 1
   end
   if snd.firstaidcuretrack.head ~= "24" or snd.firstaidcuretrack.prehead ~= "20" and not snd.canprerestorenow then
     snd.setting_priority = "PRESTORE head 20% 24" 
-    snd.update_priority = 1
   end 
   if snd.firstaidcuretrack.torso ~= "24" or snd.firstaidcuretrack.pretorso ~= "20" and not snd.canprerestorenow then
     snd.setting_priority = "PRESTORE torso 20% 24" 
-    snd.update_priority = 1
-  end   
+snd.update_priority = 1 
+ end 
   if snd.firstaidcuretrack.rightarm ~= "24" or snd.firstaidcuretrack.prerightarm ~= "20" and not snd.canprerestorenow then
     snd.setting_priority = "PRESTORE right arm 20% 24" 
-    snd.update_priority = 1
   end
   if snd.firstaidcuretrack.leftleg ~= "24" or snd.firstaidcuretrack.preleftleg ~= "20" and not snd.canprerestorenow then
     snd.setting_priority = "PRESTORE left leg 20% 24" 
-    snd.update_priority = 1
   end
   
   if snd.firstaidcuretrack.rightleg ~= "24" or snd.firstaidcuretrack.prerightleg ~= "20" and not snd.canprerestorenow then
     snd.setting_priority = "PRESTORE right leg 20% 24" 
-    snd.update_priority = 1
   end 
   
   
   -- salves 25
   if snd.firstaidcuretrack.blurry_vision ~= "25" then
 		snd.setting_priority = "blurry_vision 25"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.stuttering ~= "25" then
 		snd.setting_priority = "stuttering 25"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.crippled_throat ~= "25" then
 		snd.setting_priority = "crippled_throat 25"
-    snd.update_priority = 1
 	end   
   if snd.firstaidcuretrack.burnt_eyes ~= "25" then
 		snd.setting_priority = "burnt_eyes 25"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.effused_blood ~= "25" then
 		snd.setting_priority = "effused_blood 25"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.smashed_throat ~= "25" then
 		snd.setting_priority = "smashed_throat 25"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.void ~= "25" then
 		snd.setting_priority = "void 25"
-    snd.update_priority = 1
 	end 
   if snd.firstaidcuretrack.weakvoid ~= "25" then
 		snd.setting_priority = "weakvoid 25"
-    snd.update_priority = 1
 	end 
   -- 26 things you want off
   if snd.firstaidcuretrack.embedded_axe ~= "26" then
     snd.setting_priority = "embedded_axe 26"
-    snd.update_priority = 1
   end
   if snd.firstaidcuretrack.oiled ~= "26" then
     snd.setting_priority = "oiled 26"
-    snd.update_priority = 1
-  end 
+snd.update_priority = 1 
+ end
   
   if snd.can_firstaid() then
     if snd.update_priority &gt; 0 then
@@ -26021,18 +26492,34 @@ def_circulation = "on",
 
 ascendril = {
 def_countercurrent = "on",
-def_sagacity = "on",
+def_empowered_moon = "on",
 def_arcaneskin = "on",
 def_missiles = "on",
 },
 
+bloodborn = {
+def_victimise = "once",
+def_empowered_moon = "on",
+def_panoply = "on",
+def_forestall = "on",
+},
+
 sciomancer = {	
-def_countercurrent = "once",		
 def_rigor = "once",		
 def_shadow_engulf  = "once",		
 def_shadow_mantle = "once",		
 def_blurring = "once",		
-def_sagacity = "once",
+def_empowered_moon = "once",
+
+},
+
+runecarver = {  
+      
+def_prowess = "once",        
+def_hex_stalk  = "once",        
+def_hex_preservation = "once",        
+def_ironbark= "once",        
+def_empowered_moon = "once",
 
 },
 
@@ -26085,18 +26572,20 @@ def_inflated = "on",
   snd.toparry = "none"
   if snd.class_hitting == "carnifex" or snd.class_hitting == "warden" then
     snd.toparry = "left leg"
-  elseif snd.class_hitting == "ascendril" then
+  elseif snd.class_hitting == "ascendril" or snd.class_hitting == "bloodborn" then
     snd.toparry = "torso"
+	elseif snd.class_hitting == "shifter" and snd.my_limb_damage["head"] &gt;= 33.33 then
+		snd.toparry = "head"
   else
-    for limb in pairs(snd.limb_damage) do
-      if string.find(limb, " ") then
-        x = string.gsub(limb, " ", "_")
-        aff = "pre_restore_"..x
-      else
-        aff = "pre_restore_"..limb
-      end
+		for limb in pairs(snd.my_limb_damage) do
+			if string.find(limb, " ") then
+				x = string.gsub(limb, " ", "_")
+				aff = "pre_restore_"..x
+			else
+				aff = "pre_restore_"..limb
+			end
       if (snd.class_hitting == "sentinel" or snd.class_hitting == "monk" or snd.class_hitting == "luminary" or snd.class_hitting == "earthcaller") then
-        if snd.limb_damage[limb] &gt; 22 then
+        if snd.my_limb_damage[limb] &gt; 22 then
           snd.toparry = limb
         else
           snd.toparry = "head"
@@ -26130,17 +26619,17 @@ def_inflated = "on",
           snd.toparry = "head"
         elseif snd.have_aff("torso_mangled") then
           snd.toparry = "torso"
-        elseif snd.limb_damage[limb] &gt; 27 then
+        elseif snd.my_limb_damage[limb] &gt; 27 then
           snd.toparry = limb
-        elseif snd.limb_damage[limb] &gt; 33 then
+        elseif snd.my_limb_damage[limb] &gt; 33 then
           snd.toparry = limb
         else
           snd.toparry = "left arm"
         end
       elseif snd.class_hitting == "wayfarer" then
-        if snd.limb_damage[limb] &gt; 25 then
+        if snd.my_limb_damage[limb] &gt; 25 then
           snd.toparry = limb
-        elseif snd.limb_damage[limb] &gt; 33 then
+        elseif snd.my_limb_damage[limb] &gt; 33 then
           snd.toparry = limb
         else
           snd.toparry = "right arm"
@@ -26148,19 +26637,19 @@ def_inflated = "on",
       elseif snd.class_hitting == "zealot" or snd.class_hitting == "ravager" then
         if snd.heelrush ~= snd.toparry then
           snd.toparry = snd.heelrush
-        elseif snd.limb_damage["torso"] &gt; 16 and snd.toparry ~= "torso" then
+        elseif snd.my_limb_damage["torso"] &gt; 16 and snd.toparry ~= "torso" then
           snd.toparry = "torso"
         end
       else
-        if snd.limb_damage[limb] &gt; highest and snd.limb_damage[limb] &lt; 33.33 then
-          highest = snd.limb_damage[limb]
-          snd.toparry = limb
-        end
-      end
-      if snd.limb_damage[limb] &gt; 25 then
-        snd.aff_have(aff)
-      else
-        snd.aff_remove(aff)
+			  if snd.my_limb_damage[limb] &gt; highest and snd.my_limb_damage[limb] &lt; 33.33 then
+				  highest = snd.my_limb_damage[limb]
+				  snd.toparry = limb
+			  end
+			  if snd.my_limb_damage[limb] &gt; 25 then
+				  snd.aff_have(aff)
+			  else
+				  snd.aff_remove(aff)
+			  end
       end
     end
   end
@@ -26209,6 +26698,7 @@ snd.allies = {}
 snd.hitting = "none"
 snd.aff_list = {}
 snd.def_needed = false
+snd.using_both_hands = 0
 
 -- Firstaid assistance stuff
 
@@ -26289,7 +26779,7 @@ snd.templar_weapon_two = "shortsword" -- used for Templar offenses
 
 snd.current_offense = ""
 
---Sciomancer
+--Sciomancer/Runecarver
 snd.gravity = 0
 snd.reflection_charge = 3
 snd.repay = 0
@@ -26372,7 +26862,7 @@ snd.flamestack = 0
 snd.cauterize = true
 snd.immolation_ready = false
 
---Ascendril
+--Ascendril/Bloodborn
 snd.glimpse = "none"
 snd.gorged = ""
 snd.glimpsing = false
@@ -26380,23 +26870,7 @@ snd.reflection_charge = 3
 snd.flamewreathed = {limb = "", resonance = ""}
 snd.fulcrum_call = true
 snd.fulcrum_ready = true
-
---Teradrim/Tidesage
-templimbscourge = "none"
-snd.lev_gone = false
-
---Praenomen/Akkari
-snd.runeused = false
-
---Shapeshifter
-  Salivating = false
-  salveFail = false
-  
---Astral
-snd.glory = 0
-snd.hamartia_used = false
-snd.huntresses_used = false
-snd.unmasked = false
+snd.stalled_skill = ""
 
 snd.callers = {}
 snd.defended = false
@@ -26406,8 +26880,6 @@ snd.last_cure = ""
 snd.last_cured = ""
 snd.mana_percent = 100
 snd.health_percent = 100
-snd.blazing = false
-snd.wasi = false
 snd.jawlocked = false
 snd.soul = 100
 snd.implant = "none"
@@ -26431,15 +26903,10 @@ snd.oldalerts = {}
 snd.panic = false
 snd.alertness = {}
 snd.alertnessDir = "none"
-theytumbling = false -- start system with them not being recognized as tumbling
-theyran = false -- start system for if they fled and we want to try a quick grab
-snd.theyrandir = "none"
-snd.neckdragdir = "none"
-snd.enemy_restoration_balance = true
 snd.enemy_used_regenerate = false
-snd.disperse = "none" -- Can be set to none, callers or all.
 snd.who_called_affs = ""
 
+snd.disperse = "none" -- Can be set to none, callers or all.
 
 snd.limbs = {}
 snd.parried_limb = "none"
@@ -26469,6 +26936,7 @@ torso = "healed",
 ["right leg"] = "healed"
 }
 snd.limb_bruising = {
+skin = 0,
 head = 0,
 torso = 0,
 ["left arm"] = 0,
@@ -26476,35 +26944,35 @@ torso = 0,
 ["left leg"] = 0,
 ["right leg"] = 0
 }
-snd.broken_limbs = 0
+
 
 snd.use_hourglass_on_prismatic = false
 snd.giving = {}
 snd.hound_queue = {}
 snd.target_has = {}
 snd.rebounded = false
-snd.target_impaled = false
-
+snd.target_impaled = false -- do we specifically have our target imapled
 
 snd.effects = {
 --venoms
 sight = "oculus",
 hearing = "prefarar",
-asthma = "kalmia", --kelp
-paresis = "curare", --bloodroot
-clumsiness = "xentio", --kelp
-sensitivity = "prefarar", --kelp
-vomiting = "euphorbia", --ginseng
-allergies = "darkshade", --ginseng
-colocasia = "colocasia", --kelp
-haemophilia = "hepafarin", --ginseng
-peace = "ouabain", --bellwort
+asthma = "kalmia", 
+paresis = "curare", 
+clumsiness = "xentio", 
+sensitivity = "prefarar", 
+vomiting = "euphorbia",
+allergies = "darkshade", 
+colocasia = "colocasia", 
+haemophilia = "hepafarin", 
+peace = "ouabain",
+deadening = "vardrax",
 
-stupidity = "aconite", --goldenseal, focus
-weariness = "vernalius", --kelp, focus
-recklessness = "eurypteria", --lobelia, focus
-dizziness = "larkspur", --goldenseal, focus
-shyness = "digitalis", --goldenseal, focus
+stupidity = "aconite", 
+weariness = "vernalius", 
+recklessness = "eurypteria", 
+dizziness = "larkspur", 
+shyness = "digitalis", 
 
 anorexia = "slike",
 belonephobia = "araceae",
@@ -26529,8 +26997,20 @@ crippled_body = "cripple",
 hemorrhage = "hemorrhage",
 
 rend = "rend",
-
 }
+
+function snd.rev_empower(aff)
+
+   local revenant = {
+        ["conviction"] = "bimre",
+        ["disrupt"] = "dirne",
+        ["cripple"] = "azu",
+        ["hemorrhage"] = "wilave",
+                    }
+    if revenant[aff] == nil then return aff
+    else return revenant[aff]
+    end
+end
 
 snd.spirituality_attacks = {
 paresis = "shield strike",
@@ -26594,26 +27074,26 @@ snd.hound_attacks = {
 snd.cures = {
 
 amaurosis = {
-"sight"
+"sight",
 },
 
 ototoxin = {
-"hearing"
+"hearing",
 },
 
 panacea = {
 "stormtouched",
 "patterns",
-"shaderot_body",
-"shaderot_wither",
-"shaderot_heat",
-"shaderot_spirit",
-"shaderot_benign"
+"rot_body",
+"rot_wither",
+"rot_heat",
+"rot_spirit",
+"rot_benign",
 },
 
 anabiotic = {
 "plodding",
-"idiocy"
+"idiocy",
 },
 
 opiate = {
@@ -26625,7 +27105,7 @@ opiate = {
 "blisters",
 "slickness",
 "heartflutter",
-"slough"
+"slough",
 },
 
 steroid = {
@@ -26637,10 +27117,10 @@ steroid = {
 "limp_veins",
 "lovers_effect",
 "laxity",
-"supersition",
+"superstition",
 "generosity",
 "justice",
-"magnanimity"
+"magnanimity",
 },
 
 coagulation = {
@@ -26653,7 +27133,7 @@ coagulation = {
 "exhausted",
 "thin_blood",
 "rend",
-"haemophilia"
+"haemophilia",
 },
 
 depressant = {
@@ -26667,7 +27147,7 @@ depressant = {
 "berserking",
 "vertigo",
 "claustrophobia",
-"nyctophobia"
+"nyctophobia",
 },
 
 decongestant = {
@@ -26679,7 +27159,7 @@ decongestant = {
 "sensitivity",
 "ringing_ears",
 "impairment",
-"blood_poison"
+"blood_poison",
 },
 
 euphoriant = {
@@ -26692,7 +27172,6 @@ euphoriant = {
 "impatience",
 "dissonance",
 "infested",
-"insomnia"
 },
 
 antipsychotic = {
@@ -26705,7 +27184,7 @@ antipsychotic = {
 "addiction",
 "hypersomnia",
 "blood_curse",
-"blighted"
+"blighted",
 },
 
 eucrasia = {
@@ -26729,10 +27208,6 @@ yarrow = {
 "disfigurement",
 "migraine",
 "squelched"
-},
-
-reishi = {
-"besilence"
 },
 
 epidermal_torso = {
@@ -26806,7 +27281,6 @@ focus = {
 
 }
 
-
 snd.entangleaffs = {
   "writhe_transfix",
 	"writhe_impaled",
@@ -26825,6 +27299,7 @@ alchemist = {"Alchemy", "Experimentation", "Botany"},
 archivist = {"Geometrics", "Numerology", "Bioessence"},
 ascendril = {"Elemancy", "Arcanism", "Thaumaturgy"},
 bard = {"Weaving", "Performance", "Songcalling"},
+bloodborn = {"Humourism", "Esoterica", "Hematurgy"},
 carnifex = {"Savagery", "Deathlore", "Warhounds"},
 earthcaller = {"Subjugation", "Apocalyptia", "Tectonics"},
 indorani = {"Necromancy", "Tarot", "Domination"},
@@ -26833,6 +27308,7 @@ monk = {"Tekura", "Kaido", "Telepathy"},
 oneiromancer = {"Oneiromancy", "Hyalincuru", "Contracts"},
 praenomen = {"Corpus", "Mentis", "Sanguis"},
 revenant = {"Riving", "Manifestation", "Chirography"},
+runecarver = {"Malediction", "Runecarving", "Sporulation"},
 sciomancer = {"Sciomancy", "Sorcery", "Gravitation"},
 sentinel = {"Dhuriv", "Woodlore", "Tracking"},
 shaman = {"Primality", "Shamanism", "Naturalism"},
@@ -26930,9 +27406,9 @@ function snd.took_limb_dmg(limb, amount)
 end
 
 function snd.target_got(affliction)
-  if snd.illusion_found then
-    return
-  end
+  --if snd.illusion_found then
+   -- return
+  --end
   local target_display_table = {}
   affliction = snd.affNameCheck(affliction)
 
@@ -27008,9 +27484,9 @@ function snd.target_got(affliction)
 end
 
 function snd.target_cured(affliction)
-  if snd.illusion_found then
-    return
-  end
+  --if snd.illusion_found then
+  --  return
+ -- end
   
   local target_display_table = {}
   local target_aff_check = {}
@@ -27080,14 +27556,14 @@ function snd.target_used(curative)
       for i in pairs(snd.target_has) do
         if snd.target_has[i] == snd.cures[curative][affliction] and not aff_found then
           if curative == "panacea" then
-            if snd.cures[curative][affliction] == "shaderot_body" then
-              snd.target_cured("shaderot_wither")
-            elseif snd.cures[curative][affliction] == "shaderot_wither" then
-              snd.target_cured("shaderot_heat")
-            elseif snd.cures[curative][affliction] == "shaderot_heat" then
-              snd.target_cured("shaderot_spirit")
-            elseif snd.cures[curative][affliction] == "shaderot_spirit" then
-              snd.target_cured("shaderot_benign")
+            if snd.cures[curative][affliction] == "rot_body" then
+              snd.target_cured("rot_wither")
+            elseif snd.cures[curative][affliction] == "rot_wither" then
+              snd.target_cured("rot_heat")
+            elseif snd.cures[curative][affliction] == "rot_heat" then
+              snd.target_cured("rot_spirit")
+            elseif snd.cures[curative][affliction] == "rot_spirit" then
+              snd.target_cured("rot_benign")
             end
             snd.target_cured(snd.cures[curative][affliction])
             aff_found = true
@@ -27243,20 +27719,6 @@ function snd.onHit2(checks, conditional)
         end
       end
       
-      -- Need a way to handle 2handed attacks (Sentinel, Templar DSW, Carnifex, etc)
-      
-      if conditional == "Sentinel Slash" and #snd.maybe_affs == 2 then
-          snd.using_both_hands = 1
-      end
-            
-      if conditional == "Carnifex" or conditional == "Warden" then
-        snd.using_both_hands = 1
-      end
-      
-      if conditional == "Templar2h" then
-        snd.using_both_hands = 1
-      end
-      
       if conditional == "Bard Hiltblow" and #snd.maybe_affs &lt; 1 then
         disableTrigger("Hiltblow Confirmation")
       end
@@ -27269,6 +27731,20 @@ function snd.onHit2(checks, conditional)
         snd.target_got("muscle_spasms")
         table.insert(snd.last_affs, "muscle_spasms")
         table.remove(snd.maybe_affs, 2) 
+      end
+      
+      -- Need a way to handle 2handed attacks (Sentinel, Templar DSW, Carnifex, etc)
+      
+      if conditional == "Sentinel Slash" and #snd.maybe_affs == 2 then
+          snd.using_both_hands = 1
+      end
+            
+      if conditional == "Carnifex" or conditional == "Warden" then
+        snd.using_both_hands = 1
+      end
+      
+      if conditional == "Templar2h" then
+        snd.using_both_hands = 1
       end
       
   end
@@ -27670,7 +28146,7 @@ function snd.no_parry()
  local noparryaffs = {
   "distortion",
   "frozen",
-  "punished_arms",
+  --"punished_arms",
   "paresis",
   "paralysis",
   "asleep",
@@ -27742,27 +28218,15 @@ function snd.venomEffect(venom)
 		end
 	elseif venom == "cripple" then
 		if snd.checkAff("crippled") then
-			aff = "crippled body"
-		else
-			aff = "crippled"
-		end
-	elseif venom == "azu" then
-		if snd.checkAff("crippled") then
-			aff = "crippled body"
+			aff = "crippled_body"
 		else
 			aff = "crippled"
 		end
 	elseif venom == "disrupt" then
-		if snd.checkAff("mental disruption") then
-			aff = "physical disruption"
+		if snd.checkAff("physical_disruption") then
+			aff = "mental_disruption"
 		else
-			aff = "mental disruption"
-		end
-	elseif venom == "dirne" then
-		if snd.checkAff("mental disruption") then
-			aff = "physical disruption"
-		else
-			aff = "mental disruption"
+			aff = "physical_disruption"
 		end
 	else
 		for i in pairs(snd.effects) do
@@ -27800,11 +28264,13 @@ local affs_to_change = {
   ["destroyed throat"] = "destroyed_throat",
   ["cracked ribs"] = "cracked_ribs",
   ["self loathing"] = "self_loathing",
+  ["blood curse"] = "blood_curse",
 }
   
   if affs_to_change[aff] then
     return affs_to_change[aff]
   else
+    aff = aff:gsub("a ", "")
     return aff:gsub(" ", "_")
   end
 
@@ -27813,6 +28279,7 @@ end
 function snd.removeProneStates(all) -- Reset a target back to standing w/no writhes or other affs
   local writhe_table = {
   	"writhe_transfix",
+    "writhe_feed",
   	"writhe_web",
   	"writhe_impaled",
   	"writhe_thighlock",
@@ -27929,6 +28396,7 @@ end</script>
     Penitence = function(target)
                 snd.target_got("slickness")
                 snd.used.paste = false
+                snd.target_got("no_paste")
               end,
     Denounce = function(target, quell)
                if quell then
@@ -27936,22 +28404,32 @@ end</script>
                end
             end,
     Rekindle = function(target, limb)
-                    snd.took_limb_dmg(limb, -15)
+                    snd.took_limb_dmg(-15, limb)
                   end,
-    Censure = function(target, lightly)
+    Censure = function(target, lenient)
             snd.onHit2({"Dodge", "Rebounding"})
            end,
     
     Bloodlet = function(target)
                 snd.target_got("rend")
               end,
+    Feed = function(target, fail)
+            if not fail then
+            else
+              snd.target_cured("no_paste")
+              snd.target_cured("feast")
+              snd.target_cured("fallen")
+              end
+            end,
   
   },
   
   ["Dictum"] = {
-  
-    Exhort = function(target)
-                 snd.target_got("writhe_transfix")
+    Exhort = function(target, blindness)
+                  snd.target_got("sight")
+                  if not blindness then  
+                   snd.target_got("writhe_transfix")
+                 end
                 end,
     Confusion = function(target)
                  snd.target_got("confusion")
@@ -27995,9 +28473,6 @@ end</script>
     Vertigo = function(target)
                  snd.target_got("vertigo")
                 end,
-    Fear = function(target)
-                 snd.target_got("fear")
-                end,
     Recklessness = function(target)
                  snd.target_got("recklessness")
                 end,
@@ -28012,9 +28487,22 @@ end</script>
                   snd.target_got("disrupted")
                 end
               end,
+    Fear = function(target)
+                 snd.target_got("fear")
+                end,
+    Amnesia = function(target)
+                 snd.target_got("amnesia")
+                end,
   },
   
   ["Discipline"] = {
+  
+  Provoke = function(target)
+            if target == snd.target then
+              snd.used.rebounding = false
+              snd.used.shield = false
+            end
+          end,
   
   Anathema = function(target)
             snd.target_got("blood_curse")
@@ -28025,13 +28513,16 @@ end</script>
            snd.target_got("sight")
          end,
          
-  Exorcism = function(target, failure)
-                if not failure then
-                    snd.target_got("feast")
-      		          tempTimer(19.5, [[snd.target_cured("feast")]])
-      	             snd.used.paste = false
-                  end
-          end,
+  Exorcism = function(target, fail)
+          if not fail then
+      		  snd.target_got("feast")
+      		  tempTimer(19.5, [[snd.target_cured("feast")]])
+      	    snd.used.paste = false
+            snd.target_got("no_paste")
+          else
+            snd.target_cured("writhe_transfix")
+          end
+        end,
           
   Bane = function(target)
              snd.target_got("blood_poison")
@@ -28040,6 +28531,9 @@ end</script>
   Pariah = function(target)
             snd.target_got("blood_rune")
 	          snd.runeused = true
+        end,
+  Exsanguinate = function(target)
+          snd.target_got("effused_blood")
         end,
   
   Inquisition = function(target)
@@ -28446,6 +28940,197 @@ end</script>
             end
           	
             if snd.glimpse == "fire" then
+              snd.target_got("ablaze")
+          	end
+            snd.fulcrum_ready = false
+          end,       
+
+  },
+  
+--Bloodborn
+  ["Humourism"] = {
+  
+    Stupor = function(target)
+                snd.target_got("dizziness")
+                snd.target_got("stupidity")
+  	          end,
+    Frostbite = function(target, failed)
+                  if not failed then
+                    snd.target_got("frostbite")
+                  else
+                    snd.target_cured("no_caloric")
+                  end
+                end,
+    Boil = function(target, conditional)
+               if conditional == "Normal" then
+                 snd.target_got("ablaze")
+               elseif conditional == "Phlegm" then
+                 snd.target_got("blisters")
+               end
+             end,
+    Disgorge = function(target, element, conditional)
+                	snd.last_hit_limb = conditional
+                	snd.last_limb_dmg = 12
+                  if element == "Phlegm" then snd.last_limb_dmg = 14 end
+                	snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+                  snd.onHit2({"Parry", "Dodge"})
+                	if snd.flamewreathed.limb == "" and element == "Yellow" then
+                		snd.flamewreathed.limb = conditional
+                	end
+                  snd.flamewreathed.resonance = element
+                end,
+    Broil = function(target, element, conditional)
+            	if element == "Phlegm" then
+            		snd.target_got("slickness")
+            	elseif element == "Black" then
+            		snd.target_got("asthma")
+            	end
+              display(conditional)
+              if conditional:find("Arm") then
+                if snd.checkAff("ablaze") or snd.checkAff("excess_choleric") then
+                  snd.target_got("left_arm_broken")
+                  snd.target_got("right_arm_broken")
+                else
+                  snd.target_got("a_broken_arm")
+                end
+              else
+                if snd.checkAff("ablaze") or snd.checkAff("excess_choleric") then
+                  snd.target_got("left_leg_broken")
+                  snd.target_got("right_leg_broken")
+                else
+                  snd.target_got("a_broken_leg")
+                end
+              end
+            end,
+    Swathe = function(target, element)
+                	if element == "Black" then
+                  		snd.target_got("lethargy")
+                      snd.target_got("cold")
+                  		if snd.proned() then
+                  			snd.target_got("confusion")
+                  		end
+                  	else
+                  		snd.target_got("dizziness")
+                  	end
+                  end,
+    Befoul = function(target, element)
+                  snd.used.shield = false
+                  if melement == "Black" then
+                    if snd.checkAff("clumsiness") and snd.target_got("dizziness") then
+                      snd.target_got("dissonance")
+                    elseif snd.checkAff("clumsiness") then
+                      snd.target_got("dizziness")
+                    else
+                      snd.target_got("clumsiness")
+                    end
+                  end
+                end,
+    Equilibrium = function(target, element)
+                	if snd.checkAff("vertigo") then
+                		snd.target_got("confusion")
+                	else
+                 		snd.target_got("vertigo")
+                	end
+                	if element == "Phlegm" then
+                		snd.target_got("weariness")
+                	elseif element == "Yellow" then
+                		snd.target_got("clumsiness")
+                	end
+                end,
+      Brainfreeze = function(target, element)
+                   	snd.target_got("stupidity")
+                  	if element == "Yellow" then
+                  		snd.target_got("recklessness")
+                  	elseif element == "Black" then
+                  		snd.target_got("masochism")
+                  	end
+                  end,
+      Plunge = function(target, element)
+                  snd.target_got("cold")
+                	if element == "Phlegm" then
+                    snd.target_got("cold")
+                	elseif element == "Yellow" then
+                		snd.target_got("sensitivity")
+                	end
+                end,
+      Synapse = function(target, element)
+                  	snd.target_got("paresis")
+                  	if element == "Yellow" then
+                  		snd.target_got("vertigo")
+                  	elseif element == "Phlegm" then
+                  		snd.target_got("epilepsy")
+                  	end
+                  end,
+      Flense = function(target, element, venom)
+                     local aff = snd.venomEffect(venom)
+                     snd.target_got(aff)
+                     table.insert(snd.last_affs, aff)
+                     if element == "Phlegm" then
+                   	  snd.target_got("hypothermia")
+                     end
+                   end,
+      Revulsion = function(target, element, pill)
+              	snd.target_got("gorged")
+              	if element == "Yellow" then
+              		snd.target_got("anorexia")
+              	elseif element == "Black" then
+              		snd.target_got("indifference")
+              	end
+                if pill ~= nil then snd.gorged = pill end
+              end,
+      Perforate = function(target, failed)
+                 if failed then
+                   snd.removeProneStates(true)
+                 else
+                   snd.target_got("writhe_impaled")
+                   if snd.hitting == "You" then
+                    snd.target_impaled = true
+                   end
+                end
+              end,
+    Smother = function(target, failed)
+                if not failed then
+                  snd.target_got("excess_choleric")
+                  if snd.checksomeAffs({"right_arm_mangled","left_arm_mangled","right_leg_mangled","left_leg_mangled","head_mangled","torso_mangled",}, 1) then
+                    tempTimer(120, [[ snd.target_cured("excess_choleric") ]])
+                  elseif snd.checksomeAffs({"right_arm_damaged","left_arm_damaged","right_leg_damaged","left_leg_damaged","head_damaged","torso_damaged",}, 1) then
+                    tempTimer(90, [[ snd.target_cured("excess_choleric") ]])
+                  else
+                    tempTimer(60, [[ snd.target_cured("excess_choleric") ]])
+                  end
+                end
+              end,
+  },
+  
+  ["Esoterica"] = {
+    Enthrall = function(target, blindness)
+                    snd.target_got("sight")
+                    if not blindness then  
+                     snd.target_got("writhe_transfix")
+                   end
+                  end,
+
+  },
+  
+  ["Hematurgy"] = {
+    Palpitate = function(target)
+            if snd.glimpse == "black" then
+              if snd.checkAff("vertigo") then
+             		snd.target_got("muddled")
+              else
+             		snd.target_got("vertigo")
+              end
+            end
+          
+            if snd.glimpse == "phlegm" then
+              if snd.checkAff("hypothermia") then
+                snd.target_got("cold")  
+          		else
+             	 snd.target_got("hypothermia")
+              end
+            end
+          	
+            if snd.glimpse == "yellow" then
               snd.target_got("ablaze")
           	end
             snd.fulcrum_ready = false
@@ -29496,8 +30181,11 @@ end</script>
   },
   
   ["Mentis"] = {
-    Mesmerize = function(target)
-                 snd.target_got("writhe_transfix")
+    Mesmerize = function(target, blindness)
+                  snd.target_got("sight")
+                  if not blindness then  
+                   snd.target_got("writhe_transfix")
+                  end
                 end,
     Confusion = function(target)
                  snd.target_got("confusion")
@@ -29574,13 +30262,16 @@ end</script>
            snd.target_got("sight")
          end,
          
-  Feast = function(target, failure)
-                if not failure then
-                    snd.target_got("feast")
-      		          tempTimer(19.5, [[snd.target_cured("feast")]])
-      	             snd.used.paste = false
-                  end
-          end,
+  Feast = function(target, fail)
+          if not fail then
+      		  snd.target_got("feast")
+      		  tempTimer(19.5, [[snd.target_cured("feast")]])
+      	    snd.used.paste = false
+            snd.target_got("no_paste")
+          else
+            snd.target_cured("writhe_transfix")
+          end
+        end,
           
   Poison = function(target)
              snd.target_got("blood_poison")
@@ -29731,8 +30422,8 @@ end</script>
                 end  
               end,
       Shaderot = function(target, shadowprice)
-                   snd.target_got("shaderot_benign")
-                   if shadowprice then snd.target_got("shaderot_spirit") end
+                   snd.target_got("rot_benign")
+                   if shadowprice then snd.target_got("rot_spirit") end
                   end,         
       Voidgaze = function(target, shadowprice)
                    snd.target_got("voidgaze")
@@ -29797,6 +30488,104 @@ end</script>
           end,
     Imbue = function(target)
                snd.target_got("imbued")
+             end,
+  },
+  
+--Runecarver
+  ["Malediction"] = {
+      Numb = function(target, spiritpact)
+                snd.target_got("cold")
+                if spiritpact ~= nil then
+                  snd.target_got("cold")
+                end
+              end,
+      Imperil = function(target, fail)
+              snd.used.shield = false
+            end,
+      Enervate = function(target, spiritpact)
+              local afflist = {"clumsiness", "weariness", "lethargy", "paresis"}
+              local affcount = 0
+              for _, v in pairs(afflist) do if not snd.checkAff(v) then
+                snd.target_got(v)
+                affcount = affcount + 1
+                if not spiritpact or affcount == 2 then break end
+                end
+              end
+            end,
+      Jinx = function(target, spiritpact)
+                  if snd.checksomeAffs({"dizziness", "nyctophobia", "confusion", "dementia"}, 4) then
+                    snd.target_got("faintness")
+                  end
+                end,
+      Despair = function(target)
+                snd.target_got("gloom")
+              	if table.contains(gmcp.Room.Info.details, "darkness") == true then
+              		snd.target_got("nyctophobia")
+                end  
+              end,
+      Revile = function(target, spiritpact)
+                   snd.target_got("rot_benign")
+                   if spiritpact then snd.target_got("rot_spirit") end
+                  end,         
+      Mystify = function(target, spiritpact)
+                   snd.target_got("voidgaze")
+                   if spiritpact then snd.target_got("sight") end
+                  end, 
+      Malady = function(target, spiritpact)
+                   snd.target_got("vomiting")
+                   snd.target_got("haemophilia")
+                  end,                   
+      Woe = function(target, spiritpact)
+                      if snd.hitting == "You" then snd.balance.shadowsphere = false end
+                     	snd.target_got("woe_curse")
+                      if spiritpact then snd.target_got("nyctophobia")	end
+                    end,                   
+      Anathemise = function(target, spiritpact)
+                	if snd.checkAff("dizziness") then snd.target_got("dementia")
+                  elseif snd.checkAff("weariness") then snd.target_got("exhaustion") end
+                end,
+  },
+  
+  ["Runecarving"] = {
+    Bewitch = function(target, blindness)
+                    snd.target_got("sight")
+                    if not blindness then  
+                     snd.target_got("writhe_transfix")
+                   end
+                   snd.balance.sorcery_transfix = false
+                  end,   
+
+  },
+  
+  ["Sporulation"] = {
+    Degrade = function(target, limb)
+              snd.last_hit_limb = limb
+              local dmg = { [0] = 4, [1] = 8, [2] = 13, [3] = 19, [4] = 25, [5] = 33}
+              snd.took_limb_dmg(snd.last_hit_limb, dmg[snd.gravity])
+              snd.gravity = 0
+              if snd.class == "Runecarver" then
+              	snd.message("&lt;red&gt;Fungal Total: &lt;white&gt;"..snd.gravity)
+              end
+            end,
+    Infect = function(target)
+               snd.target_got("impede")
+            end,
+    Ensnare = function(target)
+          	snd.target_got("paresis")
+          	snd.target_got("fallen")
+          	
+          	if snd.hitting == "You" then
+          		if snd.gravity &gt;= 0 then
+          			snd.gravity = snd.gravity+1
+          		end
+          	end
+
+            if snd.class == "Runecarver" then
+            	snd.message("&lt;red&gt;Fungal Total: &lt;white&gt;"..snd.gravity)
+            end
+          end,
+    Infect = function(target)
+               snd.target_got("inoculated") -- imbued
              end,
   },
   
@@ -31142,7 +31931,7 @@ end</script>
             end
             end,
   Pendulum = function(target, direction)
-              snd.pendulum()
+              snd.pendulum(direction)
             end,
     Resurgence = function(target)
                 snd.reset_target()
@@ -31159,6 +31948,12 @@ end</script>
                     snd.target_got("dementia")
                     snd.target_got("paranoia")
                   end,
+        Dull = function(target)
+                       snd.target_got("indifference")
+                     end,
+        Dread = function(target)
+                       snd.target_got("fear")
+                     end,
   },
   
 --Ravager
@@ -31277,7 +32072,7 @@ end</script>
             end
             end,
   Bedevil = function(target, direction)
-              snd.pendulum()
+              snd.pendulum(direction)
             end,
     Unfinished = function(target)
                 snd.reset_target()
@@ -31356,6 +32151,13 @@ end</script>
       Tailstrike = function(target)
                 snd.onHit2({"Dodge"})
               end,
+  },
+  
+  ["Hunting"] = {
+    Fitness = function(target)
+                snd.handleFitness()
+              end,
+  
   },
   
   
@@ -31882,6 +32684,319 @@ snd.runeband_affs = {
 </script>
 							<eventHandlerList />
 						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Group Syssin</name>
+							<packageName></packageName>
+							<script>function groupSyssin()
+
+snd.hypno_stack = {
+  "impatience",
+  "impatience",
+  "impatience",
+  
+}
+
+local touse = {}
+local tohit = {}
+local string = ""
+local call = ""
+local extraaff = "delphinium"
+
+ if snd.target_locked() then
+  venoms = {
+		"left_leg_broken",
+		"right_leg_broken",
+		"hearing",
+		"sensitivity",
+		"voyria"
+  }
+  elseif snd.hypno == "running" then
+    venoms = {
+      "paresis",
+      "asthma",
+      "slickness",
+      "anorexia", 
+      "stupidity",     
+      "dizziness",
+      "weariness",
+      "clumsiness",
+      "allergies",
+      "hearing",
+    }
+  else
+    venoms  = {
+      "asthma",
+      "paresis",
+      "slickness",
+      "anorexia",
+      "stupidity",
+      "shyness",
+      "weariness",
+      "sight",
+      "hearing",
+      "slickness",
+      "anorexia",
+  }
+ end
+  
+if not snd.can_arms() then 
+	string = "bedazzle "..snd.target
+	elseif snd.target_locked() and snd.checkAff("sensitivity") then
+		if snd.used.paste then
+			string = "quickwield left whip"..snd.sep.."flay "..snd.target
+		else
+			string = "bite "..snd.target.." camus"
+		end
+	else
+    
+	for i in pairs(venoms) do
+		if not snd.checkAff(venoms[i]) then
+			if not table.contains(touse, venoms[i]) then
+				table.insert(touse, venoms[i])
+			end
+		end
+	end
+  
+	for aff in pairs(touse) do
+		table.insert(tohit, snd.effects[touse[aff]])
+	end 
+ 
+ 	if snd.used.shield or snd.used.rebounding then
+		string = "quickwield left whip"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
+		call = "wt Afflicting "..snd.target..": "..tohit[1]
+  else 
+		string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
+		call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
+	end
+
+
+  if snd.hypno == "open" or snd.hypno == "none" then
+		if #snd.hypno_stack &gt;= snd.last_hypno + 1 then 
+			snd.hyp = snd.last_hypno+1 
+			if snd.hypno == "none" then 
+				string = string..snd.sep.."hypnotise "..snd.target 
+			end
+				string = string..snd.sep.."suggest "..snd.target.." "..snd.hypno_stack[snd.hyp]
+		elseif snd.hypno == "open" then 
+			string = "seal "..snd.target.." 3" ..snd.sep.. "snap " ..snd.target
+		end
+	elseif snd.hypno == "running" then 
+		string = string..snd.sep.."hypnotise "..snd.target
+	end
+	end
+  
+ 	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" then
+		if snd.target_locked() then
+			string = string..snd.sep.."shadow sleight pall "..snd.target
+    elseif tohit[1] == "anorexia" or tohit[2] == "anorexia" then
+      string = string..snd.sep.."shadow sleight abrasions "..snd.target
+		else
+			string = string..snd.sep.."shadow sleight dissipate "..snd.target
+		end
+	end
+  
+  if SelfScan ({"aeon", "paresis", "asthma", "impatience", "slickness", "anorexia",}, 3) and snd.balance.shrug == true then
+    string = "shrug venom"
+  end 
+ 
+ if snd.toggles.affcalling and not snd.target_gone and (call ~= nil or call ~= "") then  
+    send("queue eqbal " ..string.. ""..snd.sep..""..call)
+  else
+    send("queue eqbal " ..string)
+ end
+ 
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Akkari Attack Stuff</name>
+							<packageName></packageName>
+							<script>snd.primary_aff = {}
+
+snd.can_attend = true
+snd.can_proclaim = true
+snd.can_crusade = true
+snd.passion_active = false
+snd.can_inquisition = true
+
+snd.secondary_aff = {}
+
+
+snd.censure_affs = {
+"sight",
+"hearing",
+"asthma",
+"paresis",
+"clumsiness",
+"sensitivity",
+"vomiting",
+"allergies", 
+"colocasia",
+"haemophilia",
+"peace",
+"stupidity",
+"weariness",
+"recklessness",
+"dizziness",
+"shyness",
+"anorexia",
+--"slickness",
+"voyria",
+"squelched",
+"disfigurement",
+"stuttering",
+"deadening",
+"thin_blood",
+"left_leg_broken",
+"right_leg_broken",
+"left_arm_broken",
+"right_arm_broken",
+}
+
+snd.secondary_affs = {
+"confusion",
+"fear",
+"impatience",
+"paranoia",
+"stupidity",
+"agoraphobia",
+"masochism",
+"loneliness",
+"contrition",
+"epilepsy",
+"anorexia",
+"amnesia",
+"peace",
+"dementia",
+"berserking",
+"indifference",
+"vertigo",
+"remorse",
+"recklessness",
+"sight",
+"hearing",
+"blood_poison",
+}
+
+snd.akkari_eq_affs = {
+	"disrupted",
+	--"sight",
+	"writhe_transfix",
+	"blood_curse",
+	"blood_rune",
+	"feast",
+}
+
+snd.akkari_eq_attacks = {
+	disrupted = "disrupt",
+--	sight = "exhort",
+	writhe_transfix = "exhort",
+	blood_curse = "spirit anathema",
+	feast = "spirit exorcise",
+}
+
+snd.akkari_bal_affs = {
+	"effused_blood",
+	"black_bile",
+	"blood_rune",
+  "no_caloric",
+  "shivering",
+  "frozen",
+  "slickness",
+  "no_paste",
+  "rend",  
+
+}
+
+snd.akkari_bal_attacks = {
+	effused_blood = "spirit exsanguinate",
+	black_bile = "denounce "..snd.target.." corruption",
+ 	blood_rune = "spirit pariah",
+  no_caloric = "ague",
+	shivering = "ague",
+	frozen = "ague",
+	slickness = "penitence",
+  no_paste = "penitence",
+	rend = "bloodlet",
+}
+
+function snd.akkari_host()
+  if gmcp.Char.Status.spec == "Dosan" then
+    if table.isMember(snd.primary_aff, "blood_curse") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_curse"))
+    end
+    if table.isMember(snd.primary_aff, "blood_poison") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_poison"))
+    end 
+    if table.isMember(snd.primary_aff, "blood_rune") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_rune"))
+    end 
+  elseif gmcp.Char.Status.spec == "Il'ahji" then
+    if table.isMember(snd.primary_aff, "feast") then
+          table.remove(snd.primary_aff, table.index_of(table, "feast"))
+    end  
+    if table.isMember(snd.primary_aff, "blood_curse") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_curse"))
+    end
+    if table.isMember(snd.primary_aff, "blood_rune") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_rune"))
+    end 
+  elseif gmcp.Char.Status.spec == "Naarak" then
+    if table.isMember(snd.primary_aff, "feast") then
+          table.remove(snd.primary_aff, table.index_of(table, "feast"))
+    end  
+    if table.isMember(snd.primary_aff, "blood_poison") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_poison"))
+    end    
+  else
+    if table.isMember(snd.primary_aff, "feast") then
+          table.remove(snd.primary_aff, table.index_of(table, "feast"))
+    end 
+    if table.isMember(snd.primary_aff, "blood_poison") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_poison"))
+    end 
+    if table.isMember(snd.primary_aff, "blood_curse") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_curse"))
+    end  
+  end
+end
+
+function snd.akkari_attend()
+  if gmcp.Char.Status.spec == "Il'ahji" or gmcp.Char.Status.spec == "Naarak" or snd.can_attend == false then
+    if table.isMember(snd.secondary_aff, "hearing") then
+      table.remove(snd.secondary_aff, table.index_of(snd.secondary_aff, "hearing"))
+    end
+    if table.isMember(snd.secondary_aff, "sight") then
+      table.remove(snd.secondary_aff, table.index_of(snd.secondary_aff, "sight"))
+    end
+  end
+end
+
+
+function snd.can_deliver()
+  if snd.checkSomeAffs({"paralysis", "paresis", "right_arm_broken", "left_arm_broken", "right_leg_broken", "left_leg_broken", "haemophilia", "asthma", "impairment", "clumsiness", "vomiting", "sensitivity", "ringing_ears", "lethargy", "blood_poison", "blood_curse", "crippled_throat", "slough", "disfigurement", "blisters", "lightwound", "ablaze", "hypothermia", "shivering", "frozen", "limp_veins", "rend", "exhausted", "allergies", "addiction", "hypersomnia", "heartflutter", "whiplash", "backstrain", "sore_wrist", "sore_ankle", "burnt_eyes", "blurry_vision", "migraine", "deadening", "ice_encased",}, 1) 
+  and snd.proned()
+  then
+    return true
+  else
+    return false
+  end
+end
+
+
+
+function snd.akkari_behead()
+  if snd.target_locked() and snd.checkSomeAffs({"disrupted", "writhe_transfixed",}, 2)
+  then 
+    return true
+  else 
+    return false
+  end
+
+end</script>
+							<eventHandlerList />
+						</Script>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Target calling</name>
@@ -32107,9 +33222,9 @@ snd.timers = snd.timers or {}
 snd.timers.pill = snd.timers.pill or {}
 snd.timers.focus = snd.timers.focus or {}
 snd.timers.tree = snd.timers.tree or {}
-snd.timers.endgame = snd.timers.endgame or {}
 snd.timers.restoration = snd.timers.restoration or {}
 snd.timers.rebounding = snd.timers.rebounding or {}
+snd.timers.induce = snd.timers.induce or {}
 
 for k, _ in pairs(snd.timers) do
   snd.timers[k] = {["start"] = nil, ["limit"] = nil}
@@ -32200,14 +33315,6 @@ function snd.track_tree(target)
     snd.timers.tree.start = os.clock()
     local limit = 10
     snd.timers.tree.limit = limit
-  end
-end
-
-function snd.track_endgame(target)
-  if target:lower() == snd.target:lower() then
-    snd.timers.endgame.start = os.clock()
-    local limit = 20
-    snd.timers.endgame.limit = limit
   end
 end</script>
 							<eventHandlerList />
@@ -34788,131 +35895,6 @@ snd.randomshadow = {}
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
-					<Script isActive="yes" isFolder="no">
-						<name>Group Syssin</name>
-						<packageName></packageName>
-						<script>function groupSyssin()
-
-snd.hypno_stack = {
-  "impatience",
-  "impatience",
-  "impatience",
-  
-}
-
-local touse = {}
-local tohit = {}
-local string = ""
-local call = ""
-local extraaff = "delphinium"
-
- if snd.target_locked() then
-  venoms = {
-		"left_leg_broken",
-		"right_leg_broken",
-		"hearing",
-		"sensitivity",
-		"voyria"
-  }
-  elseif snd.hypno == "running" then
-    venoms = {
-      "paresis",
-      "asthma",
-      "slickness",
-      "anorexia", 
-      "stupidity",     
-      "dizziness",
-      "weariness",
-      "clumsiness",
-      "allergies",
-      "hearing",
-    }
-  else
-    venoms  = {
-      "asthma",
-      "paresis",
-      "slickness",
-      "anorexia",
-      "stupidity",
-      "shyness",
-      "weariness",
-      "sight",
-      "hearing",
-      "slickness",
-      "anorexia",
-  }
- end
-  
-if not snd.can_arms() then 
-	string = "bedazzle "..snd.target
-	elseif snd.target_locked() and snd.checkAff("sensitivity") then
-		if snd.used.paste then
-			string = "quickwield left whip"..snd.sep.."flay "..snd.target
-		else
-			string = "bite "..snd.target.." camus"
-		end
-	else
-    
-	for i in pairs(venoms) do
-		if not snd.checkAff(venoms[i]) then
-			if not table.contains(touse, venoms[i]) then
-				table.insert(touse, venoms[i])
-			end
-		end
-	end
-  
-	for aff in pairs(touse) do
-		table.insert(tohit, snd.effects[touse[aff]])
-	end 
- 
- 	if snd.used.shield or snd.used.rebounding then
-		string = "quickwield left whip"..snd.sep.."wipe left"..snd.sep.."envenom whip with "..tohit[1]..snd.sep.."flay "..snd.target
-		call = "wt Afflicting "..snd.target..": "..tohit[1]
-  else 
-		string = "quickwield left dirk"..snd.sep.."wipe left"..snd.sep.."dstab "..snd.target.." "..tohit[2].." "..tohit[1]
-		call = "wt Afflicting "..snd.target..": "..tohit[2]..", "..tohit[1]
-	end
-
-
-  if snd.hypno == "open" or snd.hypno == "none" then
-		if #snd.hypno_stack &gt;= snd.last_hypno + 1 then 
-			snd.hyp = snd.last_hypno+1 
-			if snd.hypno == "none" then 
-				string = string..snd.sep.."hypnotise "..snd.target 
-			end
-				string = string..snd.sep.."suggest "..snd.target.." "..snd.hypno_stack[snd.hyp]
-		elseif snd.hypno == "open" then 
-			string = "seal "..snd.target.." 3" ..snd.sep.. "snap " ..snd.target
-		end
-	elseif snd.hypno == "running" then 
-		string = string..snd.sep.."hypnotise "..snd.target
-	end
-	end
-  
- 	if gmcp.Char.Vitals.ability_bal == "1" and gmcp.Char.Vitals.prone == "0" then
-		if snd.target_locked() then
-			string = string..snd.sep.."shadow sleight pall "..snd.target
-    elseif tohit[1] == "anorexia" or tohit[2] == "anorexia" then
-      string = string..snd.sep.."shadow sleight abrasions "..snd.target
-		else
-			string = string..snd.sep.."shadow sleight dissipate "..snd.target
-		end
-	end
-  
-  if SelfScan ({"aeon", "paresis", "asthma", "impatience", "slickness", "anorexia",}, 3) and snd.balance.shrug == true then
-    string = "shrug venom"
-  end 
- 
- if snd.toggles.affcalling and not snd.target_gone and (call ~= nil or call ~= "") then  
-    send("queue eqbal " ..string.. ""..snd.sep..""..call)
-  else
-    send("queue eqbal " ..string)
- end
- 
-end
-</script>
-						<eventHandlerList />
-					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Ylem</name>
