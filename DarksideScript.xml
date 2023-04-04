@@ -349,7 +349,6 @@ sorcery_transfix = true,
   bravado = true,
   might = true,
   leech = true,
-  shadowsphere = true,
   unbroken = true,
   soulcage = true,
   wand = true,
@@ -445,6 +444,8 @@ snd.heelrush = snd.heelrush or "none"
 snd.counterattack_active = snd.counterattack_active or false
 snd.ylem_check = snd.ylem_check or false
 snd.melting = false
+snd.sneeze = false
+snd.spoken = false
 
 snd.delete_prompt = snd.delete_prompt or false
 
@@ -1025,8 +1026,24 @@ function gmcp_items()
   end
  end
  for item in pairs(snd.items) do
+    if not shrine_list then
+	   load_shrine_db()
+    end
     if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then
       table.insert(snd.gathering, "sovereigns")
+    elseif string.find(item, "shrine") then
+      -- Make sure tables actually exist.
+      shrine_list[item] = shrine_list[item] or {}
+      -- Get some basic data.
+      shrine_list[item].name = item
+      -- Track the room.
+      shrine_list[item].rooms = shrine_list[item].rooms or {}
+      if table.contains(shrine_list[item].rooms, gmcp.Room.Info.num) then
+		  else
+	       table.insert(shrine_list[item].rooms, gmcp.Room.Info.num)
+      end
+      -- Save data.
+      save_shrine_db()
     elseif table.contains(snd.possible_items, item) or table.contains(snd.global_items, item) then
       for id in pairs(snd.items[item]) do
         table.insert(snd.gathering, snd.items[item][id])
@@ -1338,6 +1355,24 @@ end</script>
 							<eventHandlerList>
 								<string>gmcp.Comm.Channel.Start</string>
 							</eventHandlerList>
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Shrines</name>
+							<packageName></packageName>
+							<script>function load_shrine_db()
+	local path = getMudletHomeDir().."/shrineDB.sav"
+	shrine_list = {}
+	if io.exists(path) then
+		table.load(path,shrine_list)
+	end
+end
+
+function save_shrine_db()
+  if not shrine_list then return false end
+  table.save(getMudletHomeDir().."/shrineDB.sav", shrine_list)
+end
+</script>
+							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
@@ -2381,6 +2416,10 @@ snd.priorities =
     "def_victimise",
     "def_panoply",
     "def_forestall",
+    "def_prowess",
+    "def_hex_stalk",
+    "def_hex_preservation",
+    "def_ironbark",
     "def_gripping",
     "def_vigor",
     "def_divert_melee",
@@ -2730,6 +2769,8 @@ snd.method_priority = {
         if snd.toggles.active and snd.have_aff("asthma") and snd.have_aff("slickness") and gmcp.Char.Vitals.pipe == "1" then
           snd.need_fitness = true
           table.insert(snd.queue, "fitness")
+        else
+          snd.need_fitness = false
         end
         if snd.toggles.parrying and snd.offense_loaded then -- remove the offense_loaded check if you want it to always parry
           snd.parry()
@@ -3157,7 +3198,7 @@ aff_rot_spirit = {state = "healed", effect = "rot2 - shadow damage", cures = { h
 aff_rot_wither = {state = "healed", effect = "rot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_shadow_coat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadow_weakness = {state = "healed", effect = "more dmg from shadow source", cures = {}, assess = false, timer = createStopWatch()},
-aff_shadowbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_shadowbrand = {state = "healed", effect = "it's shadowbranding", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadowed = {state = "healed", effect = "gain affs if luminary shine hits you", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadowsphere = {state = "healed", effect = "hides scio affs and generally a bad time", cures = {}, assess = false, timer = createStopWatch()},
 aff_shivering = {state = "healed", effect = "", cures = {salve = "caloric", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -3257,7 +3298,7 @@ aff_faulted = {state = "healed", effect = "", cures = {}, assess = false, timer 
 --Runecarver
 aff_inoculated = {state = "healed", effect = "auto gravity from scio spells", cures = {}, assess = false, timer = createStopWatch()},
 aff_fungal_invasion = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
-aff_preymark = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_preymark = {state = "healed", effect = "shadowbrand, but not so shadowy", cures = {}, assess = false, timer = createStopWatch()},
 aff_woe_curse = {state = "healed", effect = "hides scio affs and generally a bad time", cures = {}, assess = false, timer = createStopWatch()},
 aff_mystified = {state = "healed", effect = "stuck prone for a bit via voidgaze", cures = {}, assess = false, timer = createStopWatch()},
 
@@ -3941,7 +3982,7 @@ Carnifex_shroud = {defense = "shroud", type = "normal", effect = "Shrouded.",  b
 Warden_shroud = {defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "ancest distort"}, state = "down", needit = false, timer = createStopWatch(), skill = "Shroud" },
 Syssin_shroud = { defense = "shroud", type = "normal", effect = "Shrouded.",  balance = {needybalancetake = "conjure cloak"}, state = "down", needit = false, timer = createStopWatch(), skill = "Cloak" },
 Revenant_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "riving maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
-Templar_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "battlefury maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
+Templar_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
 Sciomancer_rigor = {defense = "rigor", type = "normal", effect = "WP drain but better crit chance", balance = {balanceequilibriumtake = "cast rigor on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Rigor"},
 Warden_rigor = {defense = "rigor", type = "normal", effect = "Cheap Furor.", balance = {needybalancetake = "warden rigor"}, state = "down", needit = false, timer = createStopWatch(), skill = "Rigor"},
 Warden_fearless = {defense = "fearless", type = "normal", effect = "Protects against fear affliction.", balance = {special = "warden fortitude"}, state = "down", needit = false, timer = createStopWatch(), skill = "Fortitude"},
@@ -9251,7 +9292,7 @@ snd.areas = {
 {area = "Dovan Hollow", level = "95+", targets = {"a gaunt Aslinn slaver", "a scarred Aslinn slaver", "a sinewy Aslinn slaver", "a haughty Caentoi slaver", "a hulking Ursal brute", "a grim Aslinn slaver"}},
 {area = "the Feral Caves", level = "95+", targets = {"a small green blob", "a slimy green blob", "a massive green blob", "a gigantic green blob"}},
 {area = "The Forgotten Mausoleum", level = "95+", targets = {"a reanimated Dwarf woman", "a rotting Dwarf archer", "a decomposing Dwarf", "a robed reanimated Dwarf"}},
-{area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a box jellyfish", "a vicious copperhead snake", "a white goose", "an oversized tortoise", "a dark green alligator", "a blue crab", "a black bear", "a white-tailed deer", "a lithe cougar", "a spotted jaguar", "a ragged coyote", "a great white stag", "a diseased raccoon", "a black and white badger", "a small ocelot", "a large capybara", "a howler monkey", "a spotted leopard", "a striped tiger", "an enormous elephant", "a water buffalo", "a Horkvali butcher", "a long billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a Troll guard", "a Troll cook", "a Nazetu officer", "a thick boa constrictor", "a brown-furred bat", "an ebon crow", "a silverback gorilla", "a venomous bushmaster", "a long-billed toucan",}},
+{area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a box jellyfish", "a vicious copperhead snake", "a white goose", "an oversized tortoise", "a dark green alligator", "a blue crab", "a black bear", "a white-tailed deer", "a lithe cougar", "a spotted jaguar", "a ragged coyote", "a great white stag", "a diseased raccoon", "a black and white badger", "a small ocelot", "a large capybara", "a spotted leopard", "a howler monkey", "a striped tiger", "an enormous elephant", "a water buffalo", "a Horkvali butcher", "a long billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a Troll guard", "a Troll cook", "a Nazetu officer", "a thick boa constrictor", "a brown-furred bat", "an ebon crow", "a silverback gorilla", "a venomous bushmaster", "a long-billed toucan",}},
 {area = "Xaanhal", level = "really high", targets = {"an arrogant Xorani master at arms", "a helpless Xorani nestling", "a suspicious Xorani patrol", "a wiry Xorani guard", "a cautious Xorani guard", "a merciless Xorani warrior", "a willowy nest guardian", "a bejeweled Xorani harem girl", "Caelakan, an arrogant prince", "Kithan, a young Xorani girl"}, items = {"a fragment of a mosaic"}},
 {area = "Trapped within a mirror", level = "Quest", targets = {"a fragment of living glass"}},
 {area = "the Teshen Caldera", level = "40-60? Maybe", targets  = {"a Teshen raider", "a Teshen scout", "a Teshen reaver", "a Teshen worker"}},
@@ -19838,32 +19879,32 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
           if snd.class_list[k].class == snd.class then
             v.func()
             if snd.have_aff("shock") then
-                battack = "overdrive"..snd.sep..battack
+                battack = "overdrive"..snd.sep..battack..snd.sep.."recoup"..snd.sep
             end
           end
         end
         if tonumber(snd.toggles.gauntlet_level) &gt;= 2 and snd.balance.barrier and not snd.liarstrummed then 
           if snd.elementalcount &lt; 50 then
-            battack = battack..snd.sep.."absorb ylem" ..snd.sep       
+            battack = battack.."absorb ylem"..snd.sep.."recoup"..snd.sep      
           else
-            battack = "sacrifice corpses"..snd.sep..battack..snd.sep.."absorb ylem"..snd.sep
+            battack = "sacrifice corpses"..snd.sep..battack..snd.sep.."absorb ylem"..snd.sep.."recoup"..snd.sep  
           end
         else
           if snd.elementalcount &lt; 50 then
-            battack = battack
+            battack = battack.."recoup"..snd.sep
           else
-            battack = "sacrifice corpses"..snd.sep..battack
+            battack = "sacrifice corpses"..snd.sep..battack.."recoup"..snd.sep
           end
         end
         if snd.probed then
         else
           if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum"  or gmcp.Room.Info.area == "the Torturers' Caverns" then   
-            battack = "probe "..snd.bashing.target..snd.sep..battack
+            battack = "probe "..snd.bashing.target..snd.sep..battack..snd.sep
           end
         end
         if tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 and hasSkill("Clotting") then
           if mp &gt;= 50 then
-            battack = battack..snd.sep.."clot 500"..snd.sep
+            battack = "clot 500"..battack..snd.sep
           end  
         end          
              
@@ -19877,34 +19918,46 @@ mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
   end
 end
 
-
-
 function snd.templar_bash()
-hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
+  endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
 
-  if snd.counterattack_active then
-    if snd.punisher then
-      battack = battack..snd.sep.."jig"
+  if not snd.melting then  
+    if snd.unknownquantity &gt; 2 then
+      battack = "diag"
+    elseif snd.counterattack_active then
+      if snd.reflection_charge &gt; 0 and not snd.reflected then
+        battack = battack..snd.sep.."point wand at me"..snd.sep
+      else
+        battack = battack..snd.sep.."jig"..snd.sep
+      end
+    elseif snd.have_aff("blackout") or hp &lt;= 60 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 then
+      if snd.punisher then
+        if snd.reflection_charge &gt; 0 and not snd.reflected then
+          battack = battack..snd.sep.."point wand at me"..snd.sep
+        else
+          battack = battack..snd.sep.."jig"..snd.sep
+        end
+      else
+        if snd.reflection_charge &gt; 0 and not snd.reflected then
+          battack = battack..snd.sep.."point wand at me"..snd.sep
+        else
+          battack = battack..snd.sep.."touch shield"..snd.sep
+        end
+      end
+    elseif snd.pushattack then
+		  battack = battack..snd.sep.."push "..snd.bashing.target..snd.sep
+		  snd.pushattack = false
+    elseif hp &gt;= 61 and endur &gt;= 60 then
+      battack = battack..snd.sep.."dsk "..snd.bashing.target.." sacrifice sacrifice"..snd.sep
     else
-      battack = battack..snd.sep.."touch shield"
+      battack = battack.. "dsk "..snd.bashing.target..snd.sep
     end
-  elseif hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
-      battack = battack..snd.sep.."battlefury dsw "..snd.bashing.target.." sacrifice sacrifice"
-    else
-      battack = battack..snd.sep.."battlefury dsk "..snd.bashing.target.." sacrifice sacrifice"
-    end
-	elseif snd.pushattack then
-		battack = battack.. "push "..snd.bashing.target
-		snd.pushattack = false
-	elseif snd.toggles.newbie then
-		battack = battack.. "strikebash "..snd.bashing.target
-  elseif snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") then
-    battack = battack.. "dsw "..snd.bashing.target
   else
-  	battack = battack.. "dsk "..snd.bashing.target
-	end
+    battack = "defend kalena"..snd.sep
+  end
   
 end
 
@@ -20277,7 +20330,8 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
       tempTimer(2,[[snd.cauterize = true]])
     end
   end
-  
+
+if not snd.melting then  
   if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
     if snd.punisher then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
@@ -20297,9 +20351,14 @@ wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
 	elseif snd.pushattack then
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
+  elseif not snd.can_arms() then
+    battack = "sunkick "..snd.bashing.target
   else
     battack = battack.."flow "..snd.bashing.target.." pummel pummel"
   end
+else
+  battack = "defend kalena"
+end
 
 end
 
@@ -20466,11 +20525,11 @@ function snd.bloodborn_bash()
 		battack = battack..snd.sep.."push "..snd.bashing.target
 		snd.pushattack = false
   else
-    if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "yellow"  then
+    if gmcp.Char.Vitals.resonance == "none" or gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "black"  then
    		battack = battack..snd.sep.."humour flense "..snd.bashing.target
     elseif gmcp.Char.Vitals.resonance == "phlegm" then
    		battack = battack..snd.sep.."humour disgorge "..snd.bashing.target
-    elseif gmcp.Char.Vitals.resonance == "black" then
+    elseif gmcp.Char.Vitals.resonance == "yellow" then
     	battack = battack..snd.sep.."humour befoul "..snd.bashing.target
     end
 	end
@@ -20650,15 +20709,15 @@ hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
  	else
 		if table.contains(gmcp.Char.Defences.List, "hex_preservation") then
       if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
-        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex fever "..snd.bashing.target
+        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
       else
-        battack = battack..snd.sep.."hex fever " ..snd.bashing.target
+        battack = battack..snd.sep.."hex malady " ..snd.bashing.target
       end
     else
       if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 2 then
-        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex fever "..snd.bashing.target
+        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
       else
-        battack = battack..snd.sep.."hex fever " ..snd.bashing.target
+        battack = battack..snd.sep.."hex malady " ..snd.bashing.target
       end
     end
  	end
@@ -22671,6 +22730,8 @@ end</script>
   snd.firstaidcuretrack.cracked_ribs = "5"  
   snd.firstaidcuretrack.gloom = "5"
   snd.firstaidcuretrack.voidgaze = "5"
+  snd.firstaidcuretrack.mystified = "5"
+
 -- pill
   snd.firstaidcuretrack.slough = "5"
   snd.firstaidcuretrack.blood_curse = "5"
@@ -24568,8 +24629,8 @@ function snd.firstaidassRunecarver()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.frozen ~= "3" then
 		send("firstaid priority frozen 3")
 	end    
-  if snd.firstaidcuretrack.voidgaze ~= "5" then
-		send("firstaid priority voidgaze 5")
+  if snd.firstaidcuretrack.mystified ~= "5" then
+		send("firstaid priority mystified 5")
 	end    
   if snd.firstaidcuretrack.left_leg_broken ~= "6" then
 		send("firstaid priority left_leg_broken 6")
@@ -25787,7 +25848,7 @@ end
       snd.send(snd.endgamehealth)
     elseif snd.have_aff("vinethorns") and not snd.have_aff("stun") and not snd.have_aff("stand") then
       snd.send("pull thorn from body")
-    elseif tonumber(snd.unknownquantity) &gt; 2 and not snd.have_aff("hypochondria") and not snd.diag_sent then
+    elseif snd.unknownquantity &gt; 2 and not snd.have_aff("hypochondria") and not snd.diag_sent then
       snd.send("qeb diagnose")
       snd.diag_sent = true
       tempTimer(1, [[snd.diag_sent = false]])
@@ -26054,12 +26115,12 @@ end  			-- main function</script>
     if not snd.have_aff("aeon") and not snd.have_aff("hellsight") then
       snd.send("eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."concentrate"..snd.sep.."outc paste"..snd.sep.."apply paste")
 			if snd.focus then
-				snd.send("point icewall"..snd.sep.."compose"..snd.sep.."smoke pipe"..snd.sep.."focus")
+				snd.send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me"..snd.sep.."focus"..snd.sep.."ih")
 			else
-				snd.send("point icewall"..snd.sep.."compose"..snd.sep.."smoke pipe")
+				snd.send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me")
 			end
     end
-    if snd.defenses.def_shielded.state == "deffed" then
+    if not snd.shield_check then
     	snd.hatredcheck = true
     end
 	end
@@ -26103,7 +26164,7 @@ end
 								<name>Unknown script</name>
 								<packageName></packageName>
 								<script>function snd.unknownafter()
-  if snd.have_aff("unknown") or tonumber(snd.unknownquantity) &gt; 0 and not snd.have_aff("tree_seared") then
+  if snd.have_aff("unknown") or snd.unknownquantity &gt; 0 and not snd.have_aff("tree_seared") then
     snd.send("queue tree touch tree")
   end
 end</script>
@@ -26238,6 +26299,7 @@ def_aurora = "once",
 templar = {
 def_gripping = "on",
 def_maingauche = "once",
+def_cloak_tattoo = "on",
 },
 
 revenant = {
@@ -26752,6 +26814,7 @@ snd.unknownquantity = 0
 snd.firstaidtrack = ""
 snd.counttimes = 0
 reset_cures = true
+snd.arraynumber = {}
 
 -- Bashing stuff
 snd.pushattack = false
@@ -26774,8 +26837,8 @@ snd.kipup = false
 snd.avoidanceset = "none"
 snd.limb_dmg_done = 0
 
-snd.templar_weapon_one = "shortsword" -- used for Templar offenses
-snd.templar_weapon_two = "shortsword" -- used for Templar offenses
+snd.templar_weapon_one = "shotel" -- used for Templar offenses
+snd.templar_weapon_two = "shotel" -- used for Templar offenses
 
 snd.current_offense = ""
 
@@ -26861,6 +26924,10 @@ snd.welt_ready = "none"
 snd.flamestack = 0
 snd.cauterize = true
 snd.immolation_ready = false
+snd.rebuke = false
+snd.blitz = false
+snd.pyromania = false
+snd.swaggered = false
 
 --Ascendril/Bloodborn
 snd.glimpse = "none"
@@ -28073,9 +28140,15 @@ snd.locking = false
  snd.target_has_aura = true
  snd.need_leech_aura = true
  snd.need_deform = true
- snd.welt_ready = "none"
-  snd.flamestack = 0
-  snd.immolation_ready = false
+snd.swagger = 0
+snd.welt_ready = "none"
+snd.flamestack = 0
+snd.cauterize = true
+snd.immolation_ready = false
+snd.rebuke = false
+snd.blitz = false
+snd.pyromania = false
+snd.swaggered = false
  snd.gorged = ""
  snd.gravity = 0
  snd.thorncount = 0
@@ -30568,7 +30641,7 @@ end</script>
               end
             end,
     Infect = function(target)
-               snd.target_got("impede")
+               snd.target_got("fungal_invasion")
             end,
     Ensnare = function(target)
           	snd.target_got("paresis")
@@ -31839,6 +31912,7 @@ end</script>
                snd.target_got("whiplash")
              end,
     Blitz = function(target, conditional)
+              snd.blitz = true
               if conditional == "start" then
                 enableTrigger("Blitz Affs")
               else
@@ -32975,7 +33049,7 @@ end
 
 
 function snd.can_deliver()
-  if snd.checkSomeAffs({"paralysis", "paresis", "right_arm_broken", "left_arm_broken", "right_leg_broken", "left_leg_broken", "haemophilia", "asthma", "impairment", "clumsiness", "vomiting", "sensitivity", "ringing_ears", "lethargy", "blood_poison", "blood_curse", "crippled_throat", "slough", "disfigurement", "blisters", "lightwound", "ablaze", "hypothermia", "shivering", "frozen", "limp_veins", "rend", "exhausted", "allergies", "addiction", "hypersomnia", "heartflutter", "whiplash", "backstrain", "sore_wrist", "sore_ankle", "burnt_eyes", "blurry_vision", "migraine", "deadening", "ice_encased",}, 1) 
+  if snd.checksomeAffs({"paralysis", "paresis", "right_arm_broken", "left_arm_broken", "right_leg_broken", "left_leg_broken", "haemophilia", "asthma", "impairment", "clumsiness", "vomiting", "sensitivity", "ringing_ears", "lethargy", "blood_poison", "blood_curse", "crippled_throat", "slough", "disfigurement", "blisters", "lightwound", "ablaze", "hypothermia", "shivering", "frozen", "limp_veins", "rend", "exhausted", "allergies", "addiction", "hypersomnia", "heartflutter", "whiplash", "backstrain", "sore_wrist", "sore_ankle", "burnt_eyes", "blurry_vision", "migraine", "deadening", "ice_encased",}, 1) 
   and snd.proned()
   then
     return true
@@ -34946,18 +35020,21 @@ snd.randomshadow = {}
 							<packageName></packageName>
 							<script>snd.rheskallies = {
 "Rhesk",
-"Myrnma",
 "Amarylis",
 "Enamari",
 "Wyliame",
 "Kezef",
+"Thiora",
 "Alystrine",
 "Annerissa",
 "Benedicto",
+"Vuxten",
 "Xavin",
+"Mystmarke",
 "Sryaen",
 "Kalena",
 "Aloli",
+"Jhura",
 "Mahar",
 "Eliadon",
 "Yeras",
@@ -34965,21 +35042,22 @@ snd.randomshadow = {}
 "Roux",
 "Dreugan",
 "Amarita",
-"Scandland",
 "Ranae",
 "Nimiphi",
+"Zafrusteria",
 "Enebish",
 "Vaessa",
 "Vino",
+"Thireik",
 "Ashram",
 "Osian",
 "Zima",
 "Rasani",
+"Jakkii",
 "Del",
 "Fuere",
 "Kylan",
 "Talonnb",
-"Aolin",
 "Jeromy",
 "Czcienn",
 "Jami",
@@ -35025,7 +35103,6 @@ snd.randomshadow = {}
 
 "Illikaal",
 "Valorie",
-"Jhura",
 "Aisling",
 "Sibatti",
 "Kjell",
@@ -35041,11 +35118,32 @@ snd.randomshadow = {}
 "Straid",
 "Damonicus",
 "Pneuman",
+"Indris",
+"Dcio",
+"Bhalwyn",
+"Yvairre",
+"Myrnma",
+"Aolin",
+"Elorin",
+"Iaje",
+"Evandrus",
+"Kaleigh",
+"Yvi",
+"Virelen",
+"Turc",
+"Sitai",
+"Arista",
+"Renault",
+"Jasmyn",
+"Quandrix",
+"Minataro",
 
 "Azami",
+"Nawan",
+"Scandland",
 "Gribbit",
 "Linnaeus",
-"Arista",
+"Oridez",
 "Nispy",
 "Qem",
 "Kaius",
@@ -35053,7 +35151,6 @@ snd.randomshadow = {}
 "Feichin",
 "Haleth",
 "Khambeaux",
-"Renault",
 "Aeryx",
 "Borminchia",
 "Llancarfan",
@@ -35616,7 +35713,6 @@ snd.randomshadow = {}
 "Nahira",
 "Requilem",
 "Taaroshi",
-"Virelen",
 "Azelie",
 "Xarian",
 "Balzic",
@@ -36065,8 +36161,7 @@ v31576 = "55276",
 v55276 = "58912",
 v58912 = "20835",
 v20835 = "21286",
-v21286 = "22866",
-v22866 = "23202",
+v21286 = "23202",
 v23202 = "57559",
 v57559 = "4964",
 v4964 = "2036",
