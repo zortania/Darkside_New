@@ -578,6 +578,7 @@ snd.physical_affs = {
 "migraine",
 "deadening",
 "ice_encased",
+"physical_disruption",
 }
 
 snd.mental_affs = {
@@ -590,7 +591,6 @@ snd.mental_affs = {
 "peace",
 "paranoia",
 "hallucinations",
-"stuttering",
 "dizziness",
 "indifference",
 "berserking",
@@ -614,6 +614,58 @@ snd.mental_affs = {
 }
 
 snd.all_affs =  table.n_union(snd.physical_affs, snd.mental_affs, { "hypochondria",})
+
+snd.anxieties = {
+"sadness",
+"self_pity",
+"baldness",
+"commitment_fear",
+"body_odor",
+"hubris",
+"worrywart",
+"itchy",
+}
+
+snd.other_affs = {
+"stuttering",
+"hypochondria",
+"patterns",
+"stormtouched",
+"rot_body",
+"rot_wither",
+"rot_heat",
+"rot_spirit",
+"rot_benign",
+"idiocy",
+"plodding",
+"crippled",
+"crippled_body",
+"accursed",
+"agony",
+"superstition",
+"justice",
+"magnanimity",
+"thin_blood",
+"merciful",
+"shyness",
+"dissonance",
+"infested",
+"blighted",
+"misery",
+"hollow",
+"narcolepsy",
+"perplexed",
+"self_loathing",
+"aeon",
+"hellsight",
+"deadening",
+"withering",
+"squelched",
+"gloom",
+"muddled",
+}
+
+snd.real_all_affs =  table.n_union(snd.physical_affs, snd.mental_affs, snd.anxieties, snd.other_affs)
 
 snd.circle_affs = {
 "merciful",
@@ -2670,7 +2722,8 @@ snd.priorities =
     "def_retaliation",
     "def_supressed",
     "def_transience",
-    "def_entrench",   
+    "def_entrench",  
+    "def_selfishness", 
     
   }</script>
 							<eventHandlerList />
@@ -3488,6 +3541,16 @@ function snd.aff_count_all()
     end
   end
   return aff_count
+end
+
+function snd.real_aff_count_all()
+  local aff_count = 0
+  for aff in pairs(snd.real_all_affs) do
+    if table.contains(snd.target_has, snd.real_all_affs[aff]) then
+      aff_count = aff_count + 1
+    end
+  end
+  return aff_count
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -3636,6 +3699,7 @@ def_nimbleness = {defense = "nimbleness", type = "normal", effect = "dodge some 
 def_deathsight = {defense = "deathsight", type = "normal", effect = "Reports player deaths", balance = {special = "deathsight"}, state = "down", needit = false, timer = createStopWatch(), skill = "Deathsight"},
 def_thirdeye = {defense = "thirdeye", type = "normal", effect = "Adds locations to WHO", balance = {special = "thirdeye"}, state = "down", needit = false, timer = createStopWatch(), skill = "Thirdeye"},
 def_lifevision = {defense = "lifevision", type = "normal", effect = "See all things living, sometimes identify illusions.", balance = {balanceequilibriumtake = "lifevision"}, state = "down", needit = false, timer = createStopWatch(), skill = "Lifevision" },
+def_selfishness = {defense = "selfishness", type = "MediumSpringGreen", effect = "Too selfish to put valuables at risk.", balance ={balanceequilibriumtake = "selfishness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 
 --Ylem
 def_amber_orb = {defense= "amber_orb", type = "light_yellow", effect = "5% increase in experience", balance = {special = "activate amber orb"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
@@ -3966,7 +4030,7 @@ def_forestall = {defense = "forestall", type = "normal", effect = "chance to res
 def_arrhythmia = {defense = "arrhythmia", type = "normal", effect = "holding an attack", balance = {balanceequilibrium = ""}, state = "down", needit = false, timer = createStopWatch(), skill = "Arrhythmia"},
 
 --Runecarver
-def_prowess = {defense = "prowess", type = "normal", effect = "WP drain but better crit chance", balance = {balanceequilibriumtake = "runecarv prowess on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Prowess" },
+def_prowess = {defense = "prowess", type = "normal", effect = "WP drain but better crit chance", balance = {balanceequilibriumtake = "runecarve prowess on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Prowess" },
 def_hex_stalk = {defense = "hex_stalk", type = "normal", effect = "Mask your movements", balance = {balanceequilibriumtake = "hex stalk "}, state = "down", needit = false, timer = createStopWatch(), skill = "Stalk" },
 def_hex_preservation = {defense = "hex_preservation", type = "normal", effect = "Reduce damage taken from elements", balance = {balanceequilibriumtake = "hex preserve"}, state = "down", needit = false, timer = createStopWatch(), skill = "Preserve" },
 def_ironbark  = {defense = "ironbark", type = "normal", effect = "Better diverting", balance = {balanceequilibriumtake = "runecarve ironbark"}, state = "down", needit = false, timer = createStopWatch(), skill = "Ironbark" },
@@ -4368,6 +4432,7 @@ end</script>
   ["The Broodmother's secrecy masks your steps."] = "hex_stalk",
   ["The Warden's blessing preserves you."] = "hex_preservation",
   ["Phantasmal ironbark girds your form."] = "ironbark",
+  ["You are feeling quite selfish."] = "selfishness",
 }
  </script>
 								<eventHandlerList />
@@ -20685,41 +20750,58 @@ function snd.astral_bash()
 end
 
 function snd.runecarver_bash()
-hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
+  endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
+  
   if snd.reflection_charge == 3 then
     snd.reflected = false
   end
-  
-  if snd.counterattack_active or snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if snd.punisher then
+
+  if not snd.melting then  
+    if snd.unknownquantity &gt; 2 then
+      battack = "diag"
+    elseif snd.counterattack_active then
       if snd.reflection_charge &gt; 0 and not snd.reflected then
-			   battack = battack..snd.sep.."runecarve branch"
+        battack = battack..snd.sep.."runecarve branch"..snd.sep
       else
-        battack = battack..snd.sep.."jig"
+        battack = battack..snd.sep.."jig"..snd.sep
       end
+    elseif snd.have_aff("blackout") or hp &lt;= 60 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 then
+      if snd.punisher then
+        if snd.reflection_charge &gt; 0 and not snd.reflected then
+          battack = battack..snd.sep.."runecarve branch"..snd.sep
+        else
+          battack = battack..snd.sep.."jig"..snd.sep
+        end
+      else
+        if snd.reflection_charge &gt; 0 and not snd.reflected then
+          battack = battack..snd.sep.."runecarve branch"..snd.sep
+        else
+          battack = battack..snd.sep.."touch shield"..snd.sep
+        end
+      end
+    elseif snd.pushattack then
+		  battack = battack..snd.sep.."push "..snd.bashing.target..snd.sep
+		  snd.pushattack = false
     else
-      battack = battack..snd.sep.."touch shield"
-    end
-	elseif snd.pushattack then
-		battack = battack..snd.sep.."push "..snd.bashing.target
-		snd.pushattack = false
-	elseif snd.toggles.newbie then
-  	  battack = battack..snd.sep.."hex enervate "..snd.bashing.target
- 	else
-		if table.contains(gmcp.Char.Defences.List, "hex_preservation") then
-      if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
-        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
+  		if table.contains(gmcp.Char.Defences.List, "hex_preservation") then
+        if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
+          battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target..snd.sep
+        else
+          battack = battack..snd.sep.."hex malady " ..snd.bashing.target..snd.sep
+        end
       else
-        battack = battack..snd.sep.."hex malady " ..snd.bashing.target
-      end
-    else
-      if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 2 then
-        battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
-      else
-        battack = battack..snd.sep.."hex malady " ..snd.bashing.target
+        if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 2 then
+          battack = battack..snd.sep.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target..snd.sep
+        else
+          battack = battack..snd.sep.."hex malady " ..snd.bashing.target..snd.sep
+        end
       end
     end
+  else
+    battack = "defend kalena"..snd.sep
  	end
   
 end
@@ -26268,7 +26350,7 @@ none = {
 general_defs = {
 def_thirdeye = "on",
 def_mindseye_tattoo = "on",
---def_cloak_tattoo = "on",
+def_cloak_tattoo = "on",
 def_kola = "on",
 def_deathsight = "on",
 def_insomnia = "on",
@@ -26294,6 +26376,7 @@ def_sheath = "once",
 def_charisma = "on",
 def_euphonia = "once",
 def_aurora = "once",
+def_cloak_tattoo = "on",
 },
 
 templar = {
@@ -26305,6 +26388,7 @@ def_cloak_tattoo = "on",
 revenant = {
 def_gripping = "on",
 def_maingauche = "once",
+def_cloak_tattoo = "on",
 },
 
 luminary = {
@@ -26312,6 +26396,7 @@ def_lightshield = "once",
 def_inspiration_constitution = "once",
 def_fireblock = "once",
 def_constitution = "once",
+def_cloak_tattoo = "on",
 },
 
 earthcaller = {
@@ -26319,6 +26404,7 @@ def_heatshield = "once",
 def_battlehymn_constitution = "once",
 def_smothering = "once",
 def_constitution = "once",
+def_cloak_tattoo = "on",
 },
 
 syssin = {
@@ -27305,7 +27391,6 @@ epidermal = {
 
 caloric = {
 "hypothermia",
-"ice_encased",
 "frozen",
 "shivering",
 "no_caloric"
@@ -27322,7 +27407,6 @@ focus = {
 "peace",
 "paranoia",
 "hallucinations",
-"stuttering",
 "dizziness",
 "indifference",
 "berserking",
@@ -27623,13 +27707,15 @@ function snd.target_used(curative)
       for i in pairs(snd.target_has) do
         if snd.target_has[i] == snd.cures[curative][affliction] and not aff_found then
           if curative == "panacea" then
-            if snd.cures[curative][affliction] == "rot_body" then
+            if snd.cures[curative][affliction] == "rot_body" and (not snd.checksomeAffs({"woe_curse","shadowsphere",}, 1) and table.contains(gmcp.Room.Info.details, "darkness")) then
+              snd.target_cured("rot_body")
+            elseif snd.cures[curative][affliction] == "rot_wither" and (not snd.checksomeAffs({"woe_curse","shadowsphere",}, 1) and table.contains(gmcp.Room.Info.details, "darkness")) then
               snd.target_cured("rot_wither")
-            elseif snd.cures[curative][affliction] == "rot_wither" then
+            elseif snd.cures[curative][affliction] == "rot_heat" and (not snd.checksomeAffs({"woe_curse","shadowsphere",}, 1) and table.contains(gmcp.Room.Info.details, "darkness")) then
               snd.target_cured("rot_heat")
-            elseif snd.cures[curative][affliction] == "rot_heat" then
+            elseif snd.cures[curative][affliction] == "rot_spirit" and (not snd.checksomeAffs({"woe_curse","shadowsphere",}, 1) and table.contains(gmcp.Room.Info.details, "darkness")) then
               snd.target_cured("rot_spirit")
-            elseif snd.cures[curative][affliction] == "rot_spirit" then
+            elseif snd.cures[curative][affliction] == "rot_benign" and (not snd.checksomeAffs({"woe_curse","shadowsphere",}, 1) and table.contains(gmcp.Room.Info.details, "darkness")) then
               snd.target_cured("rot_benign")
             end
             snd.target_cured(snd.cures[curative][affliction])
@@ -30490,9 +30576,6 @@ end</script>
                 end,
       Gloom = function(target)
                 snd.target_got("gloom")
-              	if table.contains(gmcp.Room.Info.details, "darkness") == true then
-              		snd.target_got("nyctophobia")
-                end  
               end,
       Shaderot = function(target, shadowprice)
                    snd.target_got("rot_benign")
@@ -30592,9 +30675,6 @@ end</script>
                 end,
       Despair = function(target)
                 snd.target_got("gloom")
-              	if table.contains(gmcp.Room.Info.details, "darkness") == true then
-              		snd.target_got("nyctophobia")
-                end  
               end,
       Revile = function(target, spiritpact)
                    snd.target_got("rot_benign")
@@ -30657,7 +30737,7 @@ end</script>
             	snd.message("&lt;red&gt;Fungal Total: &lt;white&gt;"..snd.gravity)
             end
           end,
-    Infect = function(target)
+    Inoculation = function(target)
                snd.target_got("inoculated") -- imbued
              end,
   },
@@ -35137,8 +35217,14 @@ snd.randomshadow = {}
 "Jasmyn",
 "Quandrix",
 "Minataro",
+"Zion",
+"Flic",
 
+"Syvania",
+"Malrion",
 "Azami",
+"Neeelena",
+"Iojois",
 "Nawan",
 "Scandland",
 "Gribbit",

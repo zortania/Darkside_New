@@ -10288,12 +10288,12 @@ function snd.attack_function()
 	  string = "target "..left.." with left"..snd.sep.."target "..right.." with right"..snd.sep.."dsk "..snd.target.." trauma trauma"
    end
 	end
-  if string ~= snd.last_attack and not snd.waiting.queue then
-   snd.last_attack = string
-   snd.attack(snd.last_attack)
-   snd.waiting.queue = true
-   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-  end
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = string
+			snd.attack(snd.last_attack)
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
  end
 end
 snd.attack_function()
@@ -14581,118 +14581,107 @@ end</script>
 								<Alias isActive="yes" isFolder="no">
 									<name>Sorta 1v1 Build</name>
 									<script>if snd.class == "Runecarver" then
-snd.starting_attack()
-function snd.attack_function()
- local string = ""
- if not snd.waiting.queue then
+  snd.starting_attack()
+  function snd.attack_function()
+    local string = ""
+    if not snd.waiting.queue then
  
- local shadestring = "order myconid kill "..snd.target..snd.sep
+      local shadestring = "order myconid kill "..snd.target..snd.sep
+      local shadowprice = tonumber(gmcp.Char.Vitals.spiritpact)
  
- local shadowprice = tonumber(gmcp.Char.Vitals.spiritpact)
- 
-		local total_aff_count = 0
-    for aff in pairs(snd.all_affs) do
-        if table.contains(snd.target_has, snd.all_affs[aff]) then
-            total_aff_count = total_aff_count + 1
+      local scourgecount = 0 
+      for aff in pairs(snd.scourge_affs) do
+        if table.contains(snd.target_has, snd.scourge_affs[aff]) then
+          scourgecount = scourgecount + 1
         end
+      end
+
+	    if tonumber(snd.repay) &lt; 2 and hp &gt; 60 and shadowprice &gt; 0 then
+		    string = string.."hex obeisance" ..snd.sep
+	    end 
+
+	    if snd.used.shield then
+		    if shadowprice &lt; 2 then
+   		     string = string.."spiritpact imperil "..snd.target..snd.sep
+		    else
+			     string = string.."hex imperil "..snd.target
+		    end
+	
+      elseif not snd.checkAff("inoculated") and gmcp.Char.Vitals.morass ~= "" then
+		    string = string..shadestring.."spore inoculate "..snd.target..snd.sep
+      elseif snd.gravity == 0 and gmcp.Char.Vitals.morass ~= "" and not snd.checkAff("fungal_invasion") then
+		    string = string..shadestring.."spore ensnare "..snd.target..snd.sep
+      elseif snd.gravity &gt;= 0 and gmcp.Char.Vitals.morass ~= "" and not snd.checkAff("fungal_invasion") then
+		    string = string..shadestring.."spore infect "..snd.target..snd.sep
+	    elseif not snd.checkAff("rot_benign") then
+		    if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; 4 then
+			     string = string.."spiritpact revile " ..snd.target..snd.sep
+		    elseif shadowprice &lt; 3 then
+			     string = string.."spiritpact revile " ..snd.target..snd.sep
+		    else
+			     string = string.."hex revile " ..snd.target..snd.sep
+		    end
+	    elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") then
+		    if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; 4 then
+			     string = string.."spiritpact mystify " ..snd.target..snd.sep
+		    elseif shadowprice &lt; 3 then
+			     string = string.."spiritpact mystify " ..snd.target..snd.sep
+		    end
+	    elseif snd.balance.shadowsphere and not snd.checkAff("woe_curse") and snd.real_aff_count_all() &gt; 4 then
+		    if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; 4 then
+			     string = string.."spiritpact woe " ..snd.target..snd.sep
+		    elseif shadowprice &lt; 3 then
+			     string = string.."spiritpact woe " ..snd.target..snd.sep
+		    else
+			     string = string.."hex woe " ..snd.target..snd.sep
+		    end
+	    elseif not snd.checkAff("gloom") then
+		    if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; 4 then
+			     string = string..shadestring.."spiritpact despair "..snd.target
+		    elseif shadowprice &lt; 3 then
+			     string = string..shadestring.."spiritpact despair "..snd.target	
+		    else
+			     string = string..shadestring.."hex despair "..snd.target
+		    end
+	    elseif scourgecount &lt; 5 and snd.checkAff("woe_curse") then
+		    if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; 4 then
+			     string = string.."spiritpact jinx " ..snd.target..snd.sep
+		    elseif shadowprice &lt; 3 then
+			     string = string.."spiritpact jinx " ..snd.target..snd.sep
+		    else
+			     string = string.."hex jinx " ..snd.target..snd.sep
+		    end
+	    elseif snd.checksomeAffs({"haemophilia", "nyctophobia"}, 2) then
+		    if not snd.checksomeAffs({"dementia", "exhausted"}, 1) then
+			     if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; 4 then
+				      string = string.."spiritpact anathemise " ..snd.target..snd.sep
+			     elseif shadowprice &lt; 3 then
+				      string = string.."spiritpact anathemise " ..snd.target..snd.sep
+			     else
+				      string = string.."hex anathemise " ..snd.target..snd.sep
+			     end
+		    else
+			     string = string.."hex anathemise " ..snd.target..snd.sep
+		    end
+	    elseif not snd.checksomeAffs({"vomiting", "haemophilia"}, 1) then
+		    string = string.."hex malady "..snd.target
+	    elseif not snd.checksomeAffs({"clumsiness", "paresis"}, 1) then
+		    string = string.."hex enervate "..snd.target
+	    elseif snd.checkAff("sight") and not snd.checkAff("mystified") then
+		    string = string.."hex mystify " ..snd.target..snd.sep
+	    else
+		    string = string.."hex enervate " ..snd.target..snd.sep
+	    end
+	
+      if string ~= snd.last_attack and not snd.waiting.queue then
+        snd.last_attack = string
+        snd.attack(snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
     end
- 
- local scourgecount = 0 
-   for aff in pairs(snd.scourge_affs) do
-     if table.contains(snd.target_has, snd.scourge_affs[aff]) then
-       scourgecount = scourgecount + 1
-     end
-   end
-
-	if tonumber(snd.repay) &lt; 2 and hp &gt; 60 and shadowprice &gt; 0 then
-		string = string.."hex obeisance" ..snd.sep
-	end 
-
- 
-	if snd.used.shield then
-		if shadowprice &lt; "2" then
-   		string = string.."spiritpact imperil "..snd.target..snd.sep
-		elseif snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."spiritpact imperil "..snd.target..snd.sep
-		else
-			string = string.."hex imperil "..snd.target
-		end
-	
-	elseif not snd.checkAff("inoculated") and gmcp.Char.Vitals.morass ~= "" then
-		string = string..shadestring.."spore inoculate "..snd.target..snd.sep
-	elseif snd.gravity == 0 and gmcp.Char.Vitals.morass ~= "" and not snd.checkAff("fungal_invasion") then
-		string = string..shadestring.."spore ensnare "..snd.target..snd.sep
-	elseif snd.gravity &gt;= 0 and gmcp.Char.Vitals.morass ~= "" and not snd.checkAff("fungal_invasion") then
-		string = string..shadestring.."spore infect "..snd.target..snd.sep
-	elseif not snd.checkAff("rot_benign") then
-		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."spiritpact revile " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."spiritpact revile " ..snd.target..snd.sep
-		else
-			string = string.."hex revile " ..snd.target..snd.sep
-		end
-	elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") then
-		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."spiritpact mystify " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."spiritpact mystify " ..snd.target..snd.sep
-		end
-	elseif snd.balance.shadowsphere and not snd.checkAff("woe_curse") and total_aff_count &gt; 4 then
-		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."spiritpact woe " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."spiritpact woe " ..snd.target..snd.sep
-		else
-			string = string.."hex woe " ..snd.target..snd.sep
-		end
-	elseif not snd.checkAff("gloom") then
-		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-			string = string..shadestring.."spiritpact despair "..snd.target
-		elseif shadowprice &lt; "3" then
-			string = string..shadestring.."spiritpact despair "..snd.target	
-		else
-			string = string..shadestring.."hex despair "..snd.target
-		end
-	elseif scourgecount &lt; 5 and snd.checkAff("woe_curse") then
-		if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-			string = string.."spiritpact jinx " ..snd.target..snd.sep
-		elseif shadowprice &lt; "3" then
-			string = string.."spiritpact jinx " ..snd.target..snd.sep
-		else
-			string = string.."hex jinx " ..snd.target..snd.sep
-		end
-	elseif snd.checksomeAffs({"haemophilia", "nyctophobia"}, 2) then
-		if not snd.checksomeAffs({"dementia", "exhausted"}, 1) then
-			if snd.defenses.def_hex_preservation.state == "deffed" and shadowprice &lt; "4" then
-				string = string.."spiritpact anathemise " ..snd.target..snd.sep
-			elseif shadowprice &lt; "3" then
-				string = string.."spiritpact anathemise " ..snd.target..snd.sep
-			else
-				string = string.."hex anathemise " ..snd.target..snd.sep
-			end
-		else
-			string = string.."hex anathemise " ..snd.target..snd.sep
-		end
-	elseif not snd.checksomeAffs({"vomiting", "haemophilia"}, 1) then
-		string = string.."hex malady "..snd.target
-	elseif not snd.checksomeAffs({"clumsiness", "paresis"}, 1) then
-		string = string.."hex enervate "..snd.target
-	elseif snd.checkAff("sight") and not snd.checkAff("mystified") then
-		string = string.."hex mystify " ..snd.target..snd.sep
-	else
-		string = string.."hex enervate " ..snd.target..snd.sep
-	end
-	
-  if string ~= snd.last_attack and not snd.waiting.queue then
-   snd.last_attack = string
-   snd.attack(snd.last_attack)
-   snd.waiting.queue = true
-   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
   end
- end
-end
-snd.attack_function()
+  snd.attack_function()
 end</script>
 									<command></command>
 									<packageName></packageName>
@@ -14718,7 +14707,7 @@ end</script>
       else 
         gstring = "" 
       end
-      if snd.repay == false and tonumber(gmcp.Char.Vitals.spiritpact) &gt;= 3 and not snd.checkAff("gloom") then 
+      if snd.repay  &lt; 2 and tonumber(gmcp.Char.Vitals.spiritpact) &gt;= 3 and not snd.checkAff("gloom") then 
         paystring = "hex obeisance"..snd.sep 
       elseif snd.spay == false and tonumber(gmcp.Char.Vitals.spiritpact) == 4 then
         paystring = "hex obeisance"..snd.sep
@@ -14841,7 +14830,7 @@ function snd.attack_function()
   	cecho("&lt;red&gt;\n"..snd.gravity.." " ..tonumber(gmcp.Char.Vitals.spiritpact))
 		
 --			if not snd.checksomeAffs({"fungal_invasion","inoculated"}, 2) and not snd.used.shield then gstring = "spore inoculate " ..snd.target..snd.sep.."spore infect " ..snd.target..snd.sep else gstring = "" end
-      if snd.repay == false and tonumber(gmcp.Char.Vitals.spiritpact) &gt;= 3 and not snd.checkAff("gloom") then paystring = "hex obeisance"..snd.sep elseif snd.spay == false and tonumber(gmcp.Char.Vitals.spiritpact) == 4 then paystring = "hex obeisance"..snd.sep else paystring = "" end
+      if snd.repay  &lt; 2 and tonumber(gmcp.Char.Vitals.spiritpact) &gt;= 3 and not snd.checkAff("gloom") then paystring = "hex obeisance"..snd.sep elseif snd.spay == false and tonumber(gmcp.Char.Vitals.spiritpact) == 4 then paystring = "hex obeisance"..snd.sep else paystring = "" end
 
 	if snd.used.shield then
     if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 then
@@ -17144,13 +17133,6 @@ function snd.attack_function()
  
  local shadowprice = tonumber(gmcp.Char.Vitals.shadowprice)
  
-		local total_aff_count = 0
-    for aff in pairs(snd.all_affs) do
-        if table.contains(snd.target_has, snd.all_affs[aff]) then
-            total_aff_count = total_aff_count + 1
-        end
-    end
- 
  local scourgecount = 0 
    for aff in pairs(snd.scourge_affs) do
      if table.contains(snd.target_has, snd.scourge_affs[aff]) then
@@ -17192,7 +17174,7 @@ function snd.attack_function()
 		elseif shadowprice &lt; "3" then
 			string = string.."shadowprice voidgaze " ..snd.target..snd.sep
 		end
-	elseif snd.balance.shadowsphere and not snd.checkAff("shadowsphere") and total_aff_count &gt; 4 then
+	elseif snd.balance.shadowsphere and not snd.checkAff("shadowsphere") and snd.real_all_affs() &gt; 4 then
 		if snd.defenses.def_shadow_mantle.state == "deffed" and shadowprice &lt; "4" then
 			string = string.."shadowprice sphere " ..snd.target..snd.sep
 		elseif shadowprice &lt; "3" then
@@ -17272,7 +17254,7 @@ end</script>
       else 
         gstring = "" 
       end
-      if snd.repay == false and tonumber(gmcp.Char.Vitals.shadowprice) &gt;= 3 and not snd.checkAff("gloom") then 
+      if snd.repay  &lt; 2 and tonumber(gmcp.Char.Vitals.shadowprice) &gt;= 3 and not snd.checkAff("gloom") then 
         paystring = "cast repay"..snd.sep 
       elseif snd.spay == false and tonumber(gmcp.Char.Vitals.shadowprice) == 4 then
         paystring = "cast repay"..snd.sep
@@ -17395,7 +17377,7 @@ function snd.attack_function()
   	cecho("&lt;red&gt;\n"..snd.gravity.." " ..tonumber(gmcp.Char.Vitals.shadowprice))
 		
 --			if not snd.checksomeAffs({"impede","imbued"}, 2) and not snd.used.shield then gstring = "gravity imbue " ..snd.target..snd.sep.."gravity impede " ..snd.target..snd.sep else gstring = "" end
-      if snd.repay == false and tonumber(gmcp.Char.Vitals.shadowprice) &gt;= 3 and not snd.checkAff("gloom") then paystring = "cast repay"..snd.sep elseif snd.spay == false and tonumber(gmcp.Char.Vitals.shadowprice) == 4 then paystring = "cast repay"..snd.sep else paystring = "" end
+      if snd.repay  &lt; 2 and tonumber(gmcp.Char.Vitals.shadowprice) &gt;= 3 and not snd.checkAff("gloom") then paystring = "cast repay"..snd.sep elseif snd.spay == false and tonumber(gmcp.Char.Vitals.shadowprice) == 4 then paystring = "cast repay"..snd.sep else paystring = "" end
 
 	if snd.used.shield then
     if tonumber(gmcp.Char.Vitals.shadowprice) &lt; 4 then
@@ -17506,7 +17488,7 @@ end</script>
 									<regex>^limbs$</regex>
 								</Alias>
 								<Alias isActive="yes" isFolder="no">
-									<name>Group Limbgs</name>
+									<name>Group Limbs</name>
 									<script>if snd.class == "Sciomancer" then
 snd.starting_attack()
 function snd.attack_function()
