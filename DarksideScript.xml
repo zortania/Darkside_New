@@ -213,7 +213,7 @@ snd.version = "5.10"
 snd.class = snd.class or "" -- your class, used for bashing
 snd.limb_dmg_done = snd.limb_dmg_done or 6.5 -- really only for Templars
 snd.faction = snd.faction or "" -- your faction, spirit or shadow
-snd.mount = snd.mount or "367968" -- your horse's ID number
+snd.mount = snd.mount or "416056" -- your horse's ID number
 
 snd.stats = { 
   xp = 0,
@@ -354,7 +354,7 @@ sorcery_transfix = true,
   unbroken = true,
   soulcage = true,
   wand = true,
-  restoration = true,
+  restore = true,
 }
 
 snd.waiting = snd.waiting or {
@@ -384,6 +384,8 @@ purify = false,
 panacea = false,
 melting = false,
 nimbleness = false,
+restore = false,
+regenerate = false,
 }
 
 snd.my_limb_damage = snd.my_limb_damage or {
@@ -547,11 +549,11 @@ waterbreathing = 0,
 snd.physical_affs = {
 		"paresis",
 		"paralysis",
-		"left_leg_broken",
-		"left_arm_broken",
+		"left_leg_crippled",
+		"left_arm_crippled",
 		"broken_arms",
-		"right_leg_broken",
-		"right_arm_broken",
+		"right_leg_crippled",
+		"right_arm_crippled",
 		"broken_legs",
 		"broken_any",
 		"broken_any_more",
@@ -979,7 +981,7 @@ end</script>
 							<name>gmcp_vitals</name>
 							<packageName></packageName>
 							<script>function gmcp_vitals()
-  -- snd.core()
+  snd.core()
   if gmcp.Char.Vitals.prone == "1" and snd.not_entangled() and snd.not_aff("paralysis") then
     snd.aff_have("prone")
   else
@@ -1815,11 +1817,11 @@ function snd.have_slow()
 end
 
 function snd.can_arms()
- if snd.have_aff("left_arm_broken") or
-    snd.have_aff("left_arm_damaged") or
+ if snd.have_aff("left_arm_crippled") or
+    snd.have_aff("left_arm_broken") or
     snd.have_aff("left_arm_mangled") or
+    snd.have_aff("right_arm_crippled") or
     snd.have_aff("right_arm_broken") or
-    snd.have_aff("right_arm_damaged") or
     snd.have_aff("right_arm_mangled") then
     return false
  else
@@ -1828,11 +1830,11 @@ function snd.can_arms()
 end
 
 function snd.can_legs()
- if snd.have_aff("left_leg_broken") or
-    snd.have_aff("left_leg_damaged") or
+ if snd.have_aff("left_leg_crippled") or
+    snd.have_aff("left_leg_broken") or
     snd.have_aff("left_leg_mangled") or
+    snd.have_aff("right_leg_crippled") or
     snd.have_aff("right_leg_broken") or
-    snd.have_aff("right_leg_damaged") or
     snd.have_aff("right_leg_mangled") then
     return false
  else
@@ -2265,7 +2267,7 @@ snd.priorities =
     
     "fitness",
     "dome",
-    "regeneration",
+    "regenerate",
     "restoration",
     "shrugging",
     "purge",
@@ -2386,19 +2388,19 @@ snd.priorities =
     "aff_deadening",
     "aff_anorexia",
     "aff_head_mangled",
-    "aff_head_damaged",
+    "aff_head_broken",
     "aff_head_bruised_critical",
     "aff_head_bruised_moderate",
     "aff_head_bruised",
     "aff_destroyed_throat",
     "aff_left_arm_amputated",
     "aff_left_arm_mangled",
-    "aff_left_arm_damaged",
+    "aff_left_arm_broken",
     "aff_right_arm_amputated",
     "aff_right_arm_mangled",
-    "aff_right_arm_damaged",
-    "aff_left_arm_broken",
     "aff_right_arm_broken",
+    "aff_left_arm_crippled",
+    "aff_right_arm_crippled",
     "aff_left_arm_bruised_critical",
     "aff_left_arm_bruised_moderate",
     "aff_crushed_elbows",
@@ -2411,14 +2413,14 @@ snd.priorities =
     "aff_broken_arm",
     "aff_left_leg_amputated",
     "aff_left_leg_mangled",
-    "aff_left_leg_damaged",
+    "aff_left_leg_broken",
     "aff_right_leg_amputated",
     "aff_right_leg_mangled",
-    "aff_right_leg_damaged",
+    "aff_right_leg_broken",
     "aff_left_leg_bruised_critical",
     "aff_right_leg_bruised_critical",
-    "aff_left_leg_broken",
-    "aff_right_leg_broken",
+    "aff_left_leg_crippled",
+    "aff_right_leg_crippled",
     "aff_left_leg_bruised_moderate",
     "aff_left_leg_bruised",
     "aff_left_leg_dislocated",
@@ -2430,7 +2432,7 @@ snd.priorities =
     "aff_crushed_chest",
     "aff_voidgaze",
     "aff_torso_mangled",
-    "aff_torso_damaged",
+    "aff_torso_broken",
     "aff_torso_bruised_critical",
     "aff_heatspear",
     "aff_cracked_ribs",
@@ -2745,6 +2747,11 @@ snd.priorities =
     "def_transience",
     "def_entrench",  
     "def_selfishness", 
+    "aff_sapped_constitution",
+    "aff_sapped_dexterity",
+    "aff_sapped_intelligence",
+    "aff_sapped_stats",
+    "aff_sapped_strength",
     
   }</script>
 							<eventHandlerList />
@@ -2847,7 +2854,7 @@ snd.method_priority = {
           table.insert(snd.queue, "regenerate")
         end 
         if snd.restore_check() then
-          table.insert(snd.queue, "restore")
+          table.insert(snd.queue, "restoration")
         end 
         if ((hasSkill("Purge") and snd.class == "Carnifex") or (hasSkill("Annul") and snd.class == "Warden")) and snd.purge_check() then
           table.insert(snd.queue, "purge")
@@ -2860,6 +2867,9 @@ snd.method_priority = {
         end
         if snd.rage_check() then
           table.insert(snd.queue, "rage")
+        end
+        if snd.unknownquantity &gt; 2 then
+          snd.staone()
         end
         if snd.toggles.bashing and snd.bashing_loaded then
           table.insert(snd.queue, "bashing")
@@ -2994,6 +3004,11 @@ aff_fallen = {state = "healed", effect = "cannot move or attack, must STAND", cu
 aff_asleep = {state = "healed", effect = "cannot do anything other than WAKE", cures = {}, assess = false, timer = createStopWatch()},
 aff_stun = {state = "healed", effect = "cannot do anything", cures = {}, assess = false, timer = createStopWatch()},
 aff_aeon = {state = "healed", effect = "delays all actions", cures = {smoke = "elm"}, assess = false, timer = createStopWatch()},
+aff_sapped_constitution = {state = "healed", effect = "sapped con", cures = {}, assess = false, timer = createStopWatch()},
+aff_sapped_dexterity = {state = "healed", effect = "sapped dex", cures = {}, assess = false, timer = createStopWatch()},
+aff_sapped_intelligence = {state = "healed", effect = "sapped int", cures = {}, assess = false, timer = createStopWatch()},
+aff_sapped_stats = {state = "healed", effect = "sapped stats", cures = {}, assess = false, timer = createStopWatch()},
+aff_sapped_strength = {state = "healed", effect = "sapped str", cures = {}, assess = false, timer = createStopWatch()},
 
 aff_paresis = {state = "healed", effect = "prevents tattoos and movement", cures = {herb = "bloodroot"}, assess = false, timer = createStopWatch()},
 aff_paralysis = {state = "healed", effect = "prevents attacks, movement, and tattoos", cures = {herb = "bloodroot"}, assess = false, timer = createStopWatch()},
@@ -3109,11 +3124,11 @@ aff_haemophilia = {state = "healed", effect = "", cures = {herb = "ginseng", tre
 aff_hallucinations = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_halted = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hatred = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
-aff_head_broken = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_head_crippled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_head_bruised = {state = "healed", effect = "", cures = {salve = "mending to head"}, assess = false, timer = createStopWatch()},
 aff_head_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to head"}, assess = false, timer = createStopWatch()},
 aff_head_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending  to head"}, assess = false, timer = createStopWatch()},
-aff_head_damaged = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
+aff_head_broken = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_mangled = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_heartflutter = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -3145,21 +3160,21 @@ aff_kneel = {state = "healed", effect = "hurts you if you walk too far from rava
 aff_laxity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_leeched_aura = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_arm_amputated = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
-aff_left_arm_broken = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_left_arm_crippled = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_left_arm_bruised = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
-aff_left_arm_damaged = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
+aff_left_arm_broken = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_dislocated = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_mangled = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
 aff_left_arm_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_arm_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_leg_amputated = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
-aff_left_leg_broken = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_left_leg_crippled = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_left_leg_bruised = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
-aff_left_leg_damaged = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
+aff_left_leg_broken = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_dislocated = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_mangled = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3194,7 +3209,6 @@ aff_mutation_sickness = {state = "healed", effect = "", cures = {}, assess = fal
 aff_narcolepsy = {state = "healed", effect = "Enjoy some napping", cures = { herb = "eucrasia"}, assess = false, timer = createStopWatch()},
 aff_nightmare  = {state = "healed", effect = "???", cures = {}, assess = false, timer = createStopWatch()},
 aff_nyctophobia  = {state = "healed", effect = "can't move in to/out of darkness", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
-aff_numb_arms = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_numbed_skin = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_oblivion = {state = "healed", effect = "best gtfo", cures = {}, assess = false, timer = createStopWatch()},
 aff_oiled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3227,21 +3241,21 @@ aff_rend = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "se
 aff_resin_glauxe = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_resonance = {state = "healed", effect = "templar can assess/diagnose you for free", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_arm_amputated = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
-aff_right_arm_broken = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_right_arm_crippled = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_right_arm_bruised = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
-aff_right_arm_damaged = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
+aff_right_arm_broken = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
 aff_right_arm_dislocated = {state = "healed", effect = "", cures = {salve = "mending to arms"}, assess = false, timer = createStopWatch()},
 aff_right_arm_mangled = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
 aff_right_arm_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_arm_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_leg_amputated = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
-aff_right_leg_broken = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_right_leg_crippled = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_right_leg_bruised = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
-aff_right_leg_damaged = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
+aff_right_leg_broken = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_right_leg_dislocated = {state = "healed", effect = "", cures = {salve = "mending to legs"}, assess = false, timer = createStopWatch()},
 aff_right_leg_mangled = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_right_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3255,11 +3269,6 @@ aff_sadness = {state = "healed", effect = "", cures = {herb = "ash", tree = "sen
 aff_salve_seared = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sand_trapped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_slough = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_sapped_constitution = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_sapped_dexterity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_sapped_intelligence = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_sapped_stats = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_sapped_strength = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sealing_circle = {state = "healed", effect = "circle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
 aff_sealing_square = {state = "healed", effect = "square affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
 aff_sealing_triangle = {state = "healed", effect = "triangle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
@@ -3313,7 +3322,7 @@ aff_thunderstorm = {state = "healed", effect = "", cures = {}, assess = false, t
 aff_torso_bruised = {state = "healed", effect = "", cures = {salve = "mending to torso"}, assess = false, timer = createStopWatch()},
 aff_torso_bruised_critical = {state = "healed", effect = "", cures = {salve = "mending to torso"}, assess = false, timer = createStopWatch()},
 aff_torso_bruised_moderate = {state = "healed", effect = "", cures = {salve = "mending to torso"}, assess = false, timer = createStopWatch()},
-aff_torso_damaged = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
+aff_torso_broken = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_torso_mangled = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_torso_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_tree_seared = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3860,6 +3869,7 @@ def_axe_obstruct = {defense = "axe_obstruct", type = "normal", effect = "Smack t
 def_axe_repel = {defense = "axe_repel", type = "normal", effect = "Stop them from cleaving you", balance = {balanceequilibriumtake = "axe repel on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Repel"},
 def_bloodtrails = {defense = "bloodtrails", type = "normal", effect = "Trace those bloody trails", balance = {balanceequilibriumtake = "wayfare bloodtrails on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Bloodtrails"},
 def_phalanx = {defense = "phalanx", type = "normal", effect = "Give group cut/blunt defense bonus", balance = {balanceequilibriumtake = "fury battlechant phalanx"}, state = "down", needit = false, timer = createStopWatch(), skill = "Phalanx"},
+def_dauntless = {defense = "dauntless", type = "normal", effect = "Generate fury at cost of health/mana", balance = {balanceequilibriumtake = "fury dauntless on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Dauntless" },
 
 --Archivist
 def_spheres = {defense = "spheres", type = "normal", effect = "Spheres defense for Archivist", balance = {needyequilibriumtake = "contemplate spheres"}, state = "down", needit = false, timer = createStopWatch(), skill = "Spheres" },
@@ -9393,7 +9403,7 @@ snd.vermin = 0</script>
 {area = "Raugol Fissure", level = "20-30", targets = {"a scything skitterer", "a stonescale ravager", "a stonescale mephit", "a splintering earthrager"} },
 {area = "Chapel Garden", level = "90+", targets = {"a diminutive necromancer", "a zombie cleric", "a foul-smelling zombie", "Broondac, the vampire strategist"  } },
 {area = "the Caverns of Telfinne", level = "40-60", targets = {"a cave-dwelling avisme", "a fanged lugore", "a slimy aryeim", "a tentacled morbol", "a draconic zogura", "a slender synicant",  } },
-{area = "the Village of Kornar", level = "25-35", targets = {"a necromantic guard", "a Bloodloch soldier", "a conjured wraith", "a Bloodloch lich", "a female villager", "an undead villager", "Mala, the Artisan", "Firthar", "Hassik, the village elder", "an undead minion", "an undead child", "Moritsio, Owner of the Pub", "Igrar, Captain of the Gral", "a wealthy sailor"  } },
+{area = "the village of Kornar", level = "25-35", targets = {"a necromantic guard", "a conjured wraith", "a Bloodloch soldier", "a Bloodloch lich", "an undead villager", "a female villager", "Mala, the Artisan", "an undead minion", "Firthar", "Rovena, the widow", "Moritsio, Owner of the Pub", "an undead child", "Igrar, Captain of the Gral", "a wealthy sailor", "a cautious captain", "a weathered sailor", "a young sailor" } },
 {area = "the Arurer Haven", level = "60", targets = {"a youthful priest", "a savvy priestess", "a budding priestess", "an aged priest", "Gunder, a retired sailor", "Father Garron, the priest", "Tisian, a young priest", "a young celestial angel" } },
 {area = "the lost city of Iviofiyiedu", level = "45-55", targets = { "a ghost of a Mhun guard", "a ghost of a Mhun soldier", "General Abeshentesh", "a ghost of a male Mhun", "a ghost of a female Mhun", "a ghost of a young Mhun", "a mhun instructor", "Blacksmith Udhomentesh", "Fathientesh, a mhun crafter", "Dhemosh, a mhun miner" } },
 {area = "the Village of Torston", level = "40+", targets = {"a mottled brown frog", "a venomous water snake", "a vicious snapping turtle", "a fierce crocodile", "an irritated crow", "a tall Horkvali woman", "a wary Xorani guard", "a stalwart Horkvali guard", "Estok, the guard captain", "a dusky-skinned Grook man", "a plump white grub", "a dark-skinned Grook woman", "a carefree Grook boy", "the impish outcast, Qezirath", "a frail Xorani man", "a little Grook girl", "Lesiv, the Torstonite chieftain"}},
@@ -9401,9 +9411,9 @@ snd.vermin = 0</script>
 {area = "the Vilimo Fields", level = "35-40", targets = {"Nysaac", "a field harvester", "a field monitor", "a decaying donkey", "Laoghaire, the monitor", "Maeron, the Quartermaster", "Administrator Kamakshi", "a semi-conscious young woman", "a semi-conscious young man","a semi-conscious elderly man", "a semi-conscious elderly woman", "a semi-conscious man", "a semi-conscious woman", "an undead bloodhound", "a field hauler", "a spectral minion"}},
 {area = "the Mannaseh Swamp", level = "99+", targets = {"a savage mutant pumpkin", "a skittering miscreation", "a malformed stalker", "a miscreated avian", "an ichorous miscreation", "an amphibious malformation", "a hulking miscreation",}},
 {area = "the Village of Craneskull", level = "35-40", targets = {"a savage mutant pumpkin", "a muddy Trollish child", "a slender mud adder", "a rugged Trollish man", "a plump Trollish woman", "a lumbering Troll guard", "an elderly Troll priest", "a lean guard hound", "a traitorous Mitrine hunter","a black ram", "a militant Troll warrior", "a Troll ritualist", "an arachnid Chiav guard", "an arachnid Chiav enforcer", "an arachnid Chiav archer","an immense Trollish chieftain", "a lanky, Trollish witch doctor"}},
-{area = "the Maestral Shoals", level = "99+", targets = {"a tattered skrell", "a leathery skrell", "an emaciated skrell","a sinewy skrell lurker", "a skittish sandpiper", "a large, ill-tempered crab", "a glossy red crab", "a mottled crab"}},
-{area = "Maestral's Barrier Reef", level = "99+", targets = {"a school of long fin reef minnows", "a savage, scarred skrell","a sharp-toothed skrell", "a skrell hatchling","an Albedian codfish", "a bony Delvian boxfish", "a pot-bellied seahorse", "a school of neon tetra fish", "a hulking skrell matriarch", "a puffer fish", "a bottom-feeding flatfish"}},
-{area = "Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa", level = "99+", targets = {"a four-winged ayvarin", "a predatory kashnalda", "a swift vukon"}},
+{area = "the Maestral Shoals", level = "99+", targets = {"a tattered skrell", "a leathery skrell", "an emaciated skrell","a sinewy skrell lurker", "a skittish sandpiper", "a large, ill-tempered crab", "a glossy red crab", "a mottled crab", "a drooling skrell"}},
+{area = "Maestral's Barrier Reef", level = "99+", targets = {"a school of long fin reef minnows", "a savage, scarred skrell","a sharp-toothed skrell", "a skrell hatchling","an Albedian codfish", "a bony Delvian boxfish", "a pot-bellied seahorse", "a school of neon tetra fish", "a hulking skrell matriarch", "a puffer fish", "a bottom-feeding flatfish", "a drooling skrell"}},
+{area = "Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa", level = "99+", targets = {"a four-winged ayvarin", "a predatory kashnalda", "a swift vukon", "a riled-up protester"}},
 {area = "the Underbelly", level = "99+", targets ={"a pale skrell whelp", "a desiccated Utari zombie", "a massive grey rat", "a dire, plagued rat", "an erratic Tarpen cultist", "a mangy Caentoi cultist", "an Utari cultist with grim facial markings", "a glazed-eye zombie Aslinn", "a ravenous skrell", "a venomous skrell whelp", "a feral vakmut", "a malnourished vakmut", "a snarling vakmut hound", "a grey-skinned skrell whelp", "a simple peasant", "a drooling zombie Tarpen", "a massive, tan-shelled whelk", "a gigantic black rat", "a jagged Golban ghast", "a gigantic white rat", "a hunched, bone-fisted Golban zombie", "a hulking Ursal ghast", "a slavering vakmut", "a crawling, ravenous Aslinn ghast",}},
 {area = "a deep underground cavern", level = "99+", targets = {"a Chaos-warped Chiav guard", "a Chaos-warped gargantuan carrier centipede", "a Chaos-warped egg-laying spider", "a demonic Chaos-warped spider"}},
 {area = "Mount Hubride", level = "55-60", targets = {"a troll warrior", "a rugged roll miner", "a female troll villager", "a small, troll child", "a male troll villager"}},
@@ -9437,7 +9447,7 @@ snd.vermin = 0</script>
 {area = "Eftehl Island", level = "100+", targets = {"a vibrantly pink flamingo", "a large sea turtle", "a steel-grey barracuda", "a sleek hammerhead shark", "a ghost of a castle servant", "a ghost of a castle guard", "a lumbering ogre ghost", "a ghost of a castle kitchen worker"}, items = {},},{area = "Tak-re", level = "99+", targets = {"a vicious, mutated shark", "a vicious, mutated shark", "a hundred-strings jellyfish", "a horrifically deformed woodpecker", "a warped squirrel", "a mutated deer", }, items = {},},
 {area = "Kkirrrr'shi Hive", level = "99+", targets = {"a feral Hokkali soldier", "a twisted Hokkali hunter", "a rabid Hokkali drone", "a hideous Hokkali Queensguard", "a freshly spawned Hokkali ambusher",}, items = {},},
 {area = "within a deep mine", level = "Mining", targets = {"a bulbous direant bomber", "a sleek direant scout", "a chitinous direant soldier", "an agile direant worker", "a grimy bandit", "a bandit leader", "a dark-haired mole", "a stalagmite rat", "a massive, tunneling cave worm", "a many-eyed marionette slime", "a behemoth pit beast", "a floating cave manta", "a spotted cave salamander", "a fuzzy brown bat", "a rime-covered bear", "a long-jawed cave spider", "a bulbous, black spider", "a bristling, fanged bat", "a pale, eyeless amphibian", "a razor-finned eel", "a tiny blood worm", "a blue-streaked cave snail", "a luminous moth", "a writhing horsehair worm"}},
-{area = "the Dyisen-Ashtan Memoryscape", level = "99+", targets = {"an incorporeal townsman", "an incorporeal townsmen", "a ghastly beggar", "a spectral merchant", "an ethereal guardsman", "a spectral Balaton shark", "a fragmented, spectral memory", "a phantasmal mystic", "a disembodied soldier", "a ghostly seagull", "an eidolic, Seam-bound pilgrim",}},
+{area = "the Dyisen-Ashtan Memoryscape", level = "99+", targets = {"an incorporeal townsman", "an incorporeal townsmen", "a ghastly beggar", "a spectral merchant", "a spectral Balaton shark", "an ethereal guardsman", "a fragmented, spectral memory", "a phantasmal mystic", "a disembodied soldier", "a ghostly seagull", "an eidolic, Seam-bound pilgrim",}},
 {area = "Oblivion's Portent", level = "100+", targets = {"a singularly-focused defiler", "an otherworldly-shaped, gliding devourer", "a hungering voidwalker", "a writhing mass of voidspawn", "a many-legged, skittering aberration"}},
 {area = "the Tarblack Marshes", level = "100+", targets = {"a tarclaw caiman", "a lumbering stonefiend","a rock scorpion","a grotesque bloater"}},
 {area = "the Endless Battlefield", level = "99+", targets = {"a blood-drenched soldier wielding a claymore", "a blood-drenched swordsman", "a blood-drenched spear fighter", "a blood-drenched archer"}},
@@ -9731,7 +9741,6 @@ sunder_areaPaths = {
   v72041 = "72194",
   v72044 = "72180",
   v72048 = "72394",
-  v72055 = "72232",
   v72056 = "72395",
   v72057 = "72330",
   v72059 = "72104",
@@ -9857,7 +9866,7 @@ sunder_areaPaths = {
   v72415 = "72372",
   v72416 = "71284",
   v72418 = "71616",
-  v72420 = "72055",
+  v72420 = "72232",
   v72422 = "72109",
   v72423 = "72208",
   v72425 = "72183",
@@ -10414,70 +10423,81 @@ v57944 = "49581"
     v44277 = "44276"
   },
   ["Dovan Hollow"] = {
-    v44515 = "49335",
-    v45757 = "48405",
-    v48405 = "49307",
-    v48747 = "49287",
-    v48748 = "48761",
-    v48749 = "48748",
-    v48750 = "48749",
-    v48751 = "48755",
-    v48752 = "48751",
-    v48753 = "48752",
-    v48754 = "48753",
-    v48755 = "48750",
-    v48761 = "48762",
-    v48762 = "49333",
-    v48763 = "49328",
-    v48766 = "49314",
-    v48767 = "49295",
-    v48768 = "49305",
     v49286 = "48747",
-    v49287 = "49288",
-    v49288 = "49289",
-    v49289 = "49290",
-    v49290 = "49291",
-    v49291 = "49292",
-    v49292 = "49293",
-    v49293 = "49294",
-    v49294 = "48767",
-    v49295 = "49296",
-    v49296 = "49297",
-    v49297 = "49299",
-    v49298 = "49301",
-    v49299 = "49300",
-    v49300 = "49298",
-    v49301 = "45757",
-    v49302 = "48766",
-    v49303 = "49304",
-    v49304 = "49302",
-    v49305 = "44515",
-    v49306 = "49309",
-    v49307 = "49306",
-    v49308 = "48768",
-    v49309 = "49310",
-    v49310 = "49311",
-    v49311 = "49308",
-    v49312 = "49322",
-    v49313 = "49312",
-    v49314 = "49313",
-    v49315 = "pthcity",
-    v49316 = "49315",
-    v49317 = "49316",
-    v49318 = "49317",
-    v49319 = "49318",
-    v49320 = "49319",
-    v49321 = "49320",
-    v49322 = "49323",
-    v49323 = "49321",
-    v49328 = "49329",
-    v49329 = "49303",
-    v49330 = "48763",
-    v49331 = "49330",
-    v49332 = "49331",
-    v49333 = "49332",
-    v49334 = "48754",
-    v49335 = "49334"
+v48747 = "49287",
+v49287 = "49288",
+v49288 = "49289",
+v49289 = "49291",
+v49291 = "49292",
+v49292 = "49293",
+v49293 = "49294",
+v49294 = "48767",
+v48767 = "49295",
+v49295 = "49296",
+v49296 = "48746",
+v48746 = "48745",
+v48745 = "48744",
+v48744 = "48743",
+v48743 = "48742",
+v48742 = "49297",
+v49297 = "49298",
+v49298 = "49300",
+v49300 = "49299",
+v49299 = "49301",
+v49301 = "45757",
+v45757 = "48405",
+v48405 = "49307",
+v49307 = "49306",
+v49306 = "49309",
+v49309 = "49310",
+v49310 = "49311",
+v49311 = "49324",
+v49324 = "49325",
+v49325 = "49326",
+v49326 = "49327",
+v49327 = "49328",
+v49328 = "49329",
+v49329 = "49330",
+v49330 = "48763",
+v48763 = "49331",
+v49331 = "49332",
+v49332 = "49333",
+v49333 = "49334",
+v49334 = "49335",
+v49335 = "44515",
+v44515 = "48748",
+v48748 = "48749",
+v48749 = "48750",
+v48750 = "48751",
+v48751 = "48752",
+v48752 = "48753",
+v48753 = "48754",
+v48754 = "48755",
+v48755 = "48761",
+v48761 = "48762",
+v48762 = "49305",
+v49305 = "49308",
+v49308 = "48768",
+v48768 = "49303",
+v49303 = "49304",
+v49304 = "48766",
+v48766 = "49302",
+v49302 = "49290",
+v49290 = "49314",
+v49314 = "49313",
+v49313 = "49312",
+v49312 = "49315",
+v49315 = "49316",
+v49316 = "49317",
+v49317 = "48740",
+v48740 = "48741",
+v48741 = "49318",
+v49318 = "49319",
+v49319 = "49320",
+v49320 = "49321",
+v49321 = "49323",
+v49323 = "49322",
+v49322 = "pthcity"
   },
   Drakuum = {
     v19854 = "20076",
@@ -16643,75 +16663,81 @@ v57944 = "49581"
   v35541 = "35540"
   },
   ["Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa"] = {
-    v73321 = "73345",
-    v73345 = "73353",
-    v73353 = "73357",
-    v73357 = "73358",
-    v73358 = "73369",
-    v73369 = "74414",
-    v74414 = "74164",
-    v74164 = "74165",
-    v74165 = "74167",
-    v74167 = "74168",
-    v74168 = "74177",
-    v74177 = "74272",
-    v74272 = "73518",
-    v73518 = "74366",
-    v74366 = "74363",
-    v74363 = "74367",
-    v74367 = "74674",
-    v74674 = "74361",
-    v74361 = "74393",
-    v74393 = "74464",
-    v74464 = "74463",
-    v74463 = "74368",
-    v74368 = "74462",
-    v74462 = "74397",
-    v74397 = "74394",
-    v74394 = "74466",
-    v74466 = "74467",
-    v74467 = "74472",
-    v74472 = "74678",
-    v74678 = "74679",
-    v74679 = "74680",
-    v74680 = "74477",
-	  v74477 = "74478",
-    v74478 = "74479",
-    v74479 = "74480",
-    v74480 = "74471",
-    v74471 = "74564",
-    v74564 = "74618",
-    v74618 = "74669",
-    v74669 = "73839",
-    v73839 = "73935",
-    v73935 = "73838",
-    v73838 = "73938",
-    v73938 = "73936",
-    v73936 = "74520",
-    v74520 = "74525",
-    v74525 = "74519",
-    v74519 = "74522",
-    v74522 = "74521",
-    v74521 = "74343",
-    v74343 = "74345",
-    v74345 = "74356",
-    v74356 = "74527",
-    v74527 = "74346",
-    v74346 = "73482",
-    v73482 = "73417",
-    v73417 = "73374",
-    v73374 = "73372",
-    v73372 = "74269",    
-    v74269 = "74193",
-    v74193 = "74192",
-    v74192 = "74189",
-    v74189 = "74188",
-    v74188 = "74859",
-    v74859 = "74858",
-    v74858 = "74857",
-    v74857 = "74856",
-    v74856 = "75023",
-    v75023 = "pthcity"
+    v74673 = "75023", 
+v75023 = "74856",
+v74856 = "74857",
+v74857 = "74858",
+v74858 = "74859",
+v74859 = "74188",
+v74188 = "74189",
+v74189 = "74192",
+v74192 = "74193",
+v74193 = "74269",
+v74269 = "73321",
+v73321 = "73372",
+v73372 = "73374",
+v73374 = "73417",
+v73417 = "73482",
+v73482 = "pth74470",
+v74470 = "74369",
+v74369 = "74389",
+v74389 = "74391",
+v74391 = "74392",
+v74392 = "73345",
+v73345 = "73353",
+v73353 = "73357",
+v73357 = "73358",
+v73358 = "73369",
+v73369 = "74414",
+v74414 = "74164",
+v74164 = "74165",
+v74165 = "74167",
+v74167 = "74168",
+v74168 = "74177",
+v74177 = "74361",
+v74361 = "74674",
+v74674 = "74367",
+v74367 = "74272",
+v74272 = "73518",
+v73518 = "74366",
+v74366 = "74363",
+v74363 = "74368",
+v74368 = "74462",
+v74462 = "74463",
+v74463 = "74397",
+v74397 = "74394",
+v74394 = "74466",
+v74466 = "pth74393",
+v74393 = "74464",
+v74464 = "74467",
+v74467 = "74472",
+v74472 = "74678",
+v74678 = "74679",
+v74679 = "pth74477",
+v74477 = "74478",
+v74478 = "74479",
+v74479 = "74480",
+v74480 = "74564",
+v74564 = "74618",
+v74618 = "pth74471",
+v74471 = "74474",
+v74474 = "73838",
+v73838 = "73935",
+v73935 = "73839",
+v73839 = "73936",
+v73936 = "73938",
+v73938 = "74519",
+v74519 = "74522",
+v74522 = "74521",
+v74521 = "74520",
+v74520 = "74525",
+v74525 = "74343",
+v74343 = "74346",
+v74346 = "74356",
+v74356 = "74345",
+v74345 = "74527",
+v74527 = "74528",
+    v74528 = "pthcity"
   },
   ["the Maul"] = {
     v50236 = "50237",
@@ -19763,6 +19789,148 @@ v49442 = 	"pthcity"
     v75050 = "75045",
     v75051 = "75044",
     v75055 = "75050"
+    },
+    
+    ["the Welto Trench"] = {
+    v69888 = "69889",
+    v69889 = "69968",
+    v69968 = "69969",
+    v69969 = "69970",
+    v69970 = "69964",
+    v69964 = "69890",
+    v69890 = "69891",
+    v69891 = "69963",
+    v69963 = "69971",
+    v69971 = "69972",
+    v69972 = "69973",
+    v69973 = "69960",
+    v69960 = "69344",
+    v69344 = "69351",
+    v69351 = "69502",
+    v69502 = "69503",
+    v69503 = "69506",
+    v69506 = "69887",
+    v69887 = "69343",
+    v69343 = "69342",
+    v69342 = "69283",
+    v69283 = "69281",
+    v69281 = "69341",
+    v69341 = "69336",
+    v69336 = "69280",
+    v69280 = "69324",
+    v69324 = "69323",
+    v69323 = "69277",
+    v69277 = "69276",
+    v69276 = "69274",
+    v69274 = "69270",
+    v69270 = "69322",
+    v69322 = "69318",
+    v69318 = "69268",
+    v69268 = "69314",
+    v69314 = "69267",
+    v69267 = "69252",
+    v69252 = "69227",
+    v69227 = "69251",
+    v69251 = "70192",
+    v70192 = "70191",
+    v70191 = "69266",
+    v69266 = "69262",
+    v69262 = "69261",
+    v69261 = "69257",
+    v69257 = "69256",
+    v69256 = "70190",
+    v70190 = "70189", 
+    v70189 = "70188",
+    v70188 = "70187",
+    v70187 = "70186",
+    v70186 = "70185",
+    v70185 = "70184",
+    v70184 = "69782",
+    v69782 = "69781",
+    v69781 = "69780",
+    v69780 = "69779",
+    v69779 = "69778",
+    v69778 = "69776",
+    v69776 = "69777",
+    v69777 = "69775",
+    v69775 = "69769",
+    v69769 = "69773",
+    v69773 = "69772",
+    v69772 = "69771",
+    v69771 = "69770",
+    v69770 = "70136",
+    v70136 = "69746",
+    v69746 = "69747",
+    v69747 = "70135",
+    v70135 = "70129",
+    v70129 = "70130",
+    v70130 = "70135",
+    v70135 = "70129",
+    v70129 = "70074",
+    v70074 = "69749",
+    v69749 = "69751",
+    v69751 = "69759",
+    v69759 = "69760",
+    v69760 = "69763",
+    v69763 = "69764",
+    v69764 = "69785",
+    v69785 = "69786",
+    v69786 = "69784",
+    v69784 = "69460",
+    v69460 = "69459",
+    v69459 = "69353",
+    v69353 = "69462",
+    v69462 = "69463",
+    v69463 = "69466",
+    v69466 = "70065",
+    v70065 = "69098",
+    v69098 = "69122",
+    v69122 = "69486",
+    v69486 = "69484",
+    v69484 = "65734",
+    v65734 = "69602",
+    v69602 = "69603",
+    v69603 = "69487",
+    v69487 = "69099",
+    v69099 = "69100",
+    v69100 = "69860",
+    v69860 = "69861",
+    v69861 = "69559",
+    v69559 = "69540",
+    v69540 = "69548",
+    v69548 = "70125",
+    v70125 = "69994",
+    v69994 = "70028",
+    v70028 = "69849",
+    v69849 = "69850",
+    v69850 = "69859",
+    v69859 = "69852",
+    v69852 = "69123",
+    v69123 = "69125",
+    v69125 = "69752",
+    v69752 = "69897",
+    v69897 = "69467",
+    v69467 = "69488",
+    v69488 = "69489",
+    v69489 = "69501",
+    v69501 = "69505",
+    v69505 = "69686",
+    v69686 = "69687",
+    v69687 = "69688",
+    v69688 = "69689",
+    v69689 = "70225",
+    v70225 = "69690",
+    v69690 = "69693",
+    v69693 = "69694",
+    v69694 = "70032",
+    v70032 = "69695",
+    v69695 = "69700",
+    v69700 = "69841",
+    v69841 = "69901",
+    v69901 = "69902",
+    v69902 = "69696",
+    v69696 = "69698",
+    v69698 = "69699"    
     }
 }
 
@@ -20114,8 +20282,12 @@ function snd.runBasher()
     --if snd.toggles.bashing then snd.toggle("bashing") end
     snd.toggles.bashing = false
     if bot.going then
-      expandAlias("move", false)
-      --  tempTimer(1.5, [[expandAlias("move")]])
+      --if tonumber(snd.backup_path) == gmcp.Room.Info.num then
+        expandAlias("move", false)
+      --else
+     --   expandAlias("goto "..snd.backup_path)
+      --end
+      --tempTimer(1.5, [[expandAlias("move")]])
     end
     snd.core()
     return
@@ -20236,7 +20408,7 @@ function snd.bashing_function()
         
 			if snd.probed then
 			else
-				if gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum" or gmcp.Room.Info.area == "the Torturers' Caverns" then   
+				if (gmcp.Room.Info.area == "Tcanna Island" or gmcp.Room.Info.area == "Drakuum" or gmcp.Room.Info.area == "the Torturers' Caverns") and not snd.toggles.generics then   
 					battack = "probe "..snd.bashing.target..snd.sep..battack..snd.sep
 				end
 			end
@@ -20665,26 +20837,30 @@ end
 
 function snd.runecarver_bash()
 	hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  
+	if tonumber(snd.repay) &lt; 1 and hp &gt; 55 and tonumber(gmcp.Char.Vitals.spiritpact) &gt; 0 and not snd.have_aff("recklessness") then
+	 battack = battack.."hex obeisance"..snd.sep
+	end -- let's try to get pacts back up to 2 times without getting too hurt
     
-	if (snd.have_aff("blackout") or hp &lt;= 55 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000) and snd.shield_check then
+	if (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 60) and snd.shield_check then --snd.have_aff("blackout") or 
 		if snd.punisher then
 			if snd.reflection_charge &gt; 0 and snd.defenses.def_reflection.state ~= "deffed" then
-				battack = "runecarve branch"
+				battack = battack.."runecarve branch"
 			end
 		else
-			battack = "touch shield"
+			battack = battack.."touch shield"
 		end 
 	elseif snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
 		-- let the reflection do its job
 	elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
-		battack = "runecarve branch"
+		battack = battack.."runecarve branch"
 	elseif snd.toggles.newbie then
 		battack = battack..snd.sep.."hex enervate "..snd.bashing.target
 	else
 		if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 2 and hasSkill("Spiritpact") then
-			battack = "spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
+			battack = battack.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
 		else
-			battack = "hex malady " ..snd.bashing.target
+			battack = battack.."hex malady " ..snd.bashing.target
 		end
 	end
 end
@@ -20756,7 +20932,7 @@ function snd.shaman_bash()
 		end
 	else
 		if wp&gt;=45 and tonumber(gmcp.Char.Vitals.energy) &gt; 3 then
-			battack = battack..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
+			battack = battack..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target..snd.sep.."recoup"
 		else
 			battack = battack..snd.sep.."commune lightning "..snd.bashing.target
 		end 
@@ -20890,7 +21066,7 @@ end
 function snd.wayfarer_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   
-  if (snd.have_aff("blackout") or hp &lt;= 70 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000) and snd.shield_check then
+  if (snd.have_aff("blackout") or hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000) and snd.shield_check then
     if snd.punisher then
       if hasSkill("Sustain") then
         battack = "fury sustain"
@@ -20910,19 +21086,19 @@ function snd.zealot_bash()
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
   wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
   
-  if (tonumber(gmcp.Char.Vitals.bleeding) &gt; 1500 and snd.cauterize and mp &gt;= 15 and hp &gt;= 65) then
+  if (tonumber(gmcp.Char.Vitals.bleeding) &gt; 1500 and snd.cauterize and mp &gt;= 15 and hp &gt;= 60) then
     battack = "enact cauterize me"..snd.sep
     snd.cauterize = false
     tempTimer(2,[[snd.cauterize = true]])
   end
 
-  if (snd.have_aff("blackout") or hp &lt;= 75 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 80) then
+  if (hp &lt;= 35 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 50) then --snd.have_aff("blackout") or 
     if snd.shield_check and not snd.punisher then
       battack = battack..snd.sep.."touch shield"
     else
       battack = battack..snd.sep.."respiration"
     end
-  elseif not snd.can_arms() then
+  elseif not snd.can_arms() or snd.swagger &gt;= 3 then
     battack = "sunkick "..snd.bashing.target
 	else
 		battack = battack..snd.sep.."flow "..snd.bashing.target.." pummel pummel"
@@ -20934,45 +21110,15 @@ end
 
 function snd.astral_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  if snd.reflection_charge == 3 then
-    snd.reflected = false
-  end
 
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 then
-    if mp &gt;= 50 then
-      if snd.shield_check and not snd.punisher then
-        battack = "clot 500"..snd.sep.."touch shield"
-      else
-        battack = "clot 500"
-      end
-    end
-	elseif snd.counterattack_active or snd.have_aff("blackout") then
-    if snd.punisher then
-      if snd.reflection_charge &gt; 0 and not snd.reflected then
-			   battack = "point wand at me"
-      else
-        if snd.balance.barrier and not snd.liarstrummed then
-          battack = "strum lyre"
-          snd.liarstrummed = true
-          tempTimer(1.5,[[snd.liarstrummed = false]])
-        else
-          battack = "jig"
-        end
-      end
-    else
+  if (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 60) then
+    if snd.shield_check and not snd.punisher then
       battack = "touch shield"
-    end
-	elseif snd.pushattack then
-		battack = "push "..snd.bashing.target
-		snd.pushattack = false
-  elseif (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon")) and not snd.self_prone() then
-    battack = "astral ambrosia"
-	else
-    if snd.counterattack_active then
-      battack = battack.."jig"
     else
-    	battack = "astral evert "..snd.bashing.target
+      battack = "astral ambrosia"
     end
+  else
+    battack = "astral evert "..snd.bashing.target
  	end
 end</script>
 						<eventHandlerList />
@@ -21016,6 +21162,7 @@ end
 
 snd.generic_bashing_table_by_area = {
   ["the Forgotten Dome"] = "kelki",
+  ["the Shastaan Warrens"] = "kelki",
   ["Xaanhal"] = "xorani",
   ["Luzith's Lair"] = "spider",
   ["the Bloodwood"] = "spirit",
@@ -21026,12 +21173,25 @@ snd.generic_bashing_table_by_area = {
   ["the Centipede Cave"] = "centipede",
   ["the Teshen Caldera"] = "teshen",
   ["a snake pit"] = "snake",
-  ["the forgotten depths of Mount Helba"] = "abomination",
+  ["Myesian Run"] = "eld",
+  ["the Teshen Undercroft"] = "teshen",
+  ["the Den of Shadows"] = "mutation",
   ["the Endless Battlefield"] = "soldier",
 }
 
 
 snd.generic_bashing_table_specific_names = {
+["a spectral Balaton shark"] = "shark",
+["a ghastly beggar"] = "beggar",
+["a phantasmal mystic"] = "mystic",
+["an eidolic, Seam-bound pilgrim"] = "pilgrim",
+["an incorporeal townsman"] = "townsman",
+["a disembodied soldier"] = "soldier",
+["a spectral merchant"] = "merchant",
+["an ethereal guardsman"] = "guardsman",
+["a fragmented, spectral memory"] = "memory",
+["a ghostly seagull"] = "seagull",
+["a ghastly beggar"] = "beggar",
   ["a monstrous Carnifex guard"] = "carnifex",
   ["a fluffy jambaali"] = "jambaali",
   ["a howler monkey"] = "monkey",
@@ -21059,6 +21219,7 @@ snd.generic_bashing_table_specific_names = {
   ["a large, snowy fox"] = "fox",
   ["a scything skitterer"] = "skitterer",
   ["a stonescale ravager"] = "ravager",
+  ["a shambling fungal abomination"] = "abomination",
   ["a stalwart templar"] = "templar",
   ["a horrid basilwyrm"] = "basilwyrm",
   ["a chittering chicken"] = "chicken",
@@ -21068,9 +21229,7 @@ snd.generic_bashing_table_specific_names = {
   ["an energetic orangutan"] = "orangutan",
   ["a rot-infested swordfish"] = "swordfish",
   ["a vast ochre ooze"] = "ooze",
-  ["a winged fungal horror"] = "horror",
   ["an ogre berserker"] = "ogre",
-  ["a shambling fungal abomination"] = "abomination",
   ["a giant squid"] = "squid",
   ["an amorphous black umbra"] = "umbra",
   ["a swarm of tsetse flies"] = "flies",
@@ -21133,7 +21292,7 @@ snd.generic_bashing_table_specific_names = {
   ["Quartermaster Kuius"] = "kuius",
   ["a foul-smelling zombie"] = "zombie",
   ["a shrieking grimshrill"] = "grimshrill",
-  ["a cloud of fungal spores"] = "cloud",
+  ["a cloud of fungal spores"] = "spores",
   ["a spatial anomaly"] = "anomoly",
   ["a Troll cook"] = "cook",
   ["a swarm of black beetles"] = "beetles",
@@ -21185,6 +21344,7 @@ snd.generic_bashing_table_specific_names = {
   ["a Mamashi lioness"] = "lioness",
   ["a large bhfaol"] = "bhfaol",
   ["a spotted jaguar"] = "jaguar",
+  ["a winged fungal horror"] = "horror",
   ["a burrowing owl"] = "owl",
   ["a squat penguin"] = "penguin",
   ["an agile Sentaari monk"] = "monk",
@@ -21311,6 +21471,7 @@ snd.generic_bashing_table_specific_names = {
   ["a scheming terramancer"] = "terramancer",
   ["a plump duck"] = "duck",
   ["a nimble sentinel"] = "sentinel",
+  ["a battle-worn Ascendril"] = "ascendril",
   ["a massive argobole"] = "argobole",
   ["Shanea, a village elder"] = "shanea",
   ["a withered crone"] = "crone",
@@ -21331,7 +21492,7 @@ snd.generic_bashing_table_specific_names = {
   ["an enormous Troll bandit"] = "bandit",
   ["Nysaac"] = "nysaac",
   ["a cave basilisk"] = "basilisk",
-  ["an Ursal elite guard"] = "guard",
+  ["an Ursal elite guard"] = "ursal",
   ["a blindfolded Utari"] = "utari",
   ["an agitated basilisk"] = "basilisk",
   ["an Utari warrior"] = "utari",
@@ -21402,52 +21563,554 @@ snd.generic_bashing_table_specific_names = {
   ["a fuzzy brown bat"] = "bat", 
   ["a rime-covered bear"] = "bear", 
   ["a long-jawed cave spider"] = "spider",
-  ["a tangible malevolence"] = "malevolence",
-  ["a tattered skrell"] = "skrell",
-  ["a leathery skrell"] = "skrell",
-  ["an emaciated skrell"] = "skrell",
-  ["a sinewy skrell lurker"] = "skrell",
-  ["a skittish sandpiper"] = "sandpiper",
-  ["a large, ill-tempered crab"] = "crab",
-  ["a glossy red crab"] = "crab",
-  ["a mottled crab"] = "crab",
-  ["a pot-bellied seahorse"] = "fish",
-  ["a mottled grey mountain goat"] = "goat",
-  ["a pale skrell whelp"] = "skrell",
-  ["a desiccated Utari zombie"] = "zombie",
-  ["a massive grey rat"] = "rat",
-  ["a dire, plagued rat"] = "rat",
-  ["an erratic Tarpen cultist"] = "cultist",
-  ["a mangy Caentoi cultist"] = "cultist",
-  ["an Utari cultist with grim facial markings"] = "cultist",
-  ["a glazed-eye zombie Aslinn"] = "zombie",
-  ["a ravenous skrell"] = "skrell",
-  ["a venomous skrell whelp"] = "skrell",
-  ["a malnourished vakmut"] = "vakmut",
-  ["a feral vakmut"] = "vakmut",
-  ["a snarling vakmut hound"] = "vakmut",
-  ["a grey-skinned skrell whelp"] = "skrell",
-  ["a simple peasant"] = "peasant",
-  ["a drooling zombie Tarpen"] = "zombie",
-  ["a massive, tan-shelled whelk"] = "whelk",
-  ["a gigantic black rat"] = "rat",
-  ["a gigantic white rat"] = "rat",
-  ["a jagged Golban ghast"] = "ghast",
-  ["a hulking Ursal ghast"] = "ghast",
-  ["a hunched, bone-fisted Golban zombie"] = "zombie",
-  ["a crawling, ravenous Aslinn ghast"] = "ghast",
-  ["a slavering vakmut"] = "vakmut",
-  ["a tarclaw caiman"] = "caiman",
-    ["a lumbering stonefiend"] = "stonefiend",
-    ["a rock scorpion"] = "scorpion",
-    ["a grotesque bloater"] = "bloater",
-    ["a bottom-feeding flatfish"] = "fish",
-    ["a school of long fin reef minnows"] = "fish",
-    ["a bony Delvian boxfish"] = "fish",
-    ["an Albedian codfish"] = "fish",
+  ["an incorporeal townsman"] = "townsman",
+  ["a spectral merchant"] = "merchant", 
+  ["an ethereal guardsman"] = "guardsman", 
+  ["a spectral Balaton shark"] = "shark",
+  ["a fragmented, spectral memory"] = "memory", 
+  ["a phantasmal mystic"] = "mystic", 
+  ["a disembodied soldier"] = "soldier",
+  ["a ghostly seagull"] = "seagull", 
+  ["a ghastly beggar"] = "beggar", 
+  ["an eidolic, Seam-bound pilgrim"] = "pilgrim",
+  ["an otherworldly-shaped, gliding devourer"] = "devourer", 
+  ["a hungering voidwalker"] = "voidwalker", 
+  ["a singularly-focused defiler"] = "defiler",
+  ["a writhing mass of voidspawn"] = "voidspawn",
+  ["a many-legged, skittering aberration"] = "aberration",
+  ["a giant manta ray"] = "mantaray",
+  ["a drunk orc"] = "orc",
+["a slimy brown salamander"] = "salamander",
+  ["a vast ochre ooze"] = "ooze",
+  ["a blood construct"] = "construct",
+["a Teshen raider"] = "teshen",
+["Jorun Eftehl"] = "jorun",
+["a gargantuan Teshen drone"] = "teshen",
+["Huemotl"] = "huemotl",
+["a voracious blind-fish"] = "fish",
+[ "a ghost of a castle guard"] = "ghost",
+["a ghost of a castle servant"] = "ghost",
+["a lumbering ogre ghost"] = "ghost",
+["a ghost of a castle kitchen worker"] = "ghost",
+["a vibrantly pink flamingo"] = "animal", 
+["a large sea turtle"] = "animal", 
+["a steel-grey barracuda"] = "barracuda", 
+["a sleek hammerhead shark"] = "animal",
+["a storm-wing harpy"] = "harpy", 
+["a grey tiger shark"] = "shark", 
+["a great white hunter shark"] = "shark", 
+["a grey welto shark"] = "shark", 
+["a bronze hunter shark"] = "shark", 
+["a grey hunter shark"] = "shark",
+["a sleek hammerhead shark"] = "shark", 
+ ["a great white bull shark"] = "shark", 
+ ["a grey bull shark"] = "shark", 
+ ["a scarred tiger shark"] = "shark",
+  ["a striped tiger shark"] = "shark",
+   ["a black hunter shark"] = "shark",
+    ["a bronze welto shark"] = "shark",
+     ["a spotted tiger shark"] = "shark",
+      ["a blacktip shark"] = "shark",
+      ["a menacing torvok"] = "torvok",
+  --    ["a box jellyfish"] = "jellyfish", 
+  ["a tailless Rajamala"] = "slave",
+  ["an Atavian slave"] = "slave", 
+  ["a pathetic slave"] = "slave",
+  ["a brown-furred bat"] = "animal",
+  ["a spotted leopard"] = "animal",
+  ["a vicious copperhead snake"] = "animal",
+  ["a striped tiger"] = "animal", 
+  ["a water buffalo"] = "animal",
+  ["an enormous elephant"] = "animal",
+  ["a blue crab"] = "animal",
+  ["a box jellyfish"] = "jellyfish",
+  ["a large capybara"] = "animal",
+  ["a diseased raccoon"] = "animal", 
+  ["a white goose"] = "animal",
+  ["a ragged coyote"] = "animal",
+  ["a long-billed toucan"] = "animal",
+  ["a lithe cougar"] = "animal", 
+  ["a black bear"] = "animal", 
+  ["a brown and tan python"] = "animal",
+  ["a gray wolf"] = "animal",
+  ["a black and white badger"] = "animal",
+  ["an ebon crow"] = "animal",
+  ["a thick boa constrictor"] = "animal",
+  ["a monstrous Carnifex guard"] = "carnifex",
+  ["a fluffy jambaali"] = "jambaali",
+  ["a howler monkey"] = "animal",
+  ["a spunky white tamarin"] = "tamarin",
+  ["a beautiful wild horse"] = "horse",
+  ["a white-tailed deer"] = "animal",
+  ["a tiny hatchling"] = "hatchling",
+  ["a school of spinebacks"] = "spinebacks",
+  ["a Masilidean physicalist"] = "physicalist",
+  ["a silverback gorilla"] = "animal",
+  ["a venomous bushmaster"] = "animal",
+  ["a bemused artist"] = "artist",
+  ["a deputy constable"] = "constable",
+  ["a stonescale mephit"] = "mephit",
+  ["a soulless pixie"] = "pixie",
+  ["a playful oniro"] = "oniro",
+  ["a Dwarven craftsman"] = "craftsman",
+  ["a petrified treant"] = "treant",
+  ["a fanged lugore"] = "lugore",
+  ["a white hen"] = "hen",
+  ["a piece of an amalgamation"] = "piece",
+  ["a ball of chitinous legs"] = "legs",
+  ["a rabid plant"] = "plant",
+  ["a pungent lichosphere"] = "lichosphere",
+  ["Igrar, Captain of the Gral"] = "igrar",
+  ["the impish outcast, Qezirath"] = "qezirath",
+  ["a large, snowy fox"] = "fox",
+  ["a scything skitterer"] = "skitterer",
+  ["a stonescale ravager"] = "ravager",
+  ["a shambling fungal abomination"] = "myconid",
+  ["a stalwart templar"] = "templar",
+  ["a horrid basilwyrm"] = "basilwyrm",
+  ["a chittering chicken"] = "chicken",
+  ["a Dwarven boy"] = "dwarf",
+  ["a lanky, Trollish witch doctor"] = "troll",
+  ["a massive orgyuk"] = "orgyuk",
+  ["an energetic orangutan"] = "orangutan",
+  ["a rot-infested swordfish"] = "swordfish",
+  ["an ogre berserker"] = "ogre",
+  ["a giant squid"] = "squid",
+  ["an amorphous black umbra"] = "umbra",
+  ["a swarm of tsetse flies"] = "flies",
+  ["a male gorilla"] = "gorilla",
+  ["a naive neo-Ankyrean"] = "neo-ankyrean",
+  ["a bald eagle"] = "animal",
+  ["a vicious horned garwhol"] = "garwhol",
+  ["a Masilidean etherealist"] = "etherealist",
+  ["a guard pig"] = "pig",
+  ["an irritated crow"] = "crow",
+  ["a lithe cougar"] = "animal",
+  ["a serpentine couatl"] = "couatl",
+  ["a barnacle-encrusted oyster"] = "oyster",
+  ["a long-toothed beaver"] = "beaver",
+  ["a tentacled morbol"] = "morbol",
+  ["an orc soldier"] = "orc",
+  ["an ogre sentry"] = "ogre",
+  ["an ogre knight"] = "ogre",
+  ["a frazzled-looking possum"] = "possum",
+  ["a battle-worn Ascendril"] = "ascendril",
+  ["a fetish-decorated shaman"] = "shaman",
+  ["a burly, stone-fisted laborer"] = "laborer",
+  ["Mellias, an elegant Tsol'aa consanguine"] = "consanguine",
+  ["a boisterous Imp boy"] = "imp",
+  ["a slender, female arachnoid"] = "arachnoid",
+  ["a moth"] = "moth",
+  ["a chaos storm"] = "storm",
+  ["a large gray and black dugger"] = "dugger",
+  ["a black-spotted cow"] = "cow",
+  ["a black ram"] = "ram",
+  ["a gnat"] = "gnat",
+  ["a splintering earthrager"] = "earthrager",
+  ["a willowy nest guardian"] = "guardian",
+  ["Gwenil, the Dwarven blacksmith"] = "dwarf",
+  ["a tree frog"] = "frog",
+  ["a Masilidean mentalist"] = "mentalist",
+  ["a spindly village alpha"] = "alpha",
+  ["a corrupted hackle"] = "hackle",
+  ["a poisonous purple lora"] = "lora",
+  ["an iridescent tizapez"] = "tizapez",
+  ["Sentinel Rozhirr"] = "rozhirr",
+  ["a panther-like Rajamala"] = "rajamala",
+  ["a chaos orb"] = "orb",
+  ["Muiran, a trapper"] = "muiran",
+  ["a handsom nayar"] = "nayar",
+  ["a lava daemon"] = "daemon",
+  ["a glowing lava daemon"] = "daemon",
+  ["a long billed toucan"] = "animal",
+  ["a long-billed toucan"] = "animal",
+  ["a scarlet macaw"] = "animal",
+  ["a shadowy, mindless demon"] = "demon",
+  ["a chimera"] = "chimera",
+  ["an enchanting meayan"] = "meayan",
+  ["a slimy aryeim"] = "aryeim",
+  ["a malevolent spectre"] = "spectre",
+  ["an enormous anaconda"] = "anaconda",
+  ["a rebellious rancher"] = "rancher",
+  ["a rabid blood-fiend"] = "blood-fiend",
+  ["a strong pine"] = "pine",
+  ["insubstantial whispers"] = "whispers",
+  ["a Dwarven archeologist"] = "dwarf",
+  ["Head Foreman Cadric"] = "cadric",
+  ["an ethereal firelord"] = "firelord",
+  ["Quartermaster Kuius"] = "kuius",
+  ["a foul-smelling zombie"] = "zombie",
+  ["a shrieking grimshrill"] = "grimshrill",
+  ["a cloud of fungal spores"] = "cloud",
+  ["a spatial anomaly"] = "anomoly",
+  ["a Troll cook"] = "cook",
+  ["a swarm of black beetles"] = "beetles",
+  ["an opossum"] = "opossum",
+  ["Blacksmith Udhomentesh"] = "udhomentesh",
+  ["a banded scrubland racer"] = "racer",
+  ["a black rhinoceros"] = "rhinoceros",
+  ["a ruffled grouse"] = "grouse",
+  ["Tuera, the torturer"] = "tuera",
+  ["a willow sappling"] = "willow",
+  ["Tohrul, the Dwarven supervisor"] = "dwarf",
+  ["a demonic screamer"] = "screamer",
+  ["Edgar, the gardener"] = "edgar",
+  ["a silent reed cat"] = "cat",
+  ["a monstrous arachnid"] = "arachnid",
+  ["a tower watchman"] = "watchman",
+  ["Elenina, the astrologer"] = "elenina",
+  ["a field hauler"] = "hauler",
+  ["Morrid, a village elder"] = "morrid",
+  ["a bloodleech"] = "bloodleech",
+  ["silver-feathered orel"] = "orel",
+  ["a victimised intruder"] = "intruder",
+  ["Foreman Grummosh"] = "grummosh",
+  ["Deorkaan, the Hlugna smithy"] = "deorkaan",
+  ["a warden of the Hlugnic clans"] = "warden",
+  ["a blackened darkwalker"] = "darkwalker",
+  ["a school of piranha"] = "piranha",
+  Jehanne = "jehanne",
+  ["an insignificant lime caterpillar"] = "caterpillar",
+  ["a humbug"] = "humbug",
+  ["a ravenous locust"] = "locust",
+  ["a shadowdrop"] = "shadowdrop",
+  ["a mire pup"] = "pup",
+  ["Commander Marakhi"] = "marakhi",
+  ["Foreman Dugan"] = "dugan",
+  ["a monstrous coelacanth"] = "coelacanth",
+  ["a brown rockling"] = "rockling",
+  ["a magpie"] = "magpie",
+  ["a severed male head"] = "head",
+  ["Lassorn, a village cooper"] = "lassorn",
+  ["a large buck"] = "buck",
+  ["a soft-shelled klikkin"] = "klikkin",
+  ["a green slime"] = "slime",
+  ["a lake trout"] = "trout",
+  ["a blackbird"] = "blackbird",
+  ["a Hlugnic runeguard"] = "runeguard",
+  ["a crazed blood-fiend"] = "blood-fiend",
+  ["a mutated blood-fiend"] = "blood-fiend",
+  ["a Mamashi lioness"] = "lioness",
+  ["a large bhfaol"] = "bhfaol",
+  ["a spotted jaguar"] = "animal",
+  ["a winged fungal horror"] = "myconid",
+  ["a towering fungal abomination"] = "myconid",
+  ["a withered fungal abomination"] = "myconid",
+  ["a burrowing owl"] = "owl",
+  ["a squat penguin"] = "penguin",
+  ["an agile Sentaari monk"] = "monk",
+  ["a grotesque fangtooth"] = "fangtooth",
+  ["a dark green alligator"] = "animal",
+  ["a colorful toucan"] = "toucan",
+  ["a Bloodloch soldier"] = "soldier",
+  ["a djeirani ghost"] = "ghost",
+  ["a striped tzatica"] = "tzatica",
+  ["a cave-dwelling avisme"] = "avisme",
+  ["a pious invoker"] = "invoker",
+  ["a brawny glaive knight"] = "knight",
+  ["a vile inquisitor"] = "inquisitor",
+  ["a student of the lich"] = "student",
+  ["an ogre bowman"] = "ogre",
+  ["an Ogre bowman"] = "ogre",
+  ["a fragment of living glass"] = "fragment",
+  ["the Dwarven alemaster"] = "alemaster",
+  ["a bubonis"] = "bubonis",
+  ["a dull brown lamprey"] = "lamprey",
+  ["a burly lumberjack"] = "lumberjack",
+  ["a fiery phenkyre"] = "phenkyre",
+  ["a large, juicy cavehopper"] = "cavehopper",
+  ["Nolid, the Dwarven fisherman"] = "fisherman",
+  ["a voracious blind-fish"] = "fish",
+  ["a disembodied soul"] = "soul",
+  ["a lithe weasel"] = "weasel",
+  ["a lurking shadow"] = "shadow",
+  ["a dwarven boy"] = "boy",
+  ["a mottled green bullfrog"] = "bullfrog",
+  ["a tenacious tough"] = "tough",
+  ["a glossy black silk-spinner"] = "silk-spinner",
+  ["a gigantic fungal strider"] = "myconid",
+  ["a Masilidean focus"] = "focus",
+  ["a five-tentacled octopus of jade"] = "octopus",
+  ["a Dwarven excavator"] = "excavator",
+  ["a zombie cleric"] = "cleric",
+  ["a draconic zogura"] = "zogura",
+  ["Head Archeologist, Dolus"] = "dolus",
+  ["Lieutenant Chiakhi"] = "chiakhi",
+  ["an immense Trollish chieftain"] = "chieftain",
+  ["a sering Sycophant"] = "sycophant",
+  ["a field monitor"] = "monitor",
+  ["a white-coated chinchilla"] = "chinchilla",
+  ["a pathfinder"] = "pathfinder",
+  ["a brown and tan python"] = "animal",
+  ["an unctuous creepling"] = "creepling",
+  ["Moritsio, Owner of the Pub"] = "moritsio",
+  ["Baruin, the Dwarven mason"] = "baruin",
+  ["Maeron, the Quartermaster"] = "maeron",
+  ["a decaying donkey"] = "donkey",
+  ["a field harvester"] = "harvester",
+  ["a gamey goat"] = "goat",
+  ["Lesiv, the Torstonite chieftain"] = "lesiv",
+  ["a malevolent poltergeist"] = "poltergeist",
+  ["a short-horned chamois"] = "chamois",
+  ["Laoghaire, the monitor"] = "laoghaire",
+  ["Lieutenant Gharvoi"] = "gharvoi",
+  ["a rock devil"] = "devil",
+  ["the Dwarven miller"] = "miller",
+  ["a tall chempala"] = "chempala",
+  ["Administrator Kamakshi"] = "kamakshi",
+  ["a carefree Grook boy"] = "boy",
+  ["an oversized efreeti"] = "efreeti",
+  ["a gargantuan cicada"] = "cicada",
+  ["a large, deepwater salmon"] = "salmon",
+  ["Midolo Raim"] = "midolo",
+  ["General Abeshentesh"] = "abeshentesh",
+  ["a mutilated creature"] = "creature",
+  ["a corrupted cultist"] = "cultist",
+  ["a diminutive necromancer"] = "necromancer",
+  ["a choke creeper"] = "creeper",
+  ["a wealthy sailor"] = "sailor",
+  ["a savage mutant pumpkin"] = "pumpkin",
+  ["a white-collared lemming"] = "lemming",
+  ["Hassik, the village elder"] = "elder",
+  Firthar = "firthar",
+  ["Mala, the Artisan"] = "mala",
+  ["a darkened soul"] = "soul",
+  ["a mass of deadly trap spiders"] = "spider",
+  ["a darkling"] = "darkling",
+  ["Broondac, the vampire strategist"] = "broondac",
+  ["a radiant lumore"] = "lumore",
+  ["an irritable, rabid zebra"] = "zebra",
+  ["a snowy armadilleon"] = "armadilleon",
+  ["a lithe buckawn"] = "buckawn",
+  ["a furry coatimundi"] = "coatimundi",
+  ["Gunder, a retired sailor"] = "gunder",
+  ["Fermian, excavation foreman"] = "fermian",
+  ["a poisonous water moccasin"] = "moccasin",
+  ["a serpentine blademistress"] = "blademistress",
+  ["a shadow ray"] = "ray",
+  ["a rotund, white ptarmigan"] = "ptarmigan",
+  ["a mutilated humanoid"] = "humanoid",
+  ["a grizzly foreman"] = "foreman",
+  ["a razor nahuac"] = "nahuac",
+  ["a young foal"] = "foal",
+  ["a school of shadowy minnows"] = "minnows",
+  ["a striped sea krait"] = "krait",
+  ["a tiny aurivv bug"] = "bug",
+  ["a shivering jackrabbit"] = "jackrabbit",
+  ["a soulmaster"] = "soulmaster",
+  ["a vampiric overseer"] = "vampire",
+  ["a carnivorous weed"] = "weed",
+  ["a scarlet macaw"] = "animal",
+  ["a great white stag"] = "animal",
+  ["a lithe black panther"] = "animal",
+  ["an orange-and-yellow stripped starfish"] = "animal",
+  ["an oversized tortoise"] = "animal",
+  ["a bound shade"] = "shade",
+  ["a small ocelot"] = "animal",
+  ["a suspicious Xorani patrol"] = "xorani",
+  ["a slime-encrusted spitter"] = "spitter",
+  ["an ecru axolotl"] = "axolotl",
+  ["a serpentine jawsnapper"] = "jawsnapper",
+  ["a foul spiderling"] = "spiderling",
+  ["a slender synicant"] = "synicant",
+  ["a giant mosquito"] = "mosquito",
+  ["a katydid"] = "katydid",
+  ["a malformed beast"] = "beast",
+  ["a nightmare shadow"] = "shadow",
+  ["a white gyrfalcon"] = "gyrfalcon",
+  ["a dervish"] = "dervish",
+  ["Tirahl the Necromancer"] = "tirahl",
+  ["a savage shade"] = "shade",
+  ["a scheming terramancer"] = "terramancer",
+  ["a plump duck"] = "animal",
+  ["a nimble sentinel"] = "sentinel",
+  ["a massive argobole"] = "argobole",
+  ["Shanea, a village elder"] = "shanea",
+  ["a withered crone"] = "crone",
+  ["an elderly Dwarven gardener"] = "gardener",
+  ["a slender mud adder"] = "adder",
+  ["a white tailed doe"] = "animal",
+  ["a disgustingly warped missionary"] = "missionary",
+  ["a speckled tinyok"] = "tinyok",
+  ["a misty apparition"] = "apparition",
+  ["a wild-eyed scientist"] = "scientist",
+  ["a slender forager"] = "forager",
+  ["a green slime toad"] = "toad",
+  ["a small, ruddy turnstone"] = "turnstone",
+  ["a shadow"] = "shadow",
+  ["Mayor Thurgil Redstein"] = "thurgil",
+  ["an oversized earthworm"] = "earthworm",
+  ["a warden of the Hlugnic clans"] = "warden",
+  ["an enormous Troll bandit"] = "bandit",
+  ["Nysaac"] = "nysaac",
+  ["a cave basilisk"] = "basilisk",
+  ["an Ursal elite guard"] = "guard",
+  ["a blindfolded Utari"] = "utari",
+  ["an agitated basilisk"] = "basilisk",
+  ["an Utari warrior"] = "utari",
+  ["an Ursal swordsman"] = "swordsman",
+  ["a Caentoi rogue"] = "rogue",
+  ["a Tarpen bombardier"] = "bombardier", 
+  ["a Golba brute"] = "brute",
+  ["a skulking Golban scout"] = "scout",
+  ["a fleet-footed Caentoi scout"] = "scout", 
+  ["an oversized, grey basilisk"] = "basilisk", 
+  ["an armored, brown basilisk"] = "basilisk", 
+  ["a spiked basilisk"] = "basilisk", 
+  ["a grey and brown basilisk"] = "basilisk", 
+  ["a blinded basilisk"] = "basilisk", 
+  ["a juvenile basilisk"] = "basilisk", 
+  ["a basilisk hatchling"] = "basilisk", 
+  ["a spine-necked arrex"] = "arrex", 
+  ["a sabre-toothed abosvi"] = "abosvi",
+  ["a prowling barbed abosvi"] = "abosvi", 
+  ["a gaunt Aslinn guard"] = "aslinn",
+  ["an Aslinn slave catcher"] = "aslinn",
+  ["a snarling vakmut warhound"] = "vakmut",
+  ["a ravenous vakmut warhound"] = "vakmut", 
+  ["a lithe Aslinn houndmaster"] = "aslinn",
+  ["a wary Aslinn slaver"] = "aslinn", 
+  ["a wretched Aslinn slaver"] = "aslinn",
+  ["a cruel Aslinn guard"] = "aslinn",
+  ["a menacing Aslinn gladiator"] = "aslinn",
+  ["a scarred Aslinn gladiator"] = "aslinn",
+  ["a gaunt Aslinn slaver"] = "slaver",
+  ["a scarred Aslinn slaver"] = "slaver",
+  ["a sinewy Aslinn slaver"] = "slaver",
+  ["a haughty Caentoi slaver"] = "slaver",
+  ["a hulking Ursal brute"] = "brute",
+  ["a grim Aslinn slaver"] = "slaver",
+  ["a large earth elemental"] = "elemental", 
+  ["a large smoke elemental"] = "elemental", 
+  ["a large fire elemental"] = "elemental",
+  ["a mottled brown frog"] = "frog",
+    ["a horrifying bihrkaen"] = "bihrkaen",
+  ["a thin bihrkaen"] = "bihrkaen",
+  ["a bihrkaen ambusher"] = "bihrkaen",
+  ["a bihrkaen huntress"] = "bihrkaen",
+  ["a weary laborer"] = "bihrkaen",
+  ["a horrifying bihrkaen"] = "bihrkaen",
+  ["a hulking bihrkaen protector"] = "bihrkaen",
+  ["a blindfolded Utari"] = "utari",
+  ["a mutated carrion crow"] = "crow",
+  ["a sickly carrion crow"] = "crow",
+["a cave basilisk"] = "basilisk",
+["a Tarpen bombardier"] = "tarpen",
+["a shaggy, white mountain goat"] = "goat",
+["a fleet-footed Caentoi scout"] = "scout",
+["a prowling barbed abosvi"] = "abosvi",
+["a worried-looking mangy goat"] = "goat",
+["a mottled grey mountain goat"] = "goat",
+["a sabre-toothed abosvi"] = "abosvi",
+["an Utari warrior"] = "utari",
+["an Ursal swordsman"] = "ursal",
+["a Golba brute"]  = "brute",
+["a Caentoi rogue"] = "rogue",
+["a spiked basilisk"] = "basilisk",
+["an armored, brown basilisk"] = "basilisk",
+["a grey and brown basilisk"] = "basilisk",
+["an oversized, grey basilisk"] = "basilisk",
+["a juvenile basilisk"] = "basilisk",
+["a blinded basilisk"] = "basilisk",
+["an armored, brown basilisk"] = "basilisk",
+["an oversized, grey basilisk"] = "basilisk",
+["a spiked basilisk"] = "basilisk",
+["a basilisk hatchling"] = "basilisk",
+["an agitated basilisk"] = "basilisk",
+["a spine-necked arrex"] = "arrex",
+["a skulking Golban scout"] = "scout",
+["a vast ochre ooze"] = "ooze",
+["a malnourished vakmut"] = "vakmut", 
+["a drooling zombie Tarpen"] = "zombie", 
+["a crawling, ravenous Aslinn ghast"] = "ghast", 
+["a feral vakmut"] = "vakmut", 
+["a hunched, bone-fisted Golban zombie"] = "zombie", 
+["a dire, plagued rat"] = "rat", 
+["a desiccated Utari zombie"] = "zombie", 
+["a hulking Ursal ghast"] = "ghast", 
+["a massive, tan-shelled whelk"] = "whelk", 
+["a venomous skrell whelp"] = "skrell", 
+["a pale skrell whelp"] = "skrell", 
+["a grey-skinned skrell whelp"] = "skrell", 
+["a ravenous skrell"] = "skrell", 
+["an erratic Tarpen cultist"] = "cultist", 
+["an Utari cultist with grim facial markings"] = "cultist", 
+["a mangy Caentoi cultist"] = "cultist", 
+["an erratic Tarpen cultist"] = "cultist", 
+["a snarling vakmut hound"] = "vakmut", 
+["a massive grey rat"] = "rat", 
+["a gigantic white rat"] = "rat", 
+["a gigantic black rat"] = "rat",
+["a slavering vakmut"] = "vakmut",
+["a glazed-eye zombie Aslinn"] = "zombie",
+["a jagged Golban ghast"] = "ghast",
+["a tattered skrell"] = "skrell", 
+["a leathery skrell"] = "skrell", 
+["an emaciated skrell"] = "skrell",
+["a sinewy skrell lurker"] = "skrell",
+["a drooling skrell"] = "skrell", 
+["a skittish sandpiper"] = "sandpiper", 
+["a large, ill-tempered crab"] = "crab", 
+["a glossy red crab"] = "crab", 
+["a mottled crab"] = "crab",
+["a school of long fin reef minnows"] = "fish", 
+["a savage, scarred skrell"] = "skrell",
+["a sharp-toothed skrell"] = "skrell", 
+["a skrell hatchling"] = "skrell",
+["an Albedian codfish"] = "fish", 
+["a bony Delvian boxfish"] = "fish", 
+["a pot-bellied seahorse"] = "fish", 
+["a school of neon tetra fish"] = "fish", 
+["a hulking skrell matriarch"] = "skrell", 
+["a puffer fish"] = "fish", 
+["a bottom-feeding flatfish"] = "fish",
+["a swift vukon"] = "bird",
+["a predatory kashnalda"] = "bird",
+["a four-winged ayvarin"] = "bird",
+["a miscreated avian"] = "malformation",
+["a spectral champion"] = "specter", 
+["a restless specter"] = "specter", 
+["a vengeful wraith"] = "wraith", 
+["a skittering miscreation"] = "miscreation", 
+["a malformed stalker"] = "malformation", 
+["an amphibious malformation"] = "miscreation", 
+["an ichorous miscreation"] = "miscreation", 
+["a hulking miscreation"] = "miscreation",
+["a miscreated avian"] = "miscreation", 
+["a savage mutant pumpkin"] = "pumpkin",
+["a tarclaw caiman"] = "caiman",
+["a lumbering stonefiend"] = "stonefiend",
+["a rock scorpion"] = "scorpion",
+["a grotesque bloater"] = "bloater",
+["a twitching, ylem-bathed Mitrine"] = "man",
+["a two-headed buffalo"] = "animal",
+["a deformed lynx"] = "animal",
+["an irradiated hyena"] = "animal",
+["a disfigured sheep"] = "animal",
+["a feral, misshapen hare"] = "animal",
+["a malformed Ophidian woman"] = "woman",
+["a horrifically deformed adventurer resembling Myrnma"] = "adventurer",
+["a horrifically deformed adventurer resembling Jakarn"] = "adventurer",
+["a horrifically deformed adventurer resembling Mjoll"] = "adventurer",
+["a horrifically deformed adventurer resembling Sheryni"] = "adventurer",
+["a horrifically deformed adventurer resembling Benedicto"] = "adventurer",
+["a horrifically deformed adventurer resembling Emhyra"] = "adventurer",
+["a horrifically deformed adventurer resembling Eliadon"] = "adventurer",
+["a horrifically deformed adventurer resembling Kalena"] = "adventurer",
+["a horrifically deformed adventurer resembling Markos"] = "adventurer",
+["a horrifically deformed adventurer resembling Sryaen"] = "adventurer",
+["a horrifically deformed adventurer resembling Inkh"] = "adventurer",
+["a horrifically deformed adventurer resembling Sibatti"] = "adventurer",
+["a horrifically deformed adventurer resembling Nkala"] = "adventurer",
+["a horrifically deformed adventurer resembling Xenaden"] = "adventurer",
+["a horrifically deformed adventurer resembling Valeria"] = "adventurer",
+["a horrifically deformed adventurer resembling Valorie"] = "adventurer",
+["a horrifically deformed adventurer resembling Undirnath"] = "adventurer",
+["a riled-up protester"] = "protester",
 }
 
 snd.generic_bashing_table_duplicate_names = {
+  "ghost", 
   "keeper",
   "eld",
   "snake",
@@ -21502,7 +22165,6 @@ snd.generic_bashing_table_duplicate_names = {
   "villager",
   "worm",
   "nazetu",
-  "malevolence",
   "lich",
   "goblin",
   "fly",
@@ -21542,11 +22204,6 @@ snd.generic_bashing_table_duplicate_names = {
   "nalas",
   "mage",
   "mugyik",
-  "skrell",
-  "crab",
-  "basilisk",
-  "abosvi",
-  "goat",
 
   "troll",
   "rat",
@@ -21847,7 +22504,7 @@ snd.bashing_area_beginning_rooms ={
   ["the Siroccian Mountains"] = "4354",
   ["the Central Wilderness"] = "11326",
   ["the Western Itzatl Rainforest"] = "9853",
-  ["the Fractal Bloom"] = "ptfractal",
+  ["the Fractal Bloom"] = "pthfractal",
   ["Saliltul Swamp"] = "62102",
   ["the Ia'shal Barrow"] = "pthis'shal",
   ["the Isle of Despair"] = "pthdespair",
@@ -21860,9 +22517,9 @@ snd.bashing_area_beginning_rooms ={
   ["a basilisk lair"] = "68354",
   ["Clawhook Range"] = "49546",
   ["the Maestral Shoals"] = "48770",
-  ["Maestral's Barrier Reef"] = "29384",
+  ["Maestral's Barrier Reef"] = "35541",
   ["the Underbelly"] = "49440",
-  ["Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa"] = "73321",
+  ["Mejev Nider Nesve wo Ti, Matati wo Eja sota Aran wo Aransa"] = "74673",
 }</script>
 							<eventHandlerList />
 						</Script>
@@ -22995,7 +23652,7 @@ end</script>
  -- pill
   snd.firstaidcuretrack.asthma = "3" 
 -- special
-   snd.firstaidcuretrack.voyria = "3"
+  snd.firstaidcuretrack.voyria = "3"
   snd.firstaidcuretrack.writhe_impaled = "3"
   
   -- 4
@@ -23052,8 +23709,8 @@ end</script>
 -- salve
   snd.firstaidcuretrack.left_leg_amputated = "6"
   snd.firstaidcuretrack.right_leg_amputated = "6"
-  snd.firstaidcuretrack.left_leg_damaged = "6"
-  snd.firstaidcuretrack.right_leg_damaged = "6" 
+  snd.firstaidcuretrack.left_leg_broken = "6"
+  snd.firstaidcuretrack.right_leg_broken = "6" 
   snd.firstaidcuretrack.right_leg_mangled = "6"
   snd.firstaidcuretrack.left_leg_mangled = "6"  
 -- pill
@@ -23071,8 +23728,8 @@ end</script>
 --salve
   snd.firstaidcuretrack.left_arm_amputated = "7"
   snd.firstaidcuretrack.right_arm_amputated = "7"
-  snd.firstaidcuretrack.left_arm_damaged = "7"
-  snd.firstaidcuretrack.right_arm_damaged = "7"
+  snd.firstaidcuretrack.left_arm_broken = "7"
+  snd.firstaidcuretrack.right_arm_broken = "7"
   snd.firstaidcuretrack.right_arm_mangled = "7"
   snd.firstaidcuretrack.left_arm_mangled = "7"
 -- pill
@@ -23120,8 +23777,8 @@ end</script>
   --pipe
   snd.firstaidcuretrack.deadening = "10" 
   -- Salve
-  snd.firstaidcuretrack.left_leg_broken = "10"
-  snd.firstaidcuretrack.right_leg_broken = "10"    
+  snd.firstaidcuretrack.left_leg_crippled = "10"
+  snd.firstaidcuretrack.right_leg_crippled = "10"    
   snd.firstaidcuretrack.firstaid_predict_legs = "10"
   --pill
   snd.firstaidcuretrack.limp_veins = "10"  
@@ -23136,8 +23793,8 @@ end</script>
 
   --11
   --salve
-  snd.firstaidcuretrack.right_arm_broken = "11"
-  snd.firstaidcuretrack.left_arm_broken = "11"
+  snd.firstaidcuretrack.right_arm_crippled = "11"
+  snd.firstaidcuretrack.left_arm_crippled = "11"
   snd.firstaidcuretrack.firstaid_predict_arms = "11"        
   --pill
   snd.firstaidcuretrack.dizziness = "11"
@@ -23149,7 +23806,7 @@ end</script>
 
   --12
   --salve
-  snd.firstaidcuretrack.head_damaged = "12"
+  snd.firstaidcuretrack.head_broken = "12"
   snd.firstaidcuretrack.collapsed_lung = "12"
   --pill
   snd.firstaidcuretrack.dementia = "12"
@@ -23188,7 +23845,7 @@ end</script>
   --15
   --salve
   snd.firstaidcuretrack.spinal_rip = "15"
-  snd.firstaidcuretrack.torso_damaged = "15"
+  snd.firstaidcuretrack.torso_broken = "15"
   snd.firstaidcuretrack.torso_mangled = "15"
   snd.firstaidcuretrack.deepwound = "15"   
   snd.firstaidcuretrack.heatspear = "15"  
@@ -23481,16 +24138,16 @@ if snd.toggles.active then
   
   if snd.salveaffflag then
 		if not snd.have_aff("slickness") then
-			if not snd.kaicripple and not (snd.have_aff("left_arm_damaged") or snd.have_aff("right_arm_damaged")) then 
+			if not snd.kaicripple and not (snd.have_aff("left_arm_broken") or snd.have_aff("right_arm_broken")) then 
 				send("queue salve " ..snd.salvapplytype.. " " ..snd.mendingtype.. " arms") 
-			elseif not snd.kaicripple and not (snd.have_aff("left_leg_damaged") or snd.have_aff("right_leg_damaged")) then 
+			elseif not snd.kaicripple and not (snd.have_aff("left_leg_broken") or snd.have_aff("right_leg_broken")) then 
 				send("queue salve " ..snd.salvapplytype.. " " ..snd.mendingtype.. " legs")
 			end
 		end
 	end
 	
 
-	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_broken") or snd.have_aff("left_leg_broken"))then
+	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_crippled") or snd.have_aff("left_leg_crippled"))then
 		snd.send("qeb restore")
 		snd.sync = false
 	end
@@ -23664,11 +24321,11 @@ function snd.firstaidassAscendril()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.hypothermia ~= "5" then
 		send("firstaid priority hypothermia 5")
 	end	
-	if snd.firstaidcuretrack.left_leg_broken ~= "5" then
-		send("firstaid priority left_leg_broken 5")
+	if snd.firstaidcuretrack.left_leg_crippled ~= "5" then
+		send("firstaid priority left_leg_crippled 5")
 	end	
-	if snd.firstaidcuretrack.right_leg_broken ~= "5" then
-		send("firstaid priority right_leg_broken 5")
+	if snd.firstaidcuretrack.right_leg_crippled ~= "5" then
+		send("firstaid priority right_leg_crippled 5")
 	end	
 	if snd.firstaidcuretrack.shivering ~= "6" then
 		send("FIRSTAID PRIORITY shivering 6")
@@ -23679,14 +24336,14 @@ function snd.firstaidassAscendril()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.ablaze ~= "7" then
 		send("FIRSTAID PRIORITY ablaze 7")
 	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "8" then
-		send("firstaid priority left_arm_broken 8")
+	if snd.firstaidcuretrack.left_arm_crippled ~= "8" then
+		send("firstaid priority left_arm_crippled 8")
 	end	  
-	if snd.firstaidcuretrack.right_arm_broken ~= "8" then
-		send("firstaid priority right_arm_broken 8")
+	if snd.firstaidcuretrack.right_arm_crippled ~= "8" then
+		send("firstaid priority right_arm_crippled 8")
 	end	  
-	if snd.firstaidcuretrack.head_damaged ~= "9" then
-		send("FIRSTAID PRIORITY head_damaged 9")
+	if snd.firstaidcuretrack.head_broken ~= "9" then
+		send("FIRSTAID PRIORITY head_broken 9")
 	end
 	if snd.firstaidcuretrack.head_mangled ~= "9" then
 		send("FIRSTAID PRIORITY head_mangled 9")
@@ -23725,11 +24382,11 @@ function snd.firstaidassBloodborn()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.hypothermia ~= "5" then
 		send("firstaid priority hypothermia 5")
 	end	
-	if snd.firstaidcuretrack.left_leg_broken ~= "5" then
-		send("firstaid priority left_leg_broken 5")
+	if snd.firstaidcuretrack.left_leg_crippled ~= "5" then
+		send("firstaid priority left_leg_crippled 5")
 	end	
-	if snd.firstaidcuretrack.right_leg_broken ~= "5" then
-		send("firstaid priority right_leg_broken 5")
+	if snd.firstaidcuretrack.right_leg_crippled ~= "5" then
+		send("firstaid priority right_leg_crippled 5")
 	end	
 	if snd.firstaidcuretrack.shivering ~= "6" then
 		send("FIRSTAID PRIORITY shivering 6")
@@ -23740,14 +24397,14 @@ function snd.firstaidassBloodborn()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.ablaze ~= "7" then
 		send("FIRSTAID PRIORITY ablaze 7")
 	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "8" then
-		send("firstaid priority left_arm_broken 8")
+	if snd.firstaidcuretrack.left_arm_crippled ~= "8" then
+		send("firstaid priority left_arm_crippled 8")
 	end	  
-	if snd.firstaidcuretrack.right_arm_broken ~= "8" then
-		send("firstaid priority right_arm_broken 8")
+	if snd.firstaidcuretrack.right_arm_crippled ~= "8" then
+		send("firstaid priority right_arm_crippled 8")
 	end	  
-	if snd.firstaidcuretrack.head_damaged ~= "9" then
-		send("FIRSTAID PRIORITY head_damaged 9")
+	if snd.firstaidcuretrack.head_broken ~= "9" then
+		send("FIRSTAID PRIORITY head_broken 9")
 	end
 	if snd.firstaidcuretrack.head_mangled ~= "9" then
 		send("FIRSTAID PRIORITY head_mangled 9")
@@ -23842,14 +24499,14 @@ function snd.firstaidassSentinel()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.head_mangled ~= "4" then
     send("firstaid priority head_mangled 4")
   end 
-  if snd.firstaidcuretrack.left_arm_broken ~= "5" then
-    send("firstaid priority left_arm_broken 5")
+  if snd.firstaidcuretrack.left_arm_crippled ~= "5" then
+    send("firstaid priority left_arm_crippled 5")
   end 
-  if snd.firstaidcuretrack.left_leg_broken ~= "6" then
-    send("firstaid priority left_leg_broken 6")
+  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
+    send("firstaid priority left_leg_crippled 6")
   end 
-  if snd.firstaidcuretrack.right_leg_broken ~= "6" then
-    send("firstaid priority right_leg_broken 6")
+  if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
+    send("firstaid priority right_leg_crippled 6")
   end 
   if snd.firstaidcuretrack.crippled_throat ~= "7" and (snd.class == "Praenomen" or snd.class == "Akkari") then
     send("firstaid priority crippled_throat 7")
@@ -23857,8 +24514,8 @@ function snd.firstaidassSentinel()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.shivering ~= "8" then
     send("firstaid priority shivering 8")
   end  
-  if snd.firstaidcuretrack.right_arm_broken ~= "9" then
-    send("firstaid priority right_arm_broken 9")
+  if snd.firstaidcuretrack.right_arm_crippled ~= "9" then
+    send("firstaid priority right_arm_crippled 9")
   end
   if snd.firstaidcuretrack.firstaid_predict_arms ~= "9" then
     send("firstaid priority firstaid_predict_arms 9")
@@ -23869,17 +24526,17 @@ function snd.firstaidassSentinel()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.firstaid_predict_any_limb ~= "9" then
     send("firstaid priority firstaid_predict_any_limb 9")
   end
-  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
-    send("firstaid priority left_arm_damaged 10")
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+    send("firstaid priority left_arm_broken 10")
   end
-  if snd.firstaidcuretrack.left_leg_damaged ~= "11" then
-    send("firstaid priority left_leg_damaged 11")
+  if snd.firstaidcuretrack.left_leg_broken ~= "11" then
+    send("firstaid priority left_leg_broken 11")
   end
-  if snd.firstaidcuretrack.right_leg_damaged ~= "11" then
-    send("firstaid priority right_leg_damaged 11")
+  if snd.firstaidcuretrack.right_leg_broken ~= "11" then
+    send("firstaid priority right_leg_broken 11")
   end
-  if snd.firstaidcuretrack.right_arm_damaged ~= "12" then
-    send("firstaid priority right_arm_damaged 12")
+  if snd.firstaidcuretrack.right_arm_broken ~= "12" then
+    send("firstaid priority right_arm_broken 12")
   end
   if snd.firstaidcuretrack.left_arm_mangled ~= "13" then
     send("firstaid priority left_arm_mangled 13")
@@ -23897,46 +24554,46 @@ function snd.firstaidassSentinel()  -- curing based on class being attacked by
 end
 
 function snd.firstaidassZealot()  -- curing based on class being attacked by
-	if snd.have_aff("left_leg_broken") and not snd.have_aff("left_leg_damaged") and snd.firstaidcuretrack.left_leg_broken ~= "4" then
-    send("firstaid priority left_leg_broken 4")
-  elseif snd.firstaidcuretrack.left_leg_broken ~= "7" then
-    send("firstaid priority left_leg_broken 7")
+	if snd.have_aff("left_leg_crippled") and not snd.have_aff("left_leg_broken") and snd.firstaidcuretrack.left_leg_crippled ~= "4" then
+    send("firstaid priority left_leg_crippled 4")
+  elseif snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+    send("firstaid priority left_leg_crippled 7")
   end
-  if snd.have_aff("right_leg_broken") and not snd.have_aff("right_leg_damaged") then
-    send("firstaid priority right_leg_broken 4")
-  elseif snd.firstaidcuretrack.right_leg_broken ~= "7" then
-    send("firstaid priority right_leg_broken 7") 
+  if snd.have_aff("right_leg_crippled") and not snd.have_aff("right_leg_broken") then
+    send("firstaid priority right_leg_crippled 4")
+  elseif snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+    send("firstaid priority right_leg_crippled 7") 
   end   
   if snd.firstaidcuretrack.torso_mangled ~= "5" then
     send("firstaid priority torso_mangled 5") 
   end
-  if snd.firstaidcuretrack.torso_damaged ~= "5" then
-    send("firstaid priority torso_damaged 5") 
+  if snd.firstaidcuretrack.torso_broken ~= "5" then
+    send("firstaid priority torso_broken 5") 
   end      
   if snd.firstaidcuretrack.heatspear ~= "6" then
 		send("firstaid priority heatspear 6")
 	end	
-	if snd.firstaidcuretrack.ablaze ~= "4" and not snd.have_aff("heatspear") and not snd.have_aff("torso_damaged") then
+	if snd.firstaidcuretrack.ablaze ~= "4" and not snd.have_aff("heatspear") and not snd.have_aff("torso_broken") then
 	  send("firstaid priority ablaze 4")
-  elseif snd.firstaidcuretrack.ablaze ~= "7" and (snd.have_aff("heatspear") or snd.have_aff("torso_damaged")) then
+  elseif snd.firstaidcuretrack.ablaze ~= "7" and (snd.have_aff("heatspear") or snd.have_aff("torso_broken")) then
     send("firstaid priority ablaze 7")
 	end	  
-	if snd.firstaidcuretrack.lightwound ~= "3" and not snd.have_aff("heatspear") and snd.have_aff("ablaze") and not snd.have_aff("torso_damaged") then
+	if snd.firstaidcuretrack.lightwound ~= "3" and not snd.have_aff("heatspear") and snd.have_aff("ablaze") and not snd.have_aff("torso_broken") then
 	  send("firstaid priority lightwound 3")
   elseif snd.firstaidcuretrack.lightwound ~= "7" then
     send("firstaid priority lightwound 7")
 	end	
-  if snd.firstaidcuretrack.left_leg_broken ~= "7" then
-		send("firstaid priority left_leg_broken 7")
+  if snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+		send("firstaid priority left_leg_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.right_leg_broken ~= "7" then
-		send("firstaid priority right_leg_broken 7")
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+		send("firstaid priority right_leg_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
-		send("firstaid priority left_arm_broken 7")
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		send("firstaid priority left_arm_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
-		send("firstaid priority right_arm_broken 7")
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		send("firstaid priority right_arm_crippled 7")
 	end   
   if snd.firstaidcuretrack.left_leg_dislocated ~= "8" then
 		send("firstaid priority left_leg_dislocated 8")
@@ -23950,20 +24607,20 @@ function snd.firstaidassZealot()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.right_arm_dislocated ~= "8" then
 		send("firstaid priority right_arm_dislocated 8")
 	end   
- 	if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
-		send("firstaid priority left_leg_damaged 9")
+ 	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+		send("firstaid priority left_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
-		send("firstaid priority right_leg_damaged 9")
+  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		send("firstaid priority right_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
-		send("firstaid priority left_arm_damaged 10")
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+		send("firstaid priority left_arm_broken 10")
 	end 
-  if snd.firstaidcuretrack.right_arm_damaged ~= "10" then
-		send("firstaid priority right_arm_damaged 10")
+  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
+		send("firstaid priority right_arm_broken 10")
 	end   
-  if snd.firstaidcuretrack.head_damaged ~= "11" then
-		send("firstaid priority head_damaged 11")
+  if snd.firstaidcuretrack.head_broken ~= "11" then
+		send("firstaid priority head_broken 11")
 	end         
 	if snd.firstaidcuretrack.backstrain ~= "16" then
 		send("firstaid priority backstrain 16")
@@ -24009,46 +24666,46 @@ function snd.firstaidassZealot()  -- curing based on class being attacked by
 end
 
 function snd.firstaidassRavager()  -- curing based on class being attacked by
-	if snd.have_aff("left_leg_broken") and not snd.have_aff("left_leg_damaged") and snd.firstaidcuretrack.left_leg_broken ~= "4" then
-    send("firstaid priority left_leg_broken 4")
-  elseif snd.firstaidcuretrack.left_leg_broken ~= "7" then
-    send("firstaid priority left_leg_broken 7")
+	if snd.have_aff("left_leg_crippled") and not snd.have_aff("left_leg_broken") and snd.firstaidcuretrack.left_leg_crippled ~= "4" then
+    send("firstaid priority left_leg_crippled 4")
+  elseif snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+    send("firstaid priority left_leg_crippled 7")
   end
-  if snd.have_aff("right_leg_broken") and not snd.have_aff("right_leg_damaged") then
-    send("firstaid priority right_leg_broken 4")
-  elseif snd.firstaidcuretrack.right_leg_broken ~= "7" then
-    send("firstaid priority right_leg_broken 7") 
+  if snd.have_aff("right_leg_crippled") and not snd.have_aff("right_leg_broken") then
+    send("firstaid priority right_leg_crippled 4")
+  elseif snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+    send("firstaid priority right_leg_crippled 7") 
   end   
   if snd.firstaidcuretrack.torso_mangled ~= "5" then
     send("firstaid priority torso_mangled 5") 
   end
-  if snd.firstaidcuretrack.torso_damaged ~= "5" then
-    send("firstaid priority torso_damaged 5") 
+  if snd.firstaidcuretrack.torso_broken ~= "5" then
+    send("firstaid priority torso_broken 5") 
   end      
   if snd.firstaidcuretrack.heatspear ~= "6" then
 		send("firstaid priority heatspear 6")
 	end	
-	if snd.firstaidcuretrack.ablaze ~= "4" and not snd.have_aff("heatspear") and not snd.have_aff("torso_damaged") then
+	if snd.firstaidcuretrack.ablaze ~= "4" and not snd.have_aff("heatspear") and not snd.have_aff("torso_broken") then
 	  send("firstaid priority ablaze 4")
-  elseif snd.firstaidcuretrack.ablaze ~= "7" and (snd.have_aff("heatspear") or snd.have_aff("torso_damaged")) then
+  elseif snd.firstaidcuretrack.ablaze ~= "7" and (snd.have_aff("heatspear") or snd.have_aff("torso_broken")) then
     send("firstaid priority ablaze 7")
 	end	  
-	if snd.firstaidcuretrack.lightwound ~= "3" and not snd.have_aff("heatspear") and snd.have_aff("ablaze") and not snd.have_aff("torso_damaged") then
+	if snd.firstaidcuretrack.lightwound ~= "3" and not snd.have_aff("heatspear") and snd.have_aff("ablaze") and not snd.have_aff("torso_broken") then
 	  send("firstaid priority lightwound 3")
   elseif snd.firstaidcuretrack.lightwound ~= "7" then
     send("firstaid priority lightwound 7")
 	end	
-  if snd.firstaidcuretrack.left_leg_broken ~= "7" then
-		send("firstaid priority left_leg_broken 7")
+  if snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+		send("firstaid priority left_leg_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.right_leg_broken ~= "7" then
-		send("firstaid priority right_leg_broken 7")
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+		send("firstaid priority right_leg_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
-		send("firstaid priority left_arm_broken 7")
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		send("firstaid priority left_arm_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
-		send("firstaid priority right_arm_broken 7")
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		send("firstaid priority right_arm_crippled 7")
 	end   
   if snd.firstaidcuretrack.left_leg_dislocated ~= "8" then
 		send("firstaid priority left_leg_dislocated 8")
@@ -24062,20 +24719,20 @@ function snd.firstaidassRavager()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.right_arm_dislocated ~= "8" then
 		send("firstaid priority right_arm_dislocated 8")
 	end   
- 	if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
-		send("firstaid priority left_leg_damaged 9")
+ 	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+		send("firstaid priority left_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
-		send("firstaid priority right_leg_damaged 9")
+  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		send("firstaid priority right_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
-		send("firstaid priority left_arm_damaged 10")
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+		send("firstaid priority left_arm_broken 10")
 	end 
-  if snd.firstaidcuretrack.right_arm_damaged ~= "10" then
-		send("firstaid priority right_arm_damaged 10")
+  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
+		send("firstaid priority right_arm_broken 10")
 	end   
-  if snd.firstaidcuretrack.head_damaged ~= "11" then
-		send("firstaid priority head_damaged 11")
+  if snd.firstaidcuretrack.head_broken ~= "11" then
+		send("firstaid priority head_broken 11")
 	end         
 	if snd.firstaidcuretrack.backstrain ~= "16" then
 		send("firstaid priority backstrain 16")
@@ -24306,7 +24963,10 @@ function snd.firstaidassWayfarer()
 	end	
   if snd.firstaidcuretrack.exhausted ~= "12" then
 		send("firstaid priority exhausted 12")
-  end
+  end 
+	if snd.firstaidcuretrack.blindness ~= "25" then
+		send("firstaid priority defence blindness 25")
+	end 
 	snd.firstaidchangecure = false  -- keep last
 end
 
@@ -24740,8 +25400,8 @@ function snd.firstaidassSciomancer()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.vomiting ~= "7" then
 		send("firstaid priority vomiting 7")
 	end 
-	if snd.firstaidcuretrack.blindness ~= "8" then
-		send("firstaid priority defence blindness 8")
+	if snd.firstaidcuretrack.blindness ~= "25" then
+		send("firstaid priority defence blindness 25")
 	end   
   if snd.firstaidcuretrack.rot_heat ~= "9" then
 		send("firstaid priority rot_heat 9")
@@ -24766,9 +25426,6 @@ function snd.firstaidassSciomancer()  -- curing based on class being attacked by
 	end 
   if snd.firstaidcuretrack.loneliness ~= "16" then
 		send("firstaid priority loneliness 16")
-	end 
-  if snd.firstaidcuretrack.blindness ~= "26" then
-		send("firstaid priority defence blindness reset")
 	end 
   if snd.firstaidcuretrack.vertigo ~= "17" then
 		send("firstaid priority vertigo 17")
@@ -24800,29 +25457,29 @@ function snd.firstaidassSciomancer()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.voidgaze ~= "5" then
 		send("firstaid priority voidgaze 5")
 	end    
-  if snd.firstaidcuretrack.left_leg_broken ~= "6" then
-		send("firstaid priority left_leg_broken 6")
+  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
+		send("firstaid priority left_leg_crippled 6")
 	end 
- 	if snd.firstaidcuretrack.right_leg_broken ~= "6" then
-		send("firstaid priority right_leg_broken 6")
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
+		send("firstaid priority right_leg_crippled 6")
 	end 
- 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
-		send("firstaid priority left_arm_broken 7")
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		send("firstaid priority left_arm_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
-		send("firstaid priority right_arm_broken 7")
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		send("firstaid priority right_arm_crippled 7")
 	end  
-	if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
-		send("firstaid priority left_leg_damaged 9")
+	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+		send("firstaid priority left_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
-		send("firstaid priority right_leg_damaged 9")
+  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		send("firstaid priority right_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
-		send("firstaid priority left_arm_damaged 10")
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+		send("firstaid priority left_arm_broken 10")
 	end 
-  if snd.firstaidcuretrack.right_arm_damaged ~= "10" then
-		send("firstaid priority right_arm_damaged 10")
+  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
+		send("firstaid priority right_arm_broken 10")
 	end 
 	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
 		send("firstaid priority left_leg_mangled 11")
@@ -24871,8 +25528,8 @@ function snd.firstaidassRunecarver()  -- curing based on class being attacked by
 	if snd.firstaidcuretrack.vomiting ~= "7" then
 		send("firstaid priority vomiting 7")
 	end 
-	if snd.firstaidcuretrack.blindness ~= "8" then
-		send("firstaid priority defence blindness 8")
+	if snd.firstaidcuretrack.blindness ~= "25" then
+		send("firstaid priority defence blindness 25")
 	end   
   if snd.firstaidcuretrack.rot_heat ~= "9" then
 		send("firstaid priority rot_heat 9")
@@ -24897,9 +25554,6 @@ function snd.firstaidassRunecarver()  -- curing based on class being attacked by
 	end 
   if snd.firstaidcuretrack.loneliness ~= "16" then
 		send("firstaid priority loneliness 16")
-	end 
-  if snd.firstaidcuretrack.blindness ~= "26" then
-		send("firstaid priority defence blindness reset")
 	end 
   if snd.firstaidcuretrack.vertigo ~= "17" then
 		send("firstaid priority vertigo 17")
@@ -24931,29 +25585,29 @@ function snd.firstaidassRunecarver()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.mystified ~= "5" then
 		send("firstaid priority mystified 5")
 	end    
-  if snd.firstaidcuretrack.left_leg_broken ~= "6" then
-		send("firstaid priority left_leg_broken 6")
+  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
+		send("firstaid priority left_leg_crippled 6")
 	end 
- 	if snd.firstaidcuretrack.right_leg_broken ~= "6" then
-		send("firstaid priority right_leg_broken 6")
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
+		send("firstaid priority right_leg_crippled 6")
 	end 
- 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
-		send("firstaid priority left_arm_broken 7")
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		send("firstaid priority left_arm_crippled 7")
 	end 
- 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
-		send("firstaid priority right_arm_broken 7")
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		send("firstaid priority right_arm_crippled 7")
 	end  
-	if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
-		send("firstaid priority left_leg_damaged 9")
+	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+		send("firstaid priority left_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
-		send("firstaid priority right_leg_damaged 9")
+  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		send("firstaid priority right_leg_broken 9")
 	end   
-  if snd.firstaidcuretrack.left_arm_damaged ~= "10" then
-		send("firstaid priority left_arm_damaged 10")
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+		send("firstaid priority left_arm_broken 10")
 	end 
-  if snd.firstaidcuretrack.right_arm_damaged ~= "10" then
-		send("firstaid priority right_arm_damaged 10")
+  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
+		send("firstaid priority right_arm_broken 10")
 	end 
 	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
 		send("firstaid priority left_leg_mangled 11")
@@ -25608,17 +26262,17 @@ snd.update_priority = 1
 snd.update_priority = 1 
  end 
   -- salves 7
-  if snd.firstaidcuretrack.left_leg_broken ~= "7" then
-    snd.setting_priority = "left_leg_broken 7"
+  if snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+    snd.setting_priority = "left_leg_crippled 7"
   end 
- 	if snd.firstaidcuretrack.right_leg_broken ~= "7" then
-		snd.setting_priority = "right_leg_broken 7"
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+		snd.setting_priority = "right_leg_crippled 7"
 	end 
- 	if snd.firstaidcuretrack.left_arm_broken ~= "7" then
-		snd.setting_priority = "left_arm_broken 7"
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		snd.setting_priority = "left_arm_crippled 7"
 	end 
- 	if snd.firstaidcuretrack.right_arm_broken ~= "7" then
-		snd.setting_priority = "right_arm_broken 7"
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		snd.setting_priority = "right_arm_crippled 7"
 	end 
  	if snd.firstaidcuretrack.firstaid_predict_arms ~= "7" then
 		snd.setting_priority = "firstaid_predict_arms 7"
@@ -25724,24 +26378,24 @@ snd.update_priority = 1
 snd.update_priority = 1 
  end  
   -- salves 9
-  if snd.firstaidcuretrack.left_leg_damaged ~= "9" then
-    snd.setting_priority = "left_leg_damaged 9"
+  if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+    snd.setting_priority = "left_leg_broken 9"
 snd.update_priority = 1 
  end
-	if snd.firstaidcuretrack.right_leg_damaged ~= "9" then
-		snd.setting_priority = "right_leg_damaged 9"
+	if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		snd.setting_priority = "right_leg_broken 9"
 	end 
-	if snd.firstaidcuretrack.left_arm_damaged ~= "9" then
-		snd.setting_priority = "left_arm_damaged 9"
+	if snd.firstaidcuretrack.left_arm_broken ~= "9" then
+		snd.setting_priority = "left_arm_broken 9"
 	end
-	if snd.firstaidcuretrack.right_arm_damaged ~= "9" then
-		snd.setting_priority = "right_arm_damaged 9"
+	if snd.firstaidcuretrack.right_arm_broken ~= "9" then
+		snd.setting_priority = "right_arm_broken 9"
 	end  
-	if snd.firstaidcuretrack.head_damaged ~= "9" then
-		snd.setting_priority = "head_damaged 9"
+	if snd.firstaidcuretrack.head_broken ~= "9" then
+		snd.setting_priority = "head_broken 9"
 	end 
-	if snd.firstaidcuretrack.torso_damaged ~= "9" then
-		snd.setting_priority = "torso_damaged 9"
+	if snd.firstaidcuretrack.torso_broken ~= "9" then
+		snd.setting_priority = "torso_broken 9"
 	end 
   -- pills 9
 	if snd.firstaidcuretrack.addiction ~= "9" then
@@ -26015,7 +26669,7 @@ function snd.treecheck()
 	snd.herbcount()
 	snd.salvecount()
 	
-	if not snd.have_aff("right_arm_broken") or not snd.have_aff("left_arm_broken") then 
+	if not snd.have_aff("right_arm_crippled") or not snd.have_aff("left_arm_crippled") then 
 		if snd.tree and not snd.have_aff("paralysis") and not snd.have_aff("paresis") and not snd.have_aff("stun") and not snd.writheaffflag then
 			if tonumber(snd.herbcountnum) &gt; 2 then 
 				snd.send("touch tree")
@@ -26088,7 +26742,7 @@ end
 		end
 	end
        
-	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "archivist" or snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_broken") or snd.have_aff("left_leg_broken"))then
+	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "archivist" or snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_crippled") or snd.have_aff("left_leg_crippled"))then
 		snd.send("restore")
 		snd.sync = false
 	end
@@ -26123,9 +26777,11 @@ end
 								<packageName></packageName>
 								<script>function snd.staone()
 
-  if snd.balance.nimbless and not snd.have_aff("fallen") then
-    snd.set_queue("nimbleness " ..snd.sep)
-  end 
+    --if snd.balance.nimbleness and not snd.have_aff("fallen") and not snd.nimble_sent then
+      --snd.send("nimbleness " ..snd.sep)
+      --snd.nimble_sent = true
+      --tempTimer(1, [[snd.nimble_sent = false]])
+    --end  
   
   if snd.class == "Wayfarer" then
     if tonumber(gmcp.Char.Vitals.fury) &lt; 40 and snd.defenses.def_dauntless.state ~= "deffed" and snd.balance.fury then
@@ -26150,11 +26806,12 @@ end
     elseif snd.have_aff("vinethorns") and not snd.have_aff("stun") and not snd.have_aff("stand") then
       snd.send("pull thorn from body")
     elseif snd.unknownquantity &gt; 2 and not snd.have_aff("hypochondria") and not snd.diag_sent then
-      snd.send("qeb diagn")
+      snd.send("qeb diag")
       snd.diag_sent = true
       tempTimer(1, [[snd.diag_sent = false]])
     end
   end
+  
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -26516,10 +27173,10 @@ function snd.restore_check()
 if not snd.balance.restore then return false end
  
    local restore_affs = {
-   "left_arm_broken",
-   "left_leg_broken",
-   "right_arm_broken",
-   "right_leg_broken",
+   "left_arm_crippled",
+   "left_leg_crippled",
+   "right_arm_crippled",
+   "right_leg_crippled",
    }
  
 local limbcount = 0
@@ -26532,7 +27189,7 @@ local limbcount = 0
 end  
  
 function snd.can_restore()
- if hasSkill("Restore") and
+ if hasSkill("Restoration") and
     snd.balance.restore then
     return true
  else
@@ -26560,12 +27217,12 @@ function snd.regenerate_check()
 if not snd.balance.regenerate then return false end
  
    local regenerate_affs = {
-   "left_arm_damaged",
-   "left_leg_damaged",
-   "right_arm_damaged",
-   "right_leg_damaged",
-   "torso_damaged",
-   "head_damaged",
+   "left_arm_broken",
+   "left_leg_broken",
+   "right_arm_broken",
+   "right_leg_broken",
+   "torso_broken",
+   "head_broken",
    }
  
  for _, v in pairs(regenerate_affs) do
@@ -26724,6 +27381,7 @@ def_ghost = "on",
 def_shroud = "on",
 def_lipreading = "on",
 def_weaving = "on",
+def_cloak_tattoo = "on",
 },
 
 monk = {
@@ -27191,7 +27849,6 @@ snd.salvebal = true
 snd.elevating = false
 snd.focus = true
 snd.tree = true
-snd.pipebalance = true
 snd.prestore = false
 snd.moss = true
 snd.healbalance = true
@@ -27219,6 +27876,7 @@ snd.elementalcount = 0
 snd.localcount = 0
 snd.haveleft = "0"
 snd.liarstrummed = false
+snd.resolve = "0"
 
 --Misc
 snd.spectype = ""
@@ -27229,6 +27887,8 @@ snd.shield_check = true
 snd.theytumbling = false
 snd.theyrandir = "none"
 snd.theyran = false
+snd.nimble_sent = false
+snd.diag_sent = false
 
 snd.enemylist = false
 snd.stunrecheck = false
@@ -27252,6 +27912,9 @@ snd.repay = 0
 snd.firefly_down = false
 snd.shadeling = false
 snd.reflected = false
+snd.gravitycollapse = false
+snd.haunted = false
+snd.canforgive = true
 
 --Sentinel
 snd.my_raloth = ""
@@ -27382,7 +28045,7 @@ snd.who_called_affs = ""
 snd.disperse = "none" -- Can be set to none, callers or all.
 
 snd.limbs = {}
-snd.parried_limb = "none"
+snd.parried_limb = snd.parried_limb or "none"
 snd.last_hit_limb = "none"
 snd.last_limb_dmg = 0
 snd.resto_limb = "none"
@@ -27436,7 +28099,8 @@ clumsiness = "xentio",
 sensitivity = "prefarar", 
 vomiting = "euphorbia",
 allergies = "darkshade", 
-colocasia = "colocasia", 
+deafness = "colocasia",  
+blindness = "oleander", 
 haemophilia = "hepafarin", 
 peace = "ouabain",
 deadening = "vardrax",
@@ -27460,10 +28124,10 @@ squelched = "selarnia",
 disfigurement = "monkshood",
 
 thin_blood = "scytherus",
-left_leg_broken = "epseth",
-right_leg_broken = "epseth",
-left_arm_broken = "epteth",
-right_arm_broken = "epteth",
+left_leg_crippled = "epseth",
+right_leg_crippled = "epseth",
+left_arm_crippled = "epteth",
+right_arm_crippled = "epteth",
 
 conviction = "conviction",
 mental_disruption = "disrupt",
@@ -27692,9 +28356,9 @@ epidermal_head = {
 "stuttering",
 "blurry_vision",
 "burnt_eyes",
-"blindness",
+"sight",
 "gloom",
-"deafness"
+"hearing"
 },
 
 epidermal_torso = {
@@ -27711,9 +28375,9 @@ epidermal = {
     "anorexia",
     "gorged",
     "effused_blood",
-    "blindness",
+    "sight",
     "gloom",
-    "deafness"
+    "hearing"
 },
 
 caloric = {
@@ -27903,29 +28567,29 @@ function snd.target_got(affliction)
   
   if affliction == "a_broken_leg" and snd.checkAff("a_broken_leg") then
     snd.target_cured("a_broken_leg")
-    affliction = "right_leg_broken"
-    snd.target_got("left_leg_broken")
+    affliction = "right_leg_crippled"
+    snd.target_got("left_leg_crippled")
   end
   
-  if affliction == "a_broken_leg" and snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1) then
-    if snd.checkAff("right_leg_broken") then
-      affliction = "left_leg_broken"
+  if affliction == "a_broken_leg" and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled"},1) then
+    if snd.checkAff("right_leg_crippled") then
+      affliction = "left_leg_crippled"
     else
-      affliction = "right_leg_broken"
+      affliction = "right_leg_crippled"
     end
   end
   
   if affliction == "a_broken_arm" and snd.checkAff("a_broken_arm") then
     snd.target_cured("a_broken_arm")
-    affliction = "right_arm_broken"
-    snd.target_got("left_arm_broken")
+    affliction = "right_arm_crippled"
+    snd.target_got("left_arm_crippled")
   end
   
-  if affliction == "a_broken_arm" and snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},1) then
-    if snd.checkAff("right_arm_broken") then
-      affliction = "left_arm_broken"
+  if affliction == "a_broken_arm" and snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled"},1) then
+    if snd.checkAff("right_arm_crippled") then
+      affliction = "left_arm_crippled"
     else
-      affliction = "right_arm_broken"
+      affliction = "right_arm_crippled"
     end
   end
 
@@ -27988,10 +28652,10 @@ function snd.target_cured(affliction)
     end
   end 
   
-	if snd.checkAff("a_broken_arm") and (affliction == "right_arm_broken" or affliction == "left_arm_broken") and not snd.checkAff(affliction) then
+	if snd.checkAff("a_broken_arm") and (affliction == "right_arm_crippled" or affliction == "left_arm_crippled") and not snd.checkAff(affliction) then
 		affliction = "a_broken_arm"
 	end
-	if snd.checkAff("a_broken_leg") and (affliction == "right_leg_broken" or affliction == "left_leg_broken") and not snd.checkAff(affliction) then
+	if snd.checkAff("a_broken_leg") and (affliction == "right_leg_crippled" or affliction == "left_leg_crippled") and not snd.checkAff(affliction) then
 		affliction = "a_broken_leg"
 	end
   
@@ -28386,6 +29050,7 @@ end</script>
 end
 
 function snd.attack(attack)
+  send("config enemylist on")
   local string = ""
   if snd.can_fitness() and snd.need_fitness then
  	 string = "fitness"
@@ -28404,10 +29069,10 @@ function snd.attack(attack)
   if not snd.pipes_lit and snd.toggles.lighting then
  	 string = "light pipes"..snd.sep..string
   end
-	if string:find("slaughter") then
+	if (string:find("lob") or string:find("assault") or string:find("cripple") or string:find("slaughter") or string:find("devastate") or string:find("execute")) and snd.class == "Wayfarer" then
     snd.send("qeb")
-		snd.send("queue axes "..string)
-	else
+    snd.send("queue axes " .. string)
+  else
 		snd.send("queue axes")
 		snd.send("qeb "..string)
 	end
@@ -28513,6 +29178,9 @@ end</script>
     end
     if tonumber(gmcp.Char.Vitals.madness) &gt;= 60 then
       table.insert(snd.alerts, "\n&lt;red&gt;      THE MADNESS IS COMING, EAT UP")
+    end
+    if snd.resolve &gt;= "90" and gmcp.Room.Info.area == "the Endless Battlefield" then
+      table.insert(snd.alerts, "\n&lt;red&gt;      YOU SHOULD STOP BASHING HERE")
     end
     if #snd.alerts &gt;= 1 then
       border = "\n&lt;red&gt;*************************************"
@@ -28713,16 +29381,16 @@ end
 function snd.venomEffect(venom)
 	local aff = ""
 	if venom == "epseth" then
-		if snd.checkAff("left_leg_broken") then
-			aff = "right_leg_broken"
+		if snd.checkAff("left_leg_crippled") then
+			aff = "right_leg_crippled"
 		else
-			aff = "left_leg_broken"
+			aff = "left_leg_crippled"
 		end
 	elseif venom == "epteth" then
-		if snd.checkAff("left_arm_broken") then
-			aff = "right_arm_broken"
+		if snd.checkAff("left_arm_crippled") then
+			aff = "right_arm_crippled"
 		else
-			aff = "left_arm_broken"
+			aff = "left_arm_crippled"
 		end
 	elseif venom == "prefarar" then
 		if snd.checkAff("hearing") then
@@ -28969,8 +29637,8 @@ end</script>
     Masochism = function(target)
                  snd.target_got("masochism")
                 end,
-    Loneliness = function(target)
-                 snd.target_got("loneliness")
+    Lovers = function(target)
+                 snd.target_got("lovers_effect")
                 end,
     Epilepsy = function(target)
                  snd.target_got("epilepsy")
@@ -29317,15 +29985,15 @@ end</script>
               display(conditional)
               if conditional:find("Arm") then
                 if snd.checkAff("ablaze") or snd.checkAff("emberbrand") then
-                  snd.target_got("left_arm_broken")
-                  snd.target_got("right_arm_broken")
+                  snd.target_got("left_arm_crippled")
+                  snd.target_got("right_arm_crippled")
                 else
                   snd.target_got("a_broken_arm")
                 end
               else
                 if snd.checkAff("ablaze") or snd.checkAff("emberbrand") then
-                  snd.target_got("left_leg_broken")
-                  snd.target_got("right_leg_broken")
+                  snd.target_got("left_leg_crippled")
+                  snd.target_got("right_leg_crippled")
                 else
                   snd.target_got("a_broken_leg")
                 end
@@ -29422,7 +30090,7 @@ end</script>
                   snd.target_got("emberbrand")
                   if snd.checksomeAffs({"right_arm_mangled","left_arm_mangled","right_leg_mangled","left_leg_mangled","head_mangled","torso_mangled",}, 1) then
                     tempTimer(120, [[ snd.target_cured("emberbrand") ]])
-                  elseif snd.checksomeAffs({"right_arm_damaged","left_arm_damaged","right_leg_damaged","left_leg_damaged","head_damaged","torso_damaged",}, 1) then
+                  elseif snd.checksomeAffs({"right_arm_broken","left_arm_broken","right_leg_broken","left_leg_broken","head_broken","torso_broken",}, 1) then
                     tempTimer(90, [[ snd.target_cured("emberbrand") ]])
                   else
                     tempTimer(60, [[ snd.target_cured("emberbrand") ]])
@@ -29508,15 +30176,15 @@ end</script>
               display(conditional)
               if conditional:find("Arm") then
                 if snd.checkAff("ablaze") or snd.checkAff("excess_choleric") then
-                  snd.target_got("left_arm_broken")
-                  snd.target_got("right_arm_broken")
+                  snd.target_got("left_arm_crippled")
+                  snd.target_got("right_arm_crippled")
                 else
                   snd.target_got("a_broken_arm")
                 end
               else
                 if snd.checkAff("ablaze") or snd.checkAff("excess_choleric") then
-                  snd.target_got("left_leg_broken")
-                  snd.target_got("right_leg_broken")
+                  snd.target_got("left_leg_crippled")
+                  snd.target_got("right_leg_crippled")
                 else
                   snd.target_got("a_broken_leg")
                 end
@@ -29613,7 +30281,7 @@ end</script>
                   snd.target_got("excess_choleric")
                   if snd.checksomeAffs({"right_arm_mangled","left_arm_mangled","right_leg_mangled","left_leg_mangled","head_mangled","torso_mangled",}, 1) then
                     tempTimer(120, [[ snd.target_cured("excess_choleric") ]])
-                  elseif snd.checksomeAffs({"right_arm_damaged","left_arm_damaged","right_leg_damaged","left_leg_damaged","head_damaged","torso_damaged",}, 1) then
+                  elseif snd.checksomeAffs({"right_arm_broken","left_arm_broken","right_leg_broken","left_leg_broken","head_broken","torso_broken",}, 1) then
                     tempTimer(90, [[ snd.target_cured("excess_choleric") ]])
                   else
                     tempTimer(60, [[ snd.target_cured("excess_choleric") ]])
@@ -30458,7 +31126,7 @@ end</script>
                 else
                   snd.last_limb_dmg = 5.49
                 end
-                if snd.checksomeAffs({"right_arm_broken","left_arm_broken",2}) then
+                if snd.checksomeAffs({"right_arm_crippled","left_arm_crippled",2}) then
                   snd.target_got("weak_grip")
                   snd.target_got("collapsed_lung")
                 end
@@ -30756,8 +31424,8 @@ end</script>
     Masochism = function(target)
                  snd.target_got("masochism")
                 end,
-    Loneliness = function(target)
-                 snd.target_got("loneliness")
+    Lovers = function(target)
+                 snd.target_got("lovers_effect")
                 end,
     Epilepsy = function(target)
                  snd.target_got("epilepsy")
@@ -31066,7 +31734,7 @@ end</script>
                     snd.target_got("faintness")
                   end
                 end,
-      Despair = function(target)
+      Despair = function(target, spiritpact)
                 snd.target_got("gloom")
               end,
       Revile = function(target, spiritpact)
@@ -31089,7 +31757,16 @@ end</script>
       Anathemise = function(target, spiritpact)
                 	if snd.checkAff("dizziness") then snd.target_got("dementia")
                   elseif snd.checkAff("weariness") then snd.target_got("exhaustion") end
+                end, 
+                                 
+      Vilipend = function(target, spiritpact)
+                	snd.haunted = true
                 end,
+      Preymark = function(target, spiritpact)
+                snd.target_got("preymark")
+              end,
+      
+      
   },
   
   ["Runecarving"] = {
@@ -33160,10 +33837,10 @@ snd.venom_affs =
 "stuttering",
 "deadening",
 "thin_blood",
-"left_leg_broken",
-"right_leg_broken",
-"left_arm_broken",
-"right_arm_broken",
+"left_leg_crippled",
+"right_leg_crippled",
+"left_arm_crippled",
+"right_arm_crippled",
 }
 
 
@@ -33269,8 +33946,8 @@ local extraaff = "delphinium"
 
  if snd.target_locked() then
   venoms = {
-		"left_leg_broken",
-		"right_leg_broken",
+		"left_leg_crippled",
+		"right_leg_crippled",
 		"hearing",
 		"sensitivity",
 		"voyria"
@@ -33413,10 +34090,10 @@ snd.censure_affs = {
 "stuttering",
 "deadening",
 "thin_blood",
-"left_leg_broken",
-"right_leg_broken",
-"left_arm_broken",
-"right_arm_broken",
+"left_leg_crippled",
+"right_leg_crippled",
+"left_arm_crippled",
+"right_arm_crippled",
 }
 
 snd.secondary_affs = {
@@ -33427,7 +34104,7 @@ snd.secondary_affs = {
 "stupidity",
 "agoraphobia",
 "masochism",
-"loneliness",
+"lovers_effect",
 "contrition",
 "epilepsy",
 "anorexia",
@@ -33540,7 +34217,7 @@ end
 
 
 function snd.can_deliver()
-  if snd.checksomeAffs({"paralysis", "paresis", "right_arm_broken", "left_arm_broken", "right_leg_broken", "left_leg_broken", "haemophilia", "asthma", "impairment", "clumsiness", "vomiting", "sensitivity", "ringing_ears", "lethargy", "blood_poison", "blood_curse", "crippled_throat", "slough", "disfigurement", "blisters", "lightwound", "ablaze", "hypothermia", "shivering", "frozen", "limp_veins", "rend", "exhausted", "allergies", "addiction", "hypersomnia", "heartflutter", "whiplash", "backstrain", "sore_wrist", "sore_ankle", "burnt_eyes", "blurry_vision", "migraine", "deadening", "ice_encased",}, 1) 
+  if snd.checksomeAffs({"paralysis", "paresis", "right_arm_crippled", "left_arm_crippled", "right_leg_crippled", "left_leg_crippled", "haemophilia", "asthma", "impairment", "clumsiness", "vomiting", "sensitivity", "ringing_ears", "lethargy", "blood_poison", "blood_curse", "crippled_throat", "slough", "disfigurement", "blisters", "lightwound", "ablaze", "hypothermia", "shivering", "frozen", "limp_veins", "rend", "exhausted", "allergies", "addiction", "hypersomnia", "heartflutter", "whiplash", "backstrain", "sore_wrist", "sore_ankle", "burnt_eyes", "blurry_vision", "migraine", "deadening", "ice_encased",}, 1) 
   and snd.proned()
   then
     return true
@@ -33560,6 +34237,12 @@ function snd.akkari_behead()
   end
 
 end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Whacking limbs</name>
+							<packageName></packageName>
+							<script></script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -35539,7 +36222,6 @@ snd.randomshadow = {}
 "Evandrus",
 "Kaleigh",
 "Yvi",
-"Virelen",
 "Turc",
 "Sitai",
 "Arista",
@@ -35583,6 +36265,14 @@ snd.randomshadow = {}
 "Whirran",
 "Lycha",
 "Strelok",
+"Gaelric",
+"Maerethryn",
+"Llancarfan",
+"Dennah",
+"Kerryn",
+"Sarkis",
+"Vevius",
+"Peleg",
 
 }</script>
 							<eventHandlerList />
@@ -35591,14 +36281,10 @@ snd.randomshadow = {}
 							<name>snd.sysaaenemies</name>
 							<packageName></packageName>
 							<script>snd.sysaaenemies = {
-"Rhesk",
 "Amarylis",
 "Aisling",
 "Enamari",
 "Wyliame",
-"Kezef",
-"Thiora",
-"Alystrine",
 "Annerissa",
 "Benedicto",
 "Vuxten",
@@ -35622,7 +36308,6 @@ snd.randomshadow = {}
 "Zszerea",
 "Vaessa",
 "Vino",
-"Thireik",
 "Ashram",
 "Osian",
 "Zima",
@@ -35633,7 +36318,6 @@ snd.randomshadow = {}
 "Jakkii",
 "Berrad",
 "Del",
-"Fuere",
 "Kylan",
 "Talonnb",
 "Jeromy",
@@ -35645,11 +36329,9 @@ snd.randomshadow = {}
 "Sotir",
 "Procyon",
 "Kaiara",
-"Xenaden",
 "Velheima",
 "Jakarn",
 "Elliana",
-"Jakobi",
 "Saltz",
 "Arthitray",
 "Axius",
@@ -35659,7 +36341,6 @@ snd.randomshadow = {}
 "Isia",
 "Aeraisentesh",
 "Naia",
-"Aaric",
 "Rak",
 "Jezriel",
 "Amyie",
@@ -35669,7 +36350,6 @@ snd.randomshadow = {}
 "Eoros",
 "Emhyra",
 "Nkala",
-"Luxantha",
 "Reynard",
 "Demien",
 "Kaily",
@@ -35677,7 +36357,17 @@ snd.randomshadow = {}
 "Luca",
 "Freja",
 "Kirie",
+"Sine",
+"Meleah",
+"Ylaida",
+"Kyra",
+"Liroay",
+"Illaris",
 
+"Trynt",
+"Virelen",
+"Urim",
+"Sethra",
 "Takezo",
 "Innai",
 "Torrask",
@@ -35721,7 +36411,6 @@ snd.randomshadow = {}
 "Khambeaux",
 "Aeryx",
 "Borminchia",
-"Llancarfan",
 "Folke",
 "Talabose",
 "Callidora",
@@ -35803,6 +36492,7 @@ snd.randomshadow = {}
 "Kassidy",
 "Korvyr",
 "Saphielle",
+"Saurial",
 "Naro",
 "Evlentesh",
 "Saervok",
@@ -37495,7 +38185,7 @@ if snd.limb_status["left leg"] == "mangled" then
 	snd.display.enemy_leftleg_color = "red" 
 elseif snd.limb_status["left leg"] == "damaged" then 
 	snd.display.enemy_leftleg_color = "gold" 
-elseif snd.checkAff("left_leg_broken") then
+elseif snd.checkAff("left_leg_crippled") then
 	snd.display.enemy_leftleg_color = "green" 
 else
 	snd.display.enemy_leftleg_color = "white"
@@ -37505,7 +38195,7 @@ if snd.limb_status["right leg"] == "mangled" then
 	snd.display.enemy_rightleg_color = "red" 
 elseif snd.limb_status["right leg"] == "damaged" then 
 	snd.display.enemy_rightleg_color = "gold" 
-elseif snd.checkAff("right_leg_broken") then
+elseif snd.checkAff("right_leg_crippled") then
 	snd.display.enemy_rightleg_color = "green" 
 else
 	snd.display.enemy_rightleg_color = "white"
@@ -37515,7 +38205,7 @@ if snd.limb_status["left arm"] == "mangled" then
 	snd.display.enemy_leftarm_color = "red" 
 elseif snd.limb_status["left arm"] == "damaged" then 
 	snd.display.enemy_leftarm_color = "gold" 
-elseif snd.checkAff("left_arm_broken") then
+elseif snd.checkAff("left_arm_crippled") then
 	snd.display.enemy_leftarm_color = "green" 
 else
 	snd.display.enemy_leftarm_color = "white"
@@ -37525,7 +38215,7 @@ if snd.limb_status["right arm"] == "mangled" then
 	snd.display.enemy_rightarm_color = "red" 
 elseif snd.limb_status["right arm"] == "damaged" then 
 	snd.display.enemy_rightarm_color = "gold" 
-elseif snd.checkAff("right_arm_broken") then
+elseif snd.checkAff("right_arm_crippled") then
 	snd.display.enemy_rightarm_color = "green" 
 else
 	snd.display.enemy_rightarm_color = "white"
@@ -37552,17 +38242,17 @@ function color_self_limbs()
 --consider using different symbols for the bruising levels
 if snd.afflictions.aff_torso_mangled.state == "afflicted" then 
 	snd.display.self_torso_color = "red" 
-elseif snd.afflictions.aff_torso_damaged.state == "afflicted" then 
+elseif snd.afflictions.aff_torso_broken.state == "afflicted" then 
 	snd.display.self_torso_color = "gold" 
 else
-	snd.display.self_leftleg_color = "white"
+	snd.display.self_torso_color = "white"
 end
 
 if snd.afflictions.aff_left_leg_mangled.state == "afflicted" then 
 	snd.display.self_leftleg_color = "red" 
-elseif snd.afflictions.aff_left_leg_damaged.state == "afflicted" then 
+elseif snd.afflictions.aff_left_leg_broken.state == "afflicted" then 
 	snd.display.self_leftleg_color = "gold" 
-elseif snd.afflictions.aff_left_leg_broken.state == "afflicted" then
+elseif snd.afflictions.aff_left_leg_crippled.state == "afflicted" then
 	snd.display.self_leftleg_color = "green" 
 else
 	snd.display.self_leftleg_color = "white"
@@ -37570,9 +38260,9 @@ end
 
 if snd.afflictions.aff_right_leg_mangled.state == "afflicted" then 
 	snd.display.self_rightleg_color = "red" 
-elseif snd.afflictions.aff_right_leg_damaged.state == "afflicted" then 
+elseif snd.afflictions.aff_right_leg_broken.state == "afflicted" then 
 	snd.display.self_rightleg_color = "gold" 
-elseif snd.afflictions.aff_right_leg_broken.state == "afflicted" then
+elseif snd.afflictions.aff_right_leg_crippled.state == "afflicted" then
 	snd.display.self_rightleg_color = "green" 
 else
 	snd.display.self_rightleg_color = "white"
@@ -37580,9 +38270,9 @@ end
 
 if snd.afflictions.aff_left_arm_mangled.state == "afflicted" then 
 	snd.display.self_leftarm_color = "red" 
-elseif snd.afflictions.aff_left_arm_damaged.state == "afflicted" then 
+elseif snd.afflictions.aff_left_arm_broken.state == "afflicted" then 
 	snd.display.self_leftarm_color = "gold" 
-elseif snd.afflictions.aff_left_arm_broken.state == "afflicted" then
+elseif snd.afflictions.aff_left_arm_crippled.state == "afflicted" then
 	snd.display.self_leftarm_color = "green" 
 else
 	snd.display.self_leftarm_color = "white"
@@ -37590,9 +38280,9 @@ end
 
 if snd.afflictions.aff_right_arm_mangled.state == "afflicted" then 
 	snd.display.self_rightarm_color = "red" 
-elseif snd.afflictions.aff_right_arm_damaged.state == "afflicted" then 
+elseif snd.afflictions.aff_right_arm_broken.state == "afflicted" then 
 	snd.display.self_rightarm_color = "gold" 
-elseif snd.afflictions.aff_right_arm_broken.state == "afflicted" then
+elseif snd.afflictions.aff_right_arm_crippled.state == "afflicted" then
 	snd.display.self_rightarm_color = "green" 
 else
 	snd.display.self_rightarm_color = "white"
@@ -37600,7 +38290,7 @@ end
 
 if snd.afflictions.aff_head_mangled.state == "afflicted" then 
 	snd.display.self_head_color = "red" 
-elseif snd.afflictions.aff_head_damaged.state == "afflicted" then 
+elseif snd.afflictions.aff_head_broken.state == "afflicted" then 
 	snd.display.self_head_color = "gold" 
 else
 	snd.display.self_head_color = "white"
