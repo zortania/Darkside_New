@@ -3405,7 +3405,7 @@ aff_phlegm_frozen = {state = "healed", effect = "gives an additional cold damage
 								<packageName></packageName>
 								<script>function snd.aff_check()
  for i in pairs(snd.afflictions) do
-  if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "damaged") or string.find(i, "mangled") or string.find(i, "pre_restore") or i == "aff_concussion" then
+  if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "broken") or string.find(i, "mangled") or string.find(i, "pre_restore") or i == "aff_concussion" then
    if getStopWatchTime(snd.afflictions[i].timer) &gt; 7 and snd.afflictions[i].state == "waiting" then
     snd.aff_timeout(i)
    end
@@ -23202,9 +23202,9 @@ end</script>
 							<script>
 function snd.do_tree(current)
  limb = false
- if string.find(current, "_broken") then
-  x = string.gsub(current, "_broken", "_damaged")
-  y = string.gsub(current, "_broken", "_mangled")
+ if string.find(current, "_crippled") then
+  x = string.gsub(current, "_crippled", "_broken")
+  y = string.gsub(current, "_crippled", "_mangled")
   if snd.have_aff(x) or snd.have_aff(y) then
    limb = true
   end
@@ -23356,10 +23356,10 @@ function snd.purge_check()
     
     for _, aff in pairs(snd.physical_affs) do
       if snd.have_aff(aff) and aff ~= "paralysis" then
-        local i, _ = string.find(aff, "_broken")
+        local i, _ = string.find(aff, "_crippled")
         if i then
           local s = string.sub(aff, 0, i - 1)
-          if snd.afflictions["aff_"..s.."_damaged"].state == "healed" then
+          if snd.afflictions["aff_"..s.."_crippled"].state == "healed" then
             table.insert(purgable, aff)
           end
         else
@@ -23422,10 +23422,10 @@ function snd.purify_check()
     
     for _, aff in pairs(snd.physical_affs) do
       if snd.have_aff(aff) and aff ~= "paralysis" then
-        local i, _ = string.find(aff, "_broken")
+        local i, _ = string.find(aff, "_crippled")
         if i then
           local s = string.sub(aff, 0, i - 1)
-          if snd.afflictions["aff_"..s.."_damaged"].state == "healed" then
+          if snd.afflictions["aff_"..s.."_crippled"].state == "healed" then
             table.insert(purifiable, aff)
           end
         else
@@ -23535,10 +23535,10 @@ function snd.panacea_check()
     
     for _, aff in pairs(snd.physical_affs) do
       if snd.have_aff(aff) and aff ~= "paralysis" then
-        local i, _ = string.find(aff, "_broken")
+        local i, _ = string.find(aff, "_crippled")
         if i then
           local s = string.sub(aff, 0, i - 1)
-          if snd.afflictions["aff_"..s.."_damaged"].state == "healed" then
+          if snd.afflictions["aff_"..s.."_crippled"].state == "healed" then
             table.insert(panaceable, aff)
           end
         else
@@ -27181,7 +27181,7 @@ if not snd.balance.restore then return false end
  
 local limbcount = 0
  for _, v in pairs(restore_affs) do
-    if snd.have_aff(v) and not snd.have_aff(v:gsub("broken", "damaged")) and not snd.have_aff(v:gsub("broken", "mangled")) then
+    if snd.have_aff(v) and not snd.have_aff(v:gsub("crippled", "broken")) and not snd.have_aff(v:gsub("crippled", "mangled")) then
       limbcount = limbcount + 1
     end
   end
@@ -28522,8 +28522,8 @@ function snd.took_limb_dmg(limb, amount)
     if limb == snd.resto_limb and (amount == -30 or amount == -40) then
       snd.resto_limb = "none"
       if snd.limb_status[limb] == "mangled" then
-        snd.limb_status[limb] = "damaged"
-      elseif snd.limb_status[limb] == "damaged" then
+        snd.limb_status[limb] = "broken"
+      elseif snd.limb_status[limb] == "broken" then
         snd.limb_status[limb] = "healed"
       end
     end
@@ -28602,7 +28602,7 @@ function snd.target_got(affliction)
     if snd.gui.enabled then
       if #snd.target_has &gt;= 1 then
         for _, v in ipairs(snd.target_has) do
-          if v:find("broken") then
+          if v:find("crippled") then
             v = v:gsub("a ", "")
             v = v:gsub("left", "L")
             v = v:gsub("right", "R")
@@ -28795,7 +28795,7 @@ function snd.onHit()
       if snd.maybe_affs[1] == "placeholder" then
         snd.last_aff = ""
         table.remove(snd.maybe_affs, 1)
-      elseif snd.maybe_affs[1]:find("broken") then
+      elseif snd.maybe_affs[1]:find("crippled") then
         snd.target_got(snd.maybe_affs[1])
         table.remove(snd.maybe_affs, 1)
         table.insert(snd.last_affs, aff)
@@ -30839,7 +30839,7 @@ end</script>
                     if where == "arms" then snd.target_got("a_broken_arm")
                     elseif where == "legs" then snd.target_got("a_broken_leg")
                     elseif where == "throat" then snd.target_got("crippled_throat")
-                    else snd.target_got(where.." broken")
+                    else snd.target_got(where.."_crippled")
                     end
                   end, 
         Deform = function(target)
@@ -31274,7 +31274,7 @@ end</script>
                     if where == "arms" then snd.target_got("a_broken_arm")
                     elseif where == "legs" then snd.target_got("a_broken_leg")
                     elseif where == "throat" then snd.target_got("crippled_throat")
-                    else snd.target_got(where.." broken")
+                    else snd.target_got(where.."_crippled")
                     end
                   end, 
         Disjunct = function(target)
@@ -33772,7 +33772,7 @@ snd.actuate_attacks = {
 							<name>Monk Stuff</name>
 							<packageName></packageName>
 							<script>function cantBeParried()
-  if (snd.checkAff("a broken right arm") and snd.checkAff("a broken left arm")) or snd.checkAff("numb_arms") or snd.checkAff("paresis") or snd.checkAff("paralysis") then
+  if (snd.checkAff("a broken right arm") and snd.checkAff("a broken left arm")) or snd.checkAff("punished_arms") or snd.checkAff("paresis") or snd.checkAff("paralysis") then
 		return true
 		else
 		return false
@@ -34404,8 +34404,8 @@ end</script>
 							<script>function snd.handleExpunge()
   for aff in pairs(snd.physical_affs) do
     if snd.checkAff(snd.physical_affs[aff]) then
-      if string.find(snd.physical_affs[aff], "_broken") then
-        local string = string.gsub(snd.physical_affs[aff], "_broken", "")
+      if string.find(snd.physical_affs[aff], "_crippled") then
+        local string = string.gsub(snd.physical_affs[aff], "_crippled", "")
         string = string:gsub("_", " ")
         if snd.limb_status[string] == "healed" then
           snd.target_cured(snd.physical_affs[aff])
@@ -34449,8 +34449,8 @@ end</script>
  
   for _, v in pairs(limbs) do
 
-    if snd.checkAff(v:gsub(" ", "_").."_broken") and snd.limb_status[v] == "healed" then
-		  snd.target_cured(v:gsub(" ", "_").."_broken")
+    if snd.checkAff(v:gsub(" ", "_").."_crippled") and snd.limb_status[v] == "healed" then
+		  snd.target_cured(v:gsub(" ", "_").."_crippled")
     end
   end
 end</script>
@@ -38175,7 +38175,7 @@ function color_enemy_limbs()
 --consider using different symbols for the bruising levels
 if snd.limb_status["head"] == "mangled" then 
 	snd.display.enemy_head_color = "red" 
-elseif snd.limb_status["head"] == "damaged" then 
+elseif snd.limb_status["head"] == "broken" then 
 	snd.display.enemy_head_color = "gold" 
 else
 	snd.display.enemy_head_color = "white"
@@ -38183,7 +38183,7 @@ end
 
 if snd.limb_status["left leg"] == "mangled" then 
 	snd.display.enemy_leftleg_color = "red" 
-elseif snd.limb_status["left leg"] == "damaged" then 
+elseif snd.limb_status["left leg"] == "broken" then 
 	snd.display.enemy_leftleg_color = "gold" 
 elseif snd.checkAff("left_leg_crippled") then
 	snd.display.enemy_leftleg_color = "green" 
@@ -38193,7 +38193,7 @@ end
 
 if snd.limb_status["right leg"] == "mangled" then 
 	snd.display.enemy_rightleg_color = "red" 
-elseif snd.limb_status["right leg"] == "damaged" then 
+elseif snd.limb_status["right leg"] == "broken" then 
 	snd.display.enemy_rightleg_color = "gold" 
 elseif snd.checkAff("right_leg_crippled") then
 	snd.display.enemy_rightleg_color = "green" 
@@ -38203,7 +38203,7 @@ end
 
 if snd.limb_status["left arm"] == "mangled" then 
 	snd.display.enemy_leftarm_color = "red" 
-elseif snd.limb_status["left arm"] == "damaged" then 
+elseif snd.limb_status["left arm"] == "broken" then 
 	snd.display.enemy_leftarm_color = "gold" 
 elseif snd.checkAff("left_arm_crippled") then
 	snd.display.enemy_leftarm_color = "green" 
@@ -38213,7 +38213,7 @@ end
 
 if snd.limb_status["right arm"] == "mangled" then 
 	snd.display.enemy_rightarm_color = "red" 
-elseif snd.limb_status["right arm"] == "damaged" then 
+elseif snd.limb_status["right arm"] == "broken" then 
 	snd.display.enemy_rightarm_color = "gold" 
 elseif snd.checkAff("right_arm_crippled") then
 	snd.display.enemy_rightarm_color = "green" 
@@ -38223,7 +38223,7 @@ end
 
 if snd.limb_status["torso"] == "mangled" then 
 	snd.display.enemy_torso_color = "red" 
-elseif snd.limb_status["torso"] == "damaged" then 
+elseif snd.limb_status["torso"] == "broken" then 
 	snd.display.enemy_torso_color = "gold" 
 else
 	snd.display.enemy_torso_color = "white"
