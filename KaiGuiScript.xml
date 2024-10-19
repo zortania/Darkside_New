@@ -1,0 +1,2994 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage />
+	<TimerPackage />
+	<AliasPackage />
+	<ActionPackage />
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>KaiSunderGui</name>
+			<packageName>KaiSunderGui</packageName>
+			<script></script>
+			<eventHandlerList />
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>KaiUI</name>
+				<packageName>KaiUI</packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>KaiUI init</name>
+					<packageName></packageName>
+					<script>kaiUI = kaiUI or {}
+kaiUI.hits = kaiUI.hits or 0
+kaiUI.crits = kaiUI.crits or 0
+kaiUI.targetName = kaiUI.targetName or "Nothing"
+kaiUI.gmcp = {}
+
+registerAnonymousEventHandler("sysConnectionEvent", "kaiUI.buildUI")</script>
+					<eventHandlerList />
+				</Script>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Framework</name>
+					<packageName></packageName>
+					<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Jor'Mox's GUIframe</name>
+						<packageName></packageName>
+						<script>-- Jor'Mox's GUIframe Script
+-- 3/07/2019
+-- v1.4.2
+-- To resize frames or move tabs, right click and drag either the resize label or the tab
+-- until the desired result is achieved.
+-- To add a window to a frame for the script to manage, use the
+-- GUIframe.addWindow(window, name, container, hideText) function, where the window
+-- variable contains the Geyser object you want to add, the name variable contains
+-- the name you want it to be referred to as, which also is used as the text printed
+-- on the associated tab that is created, the container variable is a string containing
+-- one of the following: bottom, top, topleft, topright, bottomleft, bottomright,
+-- and the hideText variable is an optional boolean which, if true, prevents text being
+-- written on the tab for this window.
+-- To remove a window from GUIframe, use the GUIframe.removeWindow(name, container)
+-- function, where the name variable is the same name you gave the window when adding it,
+-- and the optional container variable is a string specifying which container to remove
+-- the window from. If no container is specified, the window is removed regardless of
+-- which container it is in.
+-- Resizing of frames can be enabled or disabled using the GUIframe.enable(side) and
+-- GUIframe.disable(side, hide) functions respectively. If the second argument to
+-- GUIframe.disable is false, then the entire set of frames on that side is hidden, and
+-- the border is adjusted as if that side had be resized to zero.
+-- To save and load settings, use the GUIframe.saveSettings() and
+-- GUIframe.loadSettings(redraw) functions. If the redraw argument is true, the border
+-- background color is changed to black to force the area of the borders to be redrawn.
+-- Additionally, the GUIframe.reinitialize() function can be used to force the script to
+-- initialize itself again, going back to default settings.
+-- To activate a tab without it being clicked, use the GUIframe.activate(name) function.
+-- And to apply a stylesheet to a tab that is different from the default stylesheet, use
+-- the GUIframe.styleTab(name, style) function, where the style variable contains a string
+-- with the CSS to be applied. Since tabs are styled only when created or when this
+-- function is used, there should be no concern with this styling being overwritten.
+GUIframe = GUIframe or {}
+local mainW, mainH = getMainWindowSize()
+local halfW, halfH = math.floor(mainW / 2), math.floor(mainH / 2)
+GUIframe.configs = GUIframe.configs or {}
+GUIframe.defaults =
+  {
+    tabHeight = 20,
+    tabStyle =
+      [[
+        background-color: green;
+        border-width: 2px;
+        border-style: outset;
+        border-color: limegreen;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        margin-right: 1px;
+        margin-left: 1px;
+        qproperty-alignment: 'AlignCenter | AlignCenter';]],
+    tabEchoStyle = '&lt;center&gt;&lt;p style="font-size:14px; color:white"&gt;',
+    leftStartWidth = 50,
+    leftStartHeight = halfH,
+    rightStartWidth = 50,
+    rightStartHeight = halfH,
+    topStartHeight = 50,
+    bottomStartHeight = 50,
+    resizeHeight = 30,
+    resizeWidth = 30,
+    resizeHoverImage = "/imgs/blue_arrows.png",
+    resizeRestImage = "/imgs/blue_arrows_20t.png",
+    borderOffset = 5,
+  }
+GUIframe.windows = GUIframe.windows or {}
+GUIframe.tabs = GUIframe.tabs or {}
+GUIframe.tabCoords = GUIframe.tabCoords or {}
+GUIframe.sides =
+  GUIframe.sides or {left = 'enabled', right = 'enabled', top = 'enabled', bottom = 'enabled'}
+local resize_style = "border-image: url(%s%s);"
+local configs = table.update(GUIframe.defaults, GUIframe.configs)
+local tabsInfo, containerInfo, resizeInfo
+local container_names =
+  {
+    'topLeftContainer',
+    'bottomLeftContainer',
+    'topRightContainer',
+    'bottomRightContainer',
+    'bottomContainer',
+    'topContainer',
+  }
+local tab_names =
+  {'topLeftTabs', 'topRightTabs', 'bottomLeftTabs', 'bottomRightTabs', 'midLeftTabs'}
+local resizeLabels = {'resizeLeft', 'resizeRight', 'resizeTop', 'resizeBottom'}
+local sides = {"top", "bottom", "left", "right"}
+local side_containers =
+  {
+    left = {"topLeftContainer", "bottomLeftContainer", "topLeftTabs", "bottomLeftTabs"},
+    right = {"topRightContainer", "bottomRightContainer", "topRightTabs", "bottomRightTabs"},
+    top = {"topContainer"},
+    bottom = {"bottomContainer"},
+  }
+
+local function get_window_coords(win, update)
+  -- gets coords for window, stores data in tabCoords table as needed
+  local x, y = win:get_x(), win:get_y()
+  local w, h = win:get_width(), win:get_height()
+  if update then
+    GUIframe.tabCoords[win.name] = {x = x, y = y, w = w, h = h}
+  end
+  return x, y, w, h
+end
+
+local function check_overlap(tab, x, y)
+  -- checks to see if given coords overlap tab or tab container
+  if type(tab) == "string" then
+    tab = GUIframe[tab] or GUIframe.tabs[tab]
+  end
+  if tab.hidden or tab.auto_hidden then
+    return false
+  end
+  local info = GUIframe.tabCoords[tab.name]
+  local x1, y1 = info.x, info.y
+  local x2, y2 = x1 + info.w, y1 + info.h
+  return (x &gt;= x1 and x &lt;= x2 and y &gt;= y1 and y &lt;= y2)
+end
+
+local function update_tab(tab, x, y, w, h)
+  -- resizes and moves tab and updates tab coords table
+  tab:move(x, y)
+  tab:resize(w, h)
+  local info = GUIframe.tabCoords[tab.name] or {}
+  info.x, info.y = tab:get_x(), tab:get_y()
+  info.w, info.h = tab:get_width(), tab:get_height()
+  if table.contains(tab_names, tab.name) then
+    info.container = true
+  end
+  GUIframe.tabCoords[tab.name] = info
+end
+
+local function get_containers(pos)
+  if type(pos) == "table" then
+    pos = pos.name
+  end
+  for _, w in ipairs({'right', 'left', 'container', 'tabs'}) do
+    pos = pos:gsub(w, w:title())
+  end
+  local con, tab
+  if string.find(pos, "Container") then
+    con = GUIframe[pos]
+    if not con then
+      return
+    end
+    tabs = con.tabs
+  elseif string.find(pos, "Tabs") then
+    tabs = GUIframe[pos]
+    if not tab then
+      return
+    end
+    con = tabs.con
+  else
+    con = GUIframe[pos .. "Container"]
+    tabs = GUIframe[pos .. "Tabs"]
+  end
+  return con, tabs
+end
+
+local function config()
+  configs = table.update(GUIframe.defaults, GUIframe.configs)
+  GUIframe.windows = {}
+  GUIframe.tabCoords = {}
+  tabsInfo =
+    {
+      topLeftTabs =
+        {
+          name = 'topLeftTabs',
+          x = 0,
+          y = 0,
+          width = configs.leftStartWidth,
+          height = configs.tabHeight,
+        },
+      bottomLeftTabs =
+        {
+          name = 'bottomLeftTabs',
+          x = 0,
+          y = configs.leftStartHeight,
+          width = configs.leftStartWidth,
+          height = configs.tabHeight,
+        },
+      topRightTabs =
+        {
+          name = 'topRightTabs',
+          x = mainW - configs.rightStartWidth,
+          y = 0,
+          width = configs.rightStartWidth,
+          height = configs.tabHeight,
+        },
+      bottomRightTabs =
+        {
+          name = 'bottomRightTabs',
+          x = mainW - configs.rightStartWidth,
+          y = configs.rightStartHeight,
+          width = configs.rightStartWidth,
+          height = configs.tabHeight,
+        },
+    }
+  containerInfo =
+    {
+      topLeftContainer =
+        {
+          name = 'topLeftContainer',
+          x = 0,
+          y = configs.tabHeight,
+          width = configs.leftStartWidth,
+          height = configs.leftStartHeight - configs.tabHeight,
+        },
+      bottomLeftContainer =
+        {
+          name = 'bottomLeftContainer',
+          x = 0,
+          y = configs.leftStartHeight + configs.tabHeight,
+          width = configs.leftStartWidth,
+          height = configs.leftStartHeight - configs.tabHeight,
+        },
+      topRightContainer =
+        {
+          name = 'topRightContainer',
+          x = mainW - configs.rightStartWidth,
+          y = configs.tabHeight,
+          width = configs.rightStartWidth,
+          height = configs.rightStartHeight - configs.tabHeight,
+        },
+      bottomRightContainer =
+        {
+          name = 'bottomRightContainer',
+          x = mainW - configs.rightStartWidth,
+          y = configs.rightStartHeight + configs.tabHeight,
+          width = configs.rightStartWidth,
+          height = configs.rightStartHeight - configs.tabHeight,
+        },
+      bottomContainer =
+        {
+          name = 'bottomContainer',
+          x = configs.leftStartWidth,
+          y = mainH - configs.bottomStartHeight,
+          height = configs.bottomStartHeight,
+          width = mainW - configs.leftStartWidth - configs.rightStartWidth,
+        },
+      topContainer =
+        {
+          name = 'topContainer',
+          x = configs.leftStartWidth,
+          y = 0,
+          height = configs.topStartHeight,
+          width = mainW - configs.leftStartWidth - configs.rightStartWidth,
+        },
+    }
+  resizeInfo =
+    {
+      resizeLeft =
+        {
+          name = 'resizeLeft',
+          x = configs.leftStartWidth,
+          y = configs.leftStartHeight - configs.resizeHeight / 2,
+          height = configs.resizeHeight,
+          width = configs.resizeWidth,
+        },
+      resizeRight =
+        {
+          name = 'resizeRight',
+          x = configs.rightStartWidth - configs.resizeWidth,
+          y = configs.rightStartHeight - configs.resizeHeight / 2,
+          height = configs.resizeHeight,
+          width = configs.resizeWidth,
+        },
+      resizeTop =
+        {
+          name = 'resizeTop',
+          x = halfW - configs.resizeWidth / 2,
+          y = configs.topStartHeight,
+          height = configs.resizeHeight,
+          width = configs.resizeWidth,
+        },
+      resizeBottom =
+        {
+          name = 'resizeBottom',
+          x = halfW - configs.resizeWidth / 2,
+          y = mainH - configs.bottomStartHeight - configs.resizeHeight,
+          height = configs.resizeHeight,
+          width = configs.resizeWidth,
+        },
+    }
+  for name, cons in pairs(containerInfo) do
+    GUIframe[name] = Geyser.Container:new(cons)
+  end
+  for name, cons in pairs(tabsInfo) do
+    GUIframe[name] = Geyser.Container:new(cons)
+    local cname = name:gsub("Tabs", "Container")
+    GUIframe[cname].tabs = GUIframe[name]
+    GUIframe[name].con = GUIframe[cname]
+  end
+  local style = resize_style
+  local path = getMudletHomeDir()
+  path = path:gsub("[\\/]", "/")
+  configs.resizeRestImage = configs.resizeRestImage:gsub("[\\/]", "/")
+  configs.resizeHoverImage = configs.resizeHoverImage:gsub("[\\/]", "/")
+  local no_image
+  if
+    not (io.exists(path .. configs.resizeHoverImage) and io.exists(path .. configs.resizeRestImage))
+  then
+    debugc("GUIframe: config: resize image(s) not found")
+    path = "255,20,147,"
+    style = "background-color: rgba(%s%s);"
+    no_image = true
+  end
+  for name, cons in pairs(resizeInfo) do
+    GUIframe[name] = Geyser.Label:new(cons)
+    GUIframe[name]:setColor(0, 0, 0, 0)
+    GUIframe[name]:setStyleSheet(
+      string.format(style, path, (no_image and "100") or configs.resizeRestImage)
+    )
+    GUIframe[name]:setOnEnter(
+      "GUIframe." .. name .. ".setStyleSheet",
+      GUIframe[name],
+      string.format(style, path, (no_image and "255") or configs.resizeHoverImage)
+    )
+    GUIframe[name]:setOnLeave(
+      "GUIframe." .. name .. ".setStyleSheet",
+      GUIframe[name],
+      string.format(style, path, (no_image and "100") or configs.resizeRestImage)
+    )
+    GUIframe[name]:setClickCallback("GUIframe.buttonClick", name)
+    GUIframe[name]:setReleaseCallback("GUIframe.buttonRelease", name)
+    GUIframe[name]:setMoveCallback("GUIframe.buttonMove", name)
+  end
+  setBorderLeft(configs.leftStartWidth + configs.borderOffset)
+  setBorderRight(configs.rightStartWidth + configs.borderOffset)
+  setBorderTop(configs.topStartHeight + configs.borderOffset)
+  setBorderBottom(configs.bottomStartHeight + configs.borderOffset)
+  GUIframe.initialized = true
+end
+
+local function deselectContainer(container, tabs)
+  -- hide all windows in container
+  for _, win in pairs(container.windowList) do
+    win:hide()
+    win.active = false
+  end
+  -- unhighlight all tabs in tabs container
+  if tabs then
+    for _, tab in pairs(tabs.windowList) do
+      local name = tab.name:gsub("Tab", "")
+      local show = GUIframe.windows[name].showText
+      if show then
+        tab:echo(configs.tabEchoStyle .. name)
+      end
+    end
+  end
+end
+
+local function adjustTabs(tabs)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  -- remove duplicated window names
+  local found = {}
+  for k, v in ipairs(tabs.windows) do
+    if not table.contains(found, v) and tabs.windowList[v] and not tabs.windowList[v].isClicked then
+      table.insert(found, v)
+    end
+  end
+  -- calculate tab width and set height
+  local w, h = math.floor(100 / #tabs.windows), configs.tabHeight
+
+  local function wrap(num)
+    return tostring(num) .. "%"
+  end
+
+  -- resize and reposition all tabs
+  local shown, first
+  for k, v in ipairs(found) do
+    local tab = tabs.windowList[v]
+    if not first then
+      first = v:gsub("Tab", "")
+    end
+    if not shown and tab.active then
+      shown = v
+    elseif tab.active then
+      tab.active = false
+    end
+    update_tab(tab, wrap(w * (k - 1)), 0, wrap(w), h)
+  end
+  if first and not shown and GUIframe.windows[first] then
+    GUIframe.windows[first]:show()
+  end
+  tabs.space_pos = nil
+end
+
+local function reorderTabs(tabs, name, pos)
+  local windows = tabs.windows
+  while table.contains(windows, name) do
+    table.remove(windows, table.index_of(windows, name))
+  end
+  table.insert(windows, pos, name)
+end
+
+local function makeSpace(tabs, tab, pos)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  local windows = table.deepcopy(tabs.windows)
+  local space_pos = tabs.space_pos
+  local tab_pos = table.index_of(windows, tab.name)
+  -- calculate tab width and set height
+  local num_tabs = #windows + 1
+  if tab_pos then
+    num_tabs = num_tabs - 1
+    if pos &gt; tab_pos then
+      pos = pos - 1
+    end
+    if pos == space_pos then
+      pos = pos + 1
+    end
+  elseif space_pos and pos &gt;= space_pos then
+    pos = pos + 1
+  end
+  local w, h = math.floor(100 / num_tabs), configs.tabHeight
+
+  local function wrap(num)
+    return tostring(num) .. "%"
+  end
+
+  -- resize and reposition all tabs
+  if tab_pos then
+    table.remove(windows, tab_pos)
+  end
+  for k, v in ipairs(windows) do
+    if k &gt;= pos then
+      update_tab(tabs.windowList[v], wrap(w * k), 0, wrap(w), h)
+    else
+      update_tab(tabs.windowList[v], wrap(w * (k - 1)), 0, wrap(w), h)
+    end
+  end
+  tabs.space_pos = pos
+end
+
+local function round(num, roundTo)
+  local b, r = math.modf(num / roundTo)
+  if r &gt;= 0.5 then
+    b = b + 1
+  end
+  return b * roundTo
+end
+
+local function setBorder(side, val)
+  local funcs =
+    {left = setBorderLeft, right = setBorderRight, top = setBorderTop, bottom = setBorderBottom}
+  val = math.max(val, 0)
+  funcs[side](val)
+end
+
+local function resizeContainers(side, w, h)
+  if table.contains({"left", "right"}, side) then
+    local info =
+      {
+        left =
+          {
+            resize = "resizeLeft",
+            cons = {"topLeftContainer", "bottomLeftContainer"},
+            tabs = {"topLeftTabs", "bottomLeftTabs"},
+            x = 0,
+            w = w,
+          },
+        right =
+          {
+            resize = "resizeRight",
+            cons = {"topRightContainer", "bottomRightContainer"},
+            tabs = {"topRightTabs", "bottomRightTabs"},
+            x = w,
+            w = mainW - w,
+          },
+      }
+    info = info[side]
+    -- move and resize top, bottom and tab containers
+    update_tab(GUIframe[info.tabs[1]], info.x, 0, info.w, configs.tabHeight)
+    update_tab(GUIframe[info.tabs[2]], info.x, h, info.w, configs.tabHeight)
+    GUIframe[info.cons[1]]:resize(info.w, h - configs.tabHeight)
+    GUIframe[info.cons[1]]:move(info.x, configs.tabHeight)
+    GUIframe[info.cons[2]]:resize(info.w, mainH - h - configs.tabHeight)
+    GUIframe[info.cons[2]]:move(info.x, h + configs.tabHeight)
+    -- adjust border size
+    setBorder(side, info.w + configs.borderOffset)
+    -- adjust width of top and bottom containers
+    local x, y
+    x = (GUIframe.sides.left ~= "hidden" and GUIframe.topLeftContainer:get_width()) or 0
+    w = ((GUIframe.sides.right ~= "hidden" and GUIframe.topRightContainer:get_x()) or mainW) - x
+    for _, con in ipairs({GUIframe.topContainer, GUIframe.bottomContainer}) do
+      y, h = con:get_y(), con:get_height()
+      con:resize(w, h)
+      con:move(x, y)
+    end
+  elseif table.contains({"top", "bottom"}, side) then
+    local x = 0
+    w = mainW
+    if GUIframe.sides.left ~= "hidden" then
+      w = w - GUIframe.topLeftContainer:get_width()
+      x = GUIframe.topLeftContainer:get_width()
+    end
+    if GUIframe.sides.right ~= "hidden" then
+      w = w - GUIframe.topRightContainer:get_width()
+    end
+    local info =
+      {
+        top = {con = "topContainer", y = 0, h = h},
+        bottom = {con = "bottomContainer", y = h, h = mainH - h},
+      }
+    local con = GUIframe[info[side].con]
+    con:resize(w, info[side].h)
+    con:move(x, info[side].y)
+    setBorder(side, info[side].h + configs.borderOffset)
+  end
+end
+
+local function refresh()
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  mainW, mainH = getMainWindowSize()
+  local rH, rW = configs.resizeHeight, configs.resizeWidth
+  local x, y, w
+  -- adjust bottom left and right container heights
+  for _, C in ipairs({GUIframe.bottomLeftContainer, GUIframe.bottomRightContainer}) do
+    C:resize(C:get_width(), mainH - C:get_y())
+  end
+  -- reposition right containers
+  w = GUIframe.topRightContainer:get_width()
+  for
+    _, C in
+      ipairs(
+        {
+          GUIframe.topRightContainer,
+          GUIframe.topRightTabs,
+          GUIframe.bottomRightContainer,
+          GUIframe.bottomRightTabs,
+        }
+      )
+  do
+    C:move(mainW - w, C:get_y())
+  end
+  -- resize and reposition bottom and top containers
+  w, x = mainW, 0
+  if GUIframe.sides.left ~= "hidden" then
+    w = w - GUIframe.topLeftContainer:get_width()
+    x = GUIframe.topLeftContainer:get_width()
+  end
+  if GUIframe.sides.right ~= "hidden" then
+    w = w - GUIframe.topRightContainer:get_width()
+  end
+  for _, C in ipairs({GUIframe.topContainer, GUIframe.bottomContainer}) do
+    C:resize(w, C:get_height())
+    C:move(x, C.name == "topContainer" and 0 or mainH - C:get_height())
+  end
+  -- reposition resize labels
+  x, y = GUIframe.topLeftContainer:get_width(), GUIframe.bottomLeftTabs:get_y()
+  GUIframe.resizeLeft:move(x, y - rH / 2)
+  x, y = GUIframe.topRightContainer:get_x(), GUIframe.bottomRightTabs:get_y()
+  GUIframe.resizeRight:move(x - rW, y - rH / 2)
+  x = (GUIframe.topContainer:get_width() - rW) / 2
+  if GUIframe.sides.left ~= "hidden" then
+    x = x + GUIframe.topLeftContainer:get_width()
+  end
+  y = GUIframe.topContainer:get_height()
+  GUIframe.resizeTop:move(x, y)
+  y = GUIframe.bottomContainer:get_y()
+  GUIframe.resizeBottom:move(x, y - rH)
+end
+
+-- enables the resize label for the given side and shows all associated containers if hidden
+
+function GUIframe.enable(side)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  if not table.contains(sides, side) then
+    error("GUIframe.enable: invalid side", 2)
+  end
+  local cons = side_containers[side]
+  for _, con in ipairs(cons) do
+    GUIframe[con]:show()
+    for _, win in pairs(GUIframe[con].windowList) do
+      -- loop can be removed after Geyser fix comes in
+      if win.active then
+        win:show()
+      end
+    end
+  end
+  if table.contains({"left", "right"}, side) then
+    setBorder(side, GUIframe[cons[1]]:get_width() + configs.borderOffset)
+  else
+    setBorder(side, GUIframe[cons[1]]:get_height() + configs.borderOffset)
+  end
+  GUIframe["resize" .. side:title()]:show()
+  GUIframe.sides[side] = "enabled"
+  refresh()
+end
+
+-- disables and hides the resize label for the given side, and hides all associated containers if indicated
+
+function GUIframe.disable(side, hide)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  if not table.contains(sides, side) then
+    error("GUIframe.disable: invalid side", 2)
+  end
+  local cons = side_containers[side]
+  GUIframe.sides[side] = "disabled"
+  if hide then
+    for _, con in ipairs(cons) do
+      GUIframe[con]:hide()
+      for _, win in pairs(GUIframe[con].windowList) do
+        -- loop can be removed after Geyser fix comes in
+        if win.type == "mapper" then
+          win:hide()
+        end
+      end
+    end
+    local border = _G["setBorder" .. side:title()]
+    border(0)
+    GUIframe.sides[side] = "hidden"
+  end
+  GUIframe["resize" .. side:title()]:hide()
+  refresh()
+end
+
+-- adds a Geyser window or container to the given container, with a tab showing the given name if applicable
+
+function GUIframe.addWindow(window, name, container, hideText)
+  if not GUIframe.initialized then
+    config()
+  end
+  if type(container) == "table" then
+    container = container.name
+  end
+  local con, tabs = get_containers(container)
+	if not window then
+		error("GUIframe.addWindow: invalid window", 2)
+	end
+  if not con then
+    error("GUIframe.addWindow: invalid container name", 2)
+  end
+  if not name then
+    error("GUIframe.addWindow: name argument required", 2)
+  end
+  -- remove window from any containers
+  for _, tcon in ipairs(container_names) do
+    if table.contains(GUIframe[tcon].windows, window.name) then
+      GUIframe.removeWindow(name, tcon)
+    end
+  end
+  deselectContainer(con, tabs)
+  -- add tab for window, if applicable
+  if tabs then
+    local showText = not hideText
+    window.showText = showText
+    local lbl =
+      Geyser.Label:new({name = name .. "Tab", x = 0, y = 0, width = 10, height = 10}, tabs)
+    lbl:setStyleSheet(configs.tabStyle)
+    if showText then
+      lbl:echo(configs.tabEchoStyle .. "&lt;b&gt;" .. name)
+    end
+    lbl:setClickCallback("GUIframe.buttonClick", name)
+    lbl:setReleaseCallback("GUIframe.buttonRelease", name)
+    lbl:setMoveCallback("GUIframe.buttonMove", name)
+    GUIframe.tabs[name] = lbl
+    adjustTabs(tabs)
+  end
+  -- add window to container and set size and position
+  con:add(window)
+  window:resize("100%", "100%")
+  window:move(0, 0)
+  window:show()
+  GUIframe.windows[name] = window
+  raiseEvent("sysWindowResizeEvent")
+end
+
+-- removes a named Geyser window or container from the named container (using name given in GUIframe.addWindow)
+
+function GUIframe.removeWindow(name, container)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  if not container then
+    container = GUIframe.windows[name].container
+  end
+  local con, tabs = get_containers(container)
+  if not con or not table.contains(container_names, con.name) then
+    error("GUIframe.removeWindow: invalid container name", 2)
+  end
+  if not name then
+    error("GUIframe.removeWindow: name argument required", 2)
+  end
+  if tabs then
+    local lbl = tabs.windowList[name .. "Tab"]
+    if lbl then
+      tabs:remove(lbl)
+      adjustTabs(tabs)
+      lbl:hide()
+    end
+  end
+  local window = GUIframe.windows[name]
+  con:remove(window)
+  window:hide()
+end
+
+-- saves the current GUI setup, including the size of the different containers and what windows go in which container
+
+function GUIframe.saveSettings()
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  local saveTbl = {}
+  local w, h = GUIframe.topLeftContainer:get_width(), GUIframe.bottomLeftTabs:get_y()
+  saveTbl.left = {w = w, h = h}
+  w, h = GUIframe.topRightContainer:get_width(), GUIframe.bottomRightTabs:get_y()
+  saveTbl.right = {w = w, h = h}
+  w, h = GUIframe.topContainer:get_width(), GUIframe.topContainer:get_height()
+  saveTbl.top = {w = w, h = h}
+  w, h = GUIframe.bottomContainer:get_width(), GUIframe.bottomContainer:get_height()
+  saveTbl.bottom = {w = w, h = h}
+  -- get added windows and containers they are assigned to
+  local windows = {}
+  local text = {}
+  for k, v in pairs(GUIframe.windows) do
+    local con = v.container.name
+    windows[con] = windows[con] or {}
+    table.insert(windows[con], k)
+    text[con] = text[con] or {}
+    text[con][k] = v.showText
+  end
+  -- reorder windows to match tab order for tabbed containers
+  for con, wins in pairs(windows) do
+    if con:find("Left") or con:find("Right") then
+      local tabs = GUIframe[con].tabs.windows
+      local new = {}
+      for k, v in ipairs(tabs) do
+        local wname = v:gsub("Tab", "")
+        table.insert(new, {wname, text[con][wname]})
+      end
+      windows[con] = new
+    end
+  end
+  saveTbl.windows = windows
+  saveTbl.sides = GUIframe.sides
+  table.save(getMudletHomeDir() .. "/GUIframeSave.lua", saveTbl)
+end
+
+-- loads GUI setup from a previous save
+
+function GUIframe.loadSettings(redraw)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  local saveTbl = {}
+  local path = getMudletHomeDir() .. "/GUIframeSave.lua"
+  path = path:gsub("\\", "/")
+  mainW, mainH = getMainWindowSize()
+  if not io.exists(path) then
+    debugc("GUIframe.loadSettings: save file doesn't exist.")
+    return
+  end
+  table.load(path, saveTbl)
+  resizeContainers("left", saveTbl.left.w, saveTbl.left.h)
+  resizeContainers("right", mainW - saveTbl.right.w, saveTbl.right.h)
+  resizeContainers("top", saveTbl.top.w, saveTbl.top.h)
+  resizeContainers("bottom", saveTbl.bottom.w, mainH - saveTbl.bottom.h)
+  for con, wins in pairs(saveTbl.windows) do
+    for _, name in ipairs(wins) do
+      if type(name) == "string" then
+        GUIframe.addWindow(GUIframe.windows[name], name, con)
+      else
+        local n, s = name[1], not name[2]
+        GUIframe.addWindow(GUIframe.windows[n], n, con, s)
+      end
+    end
+  end
+  for side, state in pairs(saveTbl.sides) do
+    if state == "enabled" then
+      GUIframe.enable(side)
+    elseif state == "disabled" then
+      GUIframe.disable(side, false)
+    elseif state == "hidden" then
+      GUIframe.disable(side, true)
+    end
+  end
+  -- force redraw of screen
+  if redraw then
+    setBackgroundColor(1, 1, 1)
+    setBackgroundColor(0, 0, 0)
+  end
+end
+
+-- can be called to force the script to run its config function again
+
+function GUIframe.reinitialize()
+  config()
+end
+
+-- can be called to activate a given tab without clicking on it
+
+function GUIframe.activate(name)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 1)
+  end
+  local window = GUIframe.windows[name]
+  if window then
+    local con, tabs = get_containers(window.container.name)
+    -- hide and unhighlight other windows and tabs
+    deselectContainer(con, tabs)
+    -- show selected window
+    window:show()
+    window.active = true
+    -- highlight selected tab
+    if window.showText then
+      GUIframe.tabs[name]:echo(configs.tabEchoStyle .. "&lt;b&gt;" .. name)
+    end
+  end
+end
+
+-- can be called to apply a style to a given tab
+
+function GUIframe.styleTab(name, style)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 1)
+  end
+  local tab = GUIframe.tabs[name]
+  if tab then
+    tab:setStyleSheet(style)
+  end
+end
+
+-- internally used function to handle button click callbacks
+
+function GUIframe.buttonClick(name, event)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  if table.contains(resizeLabels, name) then
+    if event.button == "RightButton" then
+      local lbl = GUIframe[name]
+      lbl.difX, lbl.difY = event.x, event.y
+      lbl.savedX, lbl.savedY = getMousePosition()
+      GUIframe[name].isClicked = true
+    end
+  elseif event.button == "LeftButton" then
+    local window = GUIframe.windows[name]
+    local con, tabs = get_containers(window.container.name)
+    -- hide and unhighlight other windows and tabs
+    deselectContainer(con, tabs)
+    -- show selected window
+    window:show()
+    window.active = true
+    -- highlight selected tab
+    if window.showText then
+      GUIframe.tabs[name]:echo(configs.tabEchoStyle .. "&lt;b&gt;" .. name)
+    end
+  elseif event.button == "RightButton" then
+    local window, tab = GUIframe.windows[name], GUIframe.tabs[name]
+    tab.savedX, tab.savedY = getMousePosition()
+    tab.difX, tab.difY, tab.isClicked = event.x, event.y, true
+    -- force update of coords for all tabs and tab containers
+    GUIframe.tabCoords = {}
+    for _, name in ipairs(tab_names) do
+      get_window_coords(GUIframe[name], true)
+      for tname, tab in pairs(GUIframe[name].windowList) do
+        get_window_coords(tab, true)
+      end
+    end
+  end
+  raiseEvent("GUIframe.buttonClick", name, event)
+end
+
+-- internally used function to handle button release callbacks
+
+function GUIframe.buttonRelease(name, event)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  if table.contains(resizeLabels, name) then
+    if event.button == "RightButton" then
+      local lbl = GUIframe[name]
+      lbl.savedX, lbl.savedY, lbl.difX, lbl.difY, lbl.isClicked = nil, nil, nil, nil, false
+    end
+  elseif event.button == "RightButton" then
+    local window, tab = GUIframe.windows[name], GUIframe.tabs[name]
+    local con, tabs = get_containers(window.container.name)
+    tab.difX, tab.difY, tab.savedX, tab.savedY, tab.isClicked = nil, nil, nil, nil, false
+    hideWindow("show_container")
+    for _, tname in ipairs(tab_names) do
+      local info = GUIframe[tname]
+      if info.mouse_over then
+        local pos = info.space_pos
+        info.mouse_over = nil
+        GUIframe.addWindow(window, name, tname:gsub("Tabs", ""), not window.showText)
+        if pos then
+          reorderTabs(info, tab.name, pos)
+          adjustTabs(info)
+        end
+      end
+    end
+    adjustTabs(tabs)
+  end
+  raiseEvent("GUIframe.buttonRelease", name, event)
+end
+
+-- internally used function to handle button move callbacks
+
+function GUIframe.buttonMove(name, event)
+  if not GUIframe.initialized then
+    error("GUIframe not initialized", 2)
+  end
+  if table.contains(resizeLabels, name) then
+    lbl = GUIframe[name]
+    if lbl.isClicked then
+      local w, h = getMousePosition()
+      w, h = round(w - lbl.difX, 10), round(h - lbl.difY, 10)
+      mainW, mainH = getMainWindowSize()
+      local side, cW, cH, rX, rY
+      local minX = GUIframe.sides.left ~= "hidden" and GUIframe.topLeftContainer:get_width() or 0
+      local maxX = GUIframe.sides.right ~= "hidden" and GUIframe.topRightContainer:get_x() or mainW
+      local minY = GUIframe.sides.top ~= "hidden" and GUIframe.topContainer:get_height() or 0
+      local maxY = GUIframe.sides.left ~= "hidden" and GUIframe.bottomContainer:get_y() or mainH
+      local mid, min, max = GUIframe.topContainer:get_width(), math.min, math.max
+      local tabH, rH, rW = configs.tabHeight, configs.resizeHeight, configs.resizeWidth
+      w, h = max(w, 0), max(h, 0)
+      -- specify position of resize labels and size of containers
+      local info =
+        {
+          resizeLeft =
+            {
+              side = "left",
+              x = min(w, maxX - rW),
+              y = min(max(h + rH / 2, tabH), mainH - tabH) - rH / 2,
+              w = min(w, maxX - rW),
+              h = min(max(h + rH / 2, tabH), mainH - tabH),
+            },
+          resizeRight =
+            {
+              side = "right",
+              x = min(max(w, minX), mainW),
+              y = min(max(h + rH / 2, tabH), mainH - tabH) - rH / 2,
+              w = min(max(w, minX), mainW - rW) + rW,
+              h = min(max(h + rH / 2, tabH), mainH - tabH),
+            },
+          resizeTop =
+            {
+              side = "top",
+              x = minX + (mid - rW) / 2,
+              y = min(h, maxY - rH),
+              w = maxX - minX,
+              h = min(h, maxY - rH),
+            },
+          resizeBottom =
+            {
+              side = "bottom",
+              x = minX + (mid - rW) / 2,
+              y = min(max(h, minY) - rH, mainH),
+              w = maxX - minX,
+              h = min(max(h, minY) + rH, mainH),
+            },
+        }
+      info = info[name]
+      lbl:move(info.x, info.y)
+      resizeContainers(info.side, info.w, info.h)
+    end
+  else
+    local window, tab = GUIframe.windows[name], GUIframe.tabs[name]
+    local con, tabs = get_containers(window.container.name)
+    local x, y = getMousePosition()
+    local over_con, over_tab
+    if tab and tab.isClicked then
+      moveWindow(tab.name, x - tab.difX, y - tab.difY)
+      -- check to see if mouse is over any tab containers
+      for _, tcon in ipairs(tab_names) do
+        if check_overlap(tcon, x, y) then
+          over_con = tcon
+          GUIframe[tcon].mouse_over = true
+          local info = GUIframe.tabCoords[tcon]
+          local tx, ty, tw, th = info.x, info.y, info.w, info.h
+          createLabel("show_container", 0, 0, 0, 0, 1)
+          moveWindow("show_container", tx, ty)
+          resizeWindow("show_container", tw, th)
+          setLabelStyleSheet(
+            "show_container",
+            [[
+                        background-color: black;
+                        border: 2px solid white;]]
+          )
+          showWindow("show_container")
+          lowerWindow("show_container")
+          -- check to see if mouse is over any tabs
+          for tname, info in pairs(GUIframe.tabs) do
+            if tname ~= name and check_overlap(info, x, y) then
+              over_tab = info.name
+              local windows = GUIframe[tcon].windows
+              local index = table.index_of(windows, over_tab)
+              makeSpace(GUIframe[tcon], tab, index)
+              break
+            end
+          end
+          break
+        end
+      end
+      -- remove any unnecessary spaces in tab containers
+      for _, name in ipairs(tab_names) do
+        if name ~= over_con then
+          adjustTabs(GUIframe[name])
+          GUIframe[name].mouse_over = nil
+        end
+      end
+    end
+  end
+  raiseEvent("GUIframe.buttonMove", name, event)
+end
+
+-- internally used function to handle sysWindowResizeEvent
+
+function GUIframe.eventHandler(event, ...)
+  if event == "sysWindowResizeEvent" and GUIframe.initialized then
+    refresh()
+  end
+end
+
+registerAnonymousEventHandler("sysWindowResizeEvent", "GUIframe.eventHandler")</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>CSSMan</name>
+						<packageName></packageName>
+						<script>-- CSSMan by Vadi. Public domain.
+
+CSSMan = {}
+CSSMan.__index = CSSMan
+
+function CSSMan.new(stylesheet)
+  local obj  = { stylesheet = {} }
+  setmetatable(obj,CSSMan)
+  local trim = string.trim
+
+  assert(type(stylesheet) == "string", "CSSMan.new: no stylesheet provided. A possible error is that you might have used CSSMan.new, not CSSMan:new")
+
+  for line in stylesheet:gmatch("[^\r\n]+") do
+    local attribute, value = line:match("^(.-):(.-);$")
+    if attribute and value then
+      attribute, value = trim(attribute), trim(value)
+      obj.stylesheet[attribute] = value
+    end
+  end
+
+  return obj
+end
+
+function CSSMan:set(key, value)
+  self.stylesheet[key] = value
+end
+
+function CSSMan:get(key)
+  return self.stylesheet[key]
+end
+
+function CSSMan:getCSS(key)
+  local lines, concat = {}, table.concat
+  for k,v in pairs(self.stylesheet) do lines[#lines+1] = concat({k,": ", v, ";"}) end
+  return concat(lines, "\n")
+end
+
+function CSSMan:gettable()
+  return self.stylesheet
+end
+
+function CSSMan:settable(tbl)
+  assert(type(tbl) == "table", "CSSMan:settable: table expected, got "..type(tbl))
+
+  self.stylesheet = tbl
+end</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<Script isActive="yes" isFolder="no">
+					<name>CONFIG OPTIONS</name>
+					<packageName></packageName>
+					<script>kaiUI = kaiUI or {}
+-- Font size for the People Here window
+kaiUI.peopleHereFontSize = 10
+
+-- Font size for the Info Here window
+kaiUI.infoHereFontSize = 10
+
+-- Font size for the aethermap
+kaiUI.amapSize = 14
+
+-- Chat stuff. Touch tabs at your own peril (and poke at the kaiUI.chat.initChannels() function if you do)
+-- color1 is the border color, color2 is the color for active chat tabs, font sizes are self explanatory.
+kaiUI.chat = kaiUI.chat or
+  {
+    tabs =   {"All", "Tells", "Local", "Web", "City", "Guild", "Clans", "Order", "Misc","Death"},
+    color1 = "DarkSlateBlue",
+    color2 = "SlateBlue",
+		fontSize = 10,
+		tabFontSize = 11,
+  }
+kaiUI.timestamps = false
+
+-- The colors for the info here window.
+kaiUI.infoHereColors =
+  {
+    t = "&lt;DarkGoldenrod&gt;",
+    m = "&lt;chartreuse&gt;",
+    mh = "&lt;OrangeRed&gt;",
+    c = "&lt;LightSkyBlue&gt;",
+		mt = "&lt;DarkGoldenrod&gt;",
+    none = "&lt;LightGoldenrod&gt;",
+  }
+	
+-- This is the base CSS stylesheet that all UI elements reference.
+-- Changing things here (i.e, the border color or style) will change all UI elements.
+-- Changes made will require a mudlet restart to take effect.
+kaiUI.CSS = {}
+kaiUI.CSS.base =
+  CSSMan.new(
+    [[
+				background-color: black;
+				border-color: DarkSlateBlue;
+				border-style: double;
+				border-radius: 1px;
+				border-width: 1px;
+				margin: 1px;
+				qproperty-alignment: 'AlignCenter | AlignCenter';]]
+  )
+ kaiUI.chat.current = kaiUI.chat.current or kaiUI.chat.tabs[1]
+ 
+ </script>
+					<eventHandlerList />
+				</Script>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Misc functions</name>
+					<packageName></packageName>
+					<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Level table</name>
+						<packageName></packageName>
+						<script>kaiUI.levelList = {
+  [1] = "Newborn",
+  [2] = "Bold",
+  [3] = "Bright",
+  [4] = "Trustworthy",
+  [5] = "Lusternian",
+  [6] = "Novice",
+  [7] = "Innocuous",
+  [8] = "Harmless",
+  [9] = "Apprehensive",
+  [10] = "Simple",
+  [11] = "Mundane",
+  [12] = "Steady",
+  [13] = "Stout",
+  [14] = "Resolute",
+  [15] = "Stalwart",
+  [16] = "Audacious",
+  [17] = "Strong",
+  [18] = "Spirited",
+  [19] = "Vital",
+  [20]= "Daring",
+  [21] = "Vibrant",
+  [22] = "Robust",
+  [23] = "Notable",
+  [24] = "Effervescent",
+  [25] = "Significant",
+  [26] = "Remarkable",
+  [27] = "Vanguard",
+  [28] = "Exceptional",
+  [29] = "Gallant",
+  [30] = "Courageous",
+  [31] = "Distinguished",
+  [32] = "Intrepid",
+  [33] = "Dauntless",
+  [34] = "Unflinching",
+  [35] = "Dynamic",
+  [36] = "Prominent",
+  [37] = "Prestigious",
+  [38] = "Superior",
+  [39] = "Radiant",
+  [40] = "Grand",
+  [41] = "Salient",
+  [42] = "Heroic",
+  [43] = "Golden",
+  [44] = "Valiant",
+  [45] = "Marvelous",
+  [46] = "Luminary",
+  [47]= "Shining",
+  [48]= "Scintillating",
+  [49] = "Eminent",
+  [50] = "Paragon",
+  [51] = "Mighty",
+  [52] = "Brilliant",
+  [53] = "Majestic",
+  [54] = "Dazzling",
+  [55] = "Idolized",
+  [56] = "Epic",
+  [57] = "Mythic",
+  [58] = "Exalted",
+  [59] = "Illustrious",
+  [60] = "Glorious",
+  [61] = "Impregnable",
+  [62] = "Canonized",
+  [63] = "Indomitable",
+  [64] = "Supreme",
+  [65] = "Enshrined",
+  [66] = "Lionized",
+  [67] = "Legendary",
+  [68] = "Invincible",
+  [69] = "Stellar",
+  [70] = "Plenary",
+  [71] = "Deified",
+  [72] = "Celestial",
+  [73] = "Empyreal",
+  [74] = "Unearthly",
+  [75] = "Almighty",
+  [76] = "Archmortal",
+  [77] = "Paramortal",
+  [78] = "Transmortal",
+  [79] = "Metamortal",
+  [80] = "Supramortal",
+  [81] = "5th Circle of the Fates",
+  [82] = "4th Circle of the Fates",
+  [83] = "3rd Circle of the Fates",
+  [84]= "2nd Circle of the Fates",
+  [85] = "1st Circle of the Fates",
+  [86] = "5th Rank of the Infinite",
+  [87] = "4th Rank of the Infinite",
+  [88] = "3rd Rank of the Infinite",
+  [89] = "2nd Rank of the Infinite",
+  [90] = "1st Rank of the Infinite",
+  [91] = "5th Order of the Hyperphysical",
+  [92] = "4th Order of the Hyperphysical",
+  [93] = "3rd Order of the Hyperphysical",
+  [94] = "2nd Order of the Hyperphysical",
+  [95] = "1st Order of the Hyperphysical",
+  [96] = "Master of Lusternia",
+  [97] = "First Among the Hosts",
+  [98] = "Lord of Creation",
+  [99] = "Titan",
+  [100] = "Demigod",
+  [101]= "Ascendant"
+}</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Utility functions</name>
+						<packageName></packageName>
+						<script>function commaValue(n)
+  -- credit http://richard.warburton.it
+  local left, num, right = string.match(n, '^([^%d]*%d)(%d*)(.-)$')
+  return left .. (num:reverse():gsub('(%d%d%d)', '%1,'):reverse()) .. right
+end
+
+function gmcpToBool(arg)
+  if arg == "1" then
+    return true
+  else
+    return false
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Initialize chat channels</name>
+						<packageName></packageName>
+						<script>function kaiUI.chat.initChannels()
+  kaiUI.chat.channel = kaiUI.chat.channel or {}
+  kaiUI.chat.channel.last = kaiUI.chat.channel.last or "All"
+  kaiUI.chat.channel.list =
+    {
+      ct = "Org",
+      cgt = "Org",
+      gt = "Guild",
+      gts = "Guild",
+      gnt = "Guild",
+      clt = "Clans",
+      sqt = "Squad",
+      tell = "Tells",
+      says = "Says",
+      --emotes = "Says",
+      ot = "Order",
+      oto = "Order",
+      ft = "Other",
+      newbie = "Other",
+      market = "Other",
+    }
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Update crit counter</name>
+						<packageName></packageName>
+						<script>function kaiUI.updateCritCounter()
+  if true then return end
+	kaiUI.crits = kaiUI.crits or 0
+	kaiUI.hits = kaiUI.hits or 0
+	if kaiUI.hits == 0 and kaiUI.crits == 0 then
+		kaiUI.critCounterLabel:echo([[&lt;p style="font-size:12px;"&gt;&lt;font color="DarkSlateBlue"&gt;&lt;b&gt;|[&lt;font color="LightYellow"&gt;Crits: &lt;font color="chartreuse"&gt;0&lt;font color="LightYellow"&gt;/0 &lt;font color="LightYellow"&gt;[&lt;font color="OrangeRed"&gt;0%&lt;font color="LightYellow"&gt;]&lt;font color="DarkSlateBlue"&gt;]|]])
+		return
+	end
+	local percentage = string.format("%.2f", (kaiUI.crits/kaiUI.hits)*100)
+	local echoString = [[&lt;p style="font-size:10px;"&gt;&lt;font color="DarkSlateBlue"&gt;&lt;b&gt;|[&lt;font color="LightYellow"&gt;Crits: &lt;font color="chartreuse"&gt;]] .. kaiUI.crits .. [[&lt;font color="LightYellow"&gt;/]] .. kaiUI.hits .. [[ [&lt;font color="OrangeRed"&gt;]] .. percentage .. [[%&lt;font color="LightYellow"&gt;]&lt;font color="DarkSlateBlue"&gt;]| ]]
+	kaiUI.critCounterLabel:echo(echoString)
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>UI target</name>
+						<packageName></packageName>
+						<script>function kaiUI.target(arg)
+	kaiUI.targetName = arg
+	kaiUI.updateInfoHere()
+	kaiUI.updateInfoGauges()
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Chat Append</name>
+						<packageName></packageName>
+						<script>function chatAppend(chat)
+  selectCurrentLine()
+  local text = copy2decho()
+  kaiUI.AllConsole:decho(text.."\n")
+  if chat:lower()~="all" then
+    kaiUI[chat:lower():title() .. "Console"]:decho(text.."\n")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<Script isActive="yes" isFolder="no">
+					<name>GUIFrame defaults</name>
+					<packageName></packageName>
+					<script>local mainW, mainH = getMainWindowSize()
+local tabSheet = table.deepcopy(kaiUI.CSS.base)
+tabSheet.stylesheet.margin = nil
+tabSheet:set("margin-right", "1px")
+tabSheet:set("margin-left", "1px")
+tabSheet:set("border-width", "2px")
+GUIframe.configs = {
+    tabHeight = 20,
+    tabStyle = tabSheet:getCSS(),
+    tabEchoStyle = '&lt;center&gt;&lt;p style="font-size:13px; color:LightYellow"&gt;',
+    leftStartWidth = math.floor(mainW / 6.5),
+    leftStartHeight = math.floor(mainH / 3),
+    rightStartWidth = math.floor(mainW / 3),
+    rightStartHeight = math.floor(mainH * 0.42),
+    topStartHeight = 30,
+    bottomStartHeight = 65,
+		resizeHoverImage = "/KaiUI/blue_arrows.png",
+    resizeRestImage = "/KaiUI/blue_arrows_20t.png",
+    borderOffset = 0,
+  }</script>
+					<eventHandlerList />
+				</Script>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>UI functions</name>
+					<packageName></packageName>
+					<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Indicator buttons</name>
+						<packageName></packageName>
+						<script>local balSheet =
+  [[
+	background-color: black;
+	border-style: inset;
+	border-radius: 4px;
+	border-width: 1px;
+	margin: 2px;
+	qproperty-alignment: 'AlignCenter | AlignCenter';
+  border-color: ']] ..
+  kaiUI.CSS.base:get("border-color") ..
+  "';"
+  
+kaiUI.indicators = kaiUI.indicators or {}
+kaiUI.indicators.list = kaiUI.indicators.list or {}
+
+
+local onBal = [[&lt;p style="font-size:13px;"&gt;&lt;b&gt;&lt;font color="chartreuse"&gt;]]
+local offBal = [[&lt;p style="font-size:13px;"&gt;&lt;b&gt;&lt;font color="MediumSlateBlue"&gt;]]
+
+function kaiUI.indicators.create(text, variable, container)
+  local variable = loadstring("return " .. variable)
+  local indicator = Geyser.Label:new({name = "Kai" .. text .. "Indicator"}, container)
+  indicator:setStyleSheet(balSheet)
+
+  local function update()
+    if variable() and variable()~="0" then
+      indicator:echo(onBal .. text)
+    else
+      indicator:echo(offBal .. text)
+    end
+  end
+
+  table.insert(kaiUI.indicators.list, update)
+end
+
+function kaiUI.indicators.clear()
+  kaiUI.indicators.list = {}
+end
+
+function kaiUI.indicators.update()
+  for _, f in pairs(kaiUI.indicators.list) do
+    f()
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build UI</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildUI()
+  kaiUI.indicators.clear()
+  --kaiUI.buildMapper()
+  kaiUI.buildChat()
+  kaiUI.buildPeopleHere()
+  kaiUI.buildTopBar()
+  kaiUI.buildBottomBar()
+  kaiUI.buildBashingInfo()
+  tempTimer(0, function()
+		kaiUI.chat.initChannels()
+		kaiUI.updateCritCounter()
+		end)
+	GUIframe.disable("top")
+	GUIframe.disable("bottom")
+	GUIframe.disable("right")
+	GUIframe.disable("left")
+	raiseEvent("KaiUI built")
+end
+
+function kaiUI.UIInstalled(_, name)
+	if name ~= "KaiUI" then
+		return
+	else
+		kaiUI.buildUI()
+		tempTimer(0, [[kaiUI.updateChar()]])
+	end
+end
+registerAnonymousEventHandler("sysInstall", "kaiUI.UIInstalled")</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build top bar</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildTopBar()
+  kaiUI.topBar = Geyser.Container:new({name = "KaiTopBar"})
+  kaiUI.topBarBG =
+    Geyser.Label:new(
+      {name = "KaiTopBarBG", x = 0, y = 0, height = "100%", width = "100%"}, kaiUI.topBar
+    )
+  kaiUI.topBarBG:setStyleSheet(kaiUI.CSS.base:getCSS())
+  GUIframe.addWindow(kaiUI.topBar, "TopBar", "top")
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build bottom bar</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildBottomBar()
+  kaiUI.bottomBar = Geyser.Container:new({name = "KaiBottomBar"})
+  kaiUI.bottomBarBG =
+    Geyser.Label:new(
+      {name = "KaiBottomBarBG", x = 0, y = 0, height = "100%", width = "100%"}, kaiUI.bottomBar
+    )
+  kaiUI.bottomBarBG:setStyleSheet(kaiUI.CSS.base:getCSS())
+  kaiUI.bottomBarLeft =
+    Geyser.Label:new(
+      {name = "KaiBottomBarLeft", x = 0, y = 0, height = "100%", width = "55%"}, kaiUI.bottomBarBG
+    )
+  local btmLeftSheet = table.deepcopy(kaiUI.CSS.base)
+  btmLeftSheet:set("margin-right", "0px")
+  kaiUI.bottomBarLeft:setStyleSheet(btmLeftSheet:getCSS())
+  kaiUI.bottomBarRight =
+    Geyser.Label:new(
+      {name = "KaiBottomBarRight", x = "55%", y = 0, height = "100%", width = "45%"},
+      kaiUI.bottomBarBG
+    )
+  local btmRightSheet = table.deepcopy(kaiUI.CSS.base)
+  btmRightSheet:set("margin-left", "0px")
+  kaiUI.bottomBarRight:setStyleSheet(btmRightSheet:getCSS())
+  kaiUI.bottomBarRightVBox =
+    Geyser.VBox:new(
+      {name = "KaiBottomBarRightVBox", x = 0, y = 0, height = "100%", width = "100%"},
+      kaiUI.bottomBarRight
+    )
+  kaiUI.bottomBarRightTop =
+    Geyser.Label:new({name = "KaiBottomBarRightTop", height = -1}, kaiUI.bottomBarRightVBox)
+  local btmBarTopSheet = table.deepcopy(kaiUI.CSS.base)
+  btmBarTopSheet.stylesheet.margin = nil
+  btmBarTopSheet:set("margin-top", "1px")
+  kaiUI.bottomBarRightTop:setStyleSheet(btmBarTopSheet:getCSS())
+  kaiUI.bottomBarRightBottom =
+    Geyser.Label:new({name = "KaiBottomBarRightBottom", height = -1}, kaiUI.bottomBarRightVBox)
+  local btmBarRightBtmSheet = table.deepcopy(kaiUI.CSS.base)
+  btmBarRightBtmSheet.stylesheet.margin = nil
+  kaiUI.bottomBarRightBottom:setStyleSheet(btmBarRightBtmSheet:getCSS())
+  kaiUI.balanceBG =
+    Geyser.Label:new(
+      {name = "KaiBalanceBG", x = "70%", y = 1, width = "30%", height = -1}, kaiUI.bottomBarLeft
+    )
+  local balBG = table.deepcopy(kaiUI.CSS.base)
+  balBG.stylesheet.margin = nil
+  balBG.stylesheet["border-width"] = nil
+  balBG:set("border-top", "1px")
+  balBG:set("border-left", "1px")
+  balBG:set("border-bottom", "1px")
+  kaiUI.balanceBG:setStyleSheet(balBG:getCSS())
+  kaiUI.balanceVBox =
+    Geyser.VBox:new(
+      {name = "KaiBalanceVBox", x = 1, y = 1, width = -1, height = -2}, kaiUI.balanceBG
+    )
+  local balSheet =
+    [[
+				background-color: black;
+				border-style: inset;
+				border-radius: 4px;
+				border-width: 1px;
+				margin: 2px;
+				qproperty-alignment: 'AlignCenter | AlignCenter';
+        border-color: ']] ..
+    kaiUI.CSS.base:get("border-color") ..
+    "';"
+  --  balSheet:set("border-color", kaiUI.CSS.base:get("border-color"))
+  kaiUI.balanceHBox1 = Geyser.HBox:new({name = "KaiBalanceHBox1"}, kaiUI.balanceVBox)
+  kaiUI.balanceHBox2 = Geyser.HBox:new({name = "KaiBalanceHBox2"}, kaiUI.balanceVBox)
+  
+  
+  kaiUI.indicators.create("BAL","gmcp.Char.Vitals.balance", kaiUI.balanceHBox1)
+  kaiUI.indicators.create("EQ","gmcp.Char.Vitals.equilibrium", kaiUI.balanceHBox1)
+  kaiUI.indicators.create("CR","snd.balance.crystal", kaiUI.balanceHBox1)
+  kaiUI.indicators.create("WD","snd.balance.wand", kaiUI.balanceHBox1)
+
+  kaiUI.indicators.create("HE","gmcp.Char.Vitals.herb", kaiUI.balanceHBox2)
+  kaiUI.indicators.create("SM","gmcp.Char.Vitals.pipe", kaiUI.balanceHBox2)
+  kaiUI.indicators.create("EL","gmcp.Char.Vitals.elixir", kaiUI.balanceHBox2)
+  kaiUI.indicators.create("SA","gmcp.Char.Vitals.salve", kaiUI.balanceHBox2)
+  kaiUI.indicators.create("TR","gmcp.Char.Vitals.tree", kaiUI.balanceHBox2)
+  kaiUI.indicators.create("FO","gmcp.Char.Vitals.focus", kaiUI.balanceHBox2)
+
+  
+  --instead of vbox do it with a thing
+  kaiUI.topGauges =
+    Geyser.Container:new(
+      {name = "kaiTopGauges", x = 0, y = 0, width = "69%", height = "66%"}, kaiUI.bottomBarLeft
+    )
+  kaiUI.bottomGauges =
+    Geyser.Container:new(
+      {name = "kaiBottomGauges", x = 0, y = "-33%", width = "69%", height = "33%"},
+      kaiUI.bottomBarLeft
+    )
+  kaiUI.gaugeHBox1 =
+    Geyser.HBox:new(
+      {name = "KaiGaugeHBox1", x = 5, y = 5, height = -2, width = -1}, kaiUI.topGauges
+    )
+  kaiUI.gaugeHBox2 =
+    Geyser.HBox:new(
+      {name = "KaiGaugeHBox2", x = 5, y = 0, height = -5, width = -1}, kaiUI.bottomGauges
+    )
+  local gaugeBackSheet =
+    CSSMan.new(
+      [[
+    		background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #aeaeae, stop: 0.1 #9f9f9f, stop: 0.39 #818181, stop: 0.4 #3c3c3c, stop: 1 #636363);
+        border-width: 1px;
+        border-color: black;
+        border-style: solid;
+        border-radius: 6;
+        margin-right: 1px;
+				margin-left: 1px;
+        margin-top: 2px;
+        margin-bottom: 1px;]]
+    )
+  local gaugeFrontSheet = table.deepcopy(gaugeBackSheet)
+  gaugeFrontSheet.stylesheet["border-width"] = nil
+  gaugeFrontSheet:set("border-top", "1px black solid")
+  gaugeFrontSheet:set("border-left", "1px black solid")
+  gaugeFrontSheet:set("border-bottom", "1px black solid")
+
+  local function makeGauge(name, container, gradient)
+    kaiUI[name] = Geyser.Gauge:new({name = "Kai" .. string.title(name)}, container)
+    kaiUI[name].back:setStyleSheet(gaugeBackSheet:getCSS())
+    gaugeFrontSheet:set("background-color", gradient)
+    kaiUI[name].front:setStyleSheet(gaugeFrontSheet:getCSS())
+    kaiUI[name].text:setStyleSheet([[qproperty-alignment: 'AlignCenter | AlignCenter';]])
+    kaiUI[name .. "Text"] =
+      Geyser.Label:new(
+        {name = "Kai" .. name:title() .. "Text", x = "2%", y = 0, height = "85%", width = "98%"},
+        kaiUI[name].back
+      )
+    kaiUI[name .. "Text"]:setStyleSheet(
+      [[
+		background-color: rgba(0,0,0,0%);
+		qproperty-alignment: 'AlignCenter | AlignCenter';]]
+    )
+  end
+
+  makeGauge(
+    "hpGauge",
+    kaiUI.gaugeHBox1,
+    "QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e13c3c, stop: 0.1 #d61e1e, stop: 0.39 #bd0000, stop: 0.4 #960000, stop: 1 #bd0000)"
+  )
+  makeGauge(
+    "mpGauge",
+    kaiUI.gaugeHBox1,
+    "QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #3c69e1, stop: 0.1 #1e50d6, stop: 0.39 #003cbd, stop: 0.4 #002896, stop: 1 #003cbd)"
+  )
+  makeGauge(
+    "epGauge",
+    kaiUI.gaugeHBox2,
+    "QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #4ae13c, stop: 0.1 #24d61e, stop: 0.39 #2cbd00, stop: 0.4 #059600, stop: 1 #2cbd00)"
+  )
+  makeGauge(
+    "wpGauge",
+    kaiUI.gaugeHBox2,
+    "QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #8c3ce1, stop: 0.1 #781ed6, stop: 0.39 #6600bd, stop: 0.4 #600096, stop: 1 #6600bd)"
+  )
+  GUIframe.addWindow(kaiUI.bottomBar, "BottomBar", "bottom")
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build bashing info</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildBashingInfo()
+  kaiUI.bashingInfo = Geyser.Container:new({name = "KaiBashingInfo"})
+  kaiUI.bashingInfoBG =
+    Geyser.Label:new(
+      {name = "KaiBashingInfoBG", x = 0, y = 0, height = "100%", width = "100%"}, kaiUI.bashingInfo
+    )
+  kaiUI.bashingInfoBG:setStyleSheet(kaiUI.CSS.base:getCSS())
+  kaiUI.denizenList =
+    Geyser.Label:new(
+      {name = "KaiDenizenList", x = 0, y = 0, height = "85%", width = "100%"}, kaiUI.bashingInfoBG
+    )
+	local denizenListSheet = table.deepcopy(kaiUI.CSS.base)
+	denizenListSheet.stylesheet.margin = nil
+	denizenListSheet.stylesheet["border-width"] = nil
+	denizenListSheet:set("margin-top", "2px")
+	denizenListSheet:set("margin-right", "2px")
+	denizenListSheet:set("margin-left", "2px")
+	denizenListSheet:set("border-top", "1px")
+	denizenListSheet:set("border-bottom", "1px")
+  kaiUI.denizenList:setStyleSheet(denizenListSheet:getCSS())
+  kaiUI.denizenListConsole =
+    Geyser.MiniConsole:new(
+      {name = "KaiDenizenMiniConsole", x = 2, y = 4, height = -4, width = -4, color = "black"},
+      kaiUI.denizenList
+    )
+  kaiUI.denizenListConsole:setFontSize(kaiUI.infoHereFontSize)
+  kaiUI.counterContainer =
+    Geyser.Container:new(
+      {name = "KaiCounterContainer", x = 0, y = "85%", height = "15%", width = "100%"},
+      kaiUI.bashingInfoBG
+    )
+ 
+ 
+   kaiUI.togglesVBox =
+    Geyser.VBox:new(
+      {name = "KaiTogglesVBox", x = 2, y = 2, width = -2, height = -2}, kaiUI.counterContainer
+    )
+  local balSheet =
+    [[
+				background-color: black;
+				border-style: inset;
+				border-radius: 4px;
+				border-width: 1px;
+				margin: 2px;
+				qproperty-alignment: 'AlignCenter | AlignCenter';
+        border-color: ']] ..
+    kaiUI.CSS.base:get("border-color") ..
+    "';"
+  --  balSheet:set("border-color", kaiUI.CSS.base:get("border-color"))
+  kaiUI.togglesHBox1 = Geyser.HBox:new({name = "KaiBalanceHBox1"}, kaiUI.togglesVBox)
+  kaiUI.togglesHBox2 = Geyser.HBox:new({name = "KaiBalanceHBox2"}, kaiUI.togglesVBox)
+  
+  
+  kaiUI.indicators.create("Sunder","snd.toggles.active", kaiUI.togglesHBox1)
+  kaiUI.indicators.create("FastHunt","snd.toggles.fasthunt", kaiUI.togglesHBox1)
+  kaiUI.indicators.create("Bashing","snd.toggles.bashing", kaiUI.togglesHBox1)
+  kaiUI.indicators.create("Running","bot.going or (demonwalker and demonwalker.enabled)", kaiUI.togglesHBox1)
+  
+  kaiUI.indicators.create("Attacking","snd.toggles.attacking", kaiUI.togglesHBox2)
+  kaiUI.indicators.create("Listening","snd.toggles.listening", kaiUI.togglesHBox2)
+  kaiUI.indicators.create("AffCalling","snd.toggles.affcalling", kaiUI.togglesHBox2)
+
+ 
+  GUIframe.addWindow(kaiUI.bashingInfo, "Info Here", "bottomleft")
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build people here</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildPeopleHere()
+  kaiUI.peopleHere = Geyser.Container:new({name = "KaiPeopleHere"})
+  kaiUI.peopleHereBG =
+    Geyser.Label:new(
+      {name = "KaiPeopleHereBG", x = 0, y = 0, height = "25%", width = "100%"}, kaiUI.peopleHere
+    )
+  kaiUI.peopleHereBG:setStyleSheet(kaiUI.CSS.base:getCSS())
+  kaiUI.peopleHereConsole =
+    Geyser.MiniConsole:new(
+      {
+        name = "KaiPeopleHereConsole",
+        x = "2%",
+        y = "2%",
+        height = "97%",
+        width = "97%",
+        color = "black",
+      },
+      kaiUI.peopleHereBG
+    )
+  kaiUI.peopleHereConsole:setFontSize(kaiUI.peopleHereFontSize)
+  kaiUI.peopleHereConsole:enableAutoWrap()
+  kaiUI.buildAffBoxes()
+  GUIframe.addWindow(kaiUI.peopleHere, "People Here", "topleft")
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build aff boxes</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildAffBoxes()
+
+  kaiUI.affContainer = Geyser.Label:new({
+    name = "affContainer",
+    x = 0, y = "25%",
+    width = "100%", height = "75%",
+    }, kaiUI.peopleHere)
+  
+  mystatus = Geyser.Label:new({
+   name = "mystatus",
+   x = 0, y = 0,
+   width = "35%", height = "25%",
+   fgColor = "white",
+   message = [[mystatus]],
+  }, kaiUI.affContainer)
+  mystatus:setStyleSheet(kaiUI.CSS.base:getCSS())
+
+  mystatus:echo("&lt;center&gt;".."PASN".."&lt;/center&gt;&lt;center&gt;prone&lt;/center&gt;")  
+  
+  mylimbs = Geyser.Label:new({
+   name = "mylimbs",
+   x = 0, y = "25%",
+   width = "35%", height = "25%",
+   fgColor = "white",
+   message = [[mylimbs]],
+  }, kaiUI.affContainer)
+  mylimbs:setStyleSheet(kaiUI.CSS.base:getCSS())
+  mylimbs:echo("&lt;center&gt;0&lt;/center&gt;&lt;center&gt;/|\\&lt;/center&gt;&lt;center&gt;/\\&lt;/center&gt;")
+  
+  
+  myaffs = Geyser.Label:new({
+   name = "myaffs",
+   x = "35%", y = "0%",
+   width = "65%", height = "50%",
+   fgColor = "white",
+   message = [[my affs]],
+  }, kaiUI.affContainer)
+  myaffs:setStyleSheet(kaiUI.CSS.base:getCSS())
+  
+  
+  estatus = Geyser.Label:new({
+   name = "estatus",
+   x = 0, y = "50%",
+   width = "35%", height = "25%",
+   message = [[estatus]],
+  }, kaiUI.affContainer)
+  estatus:setStyleSheet(kaiUI.CSS.base:getCSS())
+  estatus:echo("&lt;center&gt;".."PASN".."&lt;/center&gt;&lt;center&gt;prone&lt;/center&gt;")
+
+  elimbs = Geyser.Label:new({
+   name = "elimbs",
+   x = 0, y = "75%",
+   width = "35%", height = "25%",
+   message = [[elimbs]],
+  }, kaiUI.affContainer);
+  elimbs:setStyleSheet(kaiUI.CSS.base:getCSS())
+  elimbs:echo("&lt;center&gt;0&lt;/center&gt;&lt;center&gt;/|\\&lt;/center&gt;&lt;center&gt;/\\&lt;/center&gt;")
+
+  eaffs = Geyser.Label:new({
+   name = "eaffs",
+   x = "35%", y = "50%",
+   width = "65%", height = "50%",
+   message = [[&lt;center&gt;enemy affs&lt;/center&gt;]],
+  },  kaiUI.affContainer);
+  eaffs:setStyleSheet(kaiUI.CSS.base:getCSS())
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="no" isFolder="no">
+						<name>Build mapper</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildMapper()
+  kaiUI.mapper = Geyser.Container:new({name = "KaiMapper"})
+  kaiUI.mapBG =
+    Geyser.Label:new({name = "KaiMapBG", x = 0, y = 0, height = -2, width = "100%"}, kaiUI.mapper)
+  kaiUI.mapBG:setStyleSheet(kaiUI.CSS.base:getCSS())
+  kaiUI.mapBG:lower()
+  kaiUI.map =
+    Geyser.Mapper:new({name = "KaiUIMap", x = 5, y = 5, width = -10, height = -10}, kaiUI.mapper)
+  kaiUI.amap = Geyser.MiniConsole:new({name = "KaiUIAMap", x = "5%", y = "5%", width = "90%", height = "90%", color = "black"}, kaiUI.mapBG)
+  kaiUI.amap:setFontSize(kaiUI.amapSize)
+  kaiUI.amap:hide()
+  GUIframe.addWindow(kaiUI.mapper, "Map", "topright")
+  setMapZoom(11)
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Build chat</name>
+						<packageName></packageName>
+						<script>function kaiUI.buildChat()
+  kaiUI.chatContainer =
+    Geyser.Container:new({name = "kaiUIChatBaseContainer", x = 0, y = 0})
+  kaiUI.chatHeader =
+    Geyser.HBox:new(
+      {name = "kaiUIChatHeader", x = 2, y = 2, width = "100%", height = "5%"}, kaiUI.chatContainer
+    )
+  kaiUI.chatFooter =
+    Geyser.Label:new(
+      {name = "kaiUIChatFooter", x = 0, y = "6%", width = "100%", height = "94%"},
+      kaiUI.chatContainer
+    )
+  kaiUI.chatFooter:setStyleSheet(
+    [[
+        background-color: ]] .. kaiUI.chat.color1 .. [[;
+        border-radius: 2px;
+        border-width: 2px;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        margin-top: 2px;]]
+  )
+  for k, v in pairs(kaiUI.chat.tabs) do
+    kaiUI[v .. "Tab"] = Geyser.Label:new({name = "kaiUI." .. v .. "Tab"}, kaiUI.chatHeader)
+    kaiUI[v .. "Tab"]:setStyleSheet(
+      [[
+            background-color: black;
+            border-color: ]] .. kaiUI.chat.color1 .. [[;
+            border-style: outset;
+            border-radius: 2px;
+            border-width: 2px;
+            border-bottom-width: 1px;
+            font-size: ]] .. kaiUI.chat.tabFontSize .. [[;
+            margin-left: 1px;
+            margin-right: 1px;
+            qproperty-alignment: 'AlignCenter | AlignCenter';]]
+    )
+    kaiUI[v .. "Tab"]:echo(v)
+    kaiUI[v .. "Tab"]:setClickCallback("kaiUI.chat.click", v)
+    kaiUI[v] =
+      Geyser.Label:new(
+        {name = "kaiUI." .. v, x = 0, y = 0, width = "100%", height = "100%"}, kaiUI.chatFooter
+      )
+    kaiUI[v]:setStyleSheet(
+      [[
+            background-color: ]] .. kaiUI.chat.color1 .. [[;;
+            border-color: ]] .. kaiUI.chat.color1 .. [[;
+            border-radius: 2px;
+            border-width: 2px;]]
+    )
+    kaiUI[v .. "Console"] =
+      Geyser.MiniConsole:new(
+        {name = "kaiUI." .. v .. "Console", x = 1, y = 1, width = -1, height = -1, color = "black"},
+        kaiUI[v]
+      )
+    kaiUI[v .. "Console"]:setFontSize(kaiUI.chat.fontSize)
+    kaiUI[v .. "Console"]:enableAutoWrap()
+    kaiUI[v]:hide()
+  end
+
+  function kaiUI.chat.click(tab)
+    kaiUI[kaiUI.chat.current]:hide()
+    for k, v in pairs(kaiUI.chat.tabs) do
+      kaiUI[v .. "Tab"]:setStyleSheet(
+        [[
+            background-color: black;
+            border-color: ]] .. kaiUI.chat.color1 ..[[;
+            border-style: outset;
+            border-radius: 2px;
+            border-width: 2px;
+            border-bottom-width: 1px;
+            font-size: ]] .. kaiUI.chat.tabFontSize .. [[;
+            margin-left: 1px;
+            margin-right: 1px;
+            qproperty-alignment: 'AlignCenter | AlignCenter';]]
+      )
+    end
+    kaiUI.chat.current = tab
+    kaiUI[tab .. "Tab"]:setStyleSheet(
+      [[
+            background-color: ]] .. kaiUI.chat.color2 .. [[;
+            border-color: ]] .. kaiUI.chat.color1 .. [[;
+            border-style: inset;
+            border-radius: 2px;
+            border-width: 2px;
+            border-bottom-width: 1px;
+            font-size: 8px;
+            margin-left: 1px;
+            margin-right: 1px;
+            qproperty-alignment: 'AlignCenter | AlignCenter';]]
+    )
+    kaiUI[tab]:show()
+    kaiUI[tab .. "Console"]:show()
+    kaiUI[tab .. "Console"]:raise()
+    kaiUI.chat.clearBlink(tab)
+  end
+
+  GUIframe.addWindow(kaiUI.chatContainer, "Chat", "bottomright")
+  kaiUI.chat.click("All")
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Chat blinking</name>
+						<packageName></packageName>
+						<script>kaiUI.chat.blinking = kaiUI.chat.blinking or {}
+kaiUI.chat.blinkTimer = kaiUI.chat.blinkTimer
+
+local function killBlinkTimer()
+  if kaiUI.chat.blinkTimer then killTimer(kaiUI.chat.blinkTimer) end
+end
+
+function kaiUI.chat.clearBlink(chat)
+  if chat and chat~= "All" then
+    kaiUI.chat.blinking[chat] = nil
+    if not next(kaiUI.chat.blinking) then
+      killBlinkTimer()
+    end
+  else
+    kaiUI.chat.blinking = {}
+    killBlinkTimer()
+  end
+end
+
+function kaiUI.chat.startBlink(chat)
+  if kaiUI.chat.current == "All" then
+    return
+  end
+  if kaiUI.chat.current ~= chat then
+    kaiUI.chat.blinking[chat] = true
+    kaiUI.chat.doBlink()
+  end
+end
+
+function kaiUI.chat.doBlink()
+  killBlinkTimer()
+  if next(kaiUI.chat.blinking) then
+    for chat in pairs(kaiUI.chat.blinking) do
+      kaiUI[chat .. "Tab"]:flash()
+    end
+    kaiUI.AllTab:flash()
+    kaiUI.chat.blinkTimer = tempTimer(2, kaiUI.chat.doBlink)
+  end
+end
+
+</script>
+						<eventHandlerList />
+					</Script>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>GMCP</name>
+						<packageName></packageName>
+						<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Chat</name>
+							<packageName></packageName>
+							<script>snd = snd or {}
+snd.channel_list =
+  {
+    ["newbie"] = "Misc",
+    ["market"] = "Misc",
+    ["web"] = "Web",
+    ["ct"] = "City",
+    ["cnt"] = "City",
+    ["emotes"] = "Local",
+    ["gt"] = "Guild",
+    ["gts"] = "Guild",
+    ["clt"] = "Clans",
+    ["tell"] = "Tells",
+    ["says"] = "Local",
+    ["ot"] = "Order",
+    ["cot"] = "Order",
+    ["congregation"] = "Order",
+  }
+snd.channel_ignores = {hints = true}
+local mobs_to_ignore =
+  {
+    "Nysaac",
+    "Tayiv",
+    "Huemotl",
+    "Damari",
+    "Jinjin",
+    "Micotetotl",
+    "Hob",
+    "Saaik",
+    "Eddan",
+    "Gorwin",
+    "Trudd",
+    "Vladerhelm",
+    "Hvan",
+    "August",
+    "Dale",
+    "William",
+    "Ocauh",
+    "Klaana",
+    "Valgar",
+    "Sailaan",
+  }
+local talkerWhitelist = {
+  ["a masked man"] = true,
+  ["a masked woman"] = true,
+  ["a masked person"] = true,
+  ["a ghostly figure"] = true,
+  ["a pumpkin figure"] = true,
+  ["a cloaked figure"] = true,
+  ["a nightmarish figure"] = true,
+  ["a figure hidden by flames"] = true,
+  ["a figure of blinding light"] = true,
+  ["a vague silhouette"] = true,
+  ["a figure shrouded by steam"] = true,
+  ["a figure obscured by vines"] = true,
+  ["a figure wrapped in darkness"] = true,
+  ["a gravitationally distorted figure"] = true,
+}
+
+local function timestamp(chat)
+  if not kaiUI.timestamps then return end
+  chat = chat:lower():title()
+  local timestamp = "&lt;burlywood&gt;"..getTime(true, "hh:mm:ss").." "
+    kaiUI.AllConsole:cecho(timestamp)
+  if chat~="All" then
+    kaiUI[chat.."Console"]:cecho(timestamp)
+  end
+end
+
+function chatAppend(chat)
+  selectCurrentLine()
+  local text = copy2decho()
+  timestamp(chat)
+  kaiUI.AllConsole:decho(text.."\n")
+  if chat:lower()~="all" then
+    kaiUI[chat:lower():title() .. "Console"]:decho(text.."\n")
+  end
+end
+
+function kaiUI.chat.deaths()
+  timestamp("death")
+  local text = ""
+  local killer, victim, assists = gmcp.Deathsight.killer, gmcp.Deathsight.victim, gmcp.Deathsight.assists
+  if sndNDB.highlightNames then
+    text = "&lt;"..sndNDB_getColour(victim).."&gt;"..victim.."&lt;red&gt; was slain by &lt;"..sndNDB_getColour(killer).."&gt;"..killer.."\n"
+  else
+    text = "&lt;red&gt;"..victim .." was slain by "..killer.."\n"
+  end
+  kaiUI.AllConsole:cecho(text)
+  kaiUI.DeathConsole:cecho(text)
+  if assists~="" then
+    local people = string.match(assists, "They were assisted by: (.+)%.\n"):split(", ")
+    local text = "They were assisted by: "
+    for i, person in ipairs(people) do
+      text = text..(sndNDB.highlightNames and "&lt;"..sndNDB_getColour(person).."&gt;" or "")..person
+      if next(people, i) then
+        text = text.."&lt;r&gt;, "
+      end
+    end
+    text = text.."&lt;r&gt;.\n"
+    timestamp("death")
+    kaiUI.AllConsole:cecho(text)
+    kaiUI.DeathConsole:cecho(text)
+  end
+end
+registerAnonymousEventHandler("gmcp.Deathsight", "kaiUI.chat.deaths")
+
+function kaiUI.chat.capture()
+
+--if the text contains this text, don't echo to tabbed chat
+  snd.we_saw_a_thot = false
+  local talker = gmcp.Comm.Channel.Text.talker
+  
+  if gmcp.Comm.Channel.Text.channel == "says" or gmcp.Comm.Channel.Text.channel == "emotes" then
+    if table.isMember(mobs_to_ignore, talker) then return end
+    --You can choose whether you want it to match only names that are in the database (excluding divine)
+    --Or if you want it to just match any one word name. Some NPCs might slip through.
+    if string.match(talker, "%W") and not talkerWhitelist[talker] and not talker:find("the gloriously%-bearded") then return end
+    --[[ if sndNDB.players[talker] == nil then
+      if not table.isMember(sndNDB.divine, talker) then 
+        return 
+      end
+    end]]
+  end
+  snd.who_is_talking = talker or ""
+  
+  
+  local channel = gmcp.Comm.Channel.Text.channel
+  if channel:find("clt") then
+    channel = "clt"
+  end
+  snd.last_channel = snd.channel_list[channel] or "Misc"
+  
+  
+  local text = gmcp.Comm.Channel.Text.text
+  local rawtext = ansi2string(text)
+  text = ansi2decho(text)
+  text = text:gsub(string.char(27) .. [[.-]] .. string.char(4), "")
+  rawtext = rawtext:gsub(string.char(27) .. [[.-]] .. string.char(4), "")
+
+
+  --echo(rawtext)
+  if channel == "web" and snd.toggles.listening and table.contains(snd.callers, talker) then
+    matchText = rawtext:lower()
+    if
+      matchText:find("target:") and
+      not matchText:find("list") and
+      not matchText:find("calling") and
+      not matchText:find("priority") and
+      not matchText:find("removed") and
+      not matchText:find("next")
+    then
+      local check = string.match(matchText, "target: (%w+)%.")
+      if check:lower() ~= snd.target:lower() then
+        expandAlias("t " .. check)
+      end
+    end
+  end
+  
+  if snd.channel_ignores[channel] then return false end
+
+  
+  --NDB highlighting of text
+  if sndNDB.highlightNames then
+    local format = string.match(text, "&lt;%d+.-&gt;")
+    local alreadyHighlighted = {}
+    for word in string.gmatch(text, "%a+") do
+      if sndNDB_Exists(word) and not table.contains(alreadyHighlighted, word) then
+        local color = sndNDB_getColour(word) or "white"
+        color =
+          "&lt;" ..
+          color_table[color][1] ..
+          "," ..
+          color_table[color][2] ..
+          "," ..
+          color_table[color][3] ..
+          "&gt;"
+        text = text:gsub(word, color .. word .. format)
+        table.insert(alreadyHighlighted, word)
+      end
+    end
+  end
+  
+  -- demonnic.chat:decho(snd.last_channel, text.."\n")
+  -- -- enableTrigger("generic capture")
+-- end
+  timestamp(snd.last_channel)
+  kaiUI[snd.last_channel .. "Console"]:decho(text.."\n")
+  kaiUI.chat.startBlink(snd.last_channel)
+  kaiUI.AllConsole:decho(text.."\n")
+end
+
+registerAnonymousEventHandler("gmcp.Comm.Channel.Text", "kaiUI.chat.capture")</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Room Info</name>
+							<packageName></packageName>
+							<script>function kaiUI.updateRoom()
+  local room = gmcp.Room.Info
+  centerview(room.num)
+  local roomExits = {}
+  local roomInfo = room.name .. " - " .. room.area
+  kaiUI.exitString = ""
+  for k, v in pairs(room.exits) do
+    table.insert(roomExits, k)
+  end
+  kaiUI.exitString = table.concat(roomExits, ", ")
+  local color = kaiUI.CSS.base:get("border-color")
+  --GUIframe.tabs.Map:echo(
+  --  [[&lt;p style="font-size:10px;"&gt;&lt;font color="]] .. color .. [["&gt;&lt;b&gt;|[v&lt;font color="LightYellow"&gt;]] ..
+   -- room.num ..
+   -- [[&lt;font color="]] .. color .. [["&gt;]|[&lt;font color="LightYellow"&gt;]] ..
+  --  roomInfo ..
+   -- [[&lt;font color="]] .. color .. [["&gt;]|&lt;/b&gt;]]
+  --)
+end
+
+registerAnonymousEventHandler("gmcp.Room.Info", "kaiUI.updateRoom")</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Char Info</name>
+							<packageName></packageName>
+							<script>function kaiUI.updateChar()
+  kaiUI.char = gmcp.Char.Status
+  kaiUI.char.name = gmcp.Char.Name.name
+  local newsColor = "LightYellow"
+  local msgColor = "LightYellow"
+  if tonumber(kaiUI.char.unread_news) &gt; 0 then
+    newsColor = "OrangeRed"
+  end
+  if tonumber(kaiUI.char.unread_msgs) &gt; 0 then
+    msgColor = "OrangeRed"
+  end
+  local color = kaiUI.CSS.base:get("border-color")
+  kaiUI.topBarBG:echo(
+    [[&lt;p style="font-size:13px"&gt;&lt;font color="]] ..
+    color ..
+    [["&gt;&lt;b&gt;|[&lt;font color="LightYellow"&gt;]] ..
+    kaiUI.char.name ..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]|[&lt;font color="]] ..
+    newsColor ..
+    [["&gt;Unread News: ]] ..
+    kaiUI.char.unread_news ..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]|[&lt;font color ="]] ..
+    msgColor ..
+    [["&gt;Unread Messages: ]] ..
+    kaiUI.char.unread_msgs ..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]|[&lt;font color="LightYellow"&gt;Gold: &lt;font color="gold"&gt;]] ..
+    kaiUI.char.gold ..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]|
+		]]
+  )
+end
+
+registerAnonymousEventHandler("gmcp.Char.Status", "kaiUI.updateChar")</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Players</name>
+							<packageName></packageName>
+							<script>function kaiUI.updatePeopleHere()
+  kaiUI.playersInRoom = kaiUI.playersInRoom or {}
+  local formattedPlayers = table.deepcopy(kaiUI.playersInRoom)
+  if table.size(formattedPlayers) ~= 0 then
+    for k, v in ipairs(formattedPlayers) do
+      if not v:find("&lt;") then
+      	if ndb then
+        	formattedPlayers[k] = ndb.getcolor(v) .. v
+        else
+        	formattedPlayers[k] = "&lt;cyan&gt;" .. v
+        end
+      end
+    end
+  else
+    kaiUI.peopleHereConsole:clear()
+    kaiUI.peopleHereConsole:cecho("&lt;LightYellow&gt;Nobody else here.")
+    return
+  end
+  kaiUI.peopleHereConsole:clear()
+  if #formattedPlayers == 1 then
+    kaiUI.peopleHereConsole:cecho(
+      "&lt;orange&gt;1&lt;LightYellow&gt; person here: " .. formattedPlayers[1] .. "&lt;LightYellow&gt;."
+    )
+  else
+    kaiUI.peopleHereConsole:cecho(
+      "&lt;orange&gt;" ..
+      #formattedPlayers ..
+      "&lt;LightYellow&gt; people here: " ..
+      table.concat(formattedPlayers, "&lt;LightYellow&gt;, ") ..
+      "&lt;LightYellow&gt;."
+    )
+  end
+end
+
+function kaiUI.onRoomPlayers()
+  kaiUI.playersInRoom = {}
+  for i, v in pairs(gmcp.Room.Players) do
+    if v.name ~= gmcp.Char.Name.name then
+      table.insert(kaiUI.playersInRoom, v.name)
+    end
+  end
+  kaiUI.updatePeopleHere()
+end
+
+function kaiUI.onAddPlayer()
+  if not table.contains(kaiUI.playersInRoom, gmcp.Room.AddPlayer.name) then
+    table.insert(kaiUI.playersInRoom, gmcp.Room.AddPlayer.name)
+  end
+  kaiUI.updatePeopleHere()
+end
+
+function kaiUI.onRemovePlayer()
+  if table.contains(kaiUI.playersInRoom, gmcp.Room.RemovePlayer) then
+    table.remove(kaiUI.playersInRoom, table.index_of(kaiUI.playersInRoom, gmcp.Room.RemovePlayer))
+  end
+  kaiUI.updatePeopleHere()
+end
+
+registerAnonymousEventHandler("gmcp.Room.Players", "kaiUI.onRoomPlayers")
+registerAnonymousEventHandler("gmcp.Room.AddPlayer", "kaiUI.onAddPlayer")
+registerAnonymousEventHandler("gmcp.Room.RemovePlayer", "kaiUI.onRemovePlayer")</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Vitals</name>
+							<packageName></packageName>
+							<script>function delayInfoGauges()
+  tempTimer(0, kaiUI.updateInfoGauges)
+end
+
+function kaiUI.updateInfoGauges()
+  local xpDisplay = ""
+  local level = tonumber(string.match(gmcp.Char.Status.level, "%d+"))
+  local color = kaiUI.CSS.base:get("border-color")
+
+  kaiUI.indicators.update()
+  
+  xpDisplay =
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;[&lt;font color="LightYellow"&gt;XP: &lt;font color="LightSkyBlue"&gt;]] ..
+    math.floor((gmcp.Char.Vitals.xp/gmcp.Char.Vitals.maxxp)*10000)/ 100 ..
+    [[%&lt;font color="]] ..
+    color ..
+    [["&gt;]|]]
+    
+    
+  level =
+    [[&lt;p style="font-size: 11px;"&gt;&lt;b&gt;&lt;font color="]] ..
+    color ..
+    [["&gt;|[&lt;font color="LightYellow"&gt;Level: &lt;font color="LightSkyBlue"&gt;]] ..
+    string.match(gmcp.Char.Status.level, "%d+") ..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]|]]
+    
+  kaiUI.bottomBarRightTop:echo(
+    [[&lt;p style="font-size: 11px;"&gt;&lt;font color="]] ..
+    color ..
+    [["&gt;&lt;b&gt;|[&lt;font color="LightYellow"&gt;Target: &lt;font color="OrangeRed"&gt;]] ..
+    string.title(snd.target:lower()) ..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]|[&lt;font color="LightYellow"&gt;Exits: &lt;font color="GreenYellow"&gt;]] ..
+    (kaiUI.exitString or "")..
+    [[&lt;font color="]] ..
+    color ..
+    [["&gt;]| ]]
+  )
+  kaiUI.bottomBarRightBottom:echo(level .. xpDisplay)
+  -- update gauges
+  if snd.have_aff("blackout") then
+    -- we're blacked out
+    for _, gauge in pairs({"hpGauge", "mpGauge", "epGauge", "wpGauge"}) do
+      kaiUI[gauge]:setValue(1, 100)
+      kaiUI[gauge].text:echo([[&lt;p style="font-size:10px;"&gt;&lt;font color="red"&gt;&lt;b&gt; [BLACKOUT] ]])
+    end
+    return
+  end
+
+  local function printGauge(gauge, textbox, value, max)
+    value = tonumber(value)
+    max = tonumber(max)
+    local percent = math.min(100, math.floor((value / max) * 100))
+    gauge:setValue(percent)
+    local echo =
+      string.format(
+        [=[&lt;p style="font-size:10px;"&gt;&lt;font color="white"&gt;&lt;b&gt;%s/%s[%s]]=],
+        value,
+        max,
+        percent .. "%"
+      )
+    gauge.text:echo(echo)
+    if percent == 0 then
+      gauge:flash()
+    end
+  end
+
+  printGauge(kaiUI.hpGauge, kaiUI.hpGaugeText, gmcp.Char.Vitals.hp, gmcp.Char.Vitals.maxhp)
+  printGauge(kaiUI.mpGauge, kaiUI.mpGaugeText, gmcp.Char.Vitals.mp, gmcp.Char.Vitals.maxmp)
+  printGauge(kaiUI.epGauge, kaiUI.epGaugeText, gmcp.Char.Vitals.ep, gmcp.Char.Vitals.maxep)
+  printGauge(kaiUI.wpGauge, kaiUI.wpGaugeText, gmcp.Char.Vitals.wp, gmcp.Char.Vitals.maxwp)
+end
+
+registerAnonymousEventHandler("gmcp.Char.Vitals", "delayInfoGauges")</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Info here V3</name>
+							<packageName></packageName>
+							<script>registerAnonymousEventHandler("gmcp.Char.Items.Add", "kaiUI.onItemsAdd")
+registerAnonymousEventHandler("gmcp.Char.Items.Remove", "kaiUI.onItemsRemove")
+registerAnonymousEventHandler("gmcp.Char.Items.List", "kaiUI.onItemsList")
+registerAnonymousEventHandler("gmcp.Char.Items.Update", "kaiUI.onItemsUpdate")
+local maxSize = 24
+kaiUI = kaiUI or {}
+kaiUI.itemsHere = kaiUI.itemsHere or {}
+kaiUI.itemsSorted = kaiUI.itemsSorted
+local infoColors =
+  {
+    t = "&lt;DarkGoldenrod&gt;",
+    m = "&lt;chartreuse&gt;",
+    mx = "&lt;chartreuse&gt;",
+    mh = "&lt;OrangeRed&gt;",
+    c = "&lt;LightSkyBlue&gt;",
+    none = "&lt;LightGoldenrod&gt;",
+    et = "&lt;DarkGoldenrod&gt;",
+    mt = "&lt;DarkGoldenrod&gt;",
+    cm = "&lt;LightSkyBlue&gt;",
+    mxt = "&lt;chartreuse&gt;",
+    mB = "&lt;hot_pink&gt;",
+    mE = "&lt;purple&gt;",
+    aggro = "&lt;OrangeRed&gt;",
+  }
+local sortOrder = {"mE","mb","aggro","c", "none", "mx","mh", "mxt", "m", "mt", "cm", "t", "et", "ct", "md", "mdt",}
+
+local function printLine(number, name, attrib, spacing)
+  local color = infoColors[attrib] or "&lt;LightGoldenrod&gt;"
+  local echoString =
+    string.rep(" ", spacing - #("" .. number)) ..
+    "&lt;LightYellow&gt;[" ..
+    color ..
+    number ..
+    color ..
+    "&lt;LightYellow&gt;] " ..
+    color ..
+    ansi2string(name)
+  kaiUI.denizenListConsole:cecho("\n" .. echoString)
+end
+
+local function sortItems()
+  kaiUI.itemsSorted = {}
+  for _, attrib in pairs(sortOrder) do
+    kaiUI.itemsSorted[attrib] = {}
+  end
+  for k, item in pairs(kaiUI.itemsHere) do
+    local attrib = item.attrib or "none"
+    if item.icon == "face-angry-horns" then
+      attrib = "aggro"
+    end
+    if not table.contains(sortOrder, attrib) then
+      -- display(attrib)
+    else
+      kaiUI.itemsSorted[attrib][item.name] = (kaiUI.itemsSorted[attrib][item.name] or 0) + 1
+    end
+  end
+end
+
+local timerRunning, writeTimer = false
+
+function kaiUI.writeItemsHere()
+  --  display(writeTimer)
+  if not timerRunning then
+    timerRunning = true
+    if writeTimer then
+      killTimer(writeTimer)
+    end
+    writeTimer =
+      tempTimer(
+        0,
+        function()
+          timerRunning = false
+          kaiUI.writeItems2()
+        end
+      )
+  end
+end
+
+function kaiUI.writeItems2()
+  kaiUI.denizenListConsole:clear()
+  if #kaiUI.itemsHere &gt; maxSize then
+    for _, attrib in ipairs(sortOrder) do
+      for name, number in pairs(kaiUI.itemsSorted[attrib]) do
+        printLine(number, name, attrib, 3)
+      end
+    end
+  else
+    for _, item in pairs(kaiUI.itemsHere) do
+      local attrib = item.icon == "face-angry-horns" and "aggro" or item.attrib
+      printLine(item.id, item.name, attrib, 6)
+    end
+  end
+end
+
+function kaiUI.onItemsList()
+  if gmcp.Char.Items.List.location ~= "room" then
+    return
+  end
+  kaiUI.itemsHere = table.deepcopy(gmcp.Char.Items.List.items)
+  if #kaiUI.itemsHere &gt; maxSize then
+    sortItems()
+  else
+    kaiUI.itemsSorted = nil
+  end
+  kaiUI.writeItemsHere()
+end
+
+function kaiUI.onItemsUpdate()
+  if gmcp.Char.Items.Update.location ~= "room" then
+    return
+  end
+  for index, item in pairs(kaiUI.itemsHere) do
+    if item.id == gmcp.Char.Items.Update.item.id then
+      kaiUI[index] = gmcp.Char.Items.Update.item
+      kaiUI.writeItemsHere()
+      if #kaiUI.itemsHere &gt; maxSize then
+        sortItems()
+      end
+      return
+    end
+  end
+end
+
+function kaiUI.onItemsAdd()
+  if gmcp.Char.Items.Add.location ~= "room" then
+    return
+  end
+  local item = gmcp.Char.Items.Add.item
+  table.insert(kaiUI.itemsHere, item)
+  if #kaiUI.itemsHere &gt; maxSize then
+    if not kaiUI.itemsSorted then
+      sortItems()
+    end
+    local attrib = item.attrib or "none"
+    kaiUI.itemsSorted[attrib] = kaiUI.itemsSorted[attrib] or {}
+    kaiUI.itemsSorted[attrib][item.name] = (kaiUI.itemsSorted[attrib][item.name] or 0) + 1
+    kaiUI.writeItemsHere()
+  else
+    printLine(item.id, item.name, item.attrib, 6)
+  end
+end
+
+function kaiUI.onItemsRemove()
+  if gmcp.Char.Items.Remove.location ~= "room" then
+    return
+  end
+  local item = gmcp.Char.Items.Remove.item
+  for index, item2 in pairs(kaiUI.itemsHere) do
+    if item2.id == item.id then
+      table.remove(kaiUI.itemsHere, index)
+      kaiUI.writeItemsHere()
+      local attrib = item.attrib or "none"
+      if kaiUI.itemsSorted and kaiUI.itemsSorted[attrib] then
+        kaiUI.itemsSorted[attrib][item.name] =
+          (kaiUI.itemsSorted[attrib][item.name] or 0) - 1
+        if kaiUI.itemsSorted[attrib][item.name] &lt;= 0 then
+          kaiUI.itemsSorted[attrib][item.name] = nil
+        end
+      end
+      return
+    end
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+				</ScriptGroup>
+				<Script isActive="yes" isFolder="no">
+					<name>Aff displays</name>
+					<packageName></packageName>
+					<script>function display_my_affs()
+	
+	local self_display_table = {}
+	local tally_check = snd.aff_tally()
+	local aff_check = ""
+  if tally_check &gt; 0 then
+		for aff in pairs(snd.afflictions) do
+  		if snd.have_aff(aff) then
+				aff_check = aff
+				aff_check = aff_check:gsub("aff_", "")
+				aff_check = aff_check:gsub("_", " ")
+				aff_check = aff_check:gsub("left", "L")
+				aff_check = aff_check:gsub("right", "R")
+				if snd.afflictions[aff]["cures"]["herb"] ~= nil or 
+        snd.afflictions[aff]["cures"]["salve"] ~= nil or 
+        snd.afflictions[aff]["cures"]["smoke"] ~= nil then
+     			table.insert(self_display_table, "&lt;center&gt;"..aff_check.."&lt;/center&gt;")
+				end
+			end
+		end
+
+    myaffs:echo(table.concat(self_display_table))
+  else
+ 		myaffs:echo("&lt;center&gt;my affs&lt;/center&gt;")
+	end
+	color_self_affs()
+end
+
+registerAnonymousEventHandler("sunder_my_affs_updated", "display_my_affs")
+
+function display_enemy_affs()
+  target_display_table = {}
+  if #snd.target_has &gt;= 1 then
+    for _, v in ipairs(snd.target_has) do
+      if v:find("crippled") then
+        v = v:gsub("a ", "")
+        v = v:gsub("left", "L")
+        v = v:gsub("right", "R")
+      end
+      table.insert(target_display_table, "&lt;center&gt;" .. v .. "&lt;/center&gt;")
+    end
+    eaffs:echo(table.concat(target_display_table))
+  else
+    eaffs:echo("&lt;center&gt;enemy affs&lt;/center&gt;")
+  end
+  color_enemy_affs()
+end
+
+registerAnonymousEventHandler("sunder_enemy_affs_updated", "display_enemy_affs")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Coloring these things</name>
+					<packageName></packageName>
+					<script>snd = snd or {}
+snd.display = {
+--Begin self 
+--locking affs
+self_paralysis = "P",
+self_paralysis_color = "",
+self_asthma = "A",
+self_asthma_color = "",
+self_slickness = "S",
+self_slickness_color = "",
+self_anorexia = "N",
+self_anorexia_color = "",
+--prone/pseudo prone
+self_prone = "prone",
+self_prone_color = "",
+--limb damage
+self_head = "0",
+self_head_color = "",
+self_leftleg = "/",
+self_leftleg_color = "",
+self_rightleg = "\\",
+self_rightleg_color = "",
+self_leftarm = "/",
+self_leftarm_color = "",
+self_rightarm = "\\",
+self_rightarm_color = "",
+self_torso = "|",
+self_torso_color = "",
+
+
+--Begin enemy
+--locking affs
+enemy_paralysis = "P",
+enemy_paralysis_color = "",
+enemy_asthma = "A",
+enemy_asthma_color = "",
+enemy_slickness = "S",
+enemy_slickness_color = "",
+enemy_anorexia = "N",
+enemy_anorexia_color = "",
+--prone/pseudo prone
+enemy_prone = "prone",
+enemy_prone_color = "",
+--limb damage
+enemy_head = "0",
+enemy_head_color = "",
+enemy_leftleg = "/",
+enemy_leftleg_color = "",
+enemy_rightleg = "\\",
+enemy_rightleg_color = "",
+enemy_leftarm = "/",
+enemy_leftarm_color = "",
+enemy_rightarm = "\\",
+enemy_rightarm_color = "",
+enemy_torso = "|",
+enemy_torso_color = "",
+}
+--end
+
+function color_self_affs()
+if snd.have_aff("paralysis") then 
+	snd.display.self_paralysis_color = "red" 
+elseif snd.have_aff("paresis") then 
+	snd.display.self_paralysis_color = "yellow" 
+else
+	snd.display.self_paralysis_color = "white"
+end
+
+if snd.have_aff("asthma") then 
+	snd.display.self_asthma_color = "red" 
+else
+	snd.display.self_asthma_color = "white"
+end
+
+if snd.have_aff("slickness") then 
+	snd.display.self_slickness_color = "red" 
+else
+	snd.display.self_slickness_color = "white"
+end
+
+if snd.have_aff("anorexia") then 
+	snd.display.self_anorexia_color = "red" 
+else
+	snd.display.self_anorexia_color = "white"
+end
+
+local pseudo_check = false
+for _, v in ipairs(snd.entangleaffs) do
+	if snd.have_aff(v) then
+		pseudo_check = true
+		break
+	end
+end
+
+if snd.have_aff("prone") then 
+	snd.display.self_prone_color = "red" 
+elseif pseudo_check then
+	snd.display.self_prone_color = "yellow" 
+else
+	snd.display.self_prone_color = "white"
+end
+
+mystatus:echo("&lt;center&gt;".."&lt;span style=\"color:"..snd.display.self_paralysis_color.."\"&gt;"..snd.display.self_paralysis.."&lt;/span&gt;"..
+												"&lt;span style=\"color:"..snd.display.self_asthma_color.."\"&gt;"..snd.display.self_asthma.."&lt;/span&gt;"..
+												"&lt;span style=\"color:"..snd.display.self_slickness_color.."\"&gt;"..snd.display.self_slickness.."&lt;/span&gt;"..
+												"&lt;span style=\"color:"..snd.display.self_anorexia_color.."\"&gt;"..snd.display.self_anorexia.."&lt;/span&gt;"..
+												"&lt;/center&gt;&lt;center&gt;"..
+												"&lt;span style=\"color:"..snd.display.self_prone_color.."\"&gt;"..snd.display.self_prone.."&lt;/span&gt;".."&lt;/center&gt;")
+												
+end
+
+function color_enemy_affs()
+if snd.checkAff("paralysis") then 
+	snd.display.enemy_paralysis_color = "red" 
+elseif snd.checkAff("paresis") then 
+	snd.display.enemy_paralysis_color = "yellow" 
+else
+	snd.display.enemy_paralysis_color = "white"
+end
+
+if snd.checkAff("asthma") then 
+	snd.display.enemy_asthma_color = "red" 
+else
+	snd.display.enemy_asthma_color = "white"
+end
+
+if snd.checkAff("slickness") then 
+	snd.display.enemy_slickness_color = "red" 
+else
+	snd.display.enemy_slickness_color = "white"
+end
+
+if snd.checkAff("anorexia") then 
+	snd.display.enemy_anorexia_color = "red" 
+else
+	snd.display.enemy_anorexia_color = "white"
+end
+
+
+if gmcp.Char.Vitals.fallen == "1" then 
+	snd.display.self_prone_color = "red" 
+elseif gmcp.Char.Vitals.prone == "1" then
+	snd.display.self_prone_color = "yellow" 
+else
+	snd.display.self_prone_color = "white"
+end
+
+
+estatus:echo("&lt;center&gt;".."&lt;span style=\"color:"..snd.display.enemy_paralysis_color.."\"&gt;"..snd.display.enemy_paralysis.."&lt;/span&gt;"..
+												"&lt;span style=\"color:"..snd.display.enemy_asthma_color.."\"&gt;"..snd.display.enemy_asthma.."&lt;/span&gt;"..
+												"&lt;span style=\"color:"..snd.display.enemy_slickness_color.."\"&gt;"..snd.display.enemy_slickness.."&lt;/span&gt;"..
+												"&lt;span style=\"color:"..snd.display.enemy_anorexia_color.."\"&gt;"..snd.display.enemy_anorexia.."&lt;/span&gt;"..
+												"&lt;/center&gt;&lt;center&gt;"..
+												"&lt;span style=\"color:"..snd.display.enemy_prone_color.."\"&gt;"..snd.display.enemy_prone.."&lt;/span&gt;".."&lt;/center&gt;")
+												
+end
+
+function color_enemy_limbs()
+
+--consider using different symbols for the bruising levels
+if snd.limb_status["head"] == "mangled" then 
+	snd.display.enemy_head_color = "red" 
+elseif snd.limb_status["head"] == "broken" then 
+	snd.display.enemy_head_color = "gold" 
+else
+	snd.display.enemy_head_color = "white"
+end
+
+if snd.limb_status["left leg"] == "mangled" then 
+	snd.display.enemy_leftleg_color = "red" 
+elseif snd.limb_status["left leg"] == "broken" then 
+	snd.display.enemy_leftleg_color = "gold" 
+elseif snd.checkAff("left_leg_crippled") then
+	snd.display.enemy_leftleg_color = "green" 
+else
+	snd.display.enemy_leftleg_color = "white"
+end
+
+if snd.limb_status["right leg"] == "mangled" then 
+	snd.display.enemy_rightleg_color = "red" 
+elseif snd.limb_status["right leg"] == "broken" then 
+	snd.display.enemy_rightleg_color = "gold" 
+elseif snd.checkAff("right_leg_crippled") then
+	snd.display.enemy_rightleg_color = "green" 
+else
+	snd.display.enemy_rightleg_color = "white"
+end
+
+if snd.limb_status["left arm"] == "mangled" then 
+	snd.display.enemy_leftarm_color = "red" 
+elseif snd.limb_status["left arm"] == "broken" then 
+	snd.display.enemy_leftarm_color = "gold" 
+elseif snd.checkAff("left_arm_crippled") then
+	snd.display.enemy_leftarm_color = "green" 
+else
+	snd.display.enemy_leftarm_color = "white"
+end
+
+if snd.limb_status["right arm"] == "mangled" then 
+	snd.display.enemy_rightarm_color = "red" 
+elseif snd.limb_status["right arm"] == "broken" then 
+	snd.display.enemy_rightarm_color = "gold" 
+elseif snd.checkAff("right_arm_crippled") then
+	snd.display.enemy_rightarm_color = "green" 
+else
+	snd.display.enemy_rightarm_color = "white"
+end
+
+if snd.limb_status["torso"] == "mangled" then 
+	snd.display.enemy_torso_color = "red" 
+elseif snd.limb_status["torso"] == "broken" then 
+	snd.display.enemy_torso_color = "gold" 
+else
+	snd.display.enemy_torso_color = "white"
+end 
+elimbs:echo("&lt;center&gt;".."&lt;span style=\"color:"..snd.display.enemy_head_color.."\"&gt;"..snd.display.enemy_head.."&lt;/span&gt;".."&lt;/center&gt;"..
+						"&lt;center&gt;".."&lt;span style=\"color:"..snd.display.enemy_leftarm_color.."\"&gt;"..snd.display.enemy_leftarm.."&lt;/span&gt;"..
+						"&lt;span style=\"color:"..snd.display.enemy_torso_color.."\"&gt;"..snd.display.enemy_torso.."&lt;/span&gt;"..
+						"&lt;span style=\"color:"..snd.display.enemy_rightarm_color.."\"&gt;"..snd.display.enemy_rightarm.."&lt;/span&gt;".."&lt;/center&gt;"..
+						"&lt;center&gt;".."&lt;span style=\"color:"..snd.display.enemy_leftleg_color.."\"&gt;"..snd.display.enemy_leftleg.."&lt;/span&gt;"..
+						"&lt;span style=\"color:"..snd.display.enemy_rightleg_color.."\"&gt;"..snd.display.enemy_rightleg.."&lt;/span&gt;".."&lt;/center&gt;"	
+				)
+end
+
+registerAnonymousEventHandler("sunder_enemy_limbs_updated","color_enemy_limbs")
+
+function color_self_limbs()
+
+--consider using different symbols for the bruising levels
+if snd.afflictions.aff_torso_mangled.state == "afflicted" then 
+	snd.display.self_torso_color = "red" 
+elseif snd.afflictions.aff_torso_broken.state == "afflicted" then 
+	snd.display.self_torso_color = "gold" 
+else
+	snd.display.self_torso_color = "white"
+end
+
+if snd.afflictions.aff_left_leg_mangled.state == "afflicted" then 
+	snd.display.self_leftleg_color = "red" 
+elseif snd.afflictions.aff_left_leg_broken.state == "afflicted" then 
+	snd.display.self_leftleg_color = "gold" 
+elseif snd.afflictions.aff_left_leg_crippled.state == "afflicted" then
+	snd.display.self_leftleg_color = "green" 
+else
+	snd.display.self_leftleg_color = "white"
+end
+
+if snd.afflictions.aff_right_leg_mangled.state == "afflicted" then 
+	snd.display.self_rightleg_color = "red" 
+elseif snd.afflictions.aff_right_leg_broken.state == "afflicted" then 
+	snd.display.self_rightleg_color = "gold" 
+elseif snd.afflictions.aff_right_leg_crippled.state == "afflicted" then
+	snd.display.self_rightleg_color = "green" 
+else
+	snd.display.self_rightleg_color = "white"
+end
+
+if snd.afflictions.aff_left_arm_mangled.state == "afflicted" then 
+	snd.display.self_leftarm_color = "red" 
+elseif snd.afflictions.aff_left_arm_broken.state == "afflicted" then 
+	snd.display.self_leftarm_color = "gold" 
+elseif snd.afflictions.aff_left_arm_crippled.state == "afflicted" then
+	snd.display.self_leftarm_color = "green" 
+else
+	snd.display.self_leftarm_color = "white"
+end
+
+if snd.afflictions.aff_right_arm_mangled.state == "afflicted" then 
+	snd.display.self_rightarm_color = "red" 
+elseif snd.afflictions.aff_right_arm_broken.state == "afflicted" then 
+	snd.display.self_rightarm_color = "gold" 
+elseif snd.afflictions.aff_right_arm_crippled.state == "afflicted" then
+	snd.display.self_rightarm_color = "green" 
+else
+	snd.display.self_rightarm_color = "white"
+end
+
+if snd.afflictions.aff_head_mangled.state == "afflicted" then 
+	snd.display.self_head_color = "red" 
+elseif snd.afflictions.aff_head_broken.state == "afflicted" then 
+	snd.display.self_head_color = "gold" 
+else
+	snd.display.self_head_color = "white"
+end
+
+mylimbs:echo("&lt;center&gt;".."&lt;span style=\"color:"..snd.display.self_head_color.."\"&gt;"..snd.display.self_head.."&lt;/span&gt;".."&lt;/center&gt;"..
+						"&lt;center&gt;".."&lt;span style=\"color:"..snd.display.self_leftarm_color.."\"&gt;"..snd.display.self_leftarm.."&lt;/span&gt;"..
+						"&lt;span style=\"color:"..snd.display.self_torso_color.."\"&gt;"..snd.display.self_torso.."&lt;/span&gt;"..
+						"&lt;span style=\"color:"..snd.display.self_rightarm_color.."\"&gt;"..snd.display.self_rightarm.."&lt;/span&gt;".."&lt;/center&gt;"..
+						"&lt;center&gt;".."&lt;span style=\"color:"..snd.display.self_leftleg_color.."\"&gt;"..snd.display.self_leftleg.."&lt;/span&gt;"..
+						"&lt;span style=\"color:"..snd.display.self_rightleg_color.."\"&gt;"..snd.display.self_rightleg.."&lt;/span&gt;".."&lt;/center&gt;"	
+				)
+end
+
+registerAnonymousEventHandler("sunder_my_limbs_updated","color_self_limbs")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Clean up loose ends</name>
+					<packageName></packageName>
+					<script>-- local nt = {echo = function() end, setColor = function() end, setFontSize = function() end, clear = function() end, cecho = function() end, setStyleSheet = function() end, decho = function() end, append = function() end}
+-- monolith = nt
+-- wielding = nt
+-- enorian_people = nt
+-- duiran_people = nt
+-- bloodloch_people = nt
+-- spines_people = nt
+-- exits = nt
+-- demonnic = {chat = nt}
+-- snd = snd or {}
+-- snd.updateToggles = function() end
+-- snd.set_vitals = function() end
+-- time_update = function() end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+		</ScriptGroup>
+	</ScriptPackage>
+	<KeyPackage />
+	<HelpPackage>
+		<helpURL></helpURL>
+	</HelpPackage>
+</MudletPackage>
