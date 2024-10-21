@@ -24020,6 +24020,7 @@ end</script>
       snd.deformchecker()
     
       cecho("\n&lt;red&gt;Affliction Count: "..snd.deformcount)
+      cecho("\n&lt;red&gt;Card Count: "..snd.cardcount)
    
       if snd.used.shield then
         if snd.balance.chimera then
@@ -24536,6 +24537,164 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^kll3$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Alt Route Version 2</name>
+								<script>if snd.class == "Indorani" then
+
+    snd.giving = {
+		  "impatience", -- M		  
+      "clumsiness", -- S
+		  "weariness", -- M
+		  "lethargy", -- S
+		  "epilepsy", -- M
+		  "vomiting", -- S
+		  "confusion", -- M
+		  "asthma", -- S
+		  "berserking", -- M
+      "perplexed", -- S
+		  "stupidity", -- M
+		  "superstition", -- S
+      "anorexia", -- M	
+		  "sensitivity", -- S
+		  "recklessness", -- M
+		  "hypersomnia", -- S
+      "paresis", -- A
+		  "slickness", -- A
+    }
+  
+  snd.starting_attack()
+  
+  function snd.attack_function() 
+    local string = ""
+    local raw_affs_to_fling = {}
+    local cards = {one = {affliction = "", card = ""}, two = {affliction = "", card = ""}}
+   
+    if not snd.waiting.queue then
+      snd.deformchecker()
+    
+      cecho("\n&lt;red&gt;Affliction Count: "..snd.deformcount)
+      cecho("\n&lt;red&gt;Card Count: "..snd.cardcount)
+   
+      if snd.used.shield then
+        if snd.balance.chimera then
+          string = "taint "..snd.target..snd.sep
+        else
+  		    string = "touch hammer "..snd.target..snd.sep
+        end
+      elseif snd.checkAff("barrier") and snd.balance.chimera then
+        string = "taint "..snd.target..snd.sep
+      elseif snd.theytumbling then
+        if not snd.adder_attached then
+          string = "fling adder prefarar at "..snd.target..snd.sep
+        else
+          string = "flick bonedager at "..snd.target.." prefarar"..snd.sep
+        end
+        if snd.balance.soulmaster then
+          string = string.."order "..snd.target.." stop"..snd.sep          
+        end
+      else 
+        for i in pairs(snd.giving) do
+          if not snd.checkAff(snd.giving[i]) then
+            if snd.giving[i] == "aeon" then
+              if snd.checkAff("exhausted") or snd.target_locked() then
+                table.insert(raw_affs_to_fling, snd.giving[i])
+              end
+  				  elseif not table.contains(raw_affs_to_fling, snd.giving[i]) then
+              table.insert(raw_affs_to_fling, snd.giving[i]) -- insert into a raw aff list that they don't have, based on priority chosen above
+  				  end
+          end
+        end
+        for k, v in ipairs(raw_affs_to_fling) do -- run through the raw affs
+          if cards.one.affliction == "" then -- fill in card one, could start with card two if you want to work around dodge CD
+            if snd.cardshapes.indorani[v].card == "adder" then
+              if not snd.adder_attached then-- Make sure that if we're picking an adder venom, we haven't already thrown adder
+                cards.one.affliction = v
+                cards.one.card = snd.cardshapes.indorani[v].card
+            end
+          else
+            cards.one.affliction = v
+            cards.one.card = snd.cardshapes.indorani[v].card
+          end
+        elseif cards.one.card ~= snd.cardshapes.indorani[v].card and cards.two.affliction == "" then -- if card types are different and haven't already set card two
+          if snd.cardshapes.indorani[v].card == "adder" then
+            if not snd.adder_attached then -- Make sure that if we're picking an adder venom, we haven't already thrown adder
+              cards.one.affliction = v
+              cards.one.card = snd.cardshapes.indorani[v].card
+            end
+          else
+            cards.two.affliction = v
+            cards.two.card = snd.cardshapes.indorani[v].card
+          end
+        end
+      end
+
+      -- If the card is an adder venom affliction, convert the affliction to the venom.
+      if cards.one.card == "adder" then cards.one.affliction = snd.effects[cards.one.affliction] end
+      if cards.two.card == "adder" then cards.two.affliction = snd.effects[cards.two.affliction] end
+      
+      if snd.need_leech_aura then
+        string = "leech "..snd.target..snd.sep.."fling sun clumsiness and moon impatience at "..snd.target..snd.sep
+      end
+      
+      if snd.balance.chimera then
+        if snd.deformed then
+          string = string..snd.sep.."order chimera headbutt "..snd.target..snd.sep  
+        else
+          string = string..snd.sep.."order chimera roar "..snd.target..snd.sep
+        end
+      end
+      
+      if snd.adder_ready then
+        string = string..snd.sep.."activate adder "..snd.target..snd.sep
+      end
+      
+      string = string..snd.sep.."fling "..cards.one.card.." "..cards.one.affliction.." and "..cards.two.card.." "..cards.two.affliction.." at "..snd.target
+      
+      if not snd.wheelused and snd.deformcount &gt;= 3 then
+        string = "fling justice and wheel at "..snd.target..snd.sep
+      end
+      
+      if snd.defenses.def_devilpact.state ~= "deffed" and snd.deformcount &lt;= 1 and not snd.need_leech_aura then
+        string = "fling devil at ground"..snd.sep
+      end
+      
+      if snd.nopets then
+        string = "call entities"..snd.sep.."order loyals kill "..snd.target
+      elseif not snd.loyalsattacking or snd.have_aff("disfigurement") then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end
+      
+      if not snd.have_aff("faintness") and snd.checksomeSelfAffs({"aeon", "paresis", "left_arm_broken", "right_arm_broken", "left_leg_broken", "right_leg_broken", "addiction", "impairment", "hypochondria", "confusion", "clumsiness", "asthma", "impatience", "lethargy", "slickness", "anorexia", "stupidity",}, 3) and snd.balance.fool then
+        string = "fling fool at me"
+      end
+      
+      if snd.need_deform and snd.deformcount &gt;= 10 then
+        string = "deform "..snd.target..snd.sep
+      elseif snd.deformed then
+        string = "decay "..snd.target..snd.sep
+      end
+      
+    	if snd.toggles.affcalling and not snd.target_gone then
+    	  call = "wt Afflicting "..snd.target..": "..cards.one.affliction..", "..cards.two.affliction..snd.sep
+        string = call..snd.sep..string
+    	end
+  	end
+  
+  
+    if string ~= snd.last_attack and not snd.waiting.queue then
+     snd.last_attack = string
+     snd.attack(snd.last_attack)
+     snd.waiting.queue = true
+     tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+    end
+   end
+  end
+  snd.attack_function()
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^kll4$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
