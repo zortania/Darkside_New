@@ -13468,7 +13468,7 @@ cecho("\n&lt;red&gt;"..snd.vermin.." vermin in this room.")
 if snd.vermin &gt;= 3 then
  if snd.toggles.vermin then
   if bot.going then
-    tempTimer(1.5, snd.move())
+    snd.move()
   end
   disableTimer("moveroom")
  end
@@ -18814,7 +18814,7 @@ end</script>
   if potion == "levitation" then
       snd.lev_gone = false
   elseif potion == "infusion" then
-      snd.target_cured("etherflux")
+      snd.target_used("infusion")
   elseif potion == "mana" then
       snd.vital_change("mana", 25)
   elseif potion == "health" then
@@ -23346,9 +23346,12 @@ end</script>
 											<script>if matches[2] == snd.target then
   snd.target_has_aura = false
   snd.need_leech_aura = false
+  snd.leechrelease = false
 	if not snd.checkAff("leeched_aura") then 
 		snd.target_got("leeched_aura")
 	end
+else
+  snd.leechrelease = true
 end</script>
 											<triggerType>0</triggerType>
 											<conditonLineDelta>0</conditonLineDelta>
@@ -23376,6 +23379,7 @@ end</script>
 											<script>if matches[2] == snd.target then
   snd.target_has_aura = true
   snd.need_leech_aura = true
+  snd.leechrelease = false
 	snd.target_cured("leeched_aura")
 end</script>
 											<triggerType>0</triggerType>
@@ -23392,8 +23396,10 @@ end</script>
 												<string>^(\w+) appears to regain a little colour.$</string>
 												<string>^The life aura surrounding (\w+) protects .+ from harm.$</string>
 												<string>^The glowing aura of life surrounding (\w+) renders your attempt at deformation ineffective.$</string>
+												<string>^As effortlessly as you had taken it, you callously release the coveted life aura of (\w+) to fade into the air around you.$</string>
 											</regexCodeList>
 											<regexCodePropertyList>
+												<integer>1</integer>
 												<integer>1</integer>
 												<integer>1</integer>
 												<integer>1</integer>
@@ -23404,6 +23410,7 @@ end</script>
 											<script>if matches[2] == snd.target then
   snd.target_has_aura = false
   snd.need_leech_aura = false
+  snd.leechrelease = false
 	if not snd.checkAff("leeched_aura") then 
 		snd.target_got("leeched_aura")
 	end
@@ -23974,12 +23981,10 @@ end</script>
 										<regexCodePropertyList />
 										<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 											<name>Wheel affs</name>
-											<script>if matches[2] == snd.target then
-  local toParse = matches[3]
-  toParse = toParse:gsub("and", ""):gsub(",", ""):gsub("  ", " ")
-  for aff in toParse:gmatch('([^ ]+)') do
-    snd.target_got(aff)
-  end
+											<script>if matches[2]:lower() == snd.target:lower() then
+  snd.target_got(matches[3])
+  if matches[4] ~= nil then snd.target_got(matches[4]) end
+  if matches[5] ~= nil then snd.target_got(matches[5]) end
 end
 --snd.wheelused = false</script>
 											<triggerType>0</triggerType>
@@ -23993,9 +23998,15 @@ end
 											<colorTriggerFgColor>#000000</colorTriggerFgColor>
 											<colorTriggerBgColor>#000000</colorTriggerBgColor>
 											<regexCodeList>
-												<string>^Misfortune befalls (\w+), \w+ is suffering from (.*)\.$</string>
+												<string>^Misfortune befalls (\w+), \w+ is suffering from ([a-zA-Z _ -]+), ([a-zA-Z_ -]+) and ([a-zA-Z _ -]+)\.</string>
+												<string>^Misfortune befalls (\w+), \w+ is suffering from ([a-zA-Z _ -]+) and ([a-zA-Z _ -]+)\.</string>
+												<string>^Misfortune befalls (\w+), \w+ is suffering from ([a-zA-Z _ -]+).</string>
+												<string>^Misfortune befalls (\w+), \w+ is suffering from ([a-zA-Z _ -]+), ([a-zA-Z_ -]+), and ([a-zA-Z _ -]+)\.</string>
 											</regexCodeList>
 											<regexCodePropertyList>
+												<integer>1</integer>
+												<integer>1</integer>
+												<integer>1</integer>
 												<integer>1</integer>
 											</regexCodePropertyList>
 										</Trigger>
@@ -24939,6 +24950,28 @@ end
 											</regexCodeList>
 											<regexCodePropertyList>
 												<integer>3</integer>
+											</regexCodePropertyList>
+										</Trigger>
+										<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+											<name>Cardinal aff cure</name>
+											<script>if matches[3] == snd.target then
+  snd.target_cured(matches[2])
+end</script>
+											<triggerType>0</triggerType>
+											<conditonLineDelta>0</conditonLineDelta>
+											<mStayOpen>0</mStayOpen>
+											<mCommand></mCommand>
+											<packageName></packageName>
+											<mFgColor>#ff0000</mFgColor>
+											<mBgColor>#ffff00</mBgColor>
+											<mSoundFile></mSoundFile>
+											<colorTriggerFgColor>#000000</colorTriggerFgColor>
+											<colorTriggerBgColor>#000000</colorTriggerBgColor>
+											<regexCodeList>
+												<string>^The (.+) affliction lifts from (\w+), stolen away to further empower the circling cardinal\.$</string>
+											</regexCodeList>
+											<regexCodePropertyList>
+												<integer>1</integer>
 											</regexCodePropertyList>
 										</Trigger>
 									</TriggerGroup>
@@ -30578,7 +30611,7 @@ end</script>
 										</Trigger>
 									</TriggerGroup>
 								</TriggerGroup>
-								<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Weapon Hit Confirmation</name>
 									<script>-- generic weapon lines that both classes use</script>
 									<triggerType>0</triggerType>
@@ -35317,9 +35350,10 @@ end</script>
 									</Trigger>
 									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 										<name>Firewhirl shlorp</name>
-										<script>if matches[2] == snd.target then
-  snd.target_cured("ablaze")
-end</script>
+										<script>--doesn't do stuff rn
+-- if matches[2] == snd.target then
+  -- snd.target_cured("ablaze")
+-- end</script>
 										<triggerType>0</triggerType>
 										<conditonLineDelta>0</conditonLineDelta>
 										<mStayOpen>0</mStayOpen>
@@ -50650,54 +50684,35 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>dome/prismatic on target</name>
-						<script>if matches[2] == snd.target then
-  local who = matches[2]:title()
-  local count = 1
-  if not snd.illusion_found and snd.toggles.calling then
-    if table.contains(snd.targeting.list, who) then
-      local pos = table.index_of(snd.targeting.list, who) or nil
-      for k, v in ipairs(snd.targeting.list) do
-        if
-          table.contains(snd.players_here, who) and
-          table.contains(snd.players_here, v) and
-          k &gt; table.index_of(snd.targeting.list, who)
-        then
-          snd.setTarget(v)
-          break
-        end
-      end
-    else
-      table.remove(snd.players_here, table.index_of(snd.players_here, who))
-      snd.get_new_target()
-    end
-  end
-  
-  if snd.class == "Shaman" then
-    snd.attack("commune leafstorm "..matches[2])
-  elseif snd.class == "Alchemist" then
-    snd.attack("alchemy corrosive "..matches[2])
-  elseif snd.class == "Luminary" then
-    snd.attack("perform force "..matches[2].." kick "..gmcp.Char.Status.name)
-  elseif snd.class == "Earthcaller" then
-    snd.attack("dirge ordain "..matches[2].." kick "..gmcp.Char.Status.name)
-  elseif snd.class == "Templar" then
- 	  snd.attack("aura withering "..matches[2])
-  elseif snd.class == "Revenant" then
- 	  snd.attack("phantasm parasite "..matches[2])
-  elseif snd.class == "Oneiromancer" then
- 	  snd.attack("nightmare "..matches[2])
-  elseif snd.class == "Indorani" then
- 	  snd.attack("taint "..matches[2])
-  elseif snd.class == "Ascendril" then
- 	  snd.attack("cast torrent "..matches[2])
-  elseif snd.class == "Bloodborn" then
- 	  snd.attack("humour uprising "..matches[2])
-  elseif hasSkill("HourglassTattoo") then
- 	  snd.attack("touch hourglass "..matches[2])
-  end
-end
+						<script>--if matches[2] == snd.target then
+--  local who = matches[2]:title()
+ -- local count = 1
+--  if not snd.illusion_found and snd.toggles.calling then
+ --   if table.contains(snd.targeting.list, who) then
+ --     local pos = table.index_of(snd.targeting.list, who) or nil
+  --    for k, v in ipairs(snd.targeting.list) do
+  --      if
+  --        table.contains(snd.players_here, who) and
+    --      table.contains(snd.players_here, v) and
+      --    k &gt; table.index_of(snd.targeting.list, who)
+--        then
+  --        snd.setTarget(v)
+    --      break
+      --  end
+--      end
+  --  else
+    --  table.remove(snd.players_here, table.index_of(snd.players_here, who))
+      --snd.get_new_target()
+--    end
+  --end
+--end
 
-snd.target_aegis = true</script>
+snd.target_aegis = true
+cecho("\n&lt;yellow&gt;**Target DOMING!**")
+cecho("\n&lt;yellow&gt;**Target DOMING!**")
+cecho("\n&lt;yellow&gt;**Target DOMING!**")
+cecho("\n&lt;yellow&gt;**Target DOMING!**")
+cecho("\n&lt;yellow&gt;**Target DOMING!**")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
