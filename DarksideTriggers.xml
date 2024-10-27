@@ -598,7 +598,11 @@ end</script>
 								<regexCodePropertyList />
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>divert melee gain</name>
-									<script>snd.def_gain("divert_melee")</script>
+									<script>snd.divertstance = matches[2]
+if matches[2] == "melee" then
+  snd.def_gain("divert_melee")
+else
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -610,15 +614,21 @@ end</script>
 									<colorTriggerFgColor>#000000</colorTriggerFgColor>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
-										<string>You begin to focus your efforts on diverting damage from melee attacks.</string>
+										<string>^You begin to focus your efforts on diverting damage from (.+) attacks.$</string>
+										<string>^You are already diverting (.+) attacks.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
-										<integer>3</integer>
+										<integer>1</integer>
+										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>dodge melee gain</name>
-									<script>snd.def_gain("dodge_melee")</script>
+									<script>snd.dodgestance = matches[2]
+if matches[2] == "melee" then
+  snd.def_gain("dodge_melee")
+else
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -630,10 +640,12 @@ end</script>
 									<colorTriggerFgColor>#000000</colorTriggerFgColor>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
-										<string>You begin to focus your efforts on dodging melee attacks.</string>
+										<string>^You begin to focus your efforts on dodging (.+) attacks.$</string>
+										<string>^You are already dodging (.+) attacks.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
-										<integer>3</integer>
+										<integer>1</integer>
+										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -8539,7 +8551,6 @@ snd.balance.wand = true</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>used</name>
 								<script>snd.balance.fitness = false
-snd.aff_gain("exhausted")
 if snd.have_aff("slickness") then
   send("firstaid elevate slickness")
 end</script>
@@ -13179,13 +13190,13 @@ end
   snd.message("&lt;yellow&gt;Ylem mist!")
 end
 snd.ylem_check = true
---if tonumber(snd.toggles.gauntlet_level) &gt; 2 then 
+if tonumber(snd.toggles.gauntlet_level) &gt; 2 then 
   send("absorb ylem")
---  snd.ylem_check = true
---else
---  snd.set_queue("absorb ylem")
- -- snd.ylem_check = true
---end</script>
+  snd.ylem_check = true
+else
+  snd.set_queue("absorb ylem")
+  snd.ylem_check = true
+end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -13333,7 +13344,6 @@ snd.resummon = false</script>
       if snd.resummon then
       if snd.ylem_check then
         snd.set_queue("drain globe"..snd.sep.."qeb summon elemental"..snd.sep.."absorb ylem"..snd.sep.."kill elemental")
-        --"absorb ylem"..snd.sep.."
       elseif snd.elementalcount &lt; 30 then
         snd.set_queue("drain globe"..snd.sep.."qeb summon elemental"..snd.sep.."kill elemental")
       else
@@ -13343,7 +13353,6 @@ snd.resummon = false</script>
       else
       if snd.ylem_check then
         snd.set_queue("summon elemental"..snd.sep.."qeb kill elemental"..snd.sep.."absorb ylem"..snd.sep)
-        --absorb ylem"..snd.sep.."
       elseif snd.elementalcount &lt; 30 then
         snd.set_queue("summon elemental"..snd.sep.."kill elemental")
       else
@@ -13354,7 +13363,6 @@ snd.resummon = false</script>
     else
       if snd.ylem_check then
         snd.set_queue("summon elemental"..snd.sep.."qeb AETHERIAL SPIRAL elemental"..snd.sep.."absorb ylem"..snd.sep)
-        --absorb ylem"..snd.sep.."
       elseif snd.elementalcount &lt; 30 then
         snd.set_queue("summon elemental"..snd.sep.."AETHERIAL SPIRAL elemental")
       else
@@ -23888,9 +23896,11 @@ end</script>
 											<colorTriggerBgColor>#000000</colorTriggerBgColor>
 											<regexCodeList>
 												<string>^The slime upon (\w+) shrinks into little more then an irritation.$</string>
+												<string>Your slime cannot fully envelop its target again so soon.</string>
 											</regexCodeList>
 											<regexCodePropertyList>
 												<integer>1</integer>
+												<integer>3</integer>
 											</regexCodePropertyList>
 										</Trigger>
 										<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -30611,7 +30621,7 @@ end</script>
 										</Trigger>
 									</TriggerGroup>
 								</TriggerGroup>
-								<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Weapon Hit Confirmation</name>
 									<script>-- generic weapon lines that both classes use</script>
 									<triggerType>0</triggerType>
@@ -32888,7 +32898,7 @@ disableTrigger("Weaken arms or legs")</script>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
-								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Dhuriv Pierce/Sever</name>
 									<script>if matches[2] == snd.target then
  snd.target_got(matches[3]:gsub(" ", "_").."_crippled")
@@ -45862,8 +45872,8 @@ end</script>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
-								<string>^Shimmering wisps of energy surround \w+ as a connection forms between \w+ spirit and that of the bear. An ursine outline encircles \w+ and, with a deafening roar, \w+ claws? the flesh from (\w+)'s (.+)\.$</string>
-								<string>^Shimmering energy surrounds \w+ as \w+ concentrates?\. Moments later, .+ encircled by the outline of a great bear and, with a deafening roar, \w+ claws? the flesh from (\w+)'s (.+)\.$</string>
+								<string>^Verdant energy spills along \w+'s arm, expanding its proportions to that of a mighty bear's\. Transformed into an instrument of Her vengeance, \w+ mauls (\w+)'s (.+) with gleaming claws, rendering flesh to bloodied ribbon\.$</string>
+								<string>^Verdant energy spills along your arm, suffusing it with ursine fury. Transformed into an instrument of Her vengeance, you maul (\w+)'s (.+) with gleaming claws, rendering flesh to bloodied ribbon\.$</string>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>1</integer>
@@ -46081,6 +46091,38 @@ cecho("&lt;cyan&gt;VENOM STORED: " ..snd.storedascendvenom)</script>
 								<integer>3</integer>
 								<integer>3</integer>
 								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Hamartia/plasma/etc</name>
+							<script>if matches[2] == snd.target then
+ snd.target_got(matches[3])
+end</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>^Eldritch coils of oceanic light arise about your outstretched fingers, blooming toward (\w+) and exposing the flaw of (\w+) amidst disembodied laughter.$</string>
+								<string>^A beat of .+ mighty wings brings forth a cirrus of superheated light, plasmatic winds inspired by the sun itself gusting across and over (\w+) and searing \w+ with (\w+)\.$</string>
+								<string>^\w+ sweeps? a cowl of darkness across \w+ shoulders, gathering the force of night about \w+ before lashing outward toward (\w+) in a chiaroscuro coil of stygian shadow and starry scintillation, tainting \w+ with (\w+).$</string>
+								<string>^Volatile black energy wreathes .+ fingertips as \w+ thrusts? them into (\w+), imparting (\w+) within \w+\.$</string>
+								<string>^Drawing tendrils of raw power from \w+ very body, \w+ weaves? the four elements into an atrophic vortex and turns it loose upon (\w+), observing impassively as the forces assail \w+ with (\w+)\.$</string>
+								<string>^With a simple gesture, you command a swarming hive of enraged bees, marking (\w+) as the unfortunate victim. The bees surround .+, stinging .+ exposed flesh and afflicting .+ with (.+)\.$</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+								<integer>1</integer>
+								<integer>1</integer>
+								<integer>1</integer>
+								<integer>1</integer>
+								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">

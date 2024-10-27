@@ -3173,7 +3173,7 @@ snd.priorities =
     "def_tiarna_presence",
     "def_tiarna_shelter",
     "def_tiarna_shelter_stored",
-    "def_tiarna_unleash",
+    "def_tiarna_chimerism",
     
     "def_aetherial_bastion",
     "def_aetherial_presence",
@@ -4915,7 +4915,7 @@ def_glacian_twilight = {defense = "glacian_twilight", type = "normal", effect = 
 def_tiarna_form = {defense = "tiarna_form", type = "normal", effect = "Rustle rustle", balance = {balanceequilibriumtake = "rhythm thrum mental"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_tiarna_bulwark = {defense = "tiarna_bulwark", type = "normal", effect = "Protect you and absorb afflictions", balance = {balanceequilibriumtake = "tiarna bulwark"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_tiarna_presence = {defense = "tiarna_presence", type = "normal", effect = "Grants crit and dodge chance", balance = {balanceequilibriumtake = "tiarna presence on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
-def_tiarna_unleash = {defense = "tiarna_unleash", type = "normal", effect = "Chance to replicate your abilities", balance = {balanceequilibriumtake = "tiarna unleash on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_tiarna_chimerism = {defense = "tiarna chimerism", type = "normal", effect = "Chance to replicate your abilities", balance = {balanceequilibriumtake = "tiarna chimerism on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_tiarna_shelter = {defense = "tiarna_shelter", type = "normal", effect = "Blocks the next attack", balance = {balanceequilibriumtake = "tiarna shelter"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_tiarna_shelter_stored = {defense = "tiarna_shelter_stored", type = "normal", effect = "Raises shelter when &lt;40% health", balance = {balanceequilibriumtake = "tiarna shelter store"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_tiarna_store = {defense = "tiarna_store", type = "normal", effect = "Return to your fancy room on death", balance = {}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
@@ -5508,7 +5508,7 @@ end</script>
   ["Nature's protective shelter watches over you."] = "tiarna_shelter",
   ["Nature's shelter will come to your rescue."] = "tiarna_shelter_stored",
   ["You are attuned to the Grove of Isolation."] = "tiarna_store",
-  ["The savage fury of the wilds will echo your attacks."] = "tiarna_unleash",
+  ["The savage fury of the wilds will echo your attacks."] = "tiarna_chimerism",
   
   --Aetherial
   ["The bastion of Tharbar and Shenna is with you."] = "aetherial_bastion",
@@ -23908,7 +23908,7 @@ function snd.bashing_function()
         tempTimer(1, [[snd.nimble_sent = false]])
       end 
     
-			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep.."absorb ylem" end -- if you have a level 2 gauntlet, auto-absorb
+			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 and snd.ylem_check then battack = battack..snd.sep.."absorb ylem" end -- if you have a level 2 gauntlet, auto-absorb
       
       if battack == "" and (snd.counterattack_active or not snd.defenses.def_reflection.state == "deffed") then -- if the basher couldn't change battack to something from your class, it will give an error
         echo("\nTried to bash, no class ability set.")
@@ -30924,19 +30924,15 @@ end</script>
 								<packageName></packageName>
 								<script>function snd.avoidancecheck()
 	if snd.toggles.active and not snd.have_aff("stun") and not snd.have_aff("unconscious") then
-		if (snd.cureset == "wayfarer" or snd.cureset == "predator") and snd.avoidanceset ~= "ranged" then
+		if (snd.cureset == "wayfarer" or snd.cureset == "predator") and snd.avoidanceset ~= "ranged" and snd.dodgestance ~= "ranged" and snd.divertstance ~= "ranged" then
 			snd.send("divert ranged")
 			snd.send("dodge ranged")
 			snd.avoidanceset = "ranged"
-		elseif (snd.cureset == "sentinel" or snd.cureset == "executor") and snd.avoidanceset ~= "upsets" then
+		elseif (snd.cureset == "sentinel" or snd.cureset == "executor" or snd.cureset == "shaman" or snd.cureset == "alchemist" or snd.cureset == "archivist" or snd.cureset == "voidseer") and snd.avoidanceset ~= "upsets" and snd.dodgestance ~= "upsets" and snd.divertstance ~= "upsets" then
 			snd.send("dodge upsets")
 			snd.send("divert upsets")
-			snd.avoidanceset = "upsets"
-		elseif (snd.cureset == "shaman" or snd.cureset == "alchemist" or snd.cureset == "archivist" or snd.cureset == "voidseer") and snd.avoidanceset ~= "upsets" then
-			snd.send("dodge upsets") 
-			snd.send("divert upsets")
-			snd.avoidanceset = "upsets"		
-		elseif snd.avoidanceset ~= "melee" then
+			snd.avoidanceset = "upsets"	
+		elseif snd.avoidanceset ~= "melee" and snd.dodgestance ~= "melee" and snd.divertstance ~= "melee" then
 			snd.send("divert melee")
 			snd.send("dodge melee")
 			snd.avoidanceset = "melee"
@@ -32261,7 +32257,7 @@ tiarna = {
   def_tiarna_cultivation = "on",
   def_tiarna_presence = "on",
   def_tiarna_shelter_stored = "once",
-  def_tiarna_unleash = "on",
+  def_tiarna_chimerism = "on",
 },
 glacian = {
   def_glacian_penumbra = "on",
@@ -32737,6 +32733,8 @@ snd.stunrecheck = false
 snd.enemycansalve = true
 snd.kipup = false
 snd.avoidanceset = "none"
+snd.dodgestance = "none"
+snd.divertstance = "none"
 snd.limb_dmg_done = 0
 
 --200 Things
@@ -38517,7 +38515,7 @@ end</script>
   },
   
   ["Tiarna"] = {
-  Inculcate = function(target)
+  Malison = function(target)
             if snd.checkAff("magic_weakness") and snd.checkAff("fire_weakness") then
               snd.target_got("slickness")
               snd.target_got("disfigurement")
@@ -38533,7 +38531,7 @@ end</script>
            end
          end,
          
- Shear = function(target, where)
+ Savage = function(target, where)
           enableTrigger("Tiarna Shear")
           snd.doubleattack = false
           enableTrigger("Sunder Parry")
@@ -38566,7 +38564,7 @@ end</script>
       tempTimer(90, [[snd.huntresses_used = false]])
     end,
     
-    Fulminate = function(target)
+    Glare = function(target)
       snd.doubleattack = false
     end,
     
