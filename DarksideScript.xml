@@ -2816,6 +2816,7 @@ snd.priorities =
     -- "aff_dazed",
     -- "aff_embedded_axe",
     
+    "def_closecombat",
     "def_gripping",
     "def_irongrip",
     "def_vigor",
@@ -4010,6 +4011,8 @@ aff_fragments = {state = "healed", effect = "", cures = {}, assess = false, time
 aff_immobility = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
 aff_timewarped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_inaccuracy = {state = "healed", effect = "Reduced accuracy", cures = {}, assess = false, timer = createStopWatch()},
+aff_mindfog = {state = "healed", effect = "Can't cure mentals", cures = {salve = "caloric to head"}, assess = false, timer = createStopWatch()},
+aff_phosphenes = {state = "healed", effect = "Head trauma knocks eq", cures = {salve = "soothing to head"}, assess = false, timer = createStopWatch()},
 }</script>
 								<eventHandlerList />
 							</Script>
@@ -4672,6 +4675,7 @@ def_whitesight = {defense = "whitesight", type = "normal", effect = "See through
 def_aversion = {defense = "aversion", type = "normal", effect = "Avoid aegis and runes, but blocks ql and gmcp map", balance = {balanceequilibrium = "avert eyes"}, state = "down", needit = false, timer = createStopWatch(), skill = "Aversion"},
 def_defang = {defense = "defang", type = "normal", effect = "Knocks offbal if successful parry", balance = {balanceequilibriumtake = "defang"}, state = "down", needit = false, timer = createStopWatch(), skill = "Defang"},
 def_culmination = {defense = "culmination", type = "normal", effect = "Improves dodge all", balance = {balanceequilibrium = "culmination"}, state = "down", needit = false, timer = createStopWatch(), skill = "Culmination"},
+def_closecombat = {defense = "closecombat", type = "normal", effect = "Improved accuracy", balance = {balanceequilibrium = "closecombat"}, state = "down", needit = false, timer = createStopWatch(), skill = "Closecombat"},
 
 --Ravager
 def_vinculum = {defense = "vinculum", type = "normal", effect = "Enabled your use of abilities", balance = {balanceequilibriumtake = "invoke vinculum"}, state = "down", needit = false, timer = createStopWatch(), skill = "Vinculum" },
@@ -5638,6 +5642,10 @@ end</script>
   
   ["You may sense those who are near death."] = "tapestry",
   ["You are able to sense those close to death."] = "morisensus",
+  ["You are watching the trees for signs of movement."] = "treewatch",
+  ["You are aware of movement in the skies."] = "skywatch",
+  
+  ["You are heavily focused on close combat."] = "closecombat",
 }
  </script>
 								<eventHandlerList />
@@ -30061,7 +30069,7 @@ function snd.firstaidassShaman()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.stupidity ~= "6" then
 		table.insert(snd.setting_priority, "stupidity 6")		 
 	end
-  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Syssin") then
+  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Infiltrator") then
     if snd.firstaidcuretrack.clumsiness ~= "5" then
   		table.insert(snd.setting_priority, "clumsiness 5")		 
   	end 
@@ -30111,7 +30119,7 @@ function snd.firstaidassAlchemist()  -- curing based on class being attacked by
   if snd.firstaidcuretrack.stupidity ~= "6" then
 		table.insert(snd.setting_priority, "stupidity 6")		 
 	end
-  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Syssin") then
+  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Infiltrator") then
     if snd.firstaidcuretrack.clumsiness ~= "5" then
   		table.insert(snd.setting_priority, "clumsiness 5")		 
   	end 
@@ -32040,8 +32048,9 @@ predator = {
   def_windwalking = "on",
   def_preserval = "on",
   def_whitesight = "on",
-  def_defang = "on",  
+  --def_defang = "on",  
   def_culmination = "on",
+  def_closecombat = "once",
 },
 
 ravager = {
@@ -34334,7 +34343,7 @@ end</script>
   {
     soothing =
       {
-        ["head"] = {"whiplash"},
+        ["head"] = {"phosphenes", "whiplash"},
         ["torso"] = {"backstrain", "muscle_spasms", "stiffness"},
         ["left arm"] = {"sore_wrist", "weak_grip"},
         ["right arm"] = {"sore_wrist", "weak_grip"},
@@ -34361,7 +34370,7 @@ end</script>
       },
     caloric =
       {
-        ["head"] = {},
+        ["head"] = {"mindfog"},
         ["torso"] = {"hypothermia", "frozen", "frigid", "shivering"},
         ["left arm"] = {},
         ["right arm"] = {},
@@ -34778,7 +34787,7 @@ function snd.no_parry()
   "unconscious",
  }
  if snd.class == "Sentinel" or snd.class == "Executor" then
-  table.insert(noparryaffs, "confusion")
+  table.insert(noparryaffs, "heartflutter")
  end
  if snd.cureset == "zealot" or snd.cureset == "ravager" then
   table.insert(noparryaffs, "paresis")
@@ -40851,7 +40860,7 @@ local time = 1
 time = snd.recoverytime - getEpoch()
   -- Indorani/Oneiromancer - Fool two random unless they have paresis or paralysis which that will cure first and only that - 18s
   -- Monk - mind push, fitness - 20s fitness
-  -- Syssin - shrugging 20s
+  -- Infiltrator - shrugging 20s
   -- Scio - leech if not weariness then can cure asthma, if paresis/paralysis then only that
   -- Archivist -- recollection
   -- Praenomen -- purify 20s
@@ -40959,6 +40968,7 @@ end</script>
   snd.splattercount = 0
   snd.splattertwo = "none"
   snd.splatterone = "none"
+  --think about adding whirl to help make a double-eat?
 end</script>
 								<eventHandlerList />
 							</Script>
