@@ -67,7 +67,6 @@
 		snd.battle_aff = "none"
 		snd.chasten_aff = "none"
 		snd.last_cured = ""
-		snd.rebounded = false
     snd.predatorVenom = nil
     snd.recent_affs = {}
   
@@ -557,6 +556,10 @@ end</script>
  if snd.defenses[i].defense == multimatches[2][2] then
   if snd.toggles.gags then
     deleteLine()
+  end
+  if i == "efficiency" then
+    snd.efficiency = false
+    snd.efficiencycount = ""
   end
   snd.def_take(i)
  end
@@ -2133,47 +2136,60 @@ end
 snd.aff_gain(matches[2])
 snd.aff(matches[2])
 
+if table.isMember(snd.firstaidpredict, matches[2]) then
+	send("FIRSTAID UNPREDICT "..matches[2])
+	delitem(snd.firstaidpredict, matches[2])
+end
+
 if matches[2] == "paresis" then
-  if not snd.swaggered then
-    if snd.swagger &lt;= 3 then
-      if snd.class == "Zealot" then
-        snd.send("qeb swagger")
-      elseif snd.class == "Ravager" then
-        snd.send("qeb contempt")
-      end
-      snd.swaggered = true
-      tempTimer(5,[[snd.swaggered = false]])
+  if not snd.swaggered and snd.swagger &lt;= 3 and (snd.class == "Zealot" or snd.class == "Ravager") then
+    if snd.class == "Zealot" then
+      snd.send("qeb swagger")
+    elseif snd.class == "Ravager" then
+      snd.send("qeb contempt")
+    end
+    snd.swaggered = true
+    tempTimer(5,[[snd.swaggered = false]])
+  elseif #snd.elevatedaff &lt; 1 and not snd.elevatedaff["paresis"] then
+    if not snd.class == "Carnifex" then
+      send("firstaid elevate paresis")
     end
   end
-elseif matches[2] == "gloom" and (snd.cureset == "sciomancer" or snd.cureset == "runecarver") then
-  snd.firstaidchangecure = true
-  expandAlias("kd blindness")
-  send("firstaid elevate gloom"..snd.sep.."firstaid priority defence blindness 26")
-elseif matches[2] == "burnt_skin" then
-  snd.firstaidchangecure = true
-  send("firstaid priority burnt_skin 1"..snd.sep.."firstaid priority shivering 3"..snd.sep.."firstaid priority frozen 3")
-elseif matches[2] == "blisters" and (snd.cureset == "carnifex" or snd.cureset == "warden") then
-  send("firstaid elevate blisters")
-elseif matches[2] == "slickness" and (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) then
-  send("firstaid elevate slickness")
-elseif matches[2] == "asthma" and (snd.cureset == "earthcaller" or snd.cureset == "luminary") then
-  send("firstaid elevate hypochondria")
-elseif matches[2] == "vertigo" and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") then
-  send("firstaid elevate vertigo")
-elseif matches[2] == "dizziness" and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") then
-  send("firstaid elevate dizziness")
-elseif matches[2] == "confusion" and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") then
-  send("firstaid elevate confusion")
-elseif matches[2] == "withering" and (snd.cureset == "templar" or snd.cureset == "revenant") then
-  send("firstaid elevate withering")
-elseif matches[2] == "clumsiness" and (snd.class == "Carnifex" or snd.class == "Executor") then
-  send("firstaid elevate clumsiness")
-elseif matches[2] == "justice" and snd.class == "Carnifex" then
-  send("firstaid elevate justice")
-elseif matches[2] == "weariness" and snd.class == "Carnifex" then
-  send("firstaid elevate weariness")
-elseif matches[2] == "disfigurement" and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") then
-  send("firstaid elevate disfigurement")
+elseif matches[2] == "hypersomnia" then 
+  snd.metawakeon = true
+elseif #snd.elevatedaff &lt; 1 then
+  if matches[2] == "paralysis" and not snd.elevatedaff["paralysis"] then
+    send("firstaid elevate paralysis")
+  elseif matches[2] == "gloom" and (snd.cureset == "sciomancer" or snd.cureset == "runecarver") and not snd.elevatedaff["gloom"] then
+    snd.firstaidchangecure = true
+    expandAlias("kd blindness")
+    send("firstaid elevate gloom"..snd.sep.."firstaid priority defence blindness 26")
+  elseif matches[2] == "burnt_skin" and not snd.elevatedaff["burnt_skin"] then
+    snd.firstaidchangecure = true
+    send("firstaid elevate burnt_skin")
+  elseif matches[2] == "blisters" and (snd.cureset == "carnifex" or snd.cureset == "warden") and not snd.elevatedaff["blisters"] then
+    send("firstaid elevate blisters")
+  elseif matches[2] == "slickness" and (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) and not snd.elevatedaff["slickness"] then
+    send("firstaid elevate slickness")
+  elseif matches[2] == "asthma" and (snd.cureset == "earthcaller" or snd.cureset == "luminary") and not snd.elevatedaff["hypochondria"] then
+    send("firstaid elevate hypochondria")
+  elseif matches[2] == "vertigo" and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") and not snd.elevatedaff["vertigo"] then
+    send("firstaid elevate vertigo")
+  elseif matches[2] == "dizziness" and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") and not snd.elevatedaff["dizziness"] then
+    send("firstaid elevate dizziness")
+  elseif matches[2] == "confusion" and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") and not snd.elevatedaff["confusion"] then
+    send("firstaid elevate confusion")
+  elseif matches[2] == "withering" and (snd.cureset == "templar" or snd.cureset == "revenant") and not snd.elevatedaff["withering"] then
+    send("firstaid elevate withering")
+  elseif matches[2] == "clumsiness" and (snd.class == "Carnifex" or snd.class == "Executor") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) and not snd.elevatedaff["clumsiness"] then
+    send("firstaid elevate clumsiness")
+  elseif matches[2] == "justice" and snd.class == "Carnifex" and not snd.elevatedaff["justice"] then
+    send("firstaid elevate justice")
+  elseif matches[2] == "weariness" and snd.class == "Carnifex" and not snd.elevatedaff["weariness"] then
+    send("firstaid elevate weariness")
+  elseif matches[2] == "disfigurement" and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") and not snd.elevatedaff["disfigurement"] then
+    send("firstaid elevate disfigurement")
+  end
 end
 
 if snd.have_aff("blackout") and snd.have_aff("recklessness") then
@@ -2211,16 +2227,11 @@ end</script>
 								<script>snd.aff_gain(matches[3])
 snd.aff_cure(matches[2])
 
-if snd.have_aff("blackout") and snd.have_aff("recklessness") then
-	enableTimer("recklessblackouttimer")
-elseif snd.have_aff("blackout") then
-	enableTimer("blackout")
-elseif snd.have_aff("recklessness") then
-	enableTimer("recklessblackouttimer")
+if snd.elevatedaff["paresis"] then
+  send("firstaid unelevate paresis")
 end
 
-
-if snd.have_aff("paralysis") then
+if snd.have_aff("paralysis") and not snd.elevatedaff["paralysis"] then
   send("firstaid elevate paralysis")
 end
 
@@ -2230,8 +2241,7 @@ elseif snd.have_aff("blackout") then
 	enableTimer("blackout")
 elseif snd.have_aff("recklessness") then
 	enableTimer("recklessblackouttimer")
-end
-</script>
+end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
 								<mStayOpen>0</mStayOpen>
@@ -2249,13 +2259,22 @@ end
 									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
-							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="yes" isColorTriggerFg="yes" isColorTriggerBg="yes">
 								<name>affline cure</name>
 								<script>if snd.toggles.gags then
   deleteLine()
 end
 
-if snd.have_aff(matches[2]) then
+local aff = multimatches[1][2]
+snd.elevatedaff[aff] = nil
+snd.aff_cure(aff)
+
+if table.isMember(snd.firstaidpredict, aff) then
+	send("FIRSTAID UNPREDICT "..aff)
+	delitem(snd.firstaidpredict, aff)
+end
+
+if snd.have_aff(aff) then
 else
 	if snd.unknownquantity &gt; 0 then
     snd.unknownquantity = snd.unknownquantity - 1
@@ -2266,20 +2285,15 @@ else
     end
   end
 end
-  
-snd.aff_cure(matches[2])
-local aff = matches[2]
 
-if (matches[2] == "left_arm_crippled" or matches[2] == "right_arm_crippled") and snd.have_aff("a_crippled_arm") then
+if (aff == "left_arm_crippled" or aff == "right_arm_crippled") and snd.have_aff("a_crippled_arm") then
  snd.aff_remove("a_crippled_arm")
 end
-if (matches[2] == "left_leg_crippled" or matches[2] == "right_leg_crippled") and snd.have_aff("a_crippled_leg") then
+if (aff == "left_leg_crippled" or aff == "right_leg_crippled") and snd.have_aff("a_crippled_leg") then
  snd.aff_remove("a_crippled_leg")
 end
 
-local multiaffliction = matches[2]
-
-if multiaffliction == "blackout" then 
+if aff == "blackout" or aff == "stupidity" or aff == "aeon" then 
 	snd.healretry = false 
 	send("recoup"..snd.sep.."concentrate")
 	if gmcp.Char.Vitals.salve == "1" then snd.salvebal = true else snd.salvebal = false end
@@ -2288,75 +2302,65 @@ if multiaffliction == "blackout" then
 	if gmcp.Char.Vitals.moss == "1" then snd.moss = true else snd.moss = false end
 	if gmcp.Char.Vitals.elixir == "1" then snd.healbalance = true else snd.healbalance = false end
 	if snd.sync == true then snd.statusrecovery = true end
-
-elseif multiaffliction == "confusion" then
+  snd.stunrecheck = false
+elseif aff == "confusion" then
 	send("concentrate")
-elseif multiaffliction == "disfigurement" then
+elseif aff == "disfigurement" then
 	snd.statusrecovery = true
 	snd.setpassive = true
   snd.loyalsattacking = false
-elseif multiaffliction == "impatience" then
-	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
-	
-elseif (multiaffliction == "stupidity" or multiaffliction == "aeon") then 
-	if gmcp.Char.Vitals.salve == "1" then snd.salvebal = true else snd.salvebal = false end
-	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
-	if gmcp.Char.Vitals.tree == "1" then snd.tree = true else snd.tree = false end
-	if gmcp.Char.Vitals.moss == "1" then snd.moss = true else snd.moss = false end
-	if gmcp.Char.Vitals.elixir == "1" then snd.healbalance = true else snd.healbalance = false end
-	if snd.sync == true then snd.statusrecovery = true end
-	snd.stunrecheck = false
-	send("concentrate")
-
-elseif multiaffliction == "right_leg_crippled" or multiaffliction == "left_leg_crippled" then 
+elseif aff == "impatience" then
+	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end	
+elseif aff == "right_leg_crippled" or aff == "left_leg_crippled" then 
   snd.send("stand")
-
 end
 
-if matches[2] == "gloom" and (snd.cureset == "sciomancer" or snd.cureset == "runecarver")  then
+if aff == "gloom" and (snd.cureset == "sciomancer" or snd.cureset == "runecarver")  then
   snd.firstaidchangecure = true
   send("firstaid priority defence blindness 8")
   expandAlias("kd blindness")
-elseif matches[2] == "burnt_skin" then
+elseif aff == "burnt_skin" then
   snd.firstaidchangecure = true
-elseif snd.have_aff("blisters") and (snd.cureset == "carnifex" or snd.cureset == "warden") then
-  send("firstaid elevate blisters")
-elseif matches[2] == "clumsiness" and snd.class == "Carnifex" then
-  if snd.have_aff("slickness") then
-    send("firstaid elevate slickness")
-  elseif snd.have_aff("paresis") then
-    send("firstaid elevate paresis")
-  elseif snd.have_aff("paralysis") then
-    send("firstaid elevate paralysis")
+elseif #snd.elevatedaff &lt; 1 then
+  if snd.have_aff("blisters") and (snd.cureset == "carnifex" or snd.cureset == "warden") and not snd.elevatedaff["blisters"] then
+    send("firstaid elevate blisters")
+  elseif aff == "clumsiness" then
+    if snd.have_aff("slickness") and snd.class == "Carnifex" and not snd.elevatedaff["slickness"] then
+      send("firstaid elevate slickness")
+    elseif snd.have_aff("paresis") and not snd.elevatedaff["paresis"] then
+      send("firstaid elevate paresis")
+    elseif snd.have_aff("paralysis") and not snd.elevatedaff["paralysis"] then
+      send("firstaid elevate paralysis")
+    end
+  elseif snd.have_aff("asthma") and (snd.cureset == "earthcaller" or snd.cureset == "luminary") and not snd.elevatedaff["asthma"] then
+    send("firstaid elevate asthma")
+  elseif snd.have_aff("vertigo") and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") and not snd.elevatedaff["vertigo"] then
+    send("firstaid elevate vertigo")
+  elseif snd.have_aff("dizziness") and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") and not snd.elevatedaff["dizziness"] then
+    send("firstaid elevate dizziness")
+  elseif snd.have_aff("confusion") and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") and not snd.elevatedaff["confusion"] then
+    send("firstaid elevate confusion")
+  elseif snd.have_aff("clumsiness") and (snd.class == "Carnifex" or snd.class == "Executor") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) and not snd.elevatedaff["clumsiness"] then
+    send("firstaid elevate clumsiness")
+  elseif snd.have_aff("justice") and snd.class == "Carnifex" and not snd.elevatedaff["justice"] then
+    send("firstaid elevate justice")
+  elseif snd.have_aff("weariness") and snd.class == "Carnifex" and not snd.elevatedaff["weariness"] then
+    send("firstaid elevate weariness")
+  elseif snd.have_aff("withering") and (snd.cureset == "templar" or snd.cureset == "revenant") and not snd.elevatedaff["withering"] then
+    send("firstaid elevate withering")
+  elseif snd.have_aff("disfigurement") and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") and not snd.elevatedaff["disfigurement"] then
+    send("firstaid elevate disfigurement")
   end
-elseif snd.have_aff("asthma") and (snd.cureset == "earthcaller" or snd.cureset == "luminary") then
-  send("firstaid elevate hypochondria")
-elseif snd.have_aff("vertigo") and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") then
-  send("firstaid elevate vertigo")
-elseif snd.have_aff("dizziness") and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") then
-  send("firstaid elevate dizziness")
-elseif snd.have_aff("confusion") and (snd.cureset == "bloodborn" or snd.cureset == "ascendril") then
-  send("firstaid elevate confusion")
-elseif snd.have_aff("clumsiness") and (snd.class == "Carnifex" or snd.class == "Executor") then
-  send("firstaid elevate clumsiness")
-elseif snd.have_aff("justice") and snd.class == "Carnifex" then
-  send("firstaid elevate justice")
-elseif snd.have_aff("weariness") and snd.class == "Carnifex" then
-  send("firstaid elevate weariness")
-elseif snd.have_aff("withering") and (snd.cureset == "templar" or snd.cureset == "revenant") then
-  send("firstaid elevate withering")
-elseif snd.have_aff("disfigurement") and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") then
-  send("firstaid elevate disfigurement")
 end
 
 if #snd.limbbrokencount &gt; 0 then
-  if multiaffliction == "left_leg_crippled" then
+  if aff == "left_leg_crippled" then
     delitem(snd.limbbrokencount, "left_leg_crippled")
-  elseif multiaffliction == "right_leg_crippled" then
+  elseif aff == "right_leg_crippled" then
     delitem(snd.limbbrokencount, "right_leg_crippled")
-  elseif multiaffliction == "right_arm_crippled" then
+  elseif aff == "right_arm_crippled" then
     delitem(snd.limbbrokencount, "right_arm_crippled")
-  elseif multiaffliction == "left_arm_crippled" then
+  elseif aff == "left_arm_crippled" then
     delitem(snd.limbbrokencount, "left_arm_crippled")
   end
 end
@@ -2367,11 +2371,6 @@ elseif snd.have_aff("blackout") then
 	enableTimer("blackout")
 elseif snd.have_aff("recklessness") then
 	enableTimer("recklessblackouttimer")
-end
-
-if table.isMember(snd.firstaidpredict, matches[2]) then
-	send("FIRSTAID UNPREDICT "..matches[2])
-	delitem(snd.firstaidpredict, matches[2])
 end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
@@ -2381,13 +2380,15 @@ end</script>
 								<mFgColor>#ff0000</mFgColor>
 								<mBgColor>#ffff00</mBgColor>
 								<mSoundFile></mSoundFile>
-								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerFgColor>#008080</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
 									<string>^You have cured ([a-z_-]+)\.$</string>
+									<string>FG14BG2</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
+									<integer>6</integer>
 								</regexCodePropertyList>
 							</Trigger>
 							<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -2429,32 +2430,6 @@ end</script>
 										<integer>3</integer>
 										<integer>3</integer>
 										<integer>3</integer>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>elevated not known by prediction or have</name>
-									<script>deleteFull()
-local aff = matches[2]
-if table.isMember(snd.firstaidpredict, aff) then
-	delitem(snd.firstaidpredict, aff)	
-end
-snd.aff_cure(matches[2])
-</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^You're not afflicted with (\w+).$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
@@ -3050,72 +3025,6 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>^You have recovered (.*).$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>affline don't have</name>
-									<script>if snd.have_aff(matches[2]) then
-  snd.aff_cure(matches[2])
-
-  if (matches[2] == "left_arm_crippled" or matches[2] == "right_arm_crippled") and snd.have_aff("a_crippled_arm") then
-    snd.aff_remove("a_crippled_arm")
-  end
-  if (matches[2] == "left_leg_crippled" or matches[2] == "right_leg_crippled") and snd.have_aff("a_crippled_leg") then
-    snd.aff_remove("a_crippled_leg")
-  end
-
-end
-
-local multiaffliction = matches[2]
-
-if multiaffliction == "blackout" then 
-	snd.healretry = false 
-	send("recoup"..snd.sep.."concentrate")
-	if gmcp.Char.Vitals.salve == "1" then snd.salvebal = true else snd.salvebal = false end
-	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
-	if gmcp.Char.Vitals.tree == "1" then snd.tree = true else snd.tree = false end
-	if gmcp.Char.Vitals.moss == "1" then snd.moss = true else snd.moss = false end
-	if gmcp.Char.Vitals.elixir == "1" then snd.healbalance = true else snd.healbalance = false end
-	if snd.sync == true then snd.statusrecovery = true end
-
-elseif multiaffliction == "confusion" then
-	send("concentrate")
-elseif multiaffliction == "disfigurement" then
-	snd.statusrecovery = true
-	snd.setpassive = true
-  snd.loyalsattacking = false
-elseif multiaffliction == "impatience" then
-	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
-	
-elseif (multiaffliction == "stupidity" or multiaffliction == "aeon") then 
-	if gmcp.Char.Vitals.salve == "1" then snd.salvebal = true else snd.salvebal = false end
-	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
-	if gmcp.Char.Vitals.tree == "1" then snd.tree = true else snd.tree = false end
-	if gmcp.Char.Vitals.moss == "1" then snd.moss = true else snd.moss = false end
-	if gmcp.Char.Vitals.elixir == "1" then snd.healbalance = true else snd.healbalance = false end
-	if snd.sync == true then snd.statusrecovery = true end
-	snd.stunrecheck = false
-	send("concentrate"..snd.sep.."drink health")
-
-elseif multiaffliction == "right_leg_crippled" or multiaffliction == "left_leg_crippled" then 
-  snd.send("stand")
-
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^You're not afflicted with ([a-z_-]+)\.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -5728,6 +5637,11 @@ end</script>
 if snd.not_aff("unknown") then
   snd.aff_gain("unknown")
 end
+if snd.cureset == "shapeshifter" then
+  send("firstaid predict anorexia")
+  send("firstaid predict blurry_vision")
+  send("firstaid predict idiocy")
+end
 enableTrigger("Check after unknown")</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -5975,8 +5889,13 @@ end</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Slickness</name>
-									<script>snd.have_aff("slickness")
-send("firstaid elevate slickness")</script>
+									<script>if snd.not_aff("slickness") then
+  snd.aff_gain("slickness")
+end
+
+if (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) and not snd.elevatedaff["slickness"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate slickness")
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -5989,14 +5908,18 @@ send("firstaid elevate slickness")</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>With disgust, you notice that your sweat glands begin to rapidly secrete a foul, oily substance.</string>
+										<string>The poultice would slide right off your slick skin. What's the point?</string>
 									</regexCodeList>
 									<regexCodePropertyList>
+										<integer>3</integer>
 										<integer>3</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Allergies</name>
-									<script>snd.have_aff("allergies")</script>
+									<script>if snd.not_aff("allergies") then
+  snd.have_aff("allergies")
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -6009,10 +5932,8 @@ send("firstaid elevate slickness")</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>You cringe as a dark red rash spreads painfully across your skin.</string>
-										<string>Your body numbs under your allergies, leaving you unable to move.</string>
 									</regexCodeList>
 									<regexCodePropertyList>
-										<integer>3</integer>
 										<integer>3</integer>
 									</regexCodePropertyList>
 								</Trigger>
@@ -6020,7 +5941,7 @@ send("firstaid elevate slickness")</script>
 									<name>Allergies secondary and count</name>
 									<script>local allergycount = matches[2]
 snd.affsec("allergies")
-if tonumber(allergycount) &gt; 4 then
+if tonumber(allergycount) &gt; 4 and not snd.elevatedaff["allergies"] and #snd.elevatedaff &lt; 1 then
   send("FIRSTAID ELEVATE allergies")
 end</script>
 									<triggerType>0</triggerType>
@@ -6063,7 +5984,9 @@ snd.have_aff(aff)</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Secondary Anorexia</name>
-									<script>snd.have_aff("anorexia")</script>
+									<script>if snd.not_aff("anorexia") then
+  snd.have_aff("anorexia")
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -6122,50 +6045,6 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>You gasp as you feel your fine-tuned reflexes disappear into a haze of confusion.</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>3</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>Slickness</name>
-									<script>if snd.not_aff("slickness") then
-  snd.have_aff("slickness")
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>The poultice would slide right off your slick skin. What's the point?</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>3</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>Anorexia</name>
-									<script>if snd.not_aff("anorexia") then
-  snd.have_aff("anorexia")
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>The idea of eating or drinking is suddenly repulsive to you.</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>3</integer>
@@ -6267,11 +6146,12 @@ end</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Allergies gonna die in 15</name>
-									<script>snd.aff_gain("allergies")
-if not snd.elevating then
-  snd.send("firstaid elevate allergies")
-  snd.elevating = true
-  tempTimer(2,[[snd.elevating = false]])
+									<script>if snd.not_aff("allergies") then
+  snd.aff_gain("allergies")
+end
+
+if not snd.elevatedaff["allergies"] then
+  send("firstaid elevate allergies")
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -6315,15 +6195,16 @@ end</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>sluggish</name>
 									<script>cecho("\n&lt;white&gt;You have have Aeon.")
+snd.affsec("aeon")
 
-if not snd.elevating then
-  snd.send("firstaid predict aeon")
-  snd.send("firstaid elevate aeon")
-  snd.elevating = true
-  tempTimer(2,[[snd.elevating = false]])
+if snd.not_aff("aeon") then
+  snd.aff_gain("aeon")
 end
 
-snd.affsec("aeon")</script>
+if not snd.elevatedaff["aeon"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid predict aeon")
+  send("firstaid elevate aeon")
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -8285,11 +8166,9 @@ focusStopWatch = createStopWatch()
 								<name>Queue Hit</name>
 								<script>snd.queuesent = true
   
-if snd.gui.enabled then
+if currently_fishing then
   deleteFull()
-    if not currently_fishing then
-      snd.message("Queue: "..matches[2])
-    end
+
 end</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
@@ -8651,9 +8530,11 @@ if snd.have_aff("stun") then snd.aff_remove("stun") end</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>used</name>
 								<script>snd.balance.fitness = false
-if snd.have_aff("slickness") then
+if snd.have_aff("slickness") and snd.class == "Carnifex" and not snd.elevatedaff["slickness"] and #snd.elevatedaff &lt; 1 then
   send("firstaid elevate slickness")
-elseif snd.have_aff("paralysis") then
+elseif snd.have_aff("paresis") and not snd.elevatedaff["paresis"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate paresis")
+elseif snd.have_aff("paralysis") and not snd.elevatedaff["paralysis"] and #snd.elevatedaff &lt; 1 then
   send("firstaid elevate paralysis")
 end</script>
 								<triggerType>0</triggerType>
@@ -11582,8 +11463,10 @@ snd.blightneeded = true</script>
 									<string>You cannot call upon your enduring grit again so soon.</string>
 									<string>You use Artifice Grit.</string>
 									<string>You use Woodlore Might.</string>
+									<string>You cannot call upon your enduring grit again so soon.</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
@@ -12130,39 +12013,9 @@ end</script>
 							</regexCodePropertyList>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>no target</name>
-							<script>if snd.toggles.bashing then 
-  snd.no_target()
-  snd.runBasher()
-end
-enableTimer("looktimer")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand></mCommand>
-							<packageName></packageName>
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile></mSoundFile>
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>^You can find no such target as \'(\d+)\'\.$</string>
-								<string>You can find no such target as 'none'.</string>
-								<string>^You can find no such target as \'(\w+)\'\.$</string>
-								<string>^You can find no such target as \'(\d+)\'\.$</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>1</integer>
-								<integer>3</integer>
-								<integer>1</integer>
-								<integer>1</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>No such target</name>
-							<script>if matches[2] == snd.bashing.target then
-  local tid = matches[2]
+							<script>if matches[2] == snd.bashing.target then -- ^You can find no such target as \'(\d+)\'\.$
+  local tid = matches[2]  -- ^You can find no such target as \'(\w+)\'\.$
   for item in pairs(snd.items) do
     for id in pairs(snd.items[item]) do
       if snd.items[item][id] == tid then
@@ -12189,7 +12042,8 @@ enableTimer("looktimer")</script>
     snd.no_target()
     snd.runBasher() 
   end
-end</script>
+end
+enableTimer("looktimer")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -15209,8 +15063,12 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>elevate paresis</name>
-						<script>if snd.have_aff("paresis") then
-  snd.send("firstaid elevate paresis")
+						<script>if snd.have_aff("slickness") and snd.class == "Carnifex" and not snd.elevatedaff["slickness"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate slickness")
+elseif snd.have_aff("paresis") and not snd.elevatedaff["paresis"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate paresis")
+elseif snd.have_aff("paralysis") and not snd.elevatedaff["paralysis"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate paralysis")
 end
 if snd.unknownquantity &gt; 1 then
   snd.unknownquantity = snd.unknownquantity - 1
@@ -15236,8 +15094,12 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Elevate Burnt Skin</name>
-						<script>if snd.have_aff("burnt_skin") then
-  snd.send("firstaid elevate burnt_skin")
+						<script>if snd.not_aff("burnt_skin") then
+  snd.aff_gain("burnt_skin")
+end
+
+if not snd.elevatedaff["burnt_skin"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate burnt_skin")
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -16059,14 +15921,13 @@ end
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Paralysed secondary</name>
-							<script>--snd.paralysiscount = snd.paralysiscount + 1
---if tonumber(snd.paralysiscount) &gt; 1 then
-	snd.affsec("paralysis")
-	--snd.paralysiscount = 0
---end
-  if snd.have_aff("paralysis") then
+							<script>snd.affsec("paralysis")
+if snd.not_aff("paralysis") then
+  snd.aff_gain("paralysis")
+  if not snd.elevatedaff["paralysis"] then
     send("firstaid elevate paralysis")
-  end</script>
+  end
+end</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -16775,7 +16636,7 @@ end</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Faintness - secondary</name>
 							<script>snd.affsec("faintness")
-if not snd.have_aff("unconscious") then
+if snd.not_aff("unconscious") then
   snd.aff_gain("unconscious")
   snd.aff_gain("fallen")
 end</script>
@@ -17187,7 +17048,7 @@ snd.check_indifference()</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Uncon</name>
-							<script>if not snd.have_aff("unconscious") then
+							<script>if snd.not_aff("unconscious") then
   snd.aff_gain("unconscious")
   snd.aff_gain("fallen")
 end</script>
@@ -17238,7 +17099,13 @@ end</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Seize Elevate</name>
 						<script>if snd.cureset == "praenomen" or snd.cureset == "akkari" then
-  snd.send("firstaid elevate recklessness")
+  if snd.not_aff("recklessness") then
+    send("firstaid predict recklessness")
+  end
+
+  if not snd.elevatedaff["recklessness"] and #snd.elevatedaff &lt; 1 then
+    send("firstaid elevate recklessness")
+  end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -17264,7 +17131,9 @@ end</script>
 						<script>if snd.not_aff("recklessness") then
   snd.aff_gain("recklessness")
 end
-snd.send("firstaid elevate recklessness")</script>
+if not snd.elevatedaff["recklessness"] and #snd.elevatedaff &lt; 1 then
+  send("firstaid elevate recklessness")
+end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -17280,6 +17149,123 @@ snd.send("firstaid elevate recklessness")</script>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Elevate - Firstaid</name>
+						<script>snd.elevatedaff[matches[2]] = true
+</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You have elevated (.*) to be the maximum priority.$</string>
+							<string>^You have already elevated the (.*) affliction.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>elevated not known by prediction or have</name>
+						<script>deleteFull()
+local aff = matches[2]
+if table.isMember(snd.firstaidpredict, aff) then
+	delitem(snd.firstaidpredict, aff)	
+end
+snd.aff_cure(aff)
+snd.elevatedaff[aff] = nil
+
+if snd.have_aff(matches[2]) then
+  snd.aff_cure(matches[2])
+
+  if (matches[2] == "left_arm_crippled" or matches[2] == "right_arm_crippled") and snd.have_aff("a_crippled_arm") then
+    snd.aff_remove("a_crippled_arm")
+  end
+  if (matches[2] == "left_leg_crippled" or matches[2] == "right_leg_crippled") and snd.have_aff("a_crippled_leg") then
+    snd.aff_remove("a_crippled_leg")
+  end
+
+end
+
+local multiaffliction = matches[2]
+
+if multiaffliction == "blackout" then 
+	snd.healretry = false 
+	send("recoup"..snd.sep.."concentrate")
+	if gmcp.Char.Vitals.salve == "1" then snd.salvebal = true else snd.salvebal = false end
+	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
+	if gmcp.Char.Vitals.tree == "1" then snd.tree = true else snd.tree = false end
+	if gmcp.Char.Vitals.moss == "1" then snd.moss = true else snd.moss = false end
+	if gmcp.Char.Vitals.elixir == "1" then snd.healbalance = true else snd.healbalance = false end
+	if snd.sync == true then snd.statusrecovery = true end
+
+elseif multiaffliction == "confusion" then
+	send("concentrate")
+elseif multiaffliction == "disfigurement" then
+	snd.statusrecovery = true
+	snd.setpassive = true
+  snd.loyalsattacking = false
+elseif multiaffliction == "impatience" then
+	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
+	
+elseif (multiaffliction == "stupidity" or multiaffliction == "aeon") then 
+	if gmcp.Char.Vitals.salve == "1" then snd.salvebal = true else snd.salvebal = false end
+	if gmcp.Char.Vitals.focus == "1" then snd.focus = true else snd.focus = false end
+	if gmcp.Char.Vitals.tree == "1" then snd.tree = true else snd.tree = false end
+	if gmcp.Char.Vitals.moss == "1" then snd.moss = true else snd.moss = false end
+	if gmcp.Char.Vitals.elixir == "1" then snd.healbalance = true else snd.healbalance = false end
+	if snd.sync == true then snd.statusrecovery = true end
+	snd.stunrecheck = false
+	send("concentrate")
+
+elseif multiaffliction == "right_leg_crippled" or multiaffliction == "left_leg_crippled" then 
+  snd.send("stand")
+
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You're not afflicted with (\w+).$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Unelevate - Firstaid</name>
+						<script>snd.elevatedaff[matches[2]] = nil</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You have unelevated (.*) back to its original priority.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 				</TriggerGroup>
@@ -33030,7 +33016,7 @@ disableTrigger("Weaken arms or legs")</script>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Dhuriv Pierce/Sever</name>
 									<script>if matches[2] == snd.target then
  snd.target_got(matches[3]:gsub(" ", "_").."_crippled")
@@ -33663,6 +33649,34 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>^Immense heat potentiates the septic toxin upon (\w+)'s flesh, who cries out in agony\.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Flammable - hot burn - Subversion</name>
+									<script>if matches[2] == snd.target then
+  snd.kindleused = false
+  snd.splattercount = 0
+  snd.splattertwo = "none"
+  snd.splatterone = "none"
+  --gives burning damage
+  if splatterone_timer then killTimer(splatterone_timer) end
+  if splattertwo_timer then killTimer(splattertwo_timer) end
+end</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^Conflagrant heat engulfs (\w+) as the flammable toxin upon .+ flesh ignites in a destructive plume\.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -35651,18 +35665,16 @@ end</script>
   if snd.sloughTimer then killTimer(snd.sloughTimer) end
   if matches[3] == "mending" then
     snd.mendingApply(matches[4])
+    snd.mendingtrack = true
+    tempTimer(1,[[snd.mendingtrack = false]])
   elseif matches[3] == "restoration" then
-    snd.target_last_used_salve = "restoration"
     snd.track_restoration(matches[2])
     snd.restoApply(matches[4])
-    snd.restotrack = getEpoch() + 4.1
     snd.resto_limb = matches[4]
     if salverestoren_timer then killTimer(salverestoren_timer) end
     salverestoren_timer = tempTimer(3.8,[[snd.resto_limb = "none"]])
   else
     snd.salveApply(matches[3], matches[4])
-    snd.mendingtrack = true
-    tempTimer(1,[[snd.mendingtrack = false]])
   end
 elseif snd.toggles.nontargetgags and snd.toggles.gags then
   deleteFull()
@@ -37307,59 +37319,6 @@ end</script>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>mending</name>
-									<script>if matches[2]:lower() == snd.target:lower() then
-  snd.mendingApply(matches[3])
-elseif snd.toggles.nontargetgags and snd.toggles.gags then
-  deleteFull()
-end 
-if (snd.class == "Zealot" or snd.class == "Ravager") and matches[2] == snd.target and snd.flamestack &gt; 0 then
-  cecho("\n"..snd.target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^(?:You sense )?(\w+) presses a mending poultice against .+ (head|torso|right leg|left leg|right arm|left arm|skin|legs|arms), rubbing the poultice into .+ flesh\.$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>restoration</name>
-									<script>if matches[2] == snd.target and not snd.illusion_found then
-  snd.target_last_used_salve = "restoration"
-  snd.track_restoration(matches[2])
-  snd.restoApply(matches[4])
-end
-
-</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^(?:You sense )?(\w+) presses a restoration poultice against (the )?\w+ (head|torso|right leg|left leg|right arm|left arm), rubbing the poultice into (the )?\w+ flesh\.$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Prone w/leg breaks</name>
 									<script>if matches[2] == snd.target then
@@ -37443,56 +37402,6 @@ end</script>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
-										<integer>1</integer>
-										<integer>1</integer>
-										<integer>1</integer>
-										<integer>1</integer>
-										<integer>1</integer>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>cold hit</name>
-									<script>if matches[2] == snd.target then
-  snd.target_got("cold")
-  if snd.checkAff("frozen") then
-  elseif snd.checkAff("figid") then
-    snd.target_got("frozen")
-  elseif snd.checkAff("shivering") then
-    snd.target_got("frigid")
-  else
-    if snd.cureset == "earthcaller" or snd.cureset == "luminary" then
-      if snd.checkAff("no_insulation") then
-        snd.target_got("shivering")
-      else
-        snd.target_got("no_insulation")
-      end
-    else
-      snd.target_got("shivering")
-    end
-  end
-elseif snd.toggles.nontargetgags and snd.gui.enabled then
-  deleteFull()
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^You use Bladefire Iceblast \(one\-hand\) on (\w+)\.$</string>
-										<string>opens its maw wide before breathing forth a stream of freezing air towards (\w+)\.$</string>
-										<string>^\w+ uses? Woodlore Icebreath on (\w+)\.$</string>
-										<string>^You use Chrigraphy Telvi \(one\-hand\) on (\w+)\.$</string>
-										<string>^You use Chirography Telvi (one-hand) on (\w+).$</string>
-										<string>^You use Chirography Telvi (one-hand) on (\w+).$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
 										<integer>1</integer>
 										<integer>1</integer>
 										<integer>1</integer>
@@ -37602,124 +37511,6 @@ end</script>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>untargetted mending legs</name>
-									<script>if matches[2]:lower() == snd.target:lower() then
-  if not snd.checkAff("burnt_skin") then
-    if snd.limb_bruising["left leg"] &gt;= 3 then
-      snd.limb_bruising["left leg"] = snd.limb_bruising["left leg"]-1
-      table.insert(snd.last_affs, "bruising left leg")
-    elseif snd.limb_bruising["right leg"] &gt;= 3 then
-      snd.limb_bruising["right leg"] = snd.limb_bruising["right leg"]-1
-      table.insert(snd.last_affs, "bruising right leg")
-    elseif snd.checkAff("left_leg_crippled") then
-      snd.target_cured("left_leg_crippled")
-      table.insert(snd.last_affs, "left_leg_crippled")
-    elseif snd.checkAff("right_leg_crippled") then
-      snd.target_cured("right_leg_crippled")
-      table.insert(snd.last_affs, "right_leg_crippled")
-    elseif snd.limb_bruising["left leg"] &gt;= 2 then
-      snd.limb_bruising["left leg"] = snd.limb_bruising["left leg"]-1
-      table.insert(snd.last_affs, "bruising left leg")
-    elseif snd.limb_bruising["right leg"] &gt;= 2 then
-      snd.limb_bruising["right leg"] = snd.limb_bruising["right leg"]-1
-      table.insert(snd.last_affs, "bruising right leg")
-    elseif snd.checkAff("cracked_kneecaps") then
-      snd.target_cured("cracked_kneecaps")
-      table.insert(snd.last_affs, "cracked_kneecaps")
-    elseif snd.limb_bruising["left leg"] &gt; 0 then
-      snd.limb_bruising["left leg"] = snd.limb_bruising["left leg"]-1
-      table.insert(snd.last_affs, "bruising left leg")
-    elseif snd.limb_bruising["right leg"] &gt; 0 then
-      snd.limb_bruising["right leg"] = snd.limb_bruising["right leg"]-1
-      table.insert(snd.last_affs, "bruising right leg")
-    elseif snd.checkAff("left_leg_dislocated") then
-      snd.target_cured("left_leg_dislocated")
-      table.insert(snd.last_affs, "left_leg_dislocated")
-    elseif snd.checkAff("right_leg_dislocated") then
-      snd.target_cured("right_leg_dislocated")
-      table.insert(snd.last_affs, "right_leg_dislocated")
-    end
-  end
-elseif snd.toggles.nontargetgags and snd.gui.enabled then
-  deleteFull()
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^(\w+) presses a mending poultice against \w+ legs, rubbing the poultice into (the )?\w+ flesh\.$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
-										<integer>1</integer>
-									</regexCodePropertyList>
-								</Trigger>
-								<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>untargetted mending arms</name>
-									<script>if matches[2]:lower() == snd.target:lower() then
-  if not snd.checkAff("burnt_skin") then
-    if snd.limb_bruising["left arm"] &gt;= 3 then
-      snd.limb_bruising["left arm"] = snd.limb_bruising["left arm"]-1
-      table.insert(snd.last_affs, "bruising left arm")
-    elseif snd.limb_bruising["right arm"] &gt;= 3 then
-      snd.limb_bruising["right arm"] = snd.limb_bruising["right arm"]-1
-      table.insert(snd.last_affs, "bruising right arm")
-    elseif snd.checkAff("left_arm_crippled") then
-      snd.target_cured("left_arm_crippled")
-      table.insert(snd.last_affs, "left_arm_crippled")
-    elseif snd.checkAff("right_arm_crippled") then
-      snd.target_cured("right_arm_crippled")
-      table.insert(snd.last_affs, "right_arm_crippled")
-    elseif snd.limb_bruising["left arm"] &gt;= 2 then
-      snd.limb_bruising["left arm"] = snd.limb_bruising["left arm"]-1
-      table.insert(snd.last_affs, "bruising left arm")
-    elseif snd.limb_bruising["right arm"] &gt;= 2 then
-      snd.limb_bruising["right arm"] = snd.limb_bruising["right arm"]-1
-      table.insert(snd.last_affs, "bruising right arm")
-    elseif snd.checkAff("cracked_elbows") then
-      snd.target_cured("cracked_elbows")
-      table.insert(snd.last_affs, "cracked_kneecaps")
-    elseif snd.limb_bruising["left arm"] &gt; 0 then
-      snd.limb_bruising["left arm"] = snd.limb_bruising["left arm"]-1
-      table.insert(snd.last_affs, "bruising left arm")
-    elseif snd.limb_bruising["right arm"] &gt; 0 then
-      snd.limb_bruising["right arm"] = snd.limb_bruising["right arm"]-1
-      table.insert(snd.last_affs, "bruising right arm")
-    elseif snd.checkAff("left_arm_dislocated") then
-      snd.target_cured("left_arm_dislocated")
-      table.insert(snd.last_affs, "left_arm_dislocated")
-    elseif snd.checkAff("right_arm_dislocated") then
-      snd.target_cured("right_arm_dislocated")
-      table.insert(snd.last_affs, "right_arm_dislocated")
-    end
-  end
-elseif snd.toggles.nontargetgags and snd.gui.enabled then
-  deleteFull()
-end</script>
-									<triggerType>0</triggerType>
-									<conditonLineDelta>0</conditonLineDelta>
-									<mStayOpen>0</mStayOpen>
-									<mCommand></mCommand>
-									<packageName></packageName>
-									<mFgColor>#ff0000</mFgColor>
-									<mBgColor>#ffff00</mBgColor>
-									<mSoundFile></mSoundFile>
-									<colorTriggerFgColor>#000000</colorTriggerFgColor>
-									<colorTriggerBgColor>#000000</colorTriggerBgColor>
-									<regexCodeList>
-										<string>^(\w+) presses a mending poultice against \w+ arms, rubbing the poultice into (the )?\w+ flesh\.$</string>
-									</regexCodeList>
-									<regexCodePropertyList>
 										<integer>1</integer>
 									</regexCodePropertyList>
 								</Trigger>
@@ -38419,11 +38210,11 @@ end</script>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>Groinrip</name>
+									<name>Ripped Groin</name>
 									<script>if matches[2] == snd.target then
  snd.target_cured("writhe_thighlock")
  snd.jawlocked = false
- snd.target_got("groinrip")
+ snd.target_got("ripped_groin")
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -38771,7 +38562,7 @@ end</script>
 									<script>if matches[2] == snd.target then
  snd.target_cured("writhe_necklock")
  snd.jawlocked = false
- snd.target_got("throatrip")
+ snd.target_got("ripped_throat")
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -38795,7 +38586,7 @@ end</script>
 									<script>if matches[2] == snd.target then
  snd.target_cured("writhe_armpitlock")
  snd.jawlocked = false
- snd.target_got("spleenrip")
+ snd.target_got("ripped_spleen")
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -38821,7 +38612,7 @@ end</script>
 									<script>if matches[2] == snd.target then
  snd.target_cured("writhe_thighlock")
  snd.jawlocked = false
- snd.target_got("groinrip")
+ snd.target_got("ripped_groin")
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -42479,8 +42270,10 @@ end</script>
 										<string>^(\w+) flies up into the skies, carried by \w+ mount's beating wings.$</string>
 										<string>^(\w+) is quickly carried up into the skies.$</string>
 										<string>^(\w+) flits into view directly overhead.$</string>
+										<string>^The air ripples around (\w+), eddying after \w+ as \w+ ascends \w+.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
+										<integer>1</integer>
 										<integer>1</integer>
 										<integer>1</integer>
 										<integer>1</integer>
@@ -44374,7 +44167,6 @@ snd.last_attack = "none"</script>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 								<name>rebounded</name>
 								<script>snd.used.rebounding = true
-snd.rebounded = true
 snd.getting_hit = "You"</script>
 								<triggerType>0</triggerType>
 								<conditonLineDelta>0</conditonLineDelta>
@@ -44459,8 +44251,6 @@ cecho("\n&lt;yellow&gt;**Auto-kill Starting!**")
 cecho("\n&lt;yellow&gt;**Auto-kill Starting!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44489,8 +44279,6 @@ cecho("\n&lt;yellow&gt;**Cleave or Judge Almost Done!**")
 cecho("\n&lt;yellow&gt;**Cleave or Judge Almost Done!**")
 cecho("\n&lt;yellow&gt;**Cleave or Judge Almost Done!**")
 cecho("\n&lt;yellow&gt;**Cleave or Judge Almost Done!**")
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
@@ -44523,8 +44311,6 @@ cecho("\n&lt;yellow&gt;**Cleave or Judge Almost Done!**")
 cecho("\n&lt;yellow&gt;**Cleave or Judge Almost Done!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44552,8 +44338,6 @@ tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 cecho("\n&lt;yellow&gt;**Reave Starting!**")
 cecho("\n&lt;yellow&gt;**Reave Starting!**")
 cecho("\n&lt;yellow&gt;**Reave Starting!**")
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
@@ -44585,8 +44369,6 @@ cecho("\n&lt;yellow&gt;**Reave Almost Done!**")
 cecho("\n&lt;yellow&gt;**Reave Almost Done!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44614,8 +44396,6 @@ tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 cecho("\n&lt;yellow&gt;**Chasm Starting!**")
 cecho("\n&lt;yellow&gt;**Chasm Starting!**")
 cecho("\n&lt;yellow&gt;**Chasm Starting!**")
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
@@ -44648,8 +44428,6 @@ cecho("\n&lt;yellow&gt;**Judge Starting!**")
 cecho("\n&lt;yellow&gt;**Judge Starting!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44677,8 +44455,6 @@ tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 cecho("\n&lt;yellow&gt;**Judge Almost Done!**")
 cecho("\n&lt;yellow&gt;**Judge Almost Done!**")
 cecho("\n&lt;yellow&gt;**Judge Almost Done!**")
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
@@ -44710,8 +44486,6 @@ cecho("\n&lt;yellow&gt;**Behead Starting!**")
 cecho("\n&lt;yellow&gt;**Behead Starting!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44737,8 +44511,6 @@ tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 cecho("\n&lt;yellow&gt;**Behead Almost Done!**")
 cecho("\n&lt;yellow&gt;**Behead Almost Done!**")
 cecho("\n&lt;yellow&gt;**Behead Almost Done!**")
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
@@ -44768,8 +44540,6 @@ cecho("\n&lt;yellow&gt;**Death Tarot Used!**")
 cecho("\n&lt;yellow&gt;**Death Tarot Used!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44797,8 +44567,6 @@ cecho("\n&lt;yellow&gt;**Reclamation Starting!**")
 cecho("\n&lt;yellow&gt;**Reclamation Starting!**")
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
 tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 								<triggerType>0</triggerType>
@@ -44824,8 +44592,6 @@ tempTimer(4,[[snd.instakilltarget = "none"]])</script>
 cecho("\n&lt;yellow&gt;**Reclamation Almost Done!**")
 cecho("\n&lt;yellow&gt;**Reclamation Almost Done!**")
 cecho("\n&lt;yellow&gt;**Reclamation Almost Done!**")
-snd.instakilltarget = matches[2]
-snd.instakillstopper = true
 snd.instakilltarget = matches[2]
 snd.instakillstopper = true
 tempTimer(4,[[snd.instakillstopper = false]])
@@ -45221,7 +44987,7 @@ local skill = multimatches[2][3]
         echo("\nNo curing set.")
       elseif snd.cureset ~= found_set then
         snd.cureset = found_set
-        echo("\n"..snd.cureset)
+        echo("\nCuring set to: "..snd.cureset)
         if found_set == "archivist" or found_set == "voideer" then
           snd.firstaidassArchivist()
         elseif found_set == "bard" then
@@ -45275,7 +45041,6 @@ local skill = multimatches[2][3]
         end
       end
       snd.person_hitting = multimatches[2][2]
-      echo("\n"..snd.person_hitting)
     end
   end
 
@@ -45551,8 +45316,7 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Warning - Collapse / Omophagia</name>
-							<script>--snd.send("wt Collapse/Omophagia damage incoming at v"..gmcp.Room.Info.num)
-cecho("\n&lt;yellow&gt;**Collapse/Omophagia damage incoming!**")
+							<script>cecho("\n&lt;yellow&gt;**Collapse/Omophagia damage incoming!**")
 cecho("\n&lt;yellow&gt;**Collapse/Omophagia damage incoming!**")
 cecho("\n&lt;yellow&gt;**Collapse/Omophagia damage incoming!**")
 cecho("\n&lt;yellow&gt;**Collapse/Omophagia damage incoming!**")</script>
@@ -45666,6 +45430,40 @@ cecho("\n&lt;yellow&gt;**IMBRUE incoming!**")</script>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>1</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>LIGHTNING DAMAGE</name>
+							<script>snd.send("wt MAGE DAMAGE INCOMING, GET OUT OF v"..gmcp.Room.Info.num)
+cecho("\n&lt;yellow&gt;**STORMWRATH incoming!**")
+cecho("\n&lt;yellow&gt;**STORMWRATH incoming!**")
+cecho("\n&lt;yellow&gt;**STORMWRATH incoming!**")
+cecho("\n&lt;yellow&gt;**STORMWRATH incoming!**")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>^(\w+) uses? Hematurgy Catastrophe.$</string>
+								<string>^(\w+) uses? Elemancy Stormwrath.$</string>
+								<string>Crackling cobalt energy arcs throughout the air, the wicked tines of catastrophic lightning lancing through you.</string>
+								<string>^Crackling cobalt energy arcs throughout the air, the wicked tines of catastrophic lightning lancing through \w+.$</string>
+								<string>A swathe of dark clouds shroud the air, that trembles with the restrained brutality of a raging storm, lightning dancing within their depths.</string>
+								<string>The sky churns in ominous silence, dark tendrils of cloud beginning to weave together as the air grows thick with tension.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+								<integer>1</integer>
+								<integer>3</integer>
+								<integer>1</integer>
+								<integer>3</integer>
+								<integer>3</integer>
 							</regexCodePropertyList>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -50658,7 +50456,9 @@ snd.targeting.burst = false</script>
 						<name>Target no longer available</name>
 						<script>if not snd.channeling then
   if snd.toggles.bashing then snd.no_target() end
-  snd.target_gone = true
+  if not snd.flying then
+    snd.target_gone = true
+  end
 
   if not snd.toggles.calling then return end
 
