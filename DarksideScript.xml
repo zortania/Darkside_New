@@ -28926,7 +28926,7 @@ end
 		end
 	end
        
-	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "archivist" or snd.cureset == "voidseer" or snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_crippled") or snd.have_aff("left_leg_crippled"))then
+	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "archivist" or snd.cureset == "voidseer" or snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_crippled") or snd.have_aff("left_leg_crippled")) then
 		snd.send("restore")
 		snd.sync = false
 	end
@@ -29776,12 +29776,6 @@ if snd.toggles.active then
 		snd.lastmana = gmcp.Char.Vitals.mp
 	end
     
-	if snd.toggles.support and snd.percenthealth &lt; 75 and snd.class == "Oneiromancer" and not snd.flowered then
-		snd.set_queue("qeb unfurl flower at me")
-		snd.flowered = true
-		tempTimer(5,[[snd.flowered = false]])
-	end
-
 	snd.masterprerestore()
 
 	if snd.aff_tally() &gt; 0 then 
@@ -29809,7 +29803,15 @@ if snd.toggles.active then
 	end
   
   if snd.toggles.survive then
-    if snd.class == "None" then
+    --if snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
+      -- let the reflection do its job
+    --elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
+    --  snd.send("qeb point wand at me")
+    if snd.class == "Indorani" and not snd.flowered then
+		  snd.send("qeb fling priestess at me")
+		  snd.flowered = true
+		  tempTimer(5,[[snd.flowered = false]])
+    elseif snd.class == "None" then
       if (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon") or snd.aff_tally() &gt; 4) and not snd.self_prone() and snd.vitalizing then
         snd.send("qeb chaos mend")
         snd.vitalizing = false
@@ -31314,14 +31316,12 @@ snd.theyran = false
 snd.nimble_sent = false
 snd.endgame_sent = false
 snd.diag_sent = false
-snd.shieldtouched = false
 snd.recoverytime = 0
 snd.treetrack = 0
 snd.recontrack = 0
 snd.restotrack = 0
 snd.restometrack = 0
 snd.pilltrack = 0
-snd.phobiatotal = 0
 snd.purifytrack = 0
 snd.fitnesstrack = 0
 snd.shedtrack = 0
@@ -31442,6 +31442,7 @@ snd.quills = false
 snd.quillsused = false
 snd.diffuseneeded = false
 snd.blightneeded = false
+snd.phobiatotal = 0
 
 --Wayfarer
 snd.highjumped = false
@@ -32774,6 +32775,7 @@ local function mending(limb)
       if aff == "ablaze" then
         if not snd.checkAff("heatspear") then
           snd.target_cured("ablaze")
+          snd.target_cured("crispy")
           table.insert(snd.last_affs, "ablaze")
           snd.flamestack = 0
           return true
@@ -33204,109 +33206,135 @@ end</script>
 						<name>misc</name>
 						<packageName></packageName>
 						<script>function snd.reset_target()
- snd.target_has = {}
- for limb in pairs(snd.limb_dmg) do
-  snd.limb_dmg[limb] = 0
- end
- for limb in pairs(snd.limb_status) do
-  snd.limb_status[limb] = "healed"
- end
- for limb in pairs(snd.limb_bruising) do
-  snd.limb_bruising[limb] = 0
- end
- local enemyTimers = {"fitness","focus","pill","rebounding","restoration","tree"}
- for _, timer in pairs(enemyTimers) do
-  snd.timers[timer] = {}
- end
- snd.affTimers.killAll()
- snd.hypno = "none"
- snd.hyp = 0
- snd.last_hypno = 0
- snd.total_hypno = 0
- if restoration_timer then killTimer(restoration_timer) end
- snd.current_restoration_aff = ""
- snd.resto_limb = "none"
- --snd.used.rebounding = false
- snd.parried_limb = "none"
- snd.metawakeon = false
- snd.used.shield = false
- snd.used.paste = true
- snd.target_impaled = false
- snd.jawlocked = false
- snd.last_attack = "none"
- snd.target_gone = false
- snd.implant = "none"
- snd.mana_percent = 100
- snd.health_percent = 100
- snd.target_numbed = false
- snd.ulrelapse = false
-snd.mindlocked = false
-snd.mindclamped = false
-snd.hardenBonesProc = false
- snd.kaistrikelimb = ""
-snd.transmutation = true
-snd.locking = false
-snd.avoidanceset = "none"
- snd.target_has_aura = true
- snd.need_leech_aura = true
- snd.need_deform = true
- snd.wheelused = false
- snd.deformed = false
- snd.kindleused = false
-snd.splattercount = 0
-snd.splattertwo = "none"
-snd.splatterone = "none"
- snd.splattercount = 0
-snd.zenith = false
-snd.zenith_coming = false
-snd.zenith_nope = false
-snd.firefist = false
-snd.firefist_cooldown = true
-snd.welt_ready = "none"
-snd.flamestack = 0
-snd.cauterize = true
-snd.rebuke = false
-snd.blitz = false
-snd.pyromania = false
-snd.rebuke_limb = "none"
-snd.hackles = true
-snd.recover = true
-snd.wrath = true
- snd.gorged = ""
- snd.gravity = 0
- snd.thorncount = 0
- snd.fetishattuned = false
- snd.loyalsattacking = false
- snd.my_dread = false
- snd.their_dread = false 
-snd.quills = false
-snd.quillsused = false
- snd.mutmaster = ""
- snd.mutagentype = ""
- snd.their_mutagen = false
- snd.my_mutagen = false
- snd.crescentable = true
- snd.loyalsattacking = false
- snd.doubleattack = false
-snd.hamartia_used = false
-snd.huntresses_used = false
-snd.incomingomen = false
-snd.glory = 0
-snd.canprerestorenow = true
-snd.storedascendvenom = "none"
-snd.instakilltarget = "none"
-snd.instakillstopper = false
- snd.unmasked = false
- snd.soul = 100
- snd.flamewreathed = {limb = "", resonance = ""}
- snd.restotrack = 0
- snd.mendingtrack = false
- snd.backbroken = 0
- snd.infiltrate = false
- snd.firstaidresetlistnone()
+  snd.target_has = {}
+  --Curing/General Combat
+  for limb in pairs(snd.limb_dmg) do
+    snd.limb_dmg[limb] = 0
+  end
+  for limb in pairs(snd.limb_status) do
+    snd.limb_status[limb] = "healed"
+  end
+  for limb in pairs(snd.limb_bruising) do
+    snd.limb_bruising[limb] = 0
+  end
+  local enemyTimers = {"fitness","focus","pill","rebounding","restoration","tree"}
+  for _, timer in pairs(enemyTimers) do
+    snd.timers[timer] = {}
+  end
+  snd.affTimers.killAll() 
+  if restoration_timer then killTimer(restoration_timer) end
+  snd.current_restoration_aff = ""
+  snd.resto_limb = "none"
+  --snd.used.rebounding = false
+  snd.parried_limb = "none"
+  snd.metawakeon = false
+  snd.used.shield = false
+  snd.used.paste = true
+  snd.last_attack = "none"
+  snd.target_gone = false
+  snd.mana_percent = 100
+  snd.health_percent = 100
+  snd.target_numbed = false
+  snd.avoidanceset = "none"
+  snd.loyalsattacking = false
+  snd.instakilltarget = "none"
+  snd.instakillstopper = false
+  snd.canprerestorenow = true
+  snd.firstaidresetlistnone()
+  snd.restotrack = 0
+  snd.mendingtrack = false
  
- raiseEvent("sunder_enemy_limbs_updated")
- raiseEvent("sunder_my_limbs_updated")
+  --Infiltrator
+  snd.hypno = "none"
+  snd.hyp = 0
+  snd.last_hypno = 0
+  snd.total_hypno = 0
+ 
+  --Carnifex/Warden
+  snd.target_impaled = false
+  snd.implant = "none"
+  snd.ulrelapse = false
+  snd.soul = 100
+
+  --Shapeshifter
+  snd.jawlocked = false
+  snd.hardenBonesProc = false
+
+  --Monk
+  snd.mindlocked = false
+  snd.mindclamped = false
+  snd.kaistrikelimb = ""
+  snd.transmutation = true
+  snd.locking = false
+  snd.backbroken = 0
+  
+  --Indorani/Oneiromancer
+  snd.target_has_aura = true
+  snd.need_leech_aura = true
+  snd.need_deform = true
+  snd.wheelused = false
+  snd.deformed = false
+  
+  --Executor/Sentinel
+  snd.kindleused = false
+  snd.splattercount = 0
+  snd.splattertwo = "none"
+  snd.splatterone = "none"
+  
+  --Ravager/Zealot
+  snd.zenith = false
+  snd.zenith_coming = false
+  snd.zenith_nope = false
+  snd.firefist = false
+  snd.firefist_cooldown = true
+  snd.welt_ready = "none"
+  snd.flamestack = 0
+  snd.cauterize = true
+  snd.rebuke = false
+  snd.blitz = false
+  snd.pyromania = false
+  snd.rebuke_limb = "none"
+  snd.hackles = true
+  snd.recover = true
+  snd.wrath = true
+ 
+  --Bloodborn/Ascendril
+  snd.gorged = "" 
+  snd.flamewreathed = {limb = "", resonance = ""}
+  
+  --Sciomancer/Runecarver
+  snd.gravity = 0
+  
+  --Alchemist/Shaman
+  snd.thorncount = 0
+  snd.fetishattuned = false
+  snd.loyalsattacking = false
+  snd.my_dread = false
+  snd.their_dread = false 
+  snd.quills = false
+  snd.quillsused = false
+  snd.incomingomen = false
+  
+  --Archivist/Voidseer
+  snd.mutmaster = ""
+  snd.mutagentype = ""
+  snd.their_mutagen = false
+  snd.my_mutagen = false
+  snd.crescentable = true
+  
+  --200
+  snd.doubleattack = false
+  snd.hamartia_used = false
+  snd.huntresses_used = false
+  snd.glory = 0
+  snd.storedascendvenom = "none"
+  snd.unmasked = false
+ 
+  --Earthcaller/Luminary
+  snd.infiltrate = false
+ 
+  raiseEvent("sunder_enemy_limbs_updated")
+  raiseEvent("sunder_my_limbs_updated")
 
 end
 
@@ -33359,8 +33387,6 @@ function snd.no_parry()
  local noparryaffs = {
   "distortion",
   "frozen",
-  --"punished_arms",
-  --"paresis",
   "paralysis",
   "indifference",
   "asleep",
@@ -45426,6 +45452,7 @@ function snd.track_tree(target)
   if target:lower() == snd.target:lower() then
     snd.timers.tree.start = os.clock()
     local limit = 10
+    if snd.checkAff("laxity") then limit = limit+2 end
     snd.timers.tree.limit = limit
   end
 end
@@ -45450,6 +45477,16 @@ function snd.track_eqbal(time)
     snd.timers.eqbal.start = os.clock()
     snd.timers.eqbal.limit = time
   end
+end
+
+function snd.track_fury(time)
+  snd.timers.fury.start = os.clock()
+  snd.timers.fury.limit = time
+end
+
+function snd.track_axes(time)
+  snd.timers.axes.start = os.clock()
+  snd.timers.axes.limit = time
 end
 
 function snd.eqbal_timer_check(timer, time, mode)
