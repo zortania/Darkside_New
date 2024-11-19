@@ -33010,7 +33010,25 @@ end</script>
 					<Script isActive="yes" isFolder="no">
 						<name>attack function</name>
 						<packageName></packageName>
-						<script>function snd.attack_function()
+						<script>  local wf_axe_count = {
+    chop = 1,
+    sweep = 1,
+    lacerate = 1,
+    bash = 1,
+    whirlwind = 2,
+    punish = 2,
+    ravage = 2,
+    execute = 2,
+    
+    lob = 1,
+    assault = 1,
+    cripple = 1,
+    carve = 2,
+    devastate = 2,
+    slaughter = 2,
+  }
+
+function snd.attack_function()
   echo("\nYou haven't set up an attack alias yet!")
 end
 
@@ -33058,16 +33076,27 @@ function snd.attack(attack)
   if not snd.pipes_lit and snd.toggles.lighting then
     string = "light pipes" .. snd.sep .. string
   end
-  if string:find("slaughter") then
-    snd.send("qeb")
-    snd.send("queue axes " .. string)
+  if snd.class == "Wayfarer" then
+    local axes = 0
+    local checkString = string:lower()
+    for attack, count in pairs(wf_axe_count) do
+      if checkString:find(attack) then
+        axes = count
+        break
+      end
+    end
+    if axes == 2 then
+      snd.send("qeb")
+      snd.send("queue axes2 " .. string)
+    elseif axes == 1 and not snd.can_axe() then
+      snd.send("qeb")
+      snd.send("queue axe "..string)
+    else
+      snd.send("queue axes")
+      snd.send("qeb " .. string)
+    end
   else
-    --snd.send("queue axes")
-    snd.send("qeb " .. string)
-  end
-  if snd.enemylist then
-  else
-   -- send("config enemylist on")
+      snd.send("qeb " .. string)
   end
 end
 
@@ -45345,6 +45374,8 @@ snd.timers.restoration = snd.timers.restoration or {}
 snd.timers.rebounding = snd.timers.rebounding or {}
 snd.timers.induce = snd.timers.induce or {}
 snd.timers.eqbal = snd.timers.eqbal or {}
+snd.timers.fury = snd.timers.fury or {}
+snd.timers.axes = snd.timers.axes or {}
 
 
 for k, _ in pairs(snd.timers) do
