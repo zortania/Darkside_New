@@ -1071,6 +1071,9 @@ end</script>
   else
     snd.aff_remove("prone")
   end
+  if snd.can_cast() and (snd.class~="Wayfarer" or snd.can_axe()) then
+    snd.last_attack = "none"
+  end
   if snd.can_cast() then
     snd.last_attack = "none"
   end
@@ -1194,10 +1197,10 @@ function gmcp_items()
       end
       -- Save data.
       save_shrine_db()
-    elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
-      for id in pairs(snd.items[item]) do
-        table.insert(snd.gathering, snd.items[item][id])
-      end
+    --elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
+    --  for id in pairs(snd.items[item]) do
+     --   table.insert(snd.gathering, snd.items[item][id])
+    --  end
     end
   end
  snd.updateItems()
@@ -1661,6 +1664,10 @@ function snd.can_cast()
   end
 end
 
+function snd.can_axe()
+  return gmcp.Char.Vitals.wield_left~="empty" or gmcp.Char.Vitals.wield_right~="empty"
+end
+
 function snd.can_tattoo()
   if snd.not_aff("paresis") and snd.not_aff("frozen") then
     return true
@@ -1813,6 +1820,12 @@ function snd.self_prone()
   else
     return true
   end
+end
+
+function snd.full_vitals()
+  if tonumber(gmcp.Char.Vitals.hp)&lt;tonumber(gmcp.Char.Vitals.maxhp) then return false end
+  if tonumber(gmcp.Char.Vitals.mp)&lt;tonumber(gmcp.Char.Vitals.maxmp) then return false end
+  return true
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -3393,11 +3406,9 @@ snd.method_priority = {
       if snd.rage_check() and snd.can_rage() then
         table.insert(snd.queue, "rage")
       end
-      if snd.unknownquantity &gt; 2 then
+      if snd.hidden_afflictions &gt; 2 then
         snd.staone()
         snd.hiddencheckfunc()
-      end
-      if (snd.toggles.diagaffs~= 0 and snd.hidden_afflictions &gt;= snd.toggles.diagaffs) or snd.blackoutdone then
         table.insert(snd.queue, "diagnose")
       end
       if snd.toilup and not snd.toilon then
@@ -3546,7 +3557,6 @@ aff_oblivion = {state = "healed", effect = "Death unless you interrupt the bard"
 
 aff_shock = {state = "healed",  effect = "less mobility", cures = {}, assess = false, timer = createStopWatch()},
 aff_burnout = {state = "healed",  effect = "slower cds", cures = {}, assess = false, timer = createStopWatch()},
-aff_unknown = {state = "healed",  effect = "unknown aff tracking", cures = {}, assess = false, timer = createStopWatch()},
 aff_fallen = {state = "healed",  effect = "you gots to stand", cures = {}, assess = false, timer = createStopWatch()},
 
 aff_prone = {state = "healed", effect = "cannot move or attack, must STAND", cures = {stand = "send"}, assess = false, timer = createStopWatch()},
@@ -3665,6 +3675,7 @@ aff_frozen_feet = {state = "healed", effect = "", cures = {}, assess = false, ti
 aff_generosity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_glasslimb = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_gloom = {state = "healed", effect = "", cures = {salve = "epidermal to head"}, assess = false, timer = createStopWatch()},
+aff_gnawing = {state = "healed", effect = "lowers constitution by 2", cures = {salve = "epidermal to torso"}, assess = false, timer = createStopWatch()},
 aff_gorged = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_haemophilia = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hallucinations = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
@@ -3734,6 +3745,7 @@ aff_magic_fire = {state = "healed", effect = "ablaze mask aff", cures = {salve =
 aff_magic_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_magnanimity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_malevolence = {state = "healed", effect = "destroys shield, extra damage from weather", cures = {}, assess = false, timer = createStopWatch()},
+aff_manablight = {state = "healed", effect = "mana loss on torso hit", cures = {salve = "epidermal to torso"}, assess = false, timer = createStopWatch()},
 aff_marked  = {state = "healed", effect = "marked by a mage", cures = {}, assess = false, timer = createStopWatch()},
 aff_masochism = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_mauled_face = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
@@ -3810,6 +3822,11 @@ aff_ringing_ears = {state = "healed", effect = "unable to become deaf until cure
 aff_ripped_groin = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_spleen = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_throat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_rot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_heat = {state = "healed", effect = "shaderot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_spirit = {state = "healed", effect = "shaderot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_wither = {state = "healed", effect = "shaderot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_ruptured_eardrum = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sadness = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_salve_seared = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -3829,11 +3846,7 @@ aff_self_loathing = {state = "healed", effect = "5s bal knock if left on for 12s
 ["aff_self-pity"] = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_seduction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sensitivity = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_rot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_heat = {state = "healed", effect = "shaderot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_spirit = {state = "healed", effect = "shaderot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_wither = {state = "healed", effect = "shaderot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_stoneheld = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadow_coat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadow_weakness = {state = "healed", effect = "more dmg from shadow source", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadowbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4063,7 +4076,7 @@ function snd.aff_gain(affliction)
   if not snd.class == "Carnifex" then
     snd.paraTimer = tempTimer(2.5, [[if snd.have_aff("paresis") and not snd.elevatedaff["paresis"] and #snd.elevatedaff &lt; 1 then snd.send("firstaid elevate paresis") end]])
   else
-    snd.paraTimer = tempTimer(3.5, [[if snd.have_aff("paresis") and not snd.elevatedaff["paresis"] and #snd.elevatedaff &lt; 1 then snd.send("firstaid elevate paresis") end]])
+    snd.paraTimer = tempTimer(3, [[if snd.have_aff("paresis") and not snd.elevatedaff["paresis"] and #snd.elevatedaff &lt; 1 then snd.send("firstaid elevate paresis") end]])
   end
  elseif affliction == "allergies" then
   if snd.allergyTimer then killTimer(snd.allergyTimer) end
@@ -4149,9 +4162,9 @@ end
 
 function snd.aff_cure(affliction)
  snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
- if snd.afflictions["aff_"..affliction].state=="healed" then
-  snd.hidden_afflictions = math.max(0, snd.hidden_afflictions - 1)
- end
+ --if snd.afflictions["aff_"..affliction].state=="healed" then
+ -- snd.hidden_afflictions = math.max(0, snd.hidden_afflictions - 1)
+ --end
  snd.aff_remove(affliction)
 end
 
@@ -27683,23 +27696,41 @@ function snd.firstaidassAscendril()
 		table.insert(snd.setting_priority, "anorexia 2")		 
 	end	  
   if snd.firstaidcuretrack.indifference ~= "3" then
-		table.insert(snd.setting_priority, "indifference 3")		 
+		table.insert(snd.setting_priority, "impairment 3")		 
 	end	 
   if snd.firstaidcuretrack.gorged ~= "3" then
 		table.insert(snd.setting_priority, "gorged 3")		 
+	end	  
+  if snd.firstaidcuretrack.dizziness ~= "3" then
+		table.insert(snd.setting_priority, "dizziness 3")		 
 	end	 
+  if snd.firstaidcuretrack.stupidity ~= "3" then
+		table.insert(snd.setting_priority, "stupidity 3")		 
+	end	
 	if snd.firstaidcuretrack.frozen ~= "4" then
 		table.insert(snd.setting_priority, "frozen 4")		 
-	end	  
+	end	 
+  if snd.firstaidcuretrack.blisters ~= "5" then
+		table.insert(snd.setting_priority, "blisters 5")		 
+	end	 	 
+  if snd.firstaidcuretrack.vertigo ~= "5" then
+		table.insert(snd.setting_priority, "vertigo 5")		 
+	end	
 	if snd.firstaidcuretrack.frigid ~= "5" then
 		table.insert(snd.setting_priority, "frigid 5")		 
 	end	 
 	if snd.firstaidcuretrack.etherflux ~= "5" then
 		table.insert(snd.setting_priority, "etherflux 5")		 
-	end	
-	if snd.firstaidcuretrack.torso ~= "4" and snd.firstaidcuretrack.pretorso ~= "1" then
-		 table.insert(snd.setting_priority, "PRESTORE torso 1% 4")		 
-	end  
+	end	  
+	if snd.firstaidcuretrack.head_broken ~= "6" then
+		table.insert(snd.setting_priority, "head_broken 6")		 
+	end
+	if snd.firstaidcuretrack.head_mangled ~= "6" then
+		table.insert(snd.setting_priority, "head_mangled 6")		 
+	end
+	if snd.firstaidcuretrack.rightarm ~= "6" and snd.firstaidcuretrack.prerightarm ~= "17" then
+		table.insert(snd.setting_priority, "PRESTORE right arm 17% 6")		 
+	end
 	if snd.firstaidcuretrack.hypothermia ~= "5" then
 		table.insert(snd.setting_priority, "hypothermia 5")		 
 	end	
@@ -27715,18 +27746,15 @@ function snd.firstaidassAscendril()
 	if snd.firstaidcuretrack.ablaze ~= "7" then
 		table.insert(snd.setting_priority, "ablaze 7")		 
 	end
+	if snd.firstaidcuretrack.torso ~= "7" and snd.firstaidcuretrack.pretorso ~= "12" then
+		 table.insert(snd.setting_priority, "PRESTORE torso 12% 7")		 
+	end  
 	if snd.firstaidcuretrack.left_arm_crippled ~= "8" then
 		table.insert(snd.setting_priority, "left_arm_crippled 8")		 
 	end	  
 	if snd.firstaidcuretrack.right_arm_crippled ~= "8" then
 		table.insert(snd.setting_priority, "right_arm_crippled 8")		 
-	end	  
-	if snd.firstaidcuretrack.head_broken ~= "9" then
-		table.insert(snd.setting_priority, "head_broken 9")		 
-	end
-	if snd.firstaidcuretrack.head_mangled ~= "9" then
-		table.insert(snd.setting_priority, "head_mangled 9")		 
-	end
+	end	
 	if snd.firstaidcuretrack.rightleg ~= "11" and snd.firstaidcuretrack.prerightleg ~= "17" then
 		table.insert(snd.setting_priority, "PRESTORE right leg 17% 11")		 
 	end  
@@ -27746,8 +27774,23 @@ function snd.firstaidassAscendril()
 end
 
 function snd.firstaidassIndorani()
-  if snd.firstaidcuretrack.paresis ~= "3" then
-		table.insert(snd.setting_priority, "paresis 3")		 
+  if snd.firstaidcuretrack.impatience ~= "2" then
+		table.insert(snd.setting_priority, "impatience 2")		 
+	end	
+  if snd.firstaidcuretrack.weariness ~= "2" then
+		table.insert(snd.setting_priority, "weariness 2")		 
+	end
+  if snd.firstaidcuretrack.confusion ~= "3" then
+		table.insert(snd.setting_priority, "confusion 3")		 
+	end	
+  if snd.firstaidcuretrack.epilepsy ~= "3" then
+		table.insert(snd.setting_priority, "epilepsy 3")		 
+	end
+  if snd.firstaidcuretrack.vomiting ~= "4" then
+		table.insert(snd.setting_priority, "vomiting 4")		 
+	end	
+  if snd.firstaidcuretrack.paresis ~= "5" then
+		table.insert(snd.setting_priority, "paresis 5")		 
 	end	
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -27798,6 +27841,9 @@ function snd.firstaidassSentinel()
   if snd.firstaidcuretrack.destroyed_throat ~= "2" then
     table.insert(snd.setting_priority, "destroyed_throat 2")		 
   end
+	if snd.firstaidcuretrack.heartflutter ~= "3" then
+		table.insert(snd.setting_priority, "heartflutter 3")     
+	end
   if snd.firstaidcuretrack.frozen ~= "3" then
     table.insert(snd.setting_priority, "frozen 3")		 
   end
@@ -28062,9 +28108,6 @@ function snd.firstaidassShapeshifter()
 	end		
 	if snd.firstaidcuretrack.stupidity ~= "3" then
 		table.insert(snd.setting_priority, "stupidity 3")		 
-	end			
-	if snd.firstaidcuretrack.frozen ~= "3" then
-		table.insert(snd.setting_priority, "frozen 3")		 
 	end	
 	if snd.firstaidcuretrack.blurry_vision ~= "3" then
 		table.insert(snd.setting_priority, "blurry_vision 3")		 
@@ -28179,23 +28222,23 @@ function snd.firstaidassWayfarer()
 end
 
 function snd.firstaidassCarnifex()
-	if snd.firstaidcuretrack.left_arm ~= "8" and snd.firstaidcuretrack.preleftarm ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE left arm 19% 8")		 
+	if snd.firstaidcuretrack.left_arm ~= "6" and snd.firstaidcuretrack.preleftarm ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE left arm 19% 6")		 
 	end
-	if snd.firstaidcuretrack.rightarm ~= "8" and snd.firstaidcuretrack.prerightarm ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE right arm 19% 8")		 
+	if snd.firstaidcuretrack.rightarm ~= "6" and snd.firstaidcuretrack.prerightarm ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE right arm 19% 6")		 
 	end
-	if snd.firstaidcuretrack.rightleg ~= "8" and snd.firstaidcuretrack.prerightleg ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE right leg 19% 8")		 
+	if snd.firstaidcuretrack.rightleg ~= "5" and snd.firstaidcuretrack.prerightleg ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE right leg 19% 4")		 
 	end
-	if snd.firstaidcuretrack.left_leg ~= "8" and snd.firstaidcuretrack.preleftleg ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE left leg 19% 8")		 
+	if snd.firstaidcuretrack.left_leg ~= "5" and snd.firstaidcuretrack.preleftleg ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE left leg 19% 4")		 
 	end
-	if snd.firstaidcuretrack.head ~= "8" and snd.firstaidcuretrack.prehead ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE head 19% 8")		 
+	if snd.firstaidcuretrack.head ~= "7" and snd.firstaidcuretrack.prehead ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE head 19% 7")		 
 	end
-  if snd.firstaidcuretrack.torso ~= "8" and snd.firstaidcuretrack.pretorso ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE torso 19% 8")		 
+  if snd.firstaidcuretrack.torso ~= "7" and snd.firstaidcuretrack.pretorso ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE torso 19% 7")		 
 	end	
   if snd.firstaidcuretrack.paresis ~= "2" then
 		table.insert(snd.setting_priority, "paresis 2")		 
@@ -28230,12 +28273,15 @@ function snd.firstaidassCarnifex()
 	if snd.firstaidcuretrack.hypochondria ~= "3" then
 		table.insert(snd.setting_priority, "hypochondria 3")		 
 	end
-	if snd.firstaidcuretrack.sensitivity ~= "3" then
-		table.insert(snd.setting_priority, "sensitivity 3")		 
+	if snd.firstaidcuretrack.sensitivity ~= "4" then
+		table.insert(snd.setting_priority, "sensitivity 4")		 
 	end
 	if snd.firstaidcuretrack.crippled ~= "3" then
 		table.insert(snd.setting_priority, "crippled 3")		 
-	end
+	end		
+	if snd.firstaidcuretrack.frozen ~= "4" then
+		table.insert(snd.setting_priority, "frozen 4")		 
+	end	
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -28558,9 +28604,6 @@ function snd.firstaidassPraenomen()
 	end
  	if snd.firstaidcuretrack.paresis ~= "6" then
 		table.insert(snd.setting_priority, "paresis 6")		 
-	end
-	if snd.firstaidcuretrack.impatience ~= "4" then
-		table.insert(snd.setting_priority, "impatience 4")		 
 	end
   if snd.firstaidcuretrack.weariness ~= "5" then
 		table.insert(snd.setting_priority, "weariness 5")		 
@@ -28885,7 +28928,7 @@ function snd.treecheck()
 				if treerecheck_timer then killTimer(treerecheck_timer) end
 				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then snd.send("touch tree")
 				snd.tree == false end)]])
-			elseif (snd.have_aff("stupidity") or snd.have_aff("confusion") or snd.have_aff("anorexia") or snd.have_aff("asthma") or snd.have_aff("destroyed_throat") or snd.have_aff("unknown") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) or (snd.have_aff("weariness") and snd.have_aff("clumsiness")) then
+			elseif (snd.have_aff("stupidity") or snd.have_aff("confusion") or snd.have_aff("anorexia") or snd.have_aff("asthma") or snd.have_aff("destroyed_throat") or snd.hidden_afflictions &gt; 1 or snd.have_aff("hypochondria") or snd.have_aff("weariness")) or (snd.have_aff("weariness") and snd.have_aff("clumsiness")) then
 				snd.set_queue("touch tree")
 				snd.tree = false
 				snd.treerecheck = true
@@ -28965,12 +29008,6 @@ if not snd.channeling then
 
   snd.staonenonbal()
 
-  --if snd.class == "Wayfarer" then
-  --  if tonumber(gmcp.Char.Vitals.fury) &lt; 40 and snd.defenses.def_dauntless.state ~= "deffed" and snd.balance.fury then
-   --   snd.send("fury dauntless on" ..snd.sep)
-   -- end
-  --end 
-
   if gmcp.Char.Vitals.equilibrium == "1" and gmcp.Char.Vitals.balance == "1" and gmcp.Char.Vitals.left_arm == "1" and gmcp.Char.Vitals.right_arm == "1" and snd.not_aff("blackout")then 
     snd.sync = true 
   end
@@ -28989,9 +29026,7 @@ if not snd.channeling then
       snd.send(snd.endgamehealth)
       snd.endgame_sent = true
       tempTimer(1, [[snd.endgame_sent = false]])
-    --elseif snd.have_aff("vinethorns") and snd.not_aff("stun") and snd.not_aff("prone") then
-     -- snd.send("pull thorn from body")
-    elseif snd.unknownquantity &gt; 2 and snd.not_aff("hypochondria") and not snd.diag_sent then
+    elseif snd.hidden_afflictions &gt; 2 and snd.not_aff("hypochondria") and not snd.diag_sent then
       snd.send("qeb diag")
       snd.blackoutdone = true
       snd.diag_sent = true
@@ -29241,22 +29276,18 @@ end  			-- main function</script>
 	if snd.hiddentype == "shine" and (snd.cureset == "luminary" or snd.cureset == "earthcaller") and (snd.count(snd.people_hitting_me) &lt; 3) then  -- Disfigurement, dizziness, stiffness, weariness, and ablaze.
 		if snd.not_aff("hellsight") and snd.not_aff("slickness") then
 			send("smoke yarrow"..snd.sep.."press mending to torso"..snd.sep.."queue poultice press soothing to torso")
-		end
-    
+		end    
   elseif snd.queenhidden then
 		send("firstaid predict left_leg_crippled")
     send("firstaid predict right_leg_crippled")
     send("firstaid predict left_arm_crippled")
     send("firstaid predict right_arm_crippled")
-    snd.queenhidden = false
-    
+    snd.queenhidden = false    
   elseif snd.hiddentype == "cougar" then -- impairment, blurry_vision, clumsiness
     send("firstaid predict clumsiness")
-    send("firstaid predict blurry_vision")	
-  
+    send("firstaid predict blurry_vision")	  
   elseif snd.hiddentype == "boostshatter" then -- shatter: dizziness, stupidity, dementia, confusion (random) if boosted also muddled 
-	  send("stand"..snd.sep.."concentrate"..snd.sep.."ih")
-	
+	  send("stand"..snd.sep.."concentrate"..snd.sep.."ih")	
 	elseif snd.hiddentype == "spiritwrack" and (snd.count(snd.people_hitting_me) &lt; 3) then  -- Anorexia, stupidity, impatience, vertigo, sensitivity, self-pity, berserking, or migraine
 		if table.isMember(gmcp.Room.Info.details, "indoors") then
 			send("qeb fly")
@@ -29265,12 +29296,10 @@ end  			-- main function</script>
 			send("smoke yarrow")
 		end
 		send("eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
-  
   elseif snd.hiddentype == "bedazzle" then  -- Vomiting, stuttering, blurry_vision, dizziness, weariness, or laxity.
     if gmcp.Room.Info.num ~= 9330 then
       send("yell .")
-    end
-  
+    end  
   elseif snd.hiddentype == "scourge" then  -- dizziness, nyctophobia, confusion, dementia
     if snd.not_aff("dizziness") then
       snd.affsec("dizziness")
@@ -29280,8 +29309,7 @@ end  			-- main function</script>
       snd.affsec("confusion")
     elseif snd.not_aff("dementia") then
       snd.affsec("dementia")
-    end
-    
+    end    
   elseif snd.hiddentype == "mooneclipse" and (snd.count(snd.people_hitting_me) &lt; 3) then -- stupidity, confusion, recklessness, impatience, epilepsy, berserking, weariness, anorexia
     if snd.focus then
       if snd.not_aff("muddled") then
@@ -29289,7 +29317,6 @@ end  			-- main function</script>
       end
     end
     send("eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
-    
   elseif snd.hiddentype == "suneclipse" and (snd.count(snd.people_hitting_me) &lt; 3) then -- paresis, clumsiness, asthma, vomiting, lethargy, sensitivity, superstition, hypersomnia
     send("eat kawhe")
     if snd.have_aff("aeon") then
@@ -29300,8 +29327,7 @@ end  			-- main function</script>
     elseif snd.not_aff("clumsiness") then
       send("firstaid predict clumsiness")	
     	snd.affsec("clumsiness")      
-    end	
-    
+    end	    
 	elseif snd.hiddentype ~= "shine" and snd.hiddentype ~= "spiritwrack"  and snd.hiddentype ~= "scourge" then
     --if snd.not_aff("aeon") and snd.not_aff("hellsight") then
     send("compose"..snd.sep.."eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
@@ -29316,29 +29342,16 @@ end  			-- main function</script>
     end
 	end
 	snd.hiddentype = "none"
-  
-  if snd.unknownquantity &gt; 0 then
-    snd.unknownquantity = snd.unknownquantity - 1
-    if snd.unknownquantity == 0 then
-      if snd.have_aff("unknown") then
-	       snd.aff_cure("unknown")
-	     end
-    end
-  end
-  
 end
 
 function snd.check_indifference()
 
   if gmcp.Char.Vitals.fallen == "1" then return end --Don't care about indifference if true prone
-  if gmcp.Char.Vitals.prone == "0" then return end  --Not prone at all 
-  
-  if snd.self_prone() then return end
-  
+  if gmcp.Char.Vitals.prone == "0" then return end  --Not prone at all   
+  if snd.self_prone() then return end  
   if not snd.cureset == "shapeshifter" and not snd.meditation then
     snd.affsec("indifference")
   end
-
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -29355,10 +29368,6 @@ end</script>
   
 	if afftest == "self-pity" then 
   	snd.herbaffflag = true
-  end
-  
-  if afftest ~= "stand" then  
-    snd.unknownquantity = snd.unknownquantity - 1
   end
   
   if afftest == "blackout" or afftest == "recklessness" then
@@ -29388,15 +29397,6 @@ end</script>
   	
 	if table.isMember(snd.focusaffs, afftest) then 
 		snd.focusaffflag = true
-  end
-  
-  if snd.unknownquantity &gt; 0 then
-    snd.unknownquantity = snd.unknownquantity - 1
-    if snd.unknownquantity == 0 then
-      if snd.have_aff("unknown") then
-	       snd.aff_cure("unknown")
-	     end
-    end
   end
   
   if afftest == "left_leg_crippled" then
@@ -29459,15 +29459,6 @@ end
 	if table.isMember(snd.focusaffs, afftest) then snd.focusaffflag = true
 	end
 
-  if snd.unknownquantity &gt; 0 then
-    snd.unknownquantity = snd.unknownquantity - 1
-    if snd.unknownquantity == 0 then
-      if snd.have_aff("unknown") then
-	       snd.aff_cure("unknown")
-	     end
-    end
-  end
-
   if afftest == "left_leg_crippled" then
 	 if not table.isMember(snd.limbbrokencount, "left_leg_crippled") and snd.not_aff("left_leg_broken") then
 		table.insert(snd.limbbrokencount, "left_leg_crippled")
@@ -29518,7 +29509,7 @@ end
 								<name>Unknown script</name>
 								<packageName></packageName>
 								<script>function snd.unknownafter()
-  if snd.have_aff("unknown") and snd.unknownquantity &gt; 2 and snd.not_aff("tree_seared") and not snd.tree then
+  if snd.hidden_afflictions &gt; 2 and snd.not_aff("tree_seared") and not snd.tree then
     snd.send("queue tree touch tree")
   end
 end</script>
@@ -30016,7 +30007,6 @@ end</script>
       "slickness",
       "hellsight",
       "disfigurement",
-      "unknown",
       "head_bruised",
       "torso_bruised",
       "left_arm_bruised",
@@ -30043,7 +30033,7 @@ end</script>
   table.insert(snd.writhedfunction, "writhe free from a stalagmite")
   table.insert(snd.writhedfunction, "writhe furiously to escape the blade that has impaled you")
   
-  snd.specialaffs = {"aeon", "disrupted", "concentrate", "insomnia", "fear", "speed", "levitation", "paste", "voyria", "unknown", "idiocy", "metawake", "plodding", "embedded_axe"}
+  snd.specialaffs = {"aeon", "disrupted", "concentrate", "insomnia", "fear", "speed", "levitation", "paste", "voyria", "idiocy", "metawake", "plodding", "embedded_axe"}
   snd.herbaffs = {}
   table.insert(snd.herbaffs, "paralysis")
   table.insert(snd.herbaffs, "paresis")
@@ -31167,7 +31157,7 @@ chaos = {
     elseif snd.my_limb_damage[limb] &gt; 22 then
       snd.toparry = limb
     else
-      snd.toparry = "torso"
+      snd.toparry = "head"
     end
   else
       if snd.my_limb_damage[limb] &gt; highest and snd.my_limb_damage[limb] &lt; 33.33 then
@@ -31282,7 +31272,6 @@ snd.lasthealth = 0
 snd.lastmana = 0
 snd.firstaid_go = true
 snd.update_priority = 0
-snd.unknownquantity = 0
 snd.firstaidtrack = ""
 snd.counttimes = 0
 reset_cures = false
@@ -31451,6 +31440,7 @@ snd.dropstrikeready = false
 snd.axecount = 0
 snd.axeflying = false
 snd.assaultlimb = "none"
+snd.canenrage = true
 
 --Teradrim / Tidesage
 snd.lev_gone = false
@@ -32949,7 +32939,7 @@ end</script>
             "gloom",
             "deafness",
           },
-        ["torso"] = {"anorexia", "gorged"},
+        ["torso"] = {"anorexia", "manablight", "gnawing", "gorged"},
         ["left arm"] = {},
         ["right arm"] = {},
         ["left leg"] = {},
@@ -35343,9 +35333,6 @@ end</script>
     Restoration = function(target)
                     snd.handleRestore()
                   end,
-    Fitness = function(target)
-                snd.handleFitness()
-              end,
     Strike = function(target)
       snd.kaido_strike_dmg = math.floor((snd.limb_dmg.torso/5)*100)/100
       snd.took_limb_dmg("torso", -snd.limb_dmg.torso)
@@ -36055,10 +36042,7 @@ end</script>
               table.insert(snd.maybe_affs, "rend")
             end
             snd.onHit2({"Rebounding", "Dodge"})
-           end,
-    Fitness = function(target)
-                snd.handleFitness()
-              end,   
+           end, 
     Transpierce = function(target, failed)
                if failed then
                  snd.removeProneStates(true)
@@ -36845,7 +36829,7 @@ end</script>
                 snd.last_limb_dmg = 13.75
                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
                 snd.onHit2({"Dodge", "Parry"})
-                spinalrip_timer = tempTimer(10.5,[[snd.target_cured("spinal_rip")]])
+                snd.affTimers.start("spinal_rip", 10)
                end, 
    Headdrop = function(target)
                 snd.last_hit_limb = "head"
@@ -37637,10 +37621,7 @@ end</script>
               elseif defense == "rebounding" then snd.used.rebounding = false; snd.used.shield = false
               else snd.target_got("no_speed"); snd.used.rebounding = false; snd.used.shield = false 
               end
-            end,   
-    Fitness = function(target)
-                snd.handleFitness()
-              end,  
+            end, 
     Constrict = function(target, failed)
              if failed then
                snd.removeProneStates(true)
@@ -38195,6 +38176,7 @@ end</script>
   
   ["Hunting"] = {
     Fitness = function(target)
+                snd.track_fitness(snd.target)
                 snd.handleFitness()
               end,
   
