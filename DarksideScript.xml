@@ -221,7 +221,7 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>options</name>
 							<packageName></packageName>
-							<script>snd.sep = snd.sep or "\\" -- important! CONFIG SEPARATOR value
+							<script>snd.sep = snd.sep or "##" -- important! CONFIG SEPARATOR value
 --snd.mount = snd.mount or "416056" -- your horse's ID number
 
 
@@ -1066,79 +1066,19 @@ end</script>
 							<packageName></packageName>
 							<script>function gmcp_vitals()
   -- snd.core()
-  if gmcp.Char.Vitals.prone == "1" and snd.not_entangled() and snd.not_aff("paralysis") then
+  if gmcp.Char.Vitals.prone == "1" and snd.not_entangled() and snd.not_aff("paralysis") and snd.not_aff("prone") then
     snd.aff_have("prone")
   else
     snd.aff_remove("prone")
   end
-  if snd.can_cast() and (snd.class~="Wayfarer" or snd.can_axe()) then
+  if snd.can_cast() and (snd.class ~= "Wayfarer" or snd.can_axe()) then
     snd.last_attack = "none"
   end
   if snd.can_cast() then
     snd.last_attack = "none"
   end
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt;= 200 then
-    snd.aff_have("bleeding")
-  else
-    snd.aff_remove("bleeding")
-  end
-  hp = (100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)) or 100
-  if hp &lt; 10 then
-    snd.aff_have("health_10")
-  elseif hp &lt; 35 then
-    snd.aff_remove("health_10")
-    snd.aff_have("health_35")
-  elseif hp &lt; 55 then
-    snd.aff_remove("health_10")
-    snd.aff_remove("health_35")
-    snd.aff_have("health_55")
-  elseif hp &lt; 75 then
-    snd.aff_remove("health_10")
-    snd.aff_remove("health_35")
-    snd.aff_remove("health_55")
-    snd.aff_have("health_75")
-  else
-    snd.aff_remove("health_10")
-    snd.aff_remove("health_35")
-    snd.aff_remove("health_55")
-    snd.aff_remove("health_75")
-  end
-  if hp &lt; 65 then
-    snd.aff_have("health_low")
-  else
-    snd.aff_remove("health_low")
-  end
-  mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
-  if mp &lt; 10 then
-    snd.aff_have("mana_10")
-  elseif mp &lt; 35 then
-    snd.aff_remove("mana_10")
-    snd.aff_have("mana_35")
-  elseif mp &lt; 55 then
-    snd.aff_remove("mana_10")
-    snd.aff_remove("mana_35")
-    snd.aff_have("mana_55")
-  elseif mp &lt; 75 then
-    snd.aff_remove("mana_10")
-    snd.aff_remove("mana_35")
-    snd.aff_remove("mana_55")
-    snd.aff_have("mana_75")
-  else
-    snd.aff_remove("mana_10")
-    snd.aff_remove("mana_35")
-    snd.aff_remove("mana_55")
-    snd.aff_remove("mana_75")
-  end
-  if mp &lt; 65 then
-    snd.aff_have("mana_low")
-  else
-    snd.aff_remove("mana_low")
-  end
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
-  if
-    snd.toggles.attacking and snd.offense_loaded and snd.check_dome() and snd.toggles.dome
-    and (snd.count(snd.people_hitting_me) &gt;= 3 or snd.aff_tally() &gt;= 5 or hp &lt; 50)
-  then
+  if snd.toggles.attacking and snd.offense_loaded and snd.check_dome() and snd.toggles.dome and (snd.count(snd.people_hitting_me) &gt;= 3 or snd.aff_tally() &gt;= 5 or hp &lt; 50) then
     snd.need_dome = true
   else
     snd.need_dome = false
@@ -1197,10 +1137,16 @@ function gmcp_items()
       end
       -- Save data.
       save_shrine_db()
-    elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
-      for id in pairs(snd.items[item]) do
-        table.insert(snd.gathering, snd.items[item][id])
-      end
+    elseif string.find(item, "pill") and #snd.items[item] &gt;= 1 then
+      table.insert(snd.gathering, "pill")
+    elseif (string.find(item, "reishi") or string.find(item, "willow") or string.find(item, "yarrow")) and #snd.items[item] &gt;= 1 then
+      table.insert(snd.gathering, "plant")
+    elseif string.find(item, "paste") and #snd.items[item] &gt;= 1 then
+      table.insert(snd.gathering, "paste")
+    --elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
+      --for id in pairs(snd.items[item]) do
+        --table.insert(snd.gathering, snd.items[item][id])
+      --end
     end
   end
  snd.updateItems()
@@ -3369,7 +3315,7 @@ snd.method_priority = {
           table.insert(snd.queue, "moving")
         end
       end
-      if snd.toggles.parrying then -- remove the offense_loaded check if you want it to always parry
+      if snd.toggles.parrying then
         snd.parry()
       end
       if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria","baldness"},1) then
@@ -3406,7 +3352,7 @@ snd.method_priority = {
       if snd.rage_check() and snd.can_rage() then
         table.insert(snd.queue, "rage")
       end
-      if snd.hidden_afflictions &gt; 2 then
+      if snd.hidden_afflictions &gt;= 2 then
         snd.staone()
         snd.hiddencheckfunc()
         table.insert(snd.queue, "diagnose")
@@ -4064,7 +4010,9 @@ function snd.aff_gain(affliction)
   end
  end
  snd.message("You: &lt;red&gt;GOT&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
- snd.aff_have(affliction)
+ if snd.not_aff(affliction) then
+  snd.aff_have(affliction)
+ end
  raiseEvent("sunder_my_affs_updated")
  raiseEvent("sunder_my_limbs_updated")
  if affliction == "amnesia" then
@@ -4162,9 +4110,6 @@ end
 
 function snd.aff_cure(affliction)
  snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
- --if snd.afflictions["aff_"..affliction].state=="healed" then
- -- snd.hidden_afflictions = math.max(0, snd.hidden_afflictions - 1)
- --end
  snd.aff_remove(affliction)
 end
 
@@ -23514,9 +23459,9 @@ function snd.loot_it()
   --snd.send("get "..snd.corpses[i])
  --end
  for h in ipairs(snd.gathering) do
-  --snd.send("get "..snd.gathering[h])
-    if string.find(h, "pill") then
-      snd.send("get 50 pill")
+    snd.send("get "..snd.gathering[h].."##get 50 "..snd.gathering[h])
+    if string.find(h, "pill") or string.find(h, "reishi") or string.find(h, "willow") or string.find(h, "yarrow") or string.find(h, "paste") then
+      snd.send("get 50 pill##qeb get 50 plant")
       snd.gathering = {}
     end
  end
@@ -24694,10 +24639,10 @@ function generic_bashing_name(mob)
 
   local area = gmcp.Room.Info.area
   local target = ""
-  if snd.generic_bashing_table_by_area[area] then 
-    target = snd.generic_bashing_table_by_area[area] 
-  elseif snd.generic_bashing_table_specific_names[mob] then
+  if snd.generic_bashing_table_specific_names[mob] then
     target = snd.generic_bashing_table_specific_names[mob]
+  elseif snd.generic_bashing_table_by_area[area] then 
+    target = snd.generic_bashing_table_by_area[area] 
   else
     for k, v in ipairs(snd.generic_bashing_table_duplicate_names) do
      if string.match(' '.. mob:lower() ..' ', '%A'.. v ..'%A') ~= nil then
@@ -28851,7 +28796,7 @@ end</script>
 								<script>function snd.herbcount()
 	snd.herbcountnum = "0"
 	for i = 1, snd.aff_tally() do
-	local affliction = snd.have_aff[i]
+	local affliction = snd.have_aff(i)
 		if snd.afflictions[i].cures.herb then
 		  snd.herbcountnum = snd.herbcountnum + 1 
 		end
@@ -28862,7 +28807,7 @@ end
 function snd.salvecount()
 	snd.salvecountnum = "0"
 	for i = 1, snd.aff_tally() do
-	local affliction = snd.have_aff[i]
+	local affliction = snd.have_aff(i)
 		if snd.afflictions[i].cures.salve then
  		   snd.salvecountnum = snd.salvecountnum + 1 
 		end
@@ -28878,48 +28823,48 @@ function snd.treecheck()
 	if snd.not_aff("right_arm_crippled") or snd.not_aff("left_arm_crippled") then 
 		if snd.tree and snd.not_aff("paralysis") and snd.not_aff("paresis") and snd.not_aff("stun") and not snd.writheaffflag then
 			if tonumber(snd.herbcountnum) &gt; 2 then 
-				snd.send("touch tree")
+				send("queue tree touch tree")
 				if snd.have_aff("stupidity") then
-					snd.send("touch tree")
+					send("queue tree touch tree")
 				end
 				snd.tree = false
 				snd.treerecheck = true
 				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then snd.send("touch tree")
+				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
 				snd.tree == false end)]])
 			elseif tonumber(snd.salvecountnum) &gt; 2 then 
-				snd.send("touch tree")
+				send("queue tree touch tree")
 				if snd.have_aff("stupidity") then
-					snd.send("touch tree")
+					send("queue tree touch tree")
 				end
 				snd.tree = false
 				snd.treerecheck = true
 				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then snd.send("touch tree")
+				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
 				snd.tree == false end)]])
 			elseif snd.have_aff("anorexia") then
 				if snd.have_aff("stupidity") then
-					snd.send("touch tree")
+					send("queue tree touch tree")
 				end
-				snd.send("touch tree")
+				send("queue tree touch tree")
 				snd.tree = false
 				snd.treerecheck = true
 				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then snd.send("touch tree")
+				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
 				snd.tree == false end)]])
 			elseif (snd.have_aff("stupidity") or snd.have_aff("confusion") or snd.have_aff("anorexia") or snd.have_aff("asthma") or snd.have_aff("destroyed_throat") or snd.hidden_afflictions &gt; 1 or snd.have_aff("hypochondria") or snd.have_aff("weariness")) or (snd.have_aff("weariness") and snd.have_aff("clumsiness")) then
-				snd.set_queue("touch tree")
+				send("queue tree touch tree")
 				snd.tree = false
 				snd.treerecheck = true
 				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then snd.set_queue("touch tree")
+				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
 				snd.tree == false end)]])
 			elseif snd.have_aff("peace") and tonumber(snd.herbcountnum) &gt; 1 then
-				snd.set_queue("touch tree")
+				send("queue tree touch tree")
 				snd.tree = false
 				snd.treerecheck = true
 				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then snd.set_queue("touch tree")
+				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
 				snd.tree == false end)]])
 			end
 		end
@@ -29252,6 +29197,7 @@ end  			-- main function</script>
 								<name>Hidden Check</name>
 								<packageName></packageName>
 								<script>function snd.hiddencheckfunc()
+if not snd.diag_sent then
 	if snd.hiddentype == "shine" and (snd.cureset == "luminary" or snd.cureset == "earthcaller") and (snd.count(snd.people_hitting_me) &lt; 3) then  -- Disfigurement, dizziness, stiffness, weariness, and ablaze.
 		if snd.not_aff("hellsight") and snd.not_aff("slickness") then
 			send("smoke yarrow"..snd.sep.."press mending to torso"..snd.sep.."queue poultice press soothing to torso")
@@ -29308,19 +29254,22 @@ end  			-- main function</script>
     	snd.affsec("clumsiness")      
     end	    
 	elseif snd.hiddentype ~= "shine" and snd.hiddentype ~= "spiritwrack"  and snd.hiddentype ~= "scourge" then
-    --if snd.not_aff("aeon") and snd.not_aff("hellsight") then
-    send("compose"..snd.sep.."eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
-		--	if snd.focus then
-		--		send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me"..snd.sep.."focus")
-		--	else
-		--		send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me")
-		--	end
-    --end
+    if snd.not_aff("aeon") and snd.not_aff("hellsight") then
+      send("compose"..snd.sep.."eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
+			if snd.focus then
+				send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me"..snd.sep.."focus")
+			else
+				send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me")
+			end
+    end
     if not snd.shield_check then
     	snd.hatredcheck = true
     end
 	end
+  snd.diag_sent = true
+  tempTimer(2, [[snd.diag_sent = false]])
 	snd.hiddentype = "none"
+end
 end
 
 function snd.check_indifference()
@@ -29488,7 +29437,7 @@ end
 								<name>Unknown script</name>
 								<packageName></packageName>
 								<script>function snd.unknownafter()
-  if snd.hidden_afflictions &gt; 2 and snd.not_aff("tree_seared") and not snd.tree then
+  if snd.hidden_afflictions &gt;= 2 and snd.not_aff("tree_seared") and not snd.tree then
     snd.send("queue tree touch tree")
   end
 end</script>
@@ -29700,6 +29649,7 @@ if snd.toggles.active then
 	snd.percentmana = roundDown(snd.percentmana,0)
   
   snd.promptsets()
+  snd.treecheck()
   
 	if snd.have_aff("asleep") and not snd.waking and snd.not_aff("stun") and snd.not_aff("unconscious") then 
 		send("wake")
@@ -31125,7 +31075,11 @@ chaos = {
       snd.toparry = "left leg"
     end
   elseif (snd.cureset == "ascendril" or snd.cureset == "bloodborn") then
-    if snd.my_limb_damage["left arm"] &gt; 15 then
+    if snd.have_aff("blisters") or snd.have_aff("impairment") then
+      snd.toparry = "head"
+    elseif snd.rimespear then
+      snd.toparry = "torso"
+    elseif snd.my_limb_damage["left arm"] &gt; 15 then
       snd.toparry = "left arm"
     elseif snd.my_limb_damage["right arm"] &gt; 15 then
       snd.toparry = "right arm"
@@ -31482,6 +31436,8 @@ snd.stalled_skill = ""
 snd.fulcrum_call = true
 snd.fulcrum_ready = true
 snd.fulcrum_exists = false
+snd.rimespear = false
+snd.rimespeared = 0
 
 --Carnifex/Warden
 snd.soul = 100
@@ -33299,6 +33255,8 @@ end</script>
   --Bloodborn/Ascendril
   snd.gorged = "" 
   snd.flamewreathed = {limb = "", resonance = ""}
+  snd.rimespear = false
+  snd.rimespeared = 0
   
   --Sciomancer/Runecarver
   snd.gravity = 0
@@ -33632,7 +33590,7 @@ end</script>
       end
     end,
     Volley = function(target)
-      enableTrigger("Aetherial Volley")
+      enableTrigger("Aetherial Volley / Chaos Claw")
       snd.doubleattack = false
       enableTrigger("Sunder Parry")
       if #snd.maybe_affs &gt;= 1 then
@@ -34138,17 +34096,21 @@ end</script>
       snd.target_got("blisters")
       snd.target_got("impairment")
     end,
+    
     Fireburst = function(target)
       if not target then return end
       snd.target_got("ablaze")
     end,
+    
     Ashenfeet = function(target)
       snd.target_got("ashen_feet")
-       snd.affTimers.start("ashen_feet", 180)
+      snd.affTimers.start("ashen_feet", 180)
     end,
+    
     Conflagrate = function(target)
       snd.target_got("hearing")
     end,
+    
     Pyroclast = function(target)
       snd.last_hit_limb = "head"
       snd.last_limb_dmg = 23
@@ -34158,6 +34120,7 @@ end</script>
       snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
       snd.onHit2({"Parry"})
     end,
+    
     Disintegrate = function(target, condition)
       if condition == "release" then
         snd.target_got("no_arcane")
@@ -34181,7 +34144,14 @@ end</script>
     end,
     Aeroblast = function(target)
       --all effects delayed
-    end
+    end,
+    Icicle = function(target)
+            if target == "you" then
+              snd.rimespear = true
+              snd.rimespeared = snd.rimespeared + 1
+            end
+    end,
+  
   },
   
   ["Arcanism"] = {
@@ -34260,7 +34230,13 @@ end</script>
     end,
     Synaptopathy = function(target)
       --all effects delayed
-    end
+    end,
+    Rimespear = function(target)
+            if target == "you" then
+              snd.rimespear = true
+              snd.rimespeared = snd.rimespeared + 1
+            end
+    end,
   },
   
   ["Esoterica"] = {
@@ -34647,7 +34623,7 @@ end</script>
     end,
     
   Claw = function(target)
-          enableTrigger("Aetherial Volley")
+          enableTrigger("Aetherial Volley / Chaos Claw")
           snd.doubleattack = false
           enableTrigger("Sunder Parry")
           if #snd.maybe_affs &gt;= 1 then
@@ -35858,6 +35834,9 @@ end</script>
         snd.last_hit_limb = limb
         snd.last_limb_dmg = 20
         snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
+        if limb == "torso" then
+           table.insert(snd.maybe_affs, "cracked_ribs")
+        end
         snd.onHit2({"Parry", "Dodge"})
       end,
     Web =
@@ -39307,7 +39286,7 @@ end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Enemy balance trackers</name>
+							<name>Balance trackers</name>
 							<packageName></packageName>
 							<script>
 function snd.focuscovered(timeneeded)
@@ -39327,14 +39306,14 @@ function snd.focuscheck(timeneeded)
 end
 
 function snd.treecovered(timeneeded)
-  if ((snd.checkAff("paresis") or snd.checkAff("paralysis")) and snd.pillcheck(0.3)) or snd.treecheck(timeneeded) then
+  if ((snd.checkAff("paresis") or snd.checkAff("paralysis")) and snd.pillcheck(0.3)) or snd.treecheck_enemy(timeneeded) then
     return true
   else
     return false
   end
 end
 
-function snd.treecheck(timeneeded)
+function snd.treecheck_enemy(timeneeded)
   if snd.treetrack - getEpoch() &gt; timeneeded or snd.tree_seared then
     return true
   else
@@ -39518,18 +39497,15 @@ end</script>
   snd.canasthmavar = false
   local canasthma = false
   local canslickness = false
-local time = 1
-time = snd.recoverytime - getEpoch()
+  local time = 1
+  time = snd.recoverytime - getEpoch()
   -- Indorani/Oneiromancer - Fool two random unless they have paresis or paralysis which that will cure first and only that - 18s
-  -- Monk - mind push, fitness - 20s fitness
   -- Infiltrator - shrugging 20s
   -- Scio - leech if not weariness then can cure asthma, if paresis/paralysis then only that
   -- Archivist -- recollection
   -- Praenomen -- purify 20s
   -- Shapeshifter - shedding - slickness 20s
-  -- Carnifex - fitness 20s
   -- Teradrim - 
-  -- Revenant/Templar - fitness 20s and rage 
   -- Earthcaller/Luminary
   -- WF
   -- Sentinel - might random aff
@@ -39538,9 +39514,7 @@ time = snd.recoverytime - getEpoch()
   -- Zealot
   
   local asthmaready = false
-  if (snd.cureset == "monk" or snd.cureset == "carnifex" or snd.cureset == "templar" or snd.cureset == "warden" or snd.cureset == "revenant")  then
-    snd.fitnesscheck(time) --  can use balance recovery
-  elseif snd.cureset == "infiltrator" and snd.shruggingcheck(time) then
+  if snd.cureset == "infiltrator" and snd.shruggingcheck(time) then
     canasthma = true
   elseif (snd.cureset == "sciomancer" or snd.cureset == "runecarver") and snd.leechcheck(time) then
     canasthma = true
@@ -39559,7 +39533,8 @@ time = snd.recoverytime - getEpoch()
   --elseif table.isMember(snd.classattacks, "Zealot")
   --elseif table.isMember(snd.classattacks, "Wayfarer")
   --elseif table.isMember(snd.classattacks, "Executor")
-  
+  else
+    snd.fitnesscheck(time) --  can use balance recovery  
   end  
   
   if canasthma then
@@ -41711,7 +41686,7 @@ end</script>
     --if not patterns covered, stimulant, if not even with stimulant, dont use
   elseif table.isMember(snd.hiddenlistenemy, "matrix") and not table.isMember(snd.curtarget, "patterns") and table.isMember(snd.curtarget, "lemniscate") then
     snd.queueattack = snd.queueattack.. "geo impress swirl" ..snd.separator.. "geo pattern " ..snd.aim.."" ..snd.separator.. "bio stimulant" ..snd.separator
-  elseif table.isMember(snd.curtarget, "blackout") and snd.treecheck(4) and not table.isMember(snd.curtarget, "matrix") then
+  elseif table.isMember(snd.curtarget, "blackout") and snd.treecheck_enemy(4) and not table.isMember(snd.curtarget, "matrix") then
      snd.queueattack = snd.queueattack.. "geo impress " ..impression.. "" ..snd.separator.. "geo matrix " ..snd.aim.. "" ..snd.separator
   elseif snd.my_incite ~= "Crescent" and not table.isMember(snd.curtarget, "patterns") and not table.isMember(snd.curtarget, "blackout") and not table.isMember(snd.curtarget, "matrix") and not table.isMember(snd.curtarget, "lemniscate") and bioessence &gt; 1 and snd.madnessgive then
     snd.queueattack = snd.queueattack.. "geo impress hex" ..snd.separator.. "incite crescent " ..snd.aim.. "" ..snd.separator
@@ -43630,7 +43605,7 @@ end</script>
   elseif table.isMember(snd.curtarget, "anorexia") and not table.isMember(snd.curtarget, "slickness") and table.isMember(snd.curtarget, "asthma")  and snd.implantvenom ~= "gecko" then
     snd.scythevenom1 = "gecko"
     
-  elseif not (table.isMember(snd.curtarget, "paralysis") or table.isMember(snd.curtarget, "paresis")) and not snd.treecheck(time) and snd.implantvenom ~= "curare" then
+  elseif not (table.isMember(snd.curtarget, "paralysis") or table.isMember(snd.curtarget, "paresis")) and not snd.treecheck_enemy(time) and snd.implantvenom ~= "curare" then
     snd.scythevenom1 = "curare"
 
   elseif not table.isMember(snd.curtarget, "asthma") and snd.implantvenom ~= "kalmia" then
@@ -43712,7 +43687,7 @@ end</script>
   if table.isMember(snd.curtarget, "asthma") and table.isMember(snd.curtarget, "slickness") and not table.isMember(snd.curtarget, "anorexia") and snd.scythevenom1 ~= "slike" and snd.implantvenom ~= "slike" then
     snd.scythevenom2 = "slike"
     
-  elseif not (table.isMember(snd.curtarget, "paralysis") or table.isMember(snd.curtarget, "paresis")) and snd.scythevenom1 ~= "curare" and not snd.treecheck(time) and snd.implantvenom ~= "curare" then
+  elseif not (table.isMember(snd.curtarget, "paralysis") or table.isMember(snd.curtarget, "paresis")) and snd.scythevenom1 ~= "curare" and not snd.treecheck_enemy(time) and snd.implantvenom ~= "curare" then
     snd.scythevenom2 = "curare"
 
   elseif not table.isMember(snd.curtarget, "asthma") and snd.scythevenom1 ~= "kalmia" and snd.implantvenom ~= "kalmia" then
