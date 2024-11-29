@@ -1655,11 +1655,26 @@ function snd.can_focus()
 end
 
 function snd.can_fitness()
-  if
-    snd.not_aff("destroyed_throat") and
-    hasSkill("Fitness") and
-    snd.balance.fitness
-  then
+  local activelock = false
+  local asthmacover = false
+  
+  if snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria") or snd.have_aff("baldness")) then
+    asthmacover = true
+  end
+  
+  if asthmacover and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+    activelock = true
+  elseif asthmacover and (snd.have_aff("slickness") or snd.have_aff("slough")) and (snd.have_aff("left_leg_crippled") or snd.have_aff("right_leg_crippled")) and snd.have_aff("fallen") then
+    activelock = true
+  elseif snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") and (snd.have_aff("impatience") or snd.have_aff("stupidity") or snd.have_aff("egocentric")) then
+    activelock = true
+  end
+  
+  if asthmacover then
+    activelock = true
+  end  
+  
+  if snd.not_aff("destroyed_throat") and hasSkill("Fitness") and snd.balance.fitness and activelock then
     return true
   else
     return false
@@ -18853,7 +18868,8 @@ v49322 = "pthcity"
   v50555 = "50556",
   v50556 = "50558",
   v50557 = "50555",
-  v50558 = "pthcity",
+  v50558 = "48770",
+  v48770 = "pthcity",
   v50559 = "50449",
   v50840 = "49920",
   v50841 = "50840",
@@ -23459,9 +23475,9 @@ function snd.loot_it()
   --snd.send("get "..snd.corpses[i])
  --end
  for h in ipairs(snd.gathering) do
-    snd.send("get "..snd.gathering[h].."##get 50 "..snd.gathering[h])
+   -- snd.send("get "..snd.gathering[h].."##get 50 "..snd.gathering[h])
     if string.find(h, "pill") or string.find(h, "reishi") or string.find(h, "willow") or string.find(h, "yarrow") or string.find(h, "paste") then
-      snd.send("get 50 pill##qeb get 50 plant")
+      --snd.send("get 50 pill##qeb get 50 plant")
       snd.gathering = {}
     end
  end
@@ -26346,7 +26362,13 @@ end
 							<script>
 function snd.do_fitness()
  if snd.can_fitness() and snd.need_fitness and snd.full_balance() then
-  snd.send("fitness")
+  if (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+    snd.send("fitness"..snd.sep.."smoke yarrow"..snd.sep.."apply epidermal to torso")
+  elseif snd.have_aff("slickness") or snd.have_aff("slough") then
+    snd.send("fitness"..snd.sep.."smoke yarrow")
+  else
+    snd.send("fitness")
+  end
   echo("(fitness)")
   snd.last_type = "fitness"
   snd.last_item = "fitness"
@@ -28791,140 +28813,6 @@ end</script>
 								</Script>
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>Tree Check</name>
-								<packageName></packageName>
-								<script>function snd.herbcount()
-	snd.herbcountnum = "0"
-	for i = 1, snd.aff_tally() do
-	local affliction = snd.have_aff(i)
-		if snd.afflictions[i].cures.herb then
-		  snd.herbcountnum = snd.herbcountnum + 1 
-		end
-	end
-
-end
-
-function snd.salvecount()
-	snd.salvecountnum = "0"
-	for i = 1, snd.aff_tally() do
-	local affliction = snd.have_aff(i)
-		if snd.afflictions[i].cures.salve then
- 		   snd.salvecountnum = snd.salvecountnum + 1 
-		end
-	end
-
-end
-
-function snd.treecheck()
-
-	snd.herbcount()
-	snd.salvecount()
-	
-	if snd.not_aff("right_arm_crippled") or snd.not_aff("left_arm_crippled") then 
-		if snd.tree and snd.not_aff("paralysis") and snd.not_aff("paresis") and snd.not_aff("stun") and not snd.writheaffflag then
-			if tonumber(snd.herbcountnum) &gt; 2 then 
-				send("queue tree touch tree")
-				if snd.have_aff("stupidity") then
-					send("queue tree touch tree")
-				end
-				snd.tree = false
-				snd.treerecheck = true
-				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
-				snd.tree == false end)]])
-			elseif tonumber(snd.salvecountnum) &gt; 2 then 
-				send("queue tree touch tree")
-				if snd.have_aff("stupidity") then
-					send("queue tree touch tree")
-				end
-				snd.tree = false
-				snd.treerecheck = true
-				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
-				snd.tree == false end)]])
-			elseif snd.have_aff("anorexia") then
-				if snd.have_aff("stupidity") then
-					send("queue tree touch tree")
-				end
-				send("queue tree touch tree")
-				snd.tree = false
-				snd.treerecheck = true
-				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
-				snd.tree == false end)]])
-			elseif (snd.have_aff("stupidity") or snd.have_aff("confusion") or snd.have_aff("anorexia") or snd.have_aff("asthma") or snd.have_aff("destroyed_throat") or snd.hidden_afflictions &gt; 1 or snd.have_aff("hypochondria") or snd.have_aff("weariness")) or (snd.have_aff("weariness") and snd.have_aff("clumsiness")) then
-				send("queue tree touch tree")
-				snd.tree = false
-				snd.treerecheck = true
-				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
-				snd.tree == false end)]])
-			elseif snd.have_aff("peace") and tonumber(snd.herbcountnum) &gt; 1 then
-				send("queue tree touch tree")
-				snd.tree = false
-				snd.treerecheck = true
-				if treerecheck_timer then killTimer(treerecheck_timer) end
-				treerecheck_timer = tempTimer(1,[[if snd.treerecheck then send("queue tree touch tree")
-				snd.tree == false end)]])
-			end
-		end
-	end
-end
-
-
-
-</script>
-								<eventHandlerList />
-							</Script>
-							<Script isActive="yes" isFolder="no">
-								<name>Master curing call</name>
-								<packageName></packageName>
-								<script>function snd.mastercheck()
-	if not gmcp.Room then return end
-
-	if not snd.salveaffflag and snd.not_aff("slickness") and snd.not_aff("asthma") and snd.not_aff("slough") and snd.salvebal and (snd.have_aff("void") or snd.have_aff("weakvoid")) then 
-		snd.send("apply caloric")
-		snd.salvebal = false
-		snd.salveretry = true
-		if snd.retard == false and snd.not_aff("aeon") then 
-			enableTimer("salveretry") 
-		else 
-			enableTimer("salveretryretard") 
-		end
-	end
-       
-	if snd.sync and (snd.have_aff("slough") or snd.have_aff("slickness")) and (snd.cureset == "archivist" or snd.cureset == "voidseer" or snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.have_aff("right_leg_crippled") or snd.have_aff("left_leg_crippled")) then
-		snd.send("restore")
-		snd.sync = false
-	end
-
-
-end -- function end
-
-
-function snd.caloricreset()
-	snd.aff_remove("frozen")
-	snd.aff_remove("frigid")  
-	snd.aff_remove("shivering")
-end
-
-function snd.epidermalreset()
-	snd.aff_remove("anorexia")
-	snd.aff_remove("blurry_vision")
-	snd.aff_remove("stuttering")
-	snd.aff_remove("indifference")
-	snd.aff_remove("effused_blackbile")
-	snd.aff_remove("effused_yellowbile")
-	snd.aff_remove("effused_blood")
-	snd.aff_remove("effused_phlegm")
-	snd.aff_remove("burnt_eyes")
-	snd.aff_remove("gorged")
-end
-
-</script>
-								<eventHandlerList />
-							</Script>
-							<Script isActive="yes" isFolder="no">
 								<name>staone script</name>
 								<packageName></packageName>
 								<script>function snd.staone()
@@ -28958,162 +28846,6 @@ if not snd.channeling then
   end
 end
   
-end</script>
-								<eventHandlerList />
-							</Script>
-							<Script isActive="yes" isFolder="no">
-								<name>Extra Sipper</name>
-								<packageName></packageName>
-								<script>function snd.sipfunction()
-if not snd.channeling then
-
-if snd.have_aff("recklessness") or snd.have_aff("blackout") or (snd.class == "Carnifex" and snd.defenses.def_recklessness.state ~= "deffed") or (snd.class == "Warden" and snd.defenses.def_battleflow.state ~= "deffed") then
-
-	if (snd.class == "Archivist" or snd.class == "Voidseer") and snd.defenses.def_linked.state ~= "deffed" then
-		if tonumber(snd.percentesthealth) &lt; 85 and tonumber(snd.percentestmana) &lt; 100 then
-			snd.sipmana()
-		elseif tonumber(gmcp.Char.Vitals.hp) == 1 then
-			snd.sipmana()
-		elseif tonumber(snd.percentesthealth) &lt; 85 then 
-			snd.siphealth()
-		elseif tonumber(snd.percentestmana) &lt; 85 then 
-			snd.sipmana()
-		end
-
-	elseif (snd.count(snd.people_hitting_me)) &lt; 3 then
-		if (snd.cureset == "praenomen" or snd.cureset == "akkari" or snd.cureset == "luminary" or snd.cureset == "earthcaller") then 
-			if tonumber(snd.percentesthealth) &gt; 45 and tonumber(snd.percentestmana) &lt; 70 then
-				snd.sipmana()
-			elseif tonumber(snd.percentesthealth) &gt; 75 and tonumber(snd.percentestmana) &lt; 90 then 
-				snd.sipmana()
-			elseif tonumber(snd.percentesthealth) &gt; 25 and tonumber(snd.percentestmana) &lt; 60 and (snd.cureset == "luminary" or snd.cureset == "earthcaller") then
-				snd.sipmana()
-			elseif tonumber(snd.percentesthealth) &lt; 35 then
-				snd.siphealth() 
-			elseif tonumber(snd.percentesthealth) &lt; 90 and tonumber(snd.percentestmana) &gt; 69 then
-				snd.siphealth()
-			elseif tonumber(snd.percentesthealth) &lt; 87 then 
-    			snd.siphealth()
-			end
-		else
-			if tonumber(snd.percentesthealth) &lt; 87 and tonumber(snd.percentestmana) &gt; 15 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percentestmana) &lt; 85 then
-				snd.sipmana()
-			end
-		end
-
-	elseif (snd.count(snd.people_hitting_me)) &lt; 3 and (snd.cureset == "praenomen" or snd.cureset == "akkari" or snd.cureset == "luminary" or snd.cureset == "earthcaller") then
-			if tonumber(snd.percentesthealth) &lt; 87 and tonumber(snd.percentestmana) &gt; 65 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percentesthealth) &gt; 45 and tonumber(snd.percentestmana) &lt; 60 and (snd.cureset == "luminary" or snd.cureset == "earthcaller") then
-				snd.sipmana()	
-			elseif tonumber(snd.percentesthealth) &gt; 45 and tonumber(snd.percentestmana) &lt; 45 and snd.cureset == "praenomen" then
-				snd.sipmana()	
-			elseif tonumber(snd.percentesthealth) &lt; 35 and tonumber(snd.percentestmana) &gt; 45 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percentesthealth) &lt; 15 and tonumber(snd.percentestmana) &gt; 10 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percentesthealth) &lt; 87 then 
-    			snd.siphealth()
-			end
-		
-	else
-		    snd.siphealth()
-	end
-
-
-else  -- not reckless/blackout
-
-	if (snd.class == "Archivist" or snd.class == "Voidseer") and snd.defenses.def_linked.state ~= "deffed" then
-		if tonumber(snd.percenthealth) &lt; 85 and tonumber(snd.percentmana) &lt; 100 then
-			snd.sipmana()
-		elseif tonumber(gmcp.Char.Vitals.hp) == 1 then
-			snd.sipmana()
-		elseif tonumber(snd.percenthealth) &lt; 85 then 
-			snd.siphealth()
-		elseif tonumber(snd.percentmana) &lt; 85 then 
-			snd.sipmana()
-		end
-
-	elseif (snd.count(snd.people_hitting_me)) &lt; 3 then
-		if (snd.cureset == "praenomen" or snd.cureset == "akkari" or snd.cureset == "luminary" or snd.cureset == "earthcaller") then  
-			if tonumber(snd.percenthealth) &gt; 45 and tonumber(snd.percentmana) &lt; 70 then
-				snd.sipmana()
-			elseif tonumber(snd.percenthealth) &gt; 75 and tonumber(snd.percentmana) &lt; 90 then 
-				snd.sipmana()
-			elseif tonumber(snd.percenthealth) &gt; 25 and tonumber(snd.percentmana) &lt; 60 and (snd.cureset == "luminary" or snd.cureset == "earthcaller") then
-				snd.sipmana()
-			elseif tonumber(snd.percenthealth) &lt; 35 then
-				snd.siphealth() 
-			elseif tonumber(snd.percenthealth) &lt; 90 and tonumber(snd.percentmana) &gt; 69 then
-				snd.siphealth()
-			elseif tonumber(snd.percenthealth) &lt; 87 then 
-    			snd.siphealth()
-			end
-
-		else
-			if tonumber(snd.percenthealth) &lt; 87 and tonumber(snd.percentmana) &gt; 15 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percentmana) &lt; 85 then
-				snd.sipmana()
-			end
-		end
-
-	elseif (snd.count(snd.people_hitting_me)) &lt; 3 and (snd.cureset == "praenomen" or snd.cureset == "akkari" or snd.cureset == "luminary" or snd.cureset == "earthcaller") then
-			if tonumber(snd.percenthealth) &lt; 87 and tonumber(snd.percentmana) &gt; 65 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percenthealth) &gt; 45 and tonumber(snd.percentmana) &lt; 60 and (snd.cureset == "luminary" or snd.cureset == "earthcaller") then
-				snd.sipmana()	
-			elseif tonumber(snd.percenthealth) &gt; 45 and tonumber(snd.percentmana) &lt; 45 and (snd.cureset == "praenomen" or snd.cureset == "akkari") then
-				snd.sipmana()	
-			elseif tonumber(snd.percenthealth) &lt; 35 and tonumber(snd.percentmana) &gt; 45 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percenthealth) &lt; 15 and tonumber(snd.percentmana) &gt; 10 then 
-    			snd.siphealth()
-			elseif tonumber(snd.percenthealth) &lt; 87 then 
-    			snd.siphealth()
-			end
-		
-	else
-		if tonumber(snd.percenthealth) &lt; 87 and tonumber(snd.percentmana) &gt; 15 then 
-    		snd.siphealth()
-		elseif tonumber(snd.percentmana) &lt; 85 then
-			snd.sipmana()
-		end	
-	end
-end
-end
-end
-
-function snd.siphealth()
-if not snd.channeling then
-	--snd.send("drink health" ) 
-  --cecho("\nYou're drinking health")
- 	snd.healbalance = false
- 	snd.healretry = true
- 	if not snd.retard and snd.not_aff("aeon") then enableTimer("healretry") else enableTimer("healretryretard") 
-	end
-end
-end
-
-
-function snd.sipmana()
-if not snd.channeling then
-	--snd.send("drink mana") 	
-  --cecho("\nYou're drinking mana")
-	snd.healbalance = false
- 	snd.healretry = true
- 	if not snd.retard and snd.not_aff("aeon") then enableTimer("healretry") else enableTimer("healretryretard") 
-	end
-end
-end
-
-function snd.eatmoss()
-if not snd.channeling then
-	--snd.send("eat anabiotic")
-	snd.moss = false
-end
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -29221,6 +28953,13 @@ if not snd.diag_sent then
 			send("smoke yarrow")
 		end
 		send("eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
+  elseif snd.hiddentype == "snarls" then  -- Vomiting, stuttering, blurry_vision, dizziness, weariness, or laxity.
+    send("eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."concentrate"..snd.sep.."outc paste"..snd.sep.."apply paste"..snd.sep.."relax insomnia"..snd.sep.."insomnia"..snd.sep.."smoke me"..snd.sep.."ih")
+    if #snd.howllist &lt; 3 then
+      if snd.not_aff("muddled") then
+        send("queue focus focus")    
+      end
+    end
   elseif snd.hiddentype == "bedazzle" then  -- Vomiting, stuttering, blurry_vision, dizziness, weariness, or laxity.
     if gmcp.Room.Info.num ~= 9330 then
       send("yell .")
@@ -29241,7 +28980,7 @@ if not snd.diag_sent then
         send("queue focus focus")
       end
     end
-    send("eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
+    send("eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."concentrate"..snd.sep.."insomnia")
   elseif snd.hiddentype == "suneclipse" and (snd.count(snd.people_hitting_me) &lt; 3) then -- paresis, clumsiness, asthma, vomiting, lethargy, sensitivity, superstition, hypersomnia
     send("eat kawhe")
     if snd.have_aff("aeon") then
@@ -29255,7 +28994,7 @@ if not snd.diag_sent then
     end	    
 	elseif snd.hiddentype ~= "shine" and snd.hiddentype ~= "spiritwrack"  and snd.hiddentype ~= "scourge" then
     if snd.not_aff("aeon") and snd.not_aff("hellsight") then
-      send("compose"..snd.sep.."eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
+      send("compose"..snd.sep.."eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."outc paste"..snd.sep.."apply paste"..snd.sep.."say")
 			if snd.focus then
 				send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me"..snd.sep.."focus")
 			else
@@ -29277,7 +29016,7 @@ function snd.check_indifference()
   if gmcp.Char.Vitals.fallen == "1" then return end --Don't care about indifference if true prone
   if gmcp.Char.Vitals.prone == "0" then return end  --Not prone at all   
   if snd.self_prone() then return end  
-  if not snd.cureset == "shapeshifter" and not snd.meditation then
+  if not snd.cureset == "shapeshifter" then
     snd.affsec("indifference")
   end
 end</script>
@@ -29292,7 +29031,9 @@ end</script>
 	if not snd.illusion_found then return false end
   if snd.have_aff(afftest) then return false end
   snd.aff_gain(afftest)
-  send("firstaid predict " ..afftest)
+  if snd.not_aff(afftest) and not table.isMember(snd.firstaidpredict, afftest) then
+    send("firstaid predict " ..afftest)
+  end
   
 	if afftest == "self-pity" then 
   	snd.herbaffflag = true
@@ -29301,6 +29042,9 @@ end</script>
   if afftest == "blackout" or afftest == "recklessness" then
   	enableTimer("recklessblackouttimer")
   end
+  if table.isMember(snd.howlfulllist, afftest) and not table.isMember(snd.howllist, afftest) then 
+		table.insert(Msys.howllist, afftest)
+	end
   
   if table.isMember(snd.specialaffs, afftest) then 
 		snd.specialaffflag = true
@@ -29643,13 +29387,26 @@ end</script>
 								<script>function snd.promptscript()
 if snd.toggles.active then
 
-  snd.percenthealth = (tonumber(gmcp.Char.Vitals.hp) / tonumber(gmcp.Char.Vitals.maxhp) * 100)
-	snd.percenthealth = roundDown(snd.percenthealth,0)
-	snd.percentmana = (tonumber(gmcp.Char.Vitals.mp) / tonumber(gmcp.Char.Vitals.maxmp) * 100)
-	snd.percentmana = roundDown(snd.percentmana,0)
+  local healthchangeval = 0
+	
+	if gmcp.Char.Vitals ~= nil then
+		healthchangeval = (tonumber(gmcp.Char.Vitals.hp) - tonumber(snd.lasthealth))
+			if snd.not_aff("blackout") then
+				if tonumber(healthchangeval) ~= "0" then
+					if tonumber(snd.lasthealth) &gt; tonumber(gmcp.Char.Vitals.hp) then 
+						cecho("&lt;red&gt;\[\- " ..healthchangeval.. " \-\]") 
+					elseif tonumber(snd.lasthealth) &lt; tonumber(gmcp.Char.Vitals.hp) then 
+						cecho("&lt;cyan&gt;\[\+ " ..healthchangeval.. " +\]")
+					end
+				end
+			end	
+		snd.percenthealth = (tonumber(gmcp.Char.Vitals.hp) / tonumber(gmcp.Char.Vitals.maxhp) * 100)
+		snd.percenthealth = roundDown(snd.percenthealth,0)
+		snd.percentmana = (tonumber(gmcp.Char.Vitals.mp) / tonumber(gmcp.Char.Vitals.maxmp) * 100)
+		snd.percentmana = roundDown(snd.percentmana,0)
+  end
   
   snd.promptsets()
-  snd.treecheck()
   
 	if snd.have_aff("asleep") and not snd.waking and snd.not_aff("stun") and snd.not_aff("unconscious") then 
 		send("wake")
@@ -29679,8 +29436,6 @@ if snd.toggles.active then
 	end
   
   snd.staone()
-  
-  snd.sipfunction()
 
 	if snd.clottime and tonumber(gmcp.Char.Vitals.bleeding) &gt; 30 and not (snd.have_aff("haemophilia") or snd.have_aff("stun"))  then 
 		snd.clotcheck()
@@ -29698,22 +29453,6 @@ if snd.toggles.active then
     
 	snd.masterprerestore()
 
-	if snd.aff_tally() &gt; 0 then 
-		snd.mastercheck()
-	end  
-
-	if snd.moss and not snd.firstaid then
-		if tonumber(snd.percenthealth) &lt; 75 or tonumber(snd.percentmana) &lt; 75 or snd.have_aff("plodding") or snd.have_aff("idiocy") and not snd.firstaid then 
-			if snd.not_aff("anorexia") and snd.not_aff("destroyed_throat") and snd.not_aff("stun") then 
-				snd.eatmoss()
-			end
-		elseif snd.have_aff("recklessness") or snd.have_aff("blackout") then
-			if snd.not_aff("anorexia") and snd.not_aff("destroyed_throat") and snd.not_aff("stun") then 
-				snd.eatmoss()
-			end
-		end
-	end
- 
 	if not snd.can_legs() then
     if not snd.elevatedaff["left_leg_crippled"] and snd.have_aff("left_leg_crippled") and #snd.elevatedaff &lt; 1 then
       send("firstaid elevate left_leg_crippled")
@@ -29723,10 +29462,6 @@ if snd.toggles.active then
 	end
   
   if snd.toggles.survive then
-    --if snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
-      -- let the reflection do its job
-    --elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
-    --  snd.send("qeb point wand at me")
     if snd.class == "Indorani" and not snd.flowered then
 		  snd.send("qeb fling priestess at me")
 		  snd.flowered = true
@@ -30277,6 +30012,15 @@ end</script>
 								<eventHandlerList>
 									<string>gmcp.Room.Info</string>
 								</eventHandlerList>
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>Full howllist used for hidden</name>
+								<packageName></packageName>
+								<script>function snd.howlfulfunc()
+  snd.howlfulllist = {"anorexia", "berserking", "blurry_vision", "claustrophobia", "confusion", "dementia", "disrupted", "hallucinations", "hatred", "hypersomnia", "idiocy", "impairment", "lethargy", "muddled", "paresis", "peace", "plodding","recklessness", "ringing_ears", "sensitivity", "stupidity", "vomiting", "weariness"}
+end
+</script>
+								<eventHandlerList />
 							</Script>
 						</ScriptGroup>
 					</ScriptGroup>
@@ -31219,6 +30963,8 @@ snd.hiddentype = "none"
 snd.last_healed = ""
 snd.mendingtrack = false
 snd.stunrecheck = false
+snd.howllist = {}
+snd.snarlcount = 0
 
 -- Bashing stuff
 snd.pushattack = false
@@ -32961,7 +32707,13 @@ function snd.attack(attack)
   
   local string = ""
   if snd.can_fitness() and snd.need_fitness then
-    string = "fitness"
+    if (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+      string = "fitness"..snd.sep.."smoke yarrow"..snd.sep.."apply epidermal to torso"
+    elseif snd.have_aff("slickness") or snd.have_aff("slough") then
+      string = "fitness"..snd.sep.."smoke yarrow"
+    else
+      string = "fitness"
+    end
   else
     string = attack
   end
@@ -32971,7 +32723,6 @@ function snd.attack(attack)
     tempTimer(1, [[snd.nimble_sent = false]])
   end 
   string = "stand" .. snd.sep .. string
-  --.. "g body" .. snd.sep .. "g husk" .. snd.sep .."g remains"..snd.sep
   if snd.toggles.parrying and snd.toparry ~= "none" and snd.toparry ~= snd.parrying then
     if snd.class == "Zealot" and hasSkill("Fending") then
       string = "fend " .. snd.toparry .. snd.sep .. string
@@ -32990,7 +32741,6 @@ function snd.attack(attack)
         string = "guard " .. snd.toparry .. snd.sep .. string
       end
     end
-    --string = "parry " .. snd.toparry .. snd.sep .. string
   end
   for pipe, isEmpty in pairs(snd.emptypipes) do
     if isEmpty then
@@ -33197,6 +32947,8 @@ end</script>
   snd.firstaidresetlistnone()
   snd.restotrack = 0
   snd.mendingtrack = false
+  snd.howllist = {}
+  snd.snarlcount = 0
  
   --Infiltrator
   snd.hypno = "none"

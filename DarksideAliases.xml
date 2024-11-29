@@ -2409,7 +2409,7 @@ snd.get_new_target()</script>
 					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Slow Route</name>
-						<script>expandAlias("bashpath luzith, squal, spiral, mannaseh, zenith, nal'jin, forgotten dome, underbelly, shoals, reef, clawhook, a basilisk lair, bakal, ia'shal, dovan, maul")</script>
+						<script>expandAlias("bashpath luzith, squal, spiral, mannaseh, zenith, nal'jin, forgotten dome, shoals, reef, underbelly, clawhook, a basilisk lair, bakal, dovan, maul, dramedo, forgotten depths, beggar, encampment, vault, sunwash")</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^bash3$</regex>
@@ -10518,7 +10518,7 @@ end</script>
         if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
           string = "quickwield left buckler"..snd.sep..string
         end
-      end
+      end 
 
       if snd.toggles.affcalling and not snd.target_gone and call~= "" then
           string = call..snd.sep..string
@@ -10770,6 +10770,25 @@ end</script>
           end
       end
       
+      local activelock = false
+      local asthmacover = false
+  
+      if snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria") or snd.have_aff("baldness")) then
+        asthmacover = true
+      end
+  
+      if asthmacover and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+        activelock = true
+      elseif asthmacover and (snd.have_aff("slickness") or snd.have_aff("slough")) and (snd.have_aff("left_leg_crippled") or snd.have_aff("right_leg_crippled")) and snd.have_aff("fallen") then
+        activelock = true
+      elseif snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") and (snd.have_aff("impatience") or snd.have_aff("stupidity") or snd.have_aff("egocentric")) then
+        activelock = true
+      end
+  
+      if asthmacover then
+        activelock = true
+      end 
+      
       if snd.timer_check("focus", .2, "more than") then
         snd.giving = {
 				"laxity",
@@ -10875,6 +10894,8 @@ end</script>
       if snd.empowerready then
         if physcount &gt;= 3 and mentcount &gt;= 3 then
           empowerstring = "empower rafic"..snd.sep
+        elseif activelock and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness then
+          empowerstring = "empower yuef"..snd.sep
         elseif snd.balance.madness then
           empowerstring = "empower jhako"..snd.sep 
         else
@@ -10902,7 +10923,9 @@ end</script>
         end
       end
       
-      if snd.flying then
+      if activelock and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness then
+        string = string.."elicit recollection"..snd.sep
+      elseif snd.flying then
         string = string.."touch tentacle "..snd.target..snd.sep
       elseif snd.used.shield then
       	string = impressstring.."incite fork "..snd.target..snd.sep
@@ -10925,13 +10948,13 @@ end</script>
         else
           if snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") and not snd.checkAff("lemniscate") then
             string = impressstring.."incite crescent " ..snd.target..snd.sep
-          elseif snd.checkAff("blackout") then
+          elseif not snd.growth and bioessence &gt;= 2 then
+            string = impressstring.."bio growth " ..snd.target..snd.sep
+          elseif snd.checkAff("blackout") or mentcount &gt;= 6 then
             string = impressstring.."jab "..snd.target.." "..tohit[1]..snd.sep
             if bioessence &gt;= 1 then
               string = string.."bio steroid"..snd.sep
             end
-          elseif not snd.growth and bioessence &gt;= 2 then
-            string = impressstring.."bio growth " ..snd.target..snd.sep
           else
             if #touse &gt;= 1 then
               if not snd.conjoin then
