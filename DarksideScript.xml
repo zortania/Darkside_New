@@ -80,11 +80,27 @@ fish = fish or {}</script>
     tempTimer(5, [[send("raceskill active", false)]])
   end
                 
-  --tempTimer(10, [[if not sndNDB.highlightNames then expandAlias("sndb hl") end]])
   end)
   if not snd.toggles.parrying then
     expandAlias("tpry")
   end
+  
+  if gmcp.Char.Status.race == "Azudim" or gmcp.Char.Status.race == "Chaos Lord" then 
+		snd.endgamedef = "miasma"
+		snd.endgamehealth = "shift"
+	
+	elseif gmcp.Char.Status.race == "Tekal" then 
+		snd.endgamedef = "none"
+		snd.endgamehealth = "none"
+
+	elseif gmcp.Char.Status.race == "Idreth" then
+		snd.endgamedef = "safeguard"
+		snd.endgamehealth = "pulse"
+
+	elseif gmcp.Char.Status.race ~= "Azudim" and gmcp.Char.Status.race ~= "Yeleni" and gmcp.Char.Status.race ~= "Idreth" then
+		snd.endgamedef = "none"
+		snd.endgamehealth = "none"
+	end
 end
 
 
@@ -97,6 +113,7 @@ registerAnonymousEventHandler("gmcp.Char.Name", "snd.login")</script>
 						<script>function snd.deathCheck()
   if gmcp.Char.Afflictions.Add.name == "dead" then
     snd.reset_me()
+    snd.stap()
     snd.toggles.active = false
     raiseEvent("sunder_update_toggles")
     for i in pairs(snd.my_limb_damage) do
@@ -1065,12 +1082,6 @@ end</script>
 							<name>gmcp_vitals</name>
 							<packageName></packageName>
 							<script>function gmcp_vitals()
-  -- snd.core()
-  if gmcp.Char.Vitals.prone == "1" and snd.not_entangled() and snd.not_aff("paralysis") and snd.not_aff("prone") then
-    snd.aff_have("prone")
-  else
-    snd.aff_remove("prone")
-  end
   if snd.can_cast() and (snd.class ~= "Wayfarer" or snd.can_axe()) then
     snd.last_attack = "none"
   end
@@ -1143,10 +1154,10 @@ function gmcp_items()
       table.insert(snd.gathering, "plant")
     elseif string.find(item, "paste") and #snd.items[item] &gt;= 1 then
       table.insert(snd.gathering, "paste")
-    --elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
-      --for id in pairs(snd.items[item]) do
-        --table.insert(snd.gathering, snd.items[item][id])
-      --end
+    elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
+      for id in pairs(snd.items[item]) do
+        table.insert(snd.gathering, snd.items[item][id])
+      end
     end
   end
  snd.updateItems()
@@ -1775,7 +1786,7 @@ function snd.self_prone()
       snd.have_aff("writhe_transfix") or snd.have_aff("writhe_web") or snd.have_aff("writhe_impaled") or
       snd.have_aff("writhe_thighlock") or snd.have_aff("writhe_armpitlock") or 
       snd.have_aff("writhe_necklock") or snd.have_aff("writhe_ropes") or snd.have_aff("writhe_vines") or 
-      snd.have_aff("fallen") or snd.have_aff("asleep") or snd.have_aff("writhe_dartpinned") then
+      snd.have_aff("fallen") or snd.have_aff("asleep") or snd.have_aff("writhe_dartpinned") or gmcp.Char.Vitals.prone == "1" then
     return false
   
   else
@@ -2496,6 +2507,46 @@ registerAnonymousEventHandler("sunder_login", "snd.mapTweaks")</script>
   ["Tsol'aa"] = {"Meditator", "Foraging", "Lucidity"},
   Xoran = {"Cold Blooded", "Scales", "Fire Breathing"},
 }</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Target listening</name>
+							<packageName></packageName>
+							<script>function snd.targetListening()
+  local event = gmcp.Comm.Channel.Text
+  
+  if event.channel~="web" then return end
+  if not snd.toggles.listening then return end
+  if not table.contains(snd.callers, event.talker) then return end
+  
+  local rawtext = ansi2string(event.text)
+  rawtext = rawtext:gsub(string.char(27) .. [[.-]] .. string.char(4), "")
+
+  matchText = rawtext:lower()
+  if
+    matchText:find("target:") and
+    not matchText:find("list") and
+    not matchText:find("calling") and
+    not matchText:find("priority") and
+    not matchText:find("removed") and
+    not matchText:find("next")
+  then
+    local pattern = [["[ta\.]*?target: [\.\w]*?(\w+)\."]]
+    local check = rex.match(matchText, pattern)
+    if check and check:lower() ~= snd.target:lower() then
+      if snd.not_aff("dementia") then
+        snd.send("firstaid predict dementia")
+      end
+      if ((sndNDB.players[gmcp.Char.Status.name].city == sndNDB.players[check].city) and snd.have_aff("dementia")) then
+        snd.setTarget(snd.target)
+      else
+        expandAlias("t " .. check)
+      end
+    end
+  end
+end
+
+registerAnonymousEventHandler("gmcp.Comm.Channel.Text", "snd.targetListening")</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -11395,7 +11446,7 @@ snd.bashing_area_beginning_rooms ={
   ["the Bakal Chasm"] = "61011",
   ["a basilisk lair"] = "68354",
   ["Clawhook Range"] = "49546",
-  ["the Maestral Shoals"] = "48770",
+  ["the Maestral Shoals"] = "48771",
   ["Maestral's Barrier Reef"] = "35541",
   ["the Underbelly"] = "49440",
   ["Zenith's Vigil"] = "74371",
@@ -16441,7 +16492,7 @@ v49322 = "pthcity"
     v61040 = "61041",
     v61041 = "61043",
     v61043 = "61044",
-    v61044 = "pthcity",
+    v61044 = "pthcity", 
     v61045 = "61040",
     v61047 = "61048",
     v61048 = "61052",
@@ -18868,8 +18919,7 @@ v49322 = "pthcity"
   v50555 = "50556",
   v50556 = "50558",
   v50557 = "50555",
-  v50558 = "48770",
-  v48770 = "pthcity",
+  v50558 = "ptcity",
   v50559 = "50449",
   v50840 = "49920",
   v50841 = "50840",
@@ -18895,7 +18945,8 @@ v49322 = "pthcity"
   v50864 = "50863",
   v50865 = "50866",
   v50866 = "50868",
-  v50868 = "50559"
+  v50868 = "50559",
+  v50559 = "pthcity"  
   },
   ["Maestral's Barrier Reef"] = {
   v29384 = "29385",
@@ -18907,7 +18958,8 @@ v49322 = "pthcity"
   v29390 = "29393",
   v29391 = "29389",
   v29392 = "29391",
-  v29393 = "pthcity",
+  v29393 = "48770",
+  v48770 = "pthcity",
   v29394 = "29397",
   v29396 = "29394",
   v29397 = "29392",
@@ -23475,11 +23527,11 @@ function snd.loot_it()
   --snd.send("get "..snd.corpses[i])
  --end
  for h in ipairs(snd.gathering) do
-   -- snd.send("get "..snd.gathering[h].."##get 50 "..snd.gathering[h])
-    if string.find(h, "pill") or string.find(h, "reishi") or string.find(h, "willow") or string.find(h, "yarrow") or string.find(h, "paste") then
+    snd.send("get "..snd.gathering[h])
+    --if string.find(h, "pill") or string.find(h, "reishi") or string.find(h, "willow") or string.find(h, "yarrow") or string.find(h, "paste") then
       --snd.send("get 50 pill##qeb get 50 plant")
-      snd.gathering = {}
-    end
+      --snd.gathering = {}
+    --end
  end
  snd.corpses = {}
  snd.gathering = {}
@@ -23810,9 +23862,9 @@ function snd.runBasher()
     --non generic logic
     snd.bashing.target = targetID
   end
-  --if #snd.gathering &gt;= 1 then
-  -- snd.loot_it()
-  --end
+  if #snd.gathering &gt;= 1 then
+   snd.loot_it()
+  end
   --snd.counterattack_active = false
   if
     snd.toggles.calling and
@@ -26361,10 +26413,10 @@ end
 							<packageName></packageName>
 							<script>
 function snd.do_fitness()
- if snd.can_fitness() and snd.need_fitness and snd.full_balance() then
+ if snd.can_fitness() and snd.need_fitness and snd.full_balance() and snd.have_aff("asthma") then
   if (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
     snd.send("fitness"..snd.sep.."smoke yarrow"..snd.sep.."apply epidermal to torso")
-  elseif snd.have_aff("slickness") or snd.have_aff("slough") then
+  elseif (snd.have_aff("slickness") or snd.have_aff("slough")) then
     snd.send("fitness"..snd.sep.."smoke yarrow")
   else
     snd.send("fitness")
@@ -28818,8 +28870,6 @@ end</script>
 								<script>function snd.staone()
 if not snd.channeling then
 
-  snd.staonenonbal()
-
   if gmcp.Char.Vitals.equilibrium == "1" and gmcp.Char.Vitals.balance == "1" and gmcp.Char.Vitals.left_arm == "1" and gmcp.Char.Vitals.right_arm == "1" and snd.not_aff("blackout")then 
     snd.sync = true 
   end
@@ -28929,7 +28979,7 @@ end  			-- main function</script>
 								<name>Hidden Check</name>
 								<packageName></packageName>
 								<script>function snd.hiddencheckfunc()
-if not snd.diag_sent then
+if not snd.hidden_check then
 	if snd.hiddentype == "shine" and (snd.cureset == "luminary" or snd.cureset == "earthcaller") and (snd.count(snd.people_hitting_me) &lt; 3) then  -- Disfigurement, dizziness, stiffness, weariness, and ablaze.
 		if snd.not_aff("hellsight") and snd.not_aff("slickness") then
 			send("smoke yarrow"..snd.sep.."press mending to torso"..snd.sep.."queue poultice press soothing to torso")
@@ -28954,7 +29004,7 @@ if not snd.diag_sent then
 		end
 		send("eat"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."wear armour"..snd.sep.."say"..snd.sep.."apply nothing")
   elseif snd.hiddentype == "snarls" then  -- Vomiting, stuttering, blurry_vision, dizziness, weariness, or laxity.
-    send("eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."concentrate"..snd.sep.."outc paste"..snd.sep.."apply paste"..snd.sep.."relax insomnia"..snd.sep.."insomnia"..snd.sep.."smoke me"..snd.sep.."ih")
+    send("eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."concentrate"..snd.sep.."apply paste"..snd.sep.."insomnia"..snd.sep.."smoke me"..snd.sep.."ih")
     if #snd.howllist &lt; 3 then
       if snd.not_aff("muddled") then
         send("queue focus focus")    
@@ -28994,7 +29044,7 @@ if not snd.diag_sent then
     end	    
 	elseif snd.hiddentype ~= "shine" and snd.hiddentype ~= "spiritwrack"  and snd.hiddentype ~= "scourge" then
     if snd.not_aff("aeon") and snd.not_aff("hellsight") then
-      send("compose"..snd.sep.."eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."outc paste"..snd.sep.."apply paste"..snd.sep.."say")
+      send("compose"..snd.sep.."eat vial"..snd.sep.."stand"..snd.sep.."meditate"..snd.sep.."clot"..snd.sep.."queue pipe smoke"..snd.sep.."concentrate"..snd.sep.."insomnia"..snd.sep.."wear glasses"..snd.sep.."apply paste"..snd.sep.."say")
 			if snd.focus then
 				send("point icewall"..snd.sep.."compose"..snd.sep.."smoke me"..snd.sep.."focus")
 			else
@@ -29005,8 +29055,8 @@ if not snd.diag_sent then
     	snd.hatredcheck = true
     end
 	end
-  snd.diag_sent = true
-  tempTimer(2, [[snd.diag_sent = false]])
+  snd.hidden_check = true
+  tempTimer(5, [[snd.hidden_check = false]])
 	snd.hiddentype = "none"
 end
 end
@@ -29301,20 +29351,14 @@ function snd.can_regenerate()
 
 		if gmcp.Char.Vitals.equilibrium == "0" then
 			snd.equilibrium = false
-			enableTimer("equilcheck")
+			--enableTimer("equilcheck")
 		else
 			snd.equilibrium = true
-			disableTimer("equilcheck")
+			--disableTimer("equilcheck")
 		end  
 
 		if gmcp.Char.Vitals.prone == "1" then 
-			if snd.not_aff("prone") then 
-				snd.aff_gain("prone") 
-			end
 		else 
-			if snd.have_aff("prone") then
-				snd.aff_remove("prone") 
-			end
 			if snd.have_aff("paralysis") then 
 				snd.aff_remove("paralysis") 
 			end
@@ -29382,7 +29426,7 @@ end</script>
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>Main promt trigger script</name>
+								<name>Main prompt trigger script</name>
 								<packageName></packageName>
 								<script>function snd.promptscript()
 if snd.toggles.active then
@@ -29392,7 +29436,7 @@ if snd.toggles.active then
 	if gmcp.Char.Vitals ~= nil then
 		healthchangeval = (tonumber(gmcp.Char.Vitals.hp) - tonumber(snd.lasthealth))
 			if snd.not_aff("blackout") then
-				if tonumber(healthchangeval) ~= "0" then
+				if tonumber(healthchangeval) &gt;= 100 then
 					if tonumber(snd.lasthealth) &gt; tonumber(gmcp.Char.Vitals.hp) then 
 						cecho("&lt;red&gt;\[\- " ..healthchangeval.. " \-\]") 
 					elseif tonumber(snd.lasthealth) &lt; tonumber(gmcp.Char.Vitals.hp) then 
@@ -29910,38 +29954,6 @@ end
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>staonenonbal</name>
-								<packageName></packageName>
-								<script>function snd.staonenonbal()
-  if not snd.nobalancetimeuse then return end
-  snd.nobalancetimeuse = false
-  nobalance_timer = tempTimer(0.3,[[killTimer(nobalance_timer)
-  snd.nobalancetimeuse = true]])
-
-	if snd.lonelinesscheck then  -- keep last because it stacks the variable.
-		snd.lonelinesscheckfun()
-		snd.lonelinesscheck = false
-	end
-	
-  if gmcp.Char.Vitals.equilibrium == "1" and gmcp.Char.Vitals.balance == "1" and gmcp.Char.Vitals.left_arm == "1" and gmcp.Char.Vitals.right_arm == "1" and snd.not_aff("blackout")then 
-    snd.sync = true 
-  end
- 
-end</script>
-								<eventHandlerList />
-								<Script isActive="yes" isFolder="no">
-									<name>No bal list function</name>
-									<packageName></packageName>
-									<script>function snd.noballistfunc(item)
-  if not table.isMember(snd.noballist, item) then
-    table.insert(snd.noballist , item)
-    act("##")
-  end
-end</script>
-									<eventHandlerList />
-								</Script>
-							</Script>
-							<Script isActive="yes" isFolder="no">
 								<name>Loneliness check</name>
 								<packageName></packageName>
 								<script>
@@ -30018,6 +30030,183 @@ end</script>
 								<packageName></packageName>
 								<script>function snd.howlfulfunc()
   snd.howlfulllist = {"anorexia", "berserking", "blurry_vision", "claustrophobia", "confusion", "dementia", "disrupted", "hallucinations", "hatred", "hypersomnia", "idiocy", "impairment", "lethargy", "muddled", "paresis", "peace", "plodding","recklessness", "ringing_ears", "sensitivity", "stupidity", "vomiting", "weariness"}
+end
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>Hidden check clearing on lines (tree/purity)</name>
+								<packageName></packageName>
+								<script>function snd.treefunction()
+	local aff = ""
+
+	if snd.healingcall == "You put on your happy face and prepare to face the world!" then 
+		aff = "sadness"
+	elseif snd.healingcall == "The confusion lifts from your mind and it is clear once again." then		 
+		aff = "confusion"
+	elseif snd.healingcall == "Sanity returns to you and you are no longer demented." then 
+		aff = "dementia"
+	elseif snd.healingcall == "Your hallucinations cease to plague you." then 
+		aff = "hallucinations"
+	elseif snd.healingcall == "Aaaahhh. No one is out to get you after all." then 
+		aff = "paranoia"
+	elseif snd.healingcall == "Your terrible hatred" then
+		aff = "hatred"
+	elseif snd.healingcall == "Your terrible addiction seems to wane." then
+		aff = "addiction"
+	elseif snd.healingcall == "You feel a bit more alert and awake." then 
+		aff = "hypersomnia"
+	elseif snd.healingcall == "You are able to once again control your concentration." then 
+		aff = "blood_curse"
+	elseif snd.healingcall == "The venomous vines infecting you wither and die." then 
+		aff = "blighted"
+	elseif snd.healingcall == "Your ego has shriveled to that of the average mortal." then
+		aff = "hubris"
+	elseif snd.healingcall == "You are capable of offensive acts once more." then 
+		aff = "pacifism"
+	elseif snd.healingcall == "The unnatural feeling of peace leaves you." then 
+		aff = "peace"
+	elseif snd.healingcall == "The tortuous agony begrudgingly recedes." then
+		aff = "agony"
+	elseif snd.healingcall == "You have been spared from your accursed fate." then
+		aff = "accursed"
+	elseif snd.healingcall == "Your heart begins to beat strongly again, and your veins return to normal size." then
+		aff = "limp_veins"
+	elseif snd.healingcall == "You shake your head, wondering what you ever saw in" then
+		aff = "lovers_effect"
+	elseif snd.healingcall == "Your mind sharpens as the inner cogs begin to whirl." then
+		aff = "laxity"
+	elseif snd.healingcall == "You shake your head clear of superstitious fears." then 
+		aff = "superstition"
+	elseif snd.healingcall == "Ahhhh. The freedom to be stingy again!" then 
+		aff = "generosity"
+	elseif snd.healingcall == "The curse of Justice leaves you." then 
+		aff = "justice"
+	elseif snd.healingcall == "Your restraint relaxes as your state of magnanimity fades." then 
+		aff = "magnanimity"
+	elseif snd.healingcall == "Your muscles unlock; you are no longer paralysed." then 
+		aff = "paralysis"
+	elseif snd.healingcall == "Your body relaxes as your muscles are relieved of their numbness." then
+		aff = "paresis"
+	elseif snd.healingcall == "The mirroring curse has been lifted." then 
+		aff = "mirroring"
+	elseif snd.healingcall == "You are no longer crippled." then 
+		aff = "crippled_body"
+	elseif snd.healingcall == "Your legs are no longer crippled." then 
+		aff = "crippled"
+	elseif snd.healingcall == "The blisters upon your skin cease to weep fluids." then
+		aff = "blisters"
+	elseif snd.healingcall == "Your glands cease their oily secretion." then
+		aff = "slickness"
+	elseif snd.healingcall == "Your heart seems to stop skipping beats." then
+		aff = "heartflutter"
+	elseif snd.healingcall == "Feeling the stabs of pain ebb away within your limbs, you sigh in relief as the sand rot is lifted." then
+		aff = "slough"
+	elseif snd.healingcall == "Your body odor clears itself up." then 
+		aff = "body_odor"
+	elseif snd.healingcall == "The lethargy evaporates, leaving you full of energy." then
+		aff = "lethargy"
+	elseif snd.healingcall == "No longer will you suffer from allergies." then 
+		aff = "allergies"
+	elseif snd.healingcall == "Your equilibrium returns to normal." then 
+		aff = "mental_disruption"
+	elseif snd.healingcall == "Your balance returns to normal." then 
+		aff = "physical_disruption"
+	elseif snd.healingcall == "Your stomach becalms itself." then
+		aff = "vomiting"
+	elseif snd.healingcall == "Your body fills with energy again as you recover from your exhaustion." then
+		aff = "exhausted"
+	elseif snd.healingcall == "You feel your blood thickening." then 
+		aff = "thin_blood"
+	elseif snd.healingcall == "You watch as your shredded flesh knits together." then 
+		aff = "rend"
+	elseif snd.healingcall == "Your blood regains its ability to clot." then 
+		aff = "haemophilia"
+	elseif snd.healingcall == "You decide that you aren't that bad after all." then 
+		aff = "self_pity"
+	elseif snd.healingcall == "You aren't such a complete idiot anymore." then
+		aff = "stupidity"
+	elseif snd.healingcall == "You are no longer dizzy." then		 
+		aff = "dizziness"
+	elseif snd.healingcall == "You no longer feel so light-headed." then
+		aff = "faintness"
+	elseif snd.healingcall == "Your shyness has been cured. You can now face the world boldly." then
+		aff = "shyness"
+	elseif snd.healingcall == "Your nerves suddenly calm down." then 
+		aff = "epilepsy"
+	elseif snd.healingcall == "You are patient once again." then 
+		aff = "impatience"
+	elseif snd.healingcall == "Your dissonant nature becomes harmonious." then 
+		aff = "dissonance"
+	elseif snd.healingcall == "The strange resonance fades away." then 
+		aff = "dissonance"
+	elseif snd.healingcall == "One by the one, the parasites plaguing your body screech as they fall from your body." then
+		aff = "infested"
+	elseif snd.healingcall == "Your baldness is cured, thank the Gods!" then
+		aff = "baldness"
+	elseif snd.healingcall == "Thank Varian, the Celestine! Your clumsiness has been cured." then		 
+		aff = "clumsiness"
+	elseif snd.healingcall == "My, you feel healthier than you have in years." then 
+		aff = "hypochondria"
+	elseif snd.healingcall == "Your limbs strengthen and you feel stronger." then
+		aff = "weariness"
+	elseif snd.healingcall == "Your bronchial tubes open up and your asthma is cured." then
+		aff = "asthma"
+	elseif snd.healingcall == "The stinging feeling fades." then 
+		aff = "sensitivity"
+	elseif snd.healingcall == "The incessant ringing in your ears finally fades." then
+		aff = "ringing_ears"
+	elseif snd.healingcall == "Your body feels a little more like its old self." then
+		aff = "impairment"
+	elseif snd.healingcall == "You are relieved to catch up with the pace of reality." then
+		aff = "blood_poison"
+	elseif snd.healingcall == "Your body feels free of its heaviness and plodding." then
+		aff = "plodding"
+	elseif snd.healingcall == "Your mind feels free of its idiocy." then 
+		aff = "idiocy"
+	elseif snd.healingcall == "You vow that you shall never be fearful of commitment again." then 
+		aff = "commitment_fear"
+	elseif snd.healingcall == "Your merciful bent leaves you." then
+		aff = "merciful"
+	elseif snd.healingcall == "Prudence rules your psyche once again." then		 
+		aff = "recklessness"
+	elseif snd.healingcall == "Sometimes others are just as important as the self." then
+		aff = "egocentric"
+	elseif snd.healingcall == "You no longer enjoy pain." then 
+		aff = "masochism"
+	elseif snd.healingcall == "You can handle the idea of open spaces again." then 
+		aff = "agoraphobia"
+	elseif snd.healingcall == "The awful loneliness leaves you." then 
+		aff = "loneliness"
+	elseif snd.healingcall == "Your insane rage calms." then 
+		aff = "berserking"
+	elseif snd.healingcall == "Your fear of heights subsides." then
+		aff = "vertigo"
+	elseif snd.healingcall == "Small spaces no longer frighten you." then
+		aff = "claustrophobia"
+	elseif snd.healingcall == "What's so scary about the dark anyway?" then 
+		aff = "nyctophobia"
+  elseif snd.healingcall == "You no longer will inspire disloyalty among friends." then
+    aff = "disfigurement"
+  elseif snd.healingcall == "The bones in your right arm mend." then
+    aff = "right_arm_crippled"
+  elseif snd.healingcall == "The bones in your left arm mend." then
+    aff = "left_arm_crippled"
+  elseif snd.healingcall == "Your vision clears." then
+    aff = "blurry_vision"
+  elseif snd.healingcall == "The raging fire about your skin goes out." then
+    aff = "ablaze"
+  elseif snd.healingcall == "Air rushes back into your lungs as your throat mends." then
+    aff = "destroyed_throat"
+  elseif snd.healingcall == "You breathe deeply, feeling a little more free." then
+    aff = "squelched"
+	end
+  snd.healingcall = ""
+  	
+	if snd.hidden_afflictions &gt; 0 and aff ~= "" and snd.afflictions["aff_"..aff].state == "healed" then
+		snd.hidden_afflictions = snd.hidden_afflictions - 1
+		cecho("&lt;red&gt;\nYour Hidden Aff Total: "..snd.hidden_afflictions.."&lt;green&gt; Cured hidden "..aff)
+	end
 end
 </script>
 								<eventHandlerList />
@@ -30933,8 +31122,6 @@ snd.vitalizing = true
 snd.focus = true
 snd.tree = true
 snd.prestore = false
-snd.moss = true
-snd.healbalance = true
 snd.focusing = true
 snd.stormtouching = false
 snd.limblist = {}
@@ -30965,6 +31152,7 @@ snd.mendingtrack = false
 snd.stunrecheck = false
 snd.howllist = {}
 snd.snarlcount = 0
+snd.healingcall = ""
 
 -- Bashing stuff
 snd.pushattack = false
@@ -30984,6 +31172,7 @@ snd.theyran = false
 snd.nimble_sent = false
 snd.endgame_sent = false
 snd.diag_sent = false
+snd.hidden_check = false
 snd.recoverytime = 0
 snd.treetrack = 0
 snd.recontrack = 0
@@ -32706,10 +32895,10 @@ end
 function snd.attack(attack)
   
   local string = ""
-  if snd.can_fitness() and snd.need_fitness then
+  if snd.can_fitness() and snd.need_fitness and snd.have_aff("asthma") then
     if (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
       string = "fitness"..snd.sep.."smoke yarrow"..snd.sep.."apply epidermal to torso"
-    elseif snd.have_aff("slickness") or snd.have_aff("slough") then
+    elseif (snd.have_aff("slickness") or snd.have_aff("slough")) then
       string = "fitness"..snd.sep.."smoke yarrow"
     else
       string = "fitness"
@@ -35621,10 +35810,10 @@ end</script>
     Clobber = function(target)
                   snd.target_got("fallen")
                 end,       
-    Bustup = function(target, limb)
-                  enableTrigger("Bustup Confirmation")
+    --Bustup = function(target, limb)
+             --     enableTrigger("Bustup Confirmation")
                   --snd.onHit2({"Dodge", "Parry"})
-                end,
+               -- end,
     PressurePoint = function(target)
                 	table.insert(snd.maybe_affs, "stiffness")
                 	table.insert(snd.maybe_affs, "muscle_spasms")
@@ -39304,27 +39493,6 @@ end</script>
   if reboundenemy_timer then killTimer(reboundenemy_timer) end
 	reboundenemy_timer = tempTimer(6.15,[[snd.used.rebounding = true
   snd.staone()]])
-end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="no" isFolder="no">
-							<name>Healthtrack</name>
-							<packageName></packageName>
-							<script>function snd.healthtrack()
-
-	if tonumber(snd.percentenemyhealth) &gt; 100 or tonumber(snd.percentenemyhealth) &lt; 0 then
-		snd.percentenemyhealth = "100"
-		snd.enemyhealth = snd.enemymaxhealth
-
-	if tonumber(snd.percentenemyhealth) &lt; 30 then cecho("\n&lt;yellow&gt; ENEMY HEALTH BELOW 30 PERCENT") end
-	end
-
-end
-
-function snd.mosstrack()
- -- snd.enemyhealth = (snd.enemyhealth + (snd.enemyhealth * .1))
-  --snd.emmana = snd.emmana + (snd.emmana * .1)
-  --snd.healthtrack()
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -45079,7 +45247,7 @@ function snd.timer_check(which, time_left, mode)
     snd.timers[which]["start"] ~= nil and
     snd.timers[which]["limit"] ~= nil
   then
-    local now = os.clock()
+    local now = getEpoch()
     local endtime = snd.timers[which]["start"] + snd.timers[which]["limit"]
     if mode == "more than" then
       if endtime - now &gt; time_left then
@@ -45109,7 +45277,7 @@ function snd.timer_get_time(which)
     snd.timers[which]["start"] ~= nil and
     snd.timers[which]["limit"] ~= nil
   then
-    local time = (snd.timers[which]["start"] + snd.timers[which]["limit"]) - os.clock()
+    local time = (snd.timers[which]["start"] + snd.timers[which]["limit"]) - getEpoch()
     return time &gt; 0 and time or 0
   else
     return 0
@@ -45122,7 +45290,7 @@ end</script>
 							<packageName></packageName>
 							<script>function snd.track_pill(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.pill.start = os.clock()
+    snd.timers.pill.start = getEpoch()
     local limit = 1.9
     snd.timers.pill.limit = limit
   end
@@ -45130,7 +45298,7 @@ end
 
 function snd.track_focus(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.focus.start = os.clock()
+    snd.timers.focus.start = getEpoch()
     local limit = 5
     if snd.checkAff("mental_disruption") then
       limit = 10
@@ -45144,7 +45312,7 @@ end
 
 function snd.track_rebounding(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.rebounding.start = os.clock()
+    snd.timers.rebounding.start = getEpoch()
     local limit = 6.5
     snd.timers.rebounding.limit = limit
   end
@@ -45152,13 +45320,13 @@ end
 
 function snd.track_rebounding_up(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.rebounding.limit = os.clock()
+    snd.timers.rebounding.limit = getEpoch()
   end
 end
 
 function snd.track_restoration(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.restoration.start = os.clock()
+    snd.timers.restoration.start = getEpoch()
     local limit = 4.15
     if snd.checkAff("rot_body") then
       limit = limit+4.3
@@ -45169,7 +45337,7 @@ end
 
 function snd.track_tree(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.tree.start = os.clock()
+    snd.timers.tree.start = getEpoch()
     local limit = 10
     if snd.checkAff("laxity") then limit = limit+2 end
     snd.timers.tree.limit = limit
@@ -45178,7 +45346,7 @@ end
 
 function snd.track_induce(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.induce.start = os.clock()
+    snd.timers.induce.start = getEpoch()
     local limit = 11
     snd.timers.induce.limit = limit
   end
@@ -45186,25 +45354,25 @@ end
 
 function snd.track_fitness(target)
   if target:lower() == snd.target:lower() then
-    snd.timers.fitness.start = os.clock()
+    snd.timers.fitness.start = getEpoch()
     snd.timers.fitness.limit = 20
   end
 end
 
 function snd.track_eqbal(time)
   if not snd.timer_check("eqbal", time) then
-    snd.timers.eqbal.start = os.clock()
+    snd.timers.eqbal.start = getEpoch()
     snd.timers.eqbal.limit = time
   end
 end
 
 function snd.track_fury(time)
-  snd.timers.fury.start = os.clock()
+  snd.timers.fury.start = getEpoch()
   snd.timers.fury.limit = time
 end
 
 function snd.track_axes(time)
-  snd.timers.axes.start = os.clock()
+  snd.timers.axes.start = getEpoch()
   snd.timers.axes.limit = time
 end
 
