@@ -1699,7 +1699,8 @@ if matches[2]~= nil then send("config separator"..matches[2]) else send("config 
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Who Parsing</name>
-						<script>snd.parse_who()</script>
+						<script>snd.parse_who()
+registerAnonymousEventHandler("sunder_who_parsing_finished", snd.parse_who_groups, true)</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^who groups$</regex>
@@ -20166,9 +20167,6 @@ end</script>
 		elseif not snd.zenith and not snd.zenith_coming and snd.flamestack &lt; 10 then
 			string = "invoke delirium"..snd.sep
 		else
-			if not snd.swaggered and (snd.have_aff("paresis") or snd.defenses.def_contempt.state ~= "deffed") and snd.swagger &lt;= 2 and snd.not_aff("sapped_strength")  then
-				string = "contempt"..snd.sep
-			end
 			if not snd.firefist and snd.firefist_cooldown and snd.flamestack &lt; 10 then
 				string = string.."invoke ravage"..snd.sep
 			end
@@ -20250,6 +20248,12 @@ end</script>
 				mymental_aff_count = mymental_aff_count + 1
 			end
 		end
+    local mentcount = 0 
+    for aff in pairs(snd.mental_affs) do
+      if table.contains(snd.target_has, snd.mental_affs[aff]) then
+        mentcount = mentcount + 1
+      end
+    end
     
     if snd.zenith then 
 		  if snd.checkAff("heatspear") and snd.checkAff("ablaze") then
@@ -20296,11 +20300,11 @@ end</script>
 			hackleAttack = "butcher"
 		end
     
-		if not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and snd.limb_dmg["left arm"] &gt;= 24 and snd.resto_limb ~= "left arm" and snd.can_arms() then
-			firstFlow = "bustup left arm"
-		elseif not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and snd.limb_dmg["right arm"] &gt;= 24 and snd.resto_limb ~= "right arm" and snd.can_arms() then
-			firstFlow = "bustup right arm"  
-		elseif not snd.checkAff("left_leg_broken") and snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" and snd.can_legs() then
+		--if not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and snd.limb_dmg["left arm"] &gt;= 24 and snd.resto_limb ~= "left arm" and snd.can_arms() then
+		--	firstFlow = "bustup left arm"
+		--elseif not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and snd.limb_dmg["right arm"] &gt;= 24 and snd.resto_limb ~= "right arm" and snd.can_arms() then
+			--firstFlow = "bustup right arm"  
+		if not snd.checkAff("left_leg_broken") and snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" and snd.can_legs() then
 			firstFlow = "kneecap left"
 		elseif not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and snd.parried_limb ~= "left arm" and snd.resto_limb ~= "left arm" and snd.can_arms() then
 			firstFlow = "bully left"
@@ -20338,11 +20342,11 @@ end</script>
       firstFlow = "bully"
 		end
  
-		if snd.limb_dmg["left arm"] &gt;= 24 and firstFlow == "bully left" and not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and firstFlow ~= "bustup left arm" and snd.resto_limb ~= "left arm" then
-			secondFlow = "bustup left arm"
-		elseif snd.limb_dmg["right arm"] &gt;= 24 and firstFlow == "bully right" and not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and firstFlow ~= "bustup right arm" and snd.resto_limb ~= "right arm" then
-			secondFlow = "bustup right arm"
-		elseif not snd.checkAff("right_leg_broken") and snd.limb_dmg["right leg"] &gt;= 24 and firstFlow ~= "kneecap right" and snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" and snd.can_arms() then
+		--if snd.limb_dmg["left arm"] &gt;= 24 and firstFlow == "bully left" and not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and firstFlow ~= "bustup left arm" and snd.resto_limb ~= "left arm" then
+		--	secondFlow = "bustup left arm"
+		--elseif snd.limb_dmg["right arm"] &gt;= 24 and firstFlow == "bully right" and not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and firstFlow ~= "bustup right arm" and snd.resto_limb ~= "right arm" then
+		--	secondFlow = "bustup right arm"
+		if not snd.checkAff("right_leg_broken") and snd.limb_dmg["right leg"] &gt;= 24 and firstFlow ~= "kneecap right" and snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" and snd.can_arms() then
 			secondFlow = "kneecap right"
 		elseif not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and snd.parried_limb ~= "right arm" and snd.resto_limb ~= "right arm" and snd.can_arms() and firstFlow ~= "bustup right arm" then
 			secondFlow = "bully right"
@@ -20419,12 +20423,10 @@ end</script>
 		elseif snd.flamestack &gt;= 2 and not snd.zenith then
 			string = "invoke intensify "..snd.target..snd.sep
 		else
-			  if snd.wrath and snd.not_aff("sapped_strength") then
+			  if snd.wrath and snd.not_aff("sapped_strength") and snd.swagger &lt;= 2 then
           string = "predation extend"..snd.sep
-        elseif snd.wrath then
+        elseif snd.wrath and snd.swagger &lt;= 2 then
           string = "predation"..snd.sep
-        elseif not snd.swaggered and (snd.have_aff("paresis") or snd.defenses.def_contempt.state ~= "deffed") and snd.swagger &lt;= 2 and snd.not_aff("sapped_strength")  then
-          string = "contempt"..snd.sep
         end
         if not snd.firefist and snd.firefist_cooldown and snd.flamestack &lt; 10 then
 				  string = string.."invoke ravage"..snd.sep
@@ -20501,6 +20503,12 @@ end</script>
 				mymental_aff_count = mymental_aff_count + 1
 			end
 		end
+    local mentcount = 0 
+    for aff in pairs(snd.mental_affs) do
+      if table.contains(snd.target_has, snd.mental_affs[aff]) then
+        mentcount = mentcount + 1
+      end
+    end
     
     if snd.zenith then 
 		  if snd.checkAff("heatspear") and snd.checkAff("ablaze") then
@@ -20547,11 +20555,7 @@ end</script>
 			hackleAttack = "butcher"
 		end
     
-		if not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and snd.limb_dmg["left arm"] &gt;= 24 and snd.resto_limb ~= "left arm" and snd.can_arms() then
-			firstFlow = "bustup left arm"
-		elseif not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and snd.limb_dmg["right arm"] &gt;= 24 and snd.resto_limb ~= "right arm" and snd.can_arms() then
-			firstFlow = "bustup right arm"  
-		elseif (snd.checkAff("ablaze") or snd.firefist or not snd.firefist_cooldown) and not snd.checkAff("lightwound") and (snd.parried_limb ~= "torso" or snd.no_parry()) and snd.resto_limb ~= "torso" and snd.can_arms() then
+		if (snd.checkAff("ablaze") or snd.firefist or not snd.firefist_cooldown) and not snd.checkAff("lightwound") and (snd.parried_limb ~= "torso" or snd.no_parry()) and snd.resto_limb ~= "torso" and snd.can_arms() then
 			firstFlow = "haymaker"
 		elseif snd.resto_limb ~= "torso" and snd.parried_limb ~= "torso" and not snd.checksomeAffs({"infernal_seal","torso_mangled"},2) and not snd.zenith and snd.can_legs() then
 			firstFlow = "overpower torso"    
@@ -20593,11 +20597,7 @@ end</script>
 			firstFlow = "clobber"
 		end
  
-		if (snd.checkAff("left_arm_broken") or (snd.limb_dmg["left arm"] &gt;= 24 and firstFlow == "bully left" and not snd.checkAff("left_arm_broken"))) and not snd.checksomeAffs({"left_arm_mangled","left_arm_dislocated"},2) and firstFlow ~= "bustup left arm" and snd.resto_limb ~= "left arm" then
-			secondFlow = "bustup left arm"
-		elseif (snd.checkAff("right_arm_broken") or (snd.limb_dmg["right arm"] &gt;= 24 and firstFlow == "bully right" and not snd.checkAff("right_arm_broken"))) and not snd.checksomeAffs({"right_arm_mangled","right_arm_dislocated"},2) and firstFlow ~= "bustup right arm" and snd.resto_limb ~= "right arm" then
-			secondFlow = "bustup right arm"
-		elseif ((snd.checkAff("left_leg_broken") and snd.resto_limb ~= "left leg") or (snd.checkAff("right_leg_broken") and snd.resto_limb ~= "right leg")) and not snd.checkAff("fallen") then
+		if ((snd.checkAff("left_leg_broken") and snd.resto_limb ~= "left leg") or (snd.checkAff("right_leg_broken") and snd.resto_limb ~= "right leg")) and not snd.checkAff("fallen") then
 			secondFlow = "clobber"
 		elseif (snd.zenith and zenithdoing == "lance") or (snd.checkAff("heatspear") and snd.resto_limb ~= "torso") and not snd.checksomeAffs({"muscle_spasms","stiffness"},2) then
 			secondFlow = "pressure"
@@ -20631,16 +20631,10 @@ end</script>
       secondFlow = "clobber"
 		end
 		
-		if snd.zenith and (firstFlow == "plexus" or secondFlow == "plexus") and snd.limb_dmg["torso"] &gt; 24 and not snd.checkAff("infernal_seal") then 
+		if snd.zenith and (firstFlow == "plexus" or secondFlow == "plexus") and snd.limb_dmg["torso"] &gt;= 24 and not snd.checkAff("infernal_seal") then 
 			zenithAbility = "invoke branding "..snd.target..snd.sep
 		end
 
-		if (snd.checkAff("left_arm_broken") or (snd.limb_dmg["left arm"] &gt;= 24 and secondFlow == "bully left" and not snd.checkAff("left_arm_broken"))) and not snd.checksomeAffs({"left_arm_mangled","left_arm_dislocated"},2) and secondFlow ~= "bustup left arm" and snd.resto_limb ~= "left arm" then
-			firstFlow = "bustup left arm"
-		elseif (snd.checkAff("right_arm_broken") or (snd.limb_dmg["right arm"] &gt;= 24 and secondFlow == "bully right" and not snd.checkAff("right_arm_broken"))) and not snd.checksomeAffs({"right_arm_mangled","right_arm_dislocated"},2) and secondFlow ~= "bustup right arm" and snd.resto_limb ~= "right arm" then
-			firstFlow = "bustup right arm"
-		end
-    
 		if secondFlow == "pressure" and snd.hackles then
 			hackleAttack = "flog"
 		end
@@ -20655,7 +20649,6 @@ end</script>
       else
         string = "invoke extinguish "..snd.target..snd.sep
 			end
-		--and snd.have_aff("fallen") 
     elseif hp &lt;= 40 and (snd.checkAff("heatspear") or not snd.checkAff("torso_broken")) then
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
@@ -20669,9 +20662,9 @@ end</script>
 		elseif (snd.checkAff("heatspear") and snd.checksomeAffs({"torso_broken","ablaze"},2)) or snd.flamestack &gt;= 8 then
 			string = "invoke intensify "..snd.target..snd.sep
 		else
-			  if snd.wrath and snd.not_aff("sapped_strength") then
+			  if snd.wrath and snd.not_aff("sapped_strength") and snd.swagger &lt;= 2  then
           string = "predation extend"..snd.sep
-        elseif snd.wrath then
+        elseif snd.wrath and snd.swagger &lt;= 2 then
           string = "predation"..snd.sep
         end
         if not snd.firefist and snd.firefist_cooldown then
@@ -20692,11 +20685,10 @@ end</script>
             string = string.."onslaught "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep
           end
         end
-        if snd.balance.pendulum and (not snd.checkAff("left_leg_broken") and snd.resto_limb == "left leg" and snd.checkAff("left_arm_broken")) then
-          string = "invoke bedevil "..snd.target.." reverse"..snd.sep
-        elseif snd.balance.pendulum and ((snd.last_healed == "left_leg_crippled" or snd.last_healed == "right_leg_crippled") or (not snd.checkAff("right_leg_broken") and snd.resto_limb == "right leg" and snd.checkAff("right_arm_broken"))) then
-          string = "invoke bedevil "..snd.target..snd.sep
-        end
+      
+      if tonumber(gmcp.Char.Vitals.ego) &gt;= 500 and mentcount &gt;= 3 then
+        string = string..snd.sep.."ego trauma "..snd.target..snd.sep
+      end
       
 			if snd.used.shield then
 				if not snd.checkAff("ablaze") then

@@ -51,7 +51,6 @@ fish = fish or {}</script>
 						<name>login</name>
 						<packageName></packageName>
 						<script>function snd.login()
-
   tempTimer(0, function()
   sendGMCP([[Core.Supports.Add ["Comm.Channel 1", "IRE.Time 1"] ]]) -- allows us to use GMCP for communication and time tracking
   snd.pipes_lit = false
@@ -64,9 +63,19 @@ fish = fish or {}</script>
   if snd.class == "Runecarver" then send("straddle line") end
   if snd.class == "Archivist" then send("empower jhako") end
   if snd.class == "Voidseer" then send("affirm branch") end
-  snd.stormtouching = false
-  send("firstaid stormtouched off", false)
   
+  send("firstaid stormtouched off", false)
+  send("config affliction_view full", false)
+  send("config simple_diag on", false)
+  send("config pagelength 250", false)
+  send("config grabcorpses on", false)
+  send("config viewtitles off", false)
+  send("config combatmessages on", false)
+  send("config autodoors on", false)
+  send("Config Ansi ON", false)
+  send("Config mxp on", false)
+  send("config dialogue on", false)
+  send("config prettynumbers off", false)
   enableTrigger("Separator Check/Update")
   send("config separator", false)
   
@@ -78,9 +87,9 @@ fish = fish or {}</script>
   local level = tonumber(x)
   if level &gt;= 99 then
     tempTimer(5, [[send("raceskill active", false)]])
-  end
-                
+  end                
   end)
+  
   if not snd.toggles.parrying then
     expandAlias("tpry")
   end
@@ -101,8 +110,12 @@ fish = fish or {}</script>
 		snd.endgamedef = "none"
 		snd.endgamehealth = "none"
 	end
+  
+  snd.initiate()
+  enableTimer("Firstaidstatustimer")
+  snd.firstaidstart()
+  
 end
-
 
 registerAnonymousEventHandler("gmcp.Char.Name", "snd.login")</script>
 						<eventHandlerList />
@@ -225,6 +238,494 @@ function snd.dismount()
 end</script>
 						<eventHandlerList />
 					</Script>
+					<ScriptGroup isActive="no" isFolder="yes">
+						<name>Neri's Phone Book</name>
+						<packageName></packageName>
+						<script></script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>init and saving</name>
+							<packageName></packageName>
+							<script>npb = npb or {}
+npb.t = npb.t or {}
+npb.loc = getMudletHomeDir().."/phonebook.lua"
+sndNDB = sndNDB or {}
+
+function file_exists(name)
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
+
+function npb.save()
+  table.save(npb.loc, npb.t)
+end
+
+function npb.load(force)
+  if not file_exists(npb.loc) then npb.save() end
+  
+  if force or table.size(npb.t) == 0 then
+     table.load(npb.loc, npb.t)
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>user interface</name>
+							<packageName></packageName>
+							<script>npb = npb or {}
+
+function npb.echo(args)
+  cecho("\n&lt;a_darkgreen&gt;[&lt;turquoise&gt;NPB&lt;a_darkgreen&gt;]&lt;reset&gt;:"..args)
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>user config functions</name>
+							<packageName></packageName>
+							<script>npb = npb or {}
+npb.config_version = 2
+
+-- do not call init_config cirectly, use init instead.
+function npb.init_config()
+  npb.load()
+  npb.t.config = npb.t.config or {}
+  npb.t.config.colors = {
+    bloodloch="firebrick",
+    spinesreach="medium_purple",
+    duiran="lawn_green",
+    enorian="gold",
+    rogues="a_brown",
+    divine="hot_pink",
+  }
+  npb.t.guess_from_clans = true
+  npb.t.people = npb.t.people or {}
+  npb.t.config_version = 2
+  npb.save()
+end
+
+function npb.init()
+  npb.load()
+  if npb.t.config_version == npb.config_version then
+    return
+  end
+  npb.init_config()
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>people management</name>
+							<packageName></packageName>
+							<script>npb = npb or {}
+
+function npb.add_person(person, person_data, force)
+  if npb.t.people[person] and npb.t.people[person].locked and not force then return end
+  
+  npb.t.people[person] = person_data
+  npb.add_highlight(person)
+end
+
+function npb.update_person(person, person_data, force)
+  if npb.t.people[person].locked and not force then return end
+  
+  npb.t.people[person] = person_data
+  npb.add_highlight(person)
+end
+
+function npb.add_or_update_person(person, person_data, force)
+  npb.init()
+  if npb.t.people[person] then
+    npb.update_person(person, person_data, force)
+  else
+    npb.add_person(person, person_data, force)
+  end
+  npb.save()
+end
+
+function npb.add_people(people)
+  npb.init()
+  for _, person in pairs(people) do
+    npb.add_person(person.name, person)
+  end
+  npb.save()
+end
+
+function npb.honour_person(name)
+  npb.honour_data = {name=name:title()}
+  npb.honour_count = 0
+  npb.honour_on = true
+  --npb.load_guess_triggers()
+  enableTrigger("parse_honours")
+  send("honours "..name, false)
+end
+
+function npb.honour_qwho()
+  enableTrigger("parse_qwho")
+  send("qwho")
+end
+
+function npb.process_qwho()
+  if not npb.qwho_matches then
+    npb.echo("&lt;red&gt;No one found.")
+  end
+  
+  local people
+  people = npb.qwho_matches:split(", ")
+  if people[#people]:match("and ") then
+    people[#people] = people[#people]:gsub("^and ", '')
+  end
+  if #people == 1 then people = people[1]:split(" and ") end
+
+  local honour_people = {}
+  for _, person in pairs(people) do
+    if not npb.t.people[person] then
+      table.insert(honour_people, person)
+    end
+  end
+  if #honour_people &gt; 0 then
+    npb.echo("checking honours of "..#honour_people.. " people.")
+    npb.honour_queue = honour_people
+    npb.next_honour()
+  else
+    npb.echo("no new people to check.")
+  end
+end
+
+function npb.next_honour()
+  local first
+  if #npb.honour_queue &gt; 0 then
+    first = table.remove(npb.honour_queue, 1)
+    npb.echo("checking "..first)
+    tempTimer(1, [[npb.honour_person("]]..first..[[")]])
+  else
+    npb.echo("done")
+  end
+end
+
+function npb.set_city(person, city)
+  npb.init()
+  person = person:lower():title()
+  city = city:lower()
+  local current = npb.t.people[person] or {}
+  current.city = city
+  current.name = person
+  current.locked = true
+  npb.add_or_update_person(person, current, true)
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>highlight code</name>
+							<packageName></packageName>
+							<script>-- many thanks for sunder ndb and m&amp;m ndb for the idea of how to do this
+
+npb = npb or {}
+
+function npb.disable_highlights()
+  if not npb.triggers or not next(npb.triggers) then
+    return
+  end
+  
+  for _, trigger_id in pairs(npb.triggers) do
+    killTrigger(trigger_id)
+  end
+  npb.triggers = {}
+end
+
+function npb.enable_highlights()
+  npb.triggers = npb.triggers or {}
+  
+  -- neri: Speed up things by stopping garbage collectin
+  collectgarbage("stop")
+  
+  npb.disable_highlights()
+  if npb.enabled then
+    for index, person in pairs(npb.t.people) do
+      npb.highlight_person(person.name, person.city)
+    end
+  end
+  
+  -- neri: make sure we collect garbage again
+  collectgarbage()
+end
+
+function npb.add_highlight(name)
+  if not npb.enabled or not name then return end
+  if not npb.t.people[name] then return end
+  npb.highlight_person(npb.t.people[name].name, npb.t.people[name].city)
+end
+
+function npb.update_highlights(city, colour)
+  local killTrigger = killTrigger
+  
+  for name, trig in pairs(npb.triggers) do
+    if npb.t.people[name].city == city then
+      killTrigger(trig)
+      
+      if npb.enabled then
+        npb.highlight_person(npb.t.people[name].name,
+          npb.t.people[name].city)
+      end
+    elseif city == "rogues" or city == "(hidden)" then
+      if not npb.t.people[name].city then
+        killTrigger(trig)
+        if npb.enabled then
+          npb.highlight_person(npb.t.people[name].name, npb.t.people[name].city)
+        end
+      end
+    end
+  end
+end
+
+function npb.highlight_person(who, city)
+  -- cleanup old highlight if available
+  if npb.triggers and npb.triggers[who] then
+    killTrigger(npb.triggers[who])
+  end
+  
+  if not npb.enabled then return end
+  
+  local colour = npb.color_person(who, city)
+  
+  npb.triggers = npb.triggers or {}
+  npb.triggers[who] = tempTrigger(
+    who, ([[npb.do_highlight("%s", %s)]]):format(who, 
+      (colour and '"' .. colour .. '"' or "false"))
+  )
+end
+
+function npb.do_highlight(name, color)
+  local count, match = 1, 1
+  
+  while match &gt; 0 do
+    match = line:find(name, match)
+    if match == nil then return end
+    
+    count = count + 1
+    
+    if match == line:find("%f[%a]" .. name .. "%f[%A]", match) then
+      if selectString(name, count - 1) &gt; -1 then
+        if color then
+          fg(color)
+        end
+        resetFormat()
+      else
+        return
+      end
+    end
+    match = match + 1
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>utility functions</name>
+							<packageName></packageName>
+							<script>npb = npb or {}
+
+function npb.color_person(who, city)
+  npb.init()
+  if npb.t.config.colors[city] then
+    return npb.t.config.colors[city]
+  end
+  
+  return npb.t.config.colors.rogues
+end
+
+function npb.enable()
+  npb.init()
+  npb.enabled = true
+  sndNDB.highlightNames = true
+  npb.enable_highlights()
+end
+
+function npb.disable()
+  npb.init()
+  npb.enabled = false
+  sndNDB.highlightNames = false
+  npb.disable_highlights()
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>city guesses</name>
+							<packageName></packageName>
+							<script>npb = npb or {}
+npb.city_guess = {
+  -- duiran
+  ["Heartwood Yews"] = "duiran",
+  ["Dion an Duir"] = "duiran",
+  ["Memories of the Wild"] = "duiran",
+
+  -- spinesreach
+  ["the Conclave of Arts"] = "spinesreach",
+  ["the Conclave of Science and Nature"] = "spinesreach",
+  ["the Conclave of Seers"] = "spinesreach",
+  ["the Conclave of Devotion"] = "spinesreach",
+  ["the Conclave of Magic"] = "spinesreach",
+  ["The Spirean Council"] = "spinesreach",
+
+  -- bloodloch
+  ["The Stygian Assembly"] = "bloodloch",
+  ["Bloodloch Imperial Army"] = "bloodloch",
+  ["Loch OOC"] = "bloodloch",
+
+  -- enorian
+  ["Crucible of Dawn"] = "enorian",
+  ["The Liberators of Dawn"] = "enorian",
+  ["Leaders of the Dawn"] = "enorian",
+  ["The Side Line"] = "enorian",
+}</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>sndb api</name>
+							<packageName></packageName>
+							<script>sndNDB = sndNDB or {}
+function sndNDB_getColour(name)
+	if not sndNDB_Exists(name) then
+		return "white"
+	else
+		local city = sndNDB_getCitizenship(name)
+    return npb.t.config.colors[city:lower()]
+	end
+end
+
+function sndNDB_getClass(name)
+	return "Unknown"
+end
+
+function sndNDB_Exists(name)
+  name = name:lower():title()
+	if not npb.t.people[name] then
+		return false
+	else
+		return true
+	end
+end
+
+function sndNDB_isCitizenOf(city, name)
+  city = city:lower()
+  name = name:lower():title()
+	if sndNDB_Exists(name) then
+		return npb.t.people[name].city == city
+	else
+		snd.message("The information for "..name.." has not yet been gathered.")
+		return false
+	end
+end
+
+function sndNDB_getTether(name)
+  local city = sndNDB_getCitizenship(name)
+  if city == "Bloodloch" or city == "Spinesreach" then return "Shadow"
+  elseif city == "Enorian" or city == "Duiran" then return "Spirit"
+  else return "Rogue"
+  end
+end
+
+function sndNDB_getCitizenship(name)
+  name = name:lower():title()
+	if sndNDB_Exists(name) then
+    local city = npb.t.people[name].city
+		if not city then
+			return "Rogues"
+		else
+			return city:title()
+		end
+	else
+		return "Unknown"
+	end
+end
+
+function sndNDB_Remove(name)
+	local person = name:lower():title()
+  if npb.t.people[person] then
+    if npb.triggers and npb.triggers[person] then
+      killTrigger(npb.triggers[person])
+    end
+    npb.t.people[person] = nil
+    npb.save()
+    npb.echo(person.." has been removed from the database.")
+  else
+  	npb.echo(person.." is not in the database, anyway.")
+  end
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>QWS</name>
+							<packageName></packageName>
+							<script>function npb.getOnlineCharacters()
+  getHTTP("api.aetolia.com/characters.json")
+end
+
+function npb.handleResponse(_, url, body)
+  if url == "https://api.aetolia.com/characters.json" then
+    local data = yajl.to_value(body)
+    if npb.qws then
+      npb.qws = false
+      npb.qwsorted(data)
+    end
+  end
+end
+
+registerAnonymousEventHandler("sysGetHttpDone", "npb.handleResponse")
+
+local order = {"Bloodloch", "Duiran", "Enorian", "Spinesreach", "Rogues", "Divine"}
+local function newLine()
+  moveCursorEnd()
+  if getCurrentLine() ~= "" then
+    echo("\n")
+    moveCursorEnd()
+  end
+end
+
+function npb.cformat(player, format)
+  local str = "&lt;reset&gt;"
+  local color = sndNDB_getColour(player)
+  if color then
+    str = str.."&lt;"..color.."&gt;"
+  end
+  str = str..player:lower():title().."&lt;reset&gt;"..(format and format or "")
+  return str
+end
+
+function npb.qwsorted(people)
+  local wrap = getWindowWrap()
+  local sorted = {Bloodloch = {}, Duiran = {}, Enorian = {}, Spinesreach = {}, Rogues = {}, Divine = {}}
+  for _, person in pairs(people.characters) do
+    local name = person.name
+    local org = sndNDB_getCitizenship(name)
+    if org == "Unknown" then org = "Rogues" end
+    table.insert(sorted[org], name)
+  end
+  for _, org in ipairs(order) do
+    local peoples = sorted[org]
+    table.sort(peoples)
+    if #peoples&gt;0 then
+      newLine()
+      cecho("&lt;"..npb.t.config.colors[org:lower()].."&gt;"..
+      string.rep(" ", 11-#org).."&lt;b&gt;&lt;u&gt;"..org:title().."&lt;reset&gt;"..(#peoples&gt;9 and "" or " ").."&lt;white&gt;(&lt;cyan&gt;"..#peoples.."&lt;white&gt;): ")
+      for i, v in pairs(peoples) do
+        local linelength = #getCurrentLine()
+        local comma = next(peoples, i)
+        local personlength = (comma and 2 or 0) + #v
+        if linelength+personlength&gt;wrap then
+          echo("\n"..string.rep(" ",17))
+          moveCursorEnd()
+        end
+        cecho(npb.cformat(v))
+        if comma then echo(", ") end
+      end
+    end
+  end
+  echo("\n")
+  moveCursorEnd()
+end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Variables</name>
 						<packageName></packageName>
@@ -2247,6 +2748,8 @@ local specialExits = {
 	{from = 13296, to = 19621, command = [=[buy passage to tundra]=], locked = false, weight = 200},
 	{from = 18231, to = 72093, command = [=[buy passage to memoryscape]=], locked = false, weight = 200},
 	{from = 36824, to = 54459, command = [=[buy passage to tcanna]=], locked = false, weight = 200},
+  {from = 57997, to = 77865, command = [=[buy passage to wreckage]=], locked = false, weight = 200},
+  {from = 77865, to = 57997, command = [=[buy passage to esterport]=], locked = false, weight = 200},
   
   
 --Enorian Sewers
@@ -2448,7 +2951,7 @@ local lockExits = {
   {55187, "west"},
 }
 
-local ferries = { 6550, 6551, 6558, 6559, 18199, 19622, 19623, 19695, 19696, 20067, 35629, 39839, 54221, 54640, 57636, 59839, 60409, 63212, 63220, 69250, 69534, 71720, 71884, 73215, 77551 }
+local ferries = { 6550, 6551, 6558, 6559, 18199, 19622, 19623, 19695, 19696, 20067, 35629, 37722, 37740, 39839, 54221, 54640, 57636, 59839, 60409, 63212, 63220, 69250, 69534, 71720, 71884, 73215, 77551 }
 local function addFerries()
   local ferryRooms = getRoomUserData(1, "ferry rooms")
   ferryRooms = ferryRooms~="" and yajl.to_value(ferryRooms) or {}
@@ -2836,6 +3339,10 @@ snd.priorities =
     -- "aff_dazed",
     -- "aff_embedded_axe",
     
+    "def_luminesce",
+    "def_blueshift",
+    "def_stargleam",
+    "def_foresight",
     "def_closecombat",
     "def_gripping",
     "def_irongrip",
@@ -3452,7 +3959,9 @@ if not snd.channeling then
     snd.send_attack(snd.queued)
    elseif i == "lighting" then
     snd.do_lighting()
-   elseif i == "loot" then
+   elseif i == "diagnose" then
+    snd.do_diagnose()
+	 elseif i == "loot" then
     snd.do_loot()
    elseif i == "moving" then
     snd.get_moving()
@@ -3462,9 +3971,7 @@ if not snd.channeling then
     snd.do_restoration()
 	 elseif i == "dome" then
 	 	snd.do_dome()
-   elseif i == "diagnose" then
-    snd.do_diagnose()
-	 elseif i == "shrugging" then
+   elseif i == "shrugging" then
 		snd.do_shrug()
 	 elseif i == "fitness" then
 	  snd.do_fitness()
@@ -4801,6 +5308,15 @@ def_bracing = {defense = "bracing", type = "normal", effect = "Bracing for physi
 def_stealth = {defense = "stealth", type = "normal", effect = "Hide yourself", balance = {needybalancetake = "stealth on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Stealth"},
 def_boneshaking = {defense = "boneshaking", type = "normal", effect = "howls ignore deafness", balance = {balanceequilibriumtake = "boneshaking"}, state = "down", needit = false, timer = createStopWatch(), skill = "Boneshaking"},
 
+--Siderealist
+def_luminesce = {defense= "luminesce", type = "normal", effect = "basic astranomia spells", balance = {balanceequilibriumtake = "astra luminesce"}, state = "down", needit = false, timer = createStopWatch(), skill = "Luminesce"},
+def_blueshift = {defense= "blueshift", type = "normal", effect = "extra hp/mp", balance = {balanceequilibriumtake = "astra blueshift"}, state = "down", needit = false, timer = createStopWatch(), skill = "Blueshift"},
+def_foresight = {defense= "foresight", type = "normal", effect = "dodge next physical", balance = {balanceequilibriumtake = "astra foresight"}, state = "down", needit = false, timer = createStopWatch(), skill = "Foresight"},
+def_centrum = {defense= "centrum", type = "normal", effect = "cast one-handed for short duration", balance = {balanceequilibriumtake = "astra centrum"}, state = "down", needit = false, timer = createStopWatch(), skill = "Centrum"},
+def_stargleam = {defense= "stargleam", type = "normal", effect = "generates charges from mana, used to give affs", balance = {balanceequilibriumtake = "astra gleam on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Gleam"},
+def_parallax = {defense= "parallax", type = "normal", effect = "stalled spell", balance = {balanceequilibriumtake = "astra parallax"}, state = "down", needit = false, timer = createStopWatch(), skill = "Parallax"},
+def_refraction = {defense= "refraction", type = "normal", effect = "vibes affect target regardless of enemy", balance = {balanceequilibriumtake = "refract target"}, state = "down", needit = false, timer = createStopWatch(), skill = "Refraction"},
+
 --Templar
 def_maingauche = {defense = "maingauche", type = "normal", effect = "Chance to counter attack", balance = {needyequilibriumtake = "maingauche"}, state = "down", needit = false, timer = createStopWatch(), skill = "MainGauche"},
 
@@ -5683,6 +6199,13 @@ end</script>
   ["You are heavily focused on close combat."] = "closecombat",
   
   ["Your howls are shaking the bones of your victims."] = "boneshaking",
+  
+  --Siderealist
+  ["Your vitals are enhanced by the cobalt light of the stars."] = "blueshift",
+  ["You are drawing cosmic will into your body."] = "luminesce",
+  ["You have gained foresight against harm."] = "foresight",
+  ["You are gathering cosmic energy in one hand."] = "centrum",
+  ["You are enfolded by miniature stars of gleaming light."] = "stargleam",
 }
  </script>
 								<eventHandlerList />
@@ -6650,6 +7173,9 @@ function snd_toggleLoad()
 	snd.message("Toggles found; we loaded them in just fine.")
   snd.goggle_update()
 	snd_toggleSave(false)
+  if snd.toggles.highlights then
+    npb.enable()
+  end
 end
 
 registerAnonymousEventHandler("sysDisconnectionEvent", "snd_toggleSave", true)
@@ -11207,7 +11733,7 @@ function snd_patherCompile()
   local str = ""
   for x, n in pairs(sap_List) do
     if x == #sap_List then
-      sunder_areaPaths[sap_Area]["v"..n] = "pthcity"
+      sunder_areaPaths[sap_Area]["v"..n] = "ptcity"
     else
       sunder_areaPaths[sap_Area]["v"..n] = ""..sap_List[x+1]..""
     end
@@ -11229,7 +11755,7 @@ function snd_bashArea()
     if not snd.toggles.fasthunt then
       snd.toggle("fasthunt")
     end    
-    expandAlias("aa")
+    snd.aa()
   end
 end
 
@@ -23893,6 +24419,7 @@ end</script>
 {class = "Earthcaller", func = function(current) snd.earthcaller_bash() end},
 {class = "Executor", func = function(current) snd.executor_bash() end}, 
 {class = "Indorani", func = function(current) snd.indorani_bash() end}, 
+{class = "Infiltrator", func = function(current) snd.infiltrator_bash() end},
 {class = "Luminary", func = function(current) snd.luminary_bash() end}, 
 {class = "Monk", func = function(current) snd.monk_bash() end}, 
 {class = "Oneiromancer", func = function(current) snd.oneiromancer_bash() end},
@@ -23905,7 +24432,7 @@ end</script>
 {class = "Sentinel", func = function(current) snd.sentinel_bash() end}, 
 {class = "Shaman", func = function(current) snd.shaman_bash() end}, 
 {class = "Shapeshifter", func = function(current) snd.shapeshifter_bash() end}, 
-{class = "Infiltrator", func = function(current) snd.infiltrator_bash() end}, 
+{class = "Siderealist", func = function(current) snd.siderealist_bash() end}, 
 {class = "Templar", func = function(current) snd.templar_bash() end},
 {class = "Teradrim", func = function(current) snd.teradrim_bash() end},
 {class = "Tidesage", func = function(current) snd.tidesage_bash() end},
@@ -24488,6 +25015,18 @@ function snd.shapeshifter_bash()
       battack = "touch shield"
 	else
     battack = "combo "..snd.bashing.target.." slash slash"
+	end
+end
+
+function snd.siderealist_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  if hp &lt;=40 and snd.shield_check() then
+    if snd.punisher then
+    else
+      battack = "touch shield"
+    end
+	else
+    battack = "astra ray "..snd.bashing.target
 	end
 end
 
@@ -27485,61 +28024,44 @@ if snd.toggles.active then
     elseif snd.stormtouching then
       send("firstaid stormtouched off")
     end		
-		
-	elseif (snd.cureset == "akkari" or snd.cureset == "praenomen") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassPraenomen()	
-		
-	elseif (snd.cureset == "alchemist" or snd.cureset == "shaman") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassShaman()
-    
 	elseif (snd.cureset == "archivist" or snd.cureset == "voidseer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassArchivist()
-		
 	elseif (snd.cureset == "ascendril" or snd.cureset == "bloodborn") and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassAscendril()
-    
-	elseif snd.cureset == "bard" and (snd.count(snd.people_hitting_me)) &lt; 3 then
+  elseif snd.cureset == "bard" and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassBard()	
-		
 	elseif (snd.cureset == "carnifex" or snd.cureset == "warden") and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassCarnifex()	
-	
-	elseif (snd.cureset == "earthcaller" or snd.cureset == "luminary") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassLuminary()	
-	
-	elseif (snd.cureset == "executor" or snd.cureset == "sentinel") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassSentinel()
-		
 	elseif (snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassIndorani()	
-    
-	elseif snd.cureset == "infiltrator" and (snd.count(snd.people_hitting_me)) &lt; 3 then
+  elseif snd.cureset == "infiltrator" and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassInfiltrator()
-			
+	elseif (snd.cureset == "earthcaller" or snd.cureset == "luminary") and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassLuminary()	
 	elseif snd.cureset == "monk" and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassMonk()		
-    
+  elseif (snd.cureset == "akkari" or snd.cureset == "praenomen") and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassPraenomen()	
 	elseif snd.cureset == "predator" and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassPredator()	
-	
-	elseif (snd.cureset == "ravager" or snd.cureset == "zealot") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassZealot()			
-		
+	elseif (snd.cureset == "runecarver" or snd.cureset == "sciomancer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassSciomancer()				
+	elseif (snd.cureset == "executor" or snd.cureset == "sentinel") and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassSentinel()
+	elseif (snd.cureset == "alchemist" or snd.cureset == "shaman") and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassShaman()
+  elseif snd.cureset == "shapeshifter" and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassShapeshifter()						
+	elseif snd.cureset == "siderealist" and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassSiderealist()
 	elseif (snd.cureset == "revenant" or snd.cureset == "templar") and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassTemplar()		
-		
-	elseif (snd.cureset == "runecarver" or snd.cureset == "sciomancer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassSciomancer()		
-		
-	elseif snd.cureset == "shapeshifter" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassShapeshifter()						
-		
 	elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage") and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassTeradrim()		
-		
 	elseif snd.cureset == "wayfarer" and (snd.count(snd.people_hitting_me)) &lt; 3 then
 		snd.firstaidassWayfarer()
-            
+  elseif (snd.cureset == "ravager" or snd.cureset == "zealot") and (snd.count(snd.people_hitting_me)) &lt; 3 then
+		snd.firstaidassZealot()			
 	end
 
 	if not firstaidclassset then
@@ -27802,6 +28324,128 @@ function snd.firstaidassAscendril()
 	end	
 end
 
+function snd.firstaidassBard() 
+  if snd.firstaidcuretrack.paralysis ~= "1" then
+    table.insert(snd.setting_priority, "paralysis 1")	 
+  end
+  if snd.firstaidcuretrack.perplexed ~= "2" then
+    table.insert(snd.setting_priority, "perplexed 2")		 
+  end
+  if snd.firstaidcuretrack.shyness ~= "3" then
+    table.insert(snd.setting_priority, "shyness 3")		 
+  end 
+  if snd.firstaidcuretrack.thin_blood ~= "4" then
+    table.insert(snd.setting_priority, "thin_blood 4")		 
+  end 
+  if snd.firstaidcuretrack.worrywart ~= "5" then
+    table.insert(snd.setting_priority, "worrywart 5")		 
+  end 
+  if snd.firstaidcuretrack.misery ~= "6" then
+    table.insert(snd.setting_priority, "misery 6")		 
+  end 
+  if snd.firstaidcuretrack.hollow ~= "7" then
+    table.insert(snd.setting_priority, "hollow 7")		 
+  end 
+  if snd.firstaidcuretrack.narcolepsy ~= "8" then
+    table.insert(snd.setting_priority, "narcolepsy 8")		 
+  end 
+  if snd.firstaidcuretrack.self_loathing ~= "8" then
+    table.insert(snd.setting_priority, "self_loathing 8")		 
+  end 
+  if snd.firstaidcuretrack.slickness ~= "9" then
+    table.insert(snd.setting_priority, "slickness 9")		 
+  end 
+  if snd.firstaidcuretrack.stupidity ~= "10" then
+    table.insert(snd.setting_priority, "stupidity 10")		 
+  end  
+  if snd.firstaidcuretrack.dizziness ~= "10" then
+    table.insert(snd.setting_priority, "dizziness 10")		 
+  end  
+  if snd.firstaidcuretrack.magnanimity ~= "11" then
+    table.insert(snd.setting_priority, "magnanimity 11")		 
+  end  
+  if snd.firstaidcuretrack.faintness ~= "12" then
+    table.insert(snd.setting_priority, "faintness 12")		 
+  end  
+  if snd.firstaidcuretrack.addiction ~= "13" then		 
+    table.insert(snd.setting_priority, "addiction 13")
+  end 
+  if snd.firstaidcuretrack.allergies ~= "14" then		 
+    table.insert(snd.setting_priority, "allergies 14")
+  end 	
+	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end	
+end
+
+function snd.firstaidassCarnifex()
+	if snd.firstaidcuretrack.left_arm ~= "6" and snd.firstaidcuretrack.preleftarm ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE left arm 19% 6")		 
+	end
+	if snd.firstaidcuretrack.rightarm ~= "6" and snd.firstaidcuretrack.prerightarm ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE right arm 19% 6")		 
+	end
+	if snd.firstaidcuretrack.rightleg ~= "5" and snd.firstaidcuretrack.prerightleg ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE right leg 19% 4")		 
+	end
+	if snd.firstaidcuretrack.left_leg ~= "5" and snd.firstaidcuretrack.preleftleg ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE left leg 19% 4")		 
+	end
+	if snd.firstaidcuretrack.head ~= "7" and snd.firstaidcuretrack.prehead ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE head 19% 7")		 
+	end
+  if snd.firstaidcuretrack.torso ~= "7" and snd.firstaidcuretrack.pretorso ~= "19" then
+		table.insert(snd.setting_priority, "PRESTORE torso 19% 7")		 
+	end	
+  if snd.firstaidcuretrack.paresis ~= "2" then
+		table.insert(snd.setting_priority, "paresis 2")		 
+	end	
+	if snd.firstaidcuretrack.paralysis ~= "1" then
+		table.insert(snd.setting_priority, "paralysis 1")		 
+	end	
+	if snd.firstaidcuretrack.slickness ~= "2" then
+		table.insert(snd.setting_priority, "slickness 2")		 
+	end	
+	if snd.firstaidcuretrack.anorexia ~= "2" then
+		table.insert(snd.setting_priority, "anorexia 2")		 
+	end	
+	if snd.firstaidcuretrack.asthma ~= "2" then
+		table.insert(snd.setting_priority, "asthma 2")		 
+	end	
+	if snd.firstaidcuretrack.ringing_ears ~= "2" then
+		table.insert(snd.setting_priority, "ringing_ears 2")		 
+	end	
+	if snd.firstaidcuretrack.clumsiness ~= "2" then
+		table.insert(snd.setting_priority, "clumsiness 2")		 
+	end	
+	if snd.firstaidcuretrack.crushed_chest ~= "3" then
+		table.insert(snd.setting_priority, "crushed_chest 3")		 
+	end		
+	if snd.firstaidcuretrack.weariness ~= "3" then
+		table.insert(snd.setting_priority, "weariness 3")		 
+	end		
+	if snd.firstaidcuretrack.impairment ~= "3" then
+		table.insert(snd.setting_priority, "impairment 3")		 
+	end	
+	if snd.firstaidcuretrack.hypochondria ~= "3" then
+		table.insert(snd.setting_priority, "hypochondria 3")		 
+	end
+	if snd.firstaidcuretrack.sensitivity ~= "4" then
+		table.insert(snd.setting_priority, "sensitivity 4")		 
+	end
+	if snd.firstaidcuretrack.crippled ~= "3" then
+		table.insert(snd.setting_priority, "crippled 3")		 
+	end		
+	if snd.firstaidcuretrack.frozen ~= "4" then
+		table.insert(snd.setting_priority, "frozen 4")		 
+	end	
+	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end	
+end
+
 function snd.firstaidassIndorani()
   if snd.firstaidcuretrack.impatience ~= "2" then
 		table.insert(snd.setting_priority, "impatience 2")		 
@@ -27822,6 +28466,37 @@ function snd.firstaidassIndorani()
 		table.insert(snd.setting_priority, "paresis 5")		 
 	end	
 	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end
+end
+
+function snd.firstaidassInfiltrator() 
+	if snd.firstaidcuretrack.paresis ~= "2" then
+		table.insert(snd.setting_priority, "paresis 1")		 
+	end	
+	if snd.firstaidcuretrack.paralysis ~= "1" then
+		table.insert(snd.setting_priority, "paralysis 1")		 
+	end	
+	if snd.firstaidcuretrack.slickness ~= "2" then
+		table.insert(snd.setting_priority, "slickness 2")		 
+	end	
+	if snd.firstaidcuretrack.anorexia ~= "2" then
+		table.insert(snd.setting_priority, "anorexia 2")		 
+	end	
+	if snd.firstaidcuretrack.asthma ~= "2" then
+		table.insert(snd.setting_priority, "asthma 2")		 
+	end	
+	if snd.firstaidcuretrack.addiction ~= "2" then
+		table.insert(snd.setting_priority, "addiction 2")		 
+	end	
+	if snd.firstaidcuretrack.hypersomnia ~= "1" then
+		table.insert(snd.setting_priority, "hypersomnia 1")		 
+	end	
+	if snd.firstaidcuretrack.clumsiness ~= "3" then
+		table.insert(snd.setting_priority, "clumsiness 1")		 
+	end	
+	snd.firstaidchangecure = false  -- keep last		
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
 	end
@@ -27854,6 +28529,268 @@ function snd.firstaidassMonk()
   if snd.firstaidcuretrack.anorexia ~= "5" then
 		table.insert(snd.setting_priority, "anorexia 5")		 
 	end	
+	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end	
+end
+
+function snd.firstaidassPraenomen()
+  if snd.firstaidcuretrack.blindness ~= "4" then
+		table.insert(snd.setting_priority, "defence blindness 4")		 
+	end 
+  if snd.firstaidcuretrack.asthma ~= "1" then
+		table.insert(snd.setting_priority, "asthma 1")		 
+	end
+  if snd.firstaidcuretrack.clumsiness ~= "2" then
+		table.insert(snd.setting_priority, "clumsiness 2")		 
+	end
+	if snd.firstaidcuretrack.paralysis ~= "3" then
+		table.insert(snd.setting_priority, "paralysis 3")		 
+	end
+ 	if snd.firstaidcuretrack.paresis ~= "6" then
+		table.insert(snd.setting_priority, "paresis 6")		 
+	end
+  if snd.firstaidcuretrack.weariness ~= "5" then
+		table.insert(snd.setting_priority, "weariness 5")		 
+	end
+	if snd.firstaidcuretrack.confusion ~= "5" then
+		table.insert(snd.setting_priority, "confusion 5")		 
+	end
+	if snd.firstaidcuretrack.blood_curse ~= "5" then
+		table.insert(snd.setting_priority, "blood_curse 5")		 
+	end
+	if snd.firstaidcuretrack.blood_poison ~= "5" then
+		table.insert(snd.setting_priority, "blood_poison 5")		 
+	end
+	if snd.firstaidcuretrack.epilepsy ~= "6" then
+		table.insert(snd.setting_priority, "epilepsy 6")		 
+	end
+	if snd.firstaidcuretrack.stupidity ~= "6" then
+		table.insert(snd.setting_priority, "stupidity 6")		 
+	end
+	if snd.firstaidcuretrack.peace ~= "7" then
+		table.insert(snd.setting_priority, "peace 7")		 
+	end
+	if snd.firstaidcuretrack.masochism ~= "7" then
+		table.insert(snd.setting_priority, "masochism 7")		 
+	end
+	if snd.firstaidcuretrack.haemophilia ~= "7" then
+		table.insert(snd.setting_priority, "haemophilia 7")		 
+	end
+	if snd.firstaidcuretrack.vomiting ~= "7" then
+		table.insert(snd.setting_priority, "vomiting 7")		 
+	end
+	if snd.firstaidcuretrack.allergies ~= "7" then
+		table.insert(snd.setting_priority, "allergies 7")		 
+	end
+	if snd.firstaidcuretrack.recklessness ~= "8" then
+		table.insert(snd.setting_priority, "recklessness 8")		 
+	end
+	if snd.firstaidcuretrack.rend ~= "9" then
+		table.insert(snd.setting_priority, "rend 9")		 
+	end
+	if snd.firstaidcuretrack.sensitivity ~= "9" then
+		table.insert(snd.setting_priority, "sensitivity 9")		 
+	end	
+	if snd.firstaidcuretrack.loneliness ~= "25" then
+		table.insert(snd.setting_priority, "loneliness 25")		 
+	end
+  
+	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end	
+end
+
+function snd.firstaidassPredator() 
+	if snd.firstaidcuretrack.asthma ~= "1" then
+		table.insert(snd.setting_priority, "asthma 1")		 
+	end
+  if snd.firstaidcuretrack.clumsiness ~= "2" then
+		table.insert(snd.setting_priority, "clumsiness 2")		 
+	end
+	if snd.firstaidcuretrack.paralysis ~= "3" then
+		table.insert(snd.setting_priority, "paralysis 3")		 
+	end
+ 	if snd.firstaidcuretrack.paresis ~= "3" then
+		table.insert(snd.setting_priority, "paresis 3")		 
+	end 
+  if snd.firstaidcuretrack.weariness ~= "5" then
+		table.insert(snd.setting_priority, "weariness 5")		 
+	end
+	if snd.firstaidcuretrack.confusion ~= "5" then
+		table.insert(snd.setting_priority, "confusion 5")		 
+	end
+	if snd.firstaidcuretrack.blood_curse ~= "5" then
+		table.insert(snd.setting_priority, "blood_curse 5")		 
+	end
+	if snd.firstaidcuretrack.blood_poison ~= "5" then
+		table.insert(snd.setting_priority, "blood_poison 5")		 
+	end
+	if snd.firstaidcuretrack.impatience ~= "6" then
+		table.insert(snd.setting_priority, "impatience 6")		 
+	end
+	if snd.firstaidcuretrack.epilepsy ~= "6" then
+		table.insert(snd.setting_priority, "epilepsy 6")		 
+	end
+	if snd.firstaidcuretrack.peace ~= "7" then
+		table.insert(snd.setting_priority, "peace 7")		 
+	end
+	if snd.firstaidcuretrack.masochism ~= "7" then
+		table.insert(snd.setting_priority, "masochism 7")		 
+	end
+	if snd.firstaidcuretrack.haemophilia ~= "7" then
+		table.insert(snd.setting_priority, "haemophilia 7")		 
+	end
+	if snd.firstaidcuretrack.loneliness ~= "7" then
+		table.insert(snd.setting_priority, "loneliness 7")		 
+	end
+	if snd.firstaidcuretrack.vomiting ~= "7" then
+		table.insert(snd.setting_priority, "vomiting 7")		 
+	end
+	if snd.firstaidcuretrack.allergies ~= "7" then
+		table.insert(snd.setting_priority, "allergies 7")		 
+	end
+	if snd.firstaidcuretrack.recklessness ~= "8" then
+		table.insert(snd.setting_priority, "recklessness 8")		 
+	end
+	if snd.firstaidcuretrack.rend ~= "9" then
+		table.insert(snd.setting_priority, "rend 9")		 
+	end
+	if snd.firstaidcuretrack.sensitivity ~= "9" then
+		table.insert(snd.setting_priority, "sensitivity 9")		 
+	end	  
+	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end	
+end
+
+function snd.firstaidassSciomancer() 
+	if snd.firstaidcuretrack.paralysis ~= "1" then
+		table.insert(snd.setting_priority, "paralysis 1")		 
+	end
+	if snd.firstaidcuretrack.asthma ~= "2" then
+		table.insert(snd.setting_priority, "asthma 2")		 
+	end
+	if snd.firstaidcuretrack.rot_body ~= "3" then
+		table.insert(snd.setting_priority, "rot_body 3")		 
+	end
+	if snd.firstaidcuretrack.rot_wither ~= "3" then
+		table.insert(snd.setting_priority, "rot_wither 3")		 
+	end
+	if snd.firstaidcuretrack.dementia ~= "4" then
+		table.insert(snd.setting_priority, "dementia 4")		 
+	end
+	if snd.firstaidcuretrack.paresis ~= "5" then
+		table.insert(snd.setting_priority, "paresis 5")		 
+	end 
+	if snd.firstaidcuretrack.lethargy ~= "6" then
+		table.insert(snd.setting_priority, "lethargy 6")		 
+	end 
+	if snd.firstaidcuretrack.vomiting ~= "7" then
+		table.insert(snd.setting_priority, "vomiting 7")		 
+	end  
+  if snd.firstaidcuretrack.rot_heat ~= "9" then
+		table.insert(snd.setting_priority, "rot_heat 9")		 
+	end   
+  if snd.firstaidcuretrack.clumsiness ~= "10" then
+		table.insert(snd.setting_priority, "clumsiness 10")		 
+	end  
+  if snd.firstaidcuretrack.nyctophobia ~= "11" then
+		table.insert(snd.setting_priority, "nyctophobia 11")		 
+	end 
+  if snd.firstaidcuretrack.weariness ~= "12" then
+		table.insert(snd.setting_priority, "weariness 12")		 
+	end 
+  if snd.firstaidcuretrack.rot_spirit ~= "13" then
+		table.insert(snd.setting_priority, "rot_spirit 13")		 
+	end 
+  if snd.firstaidcuretrack.rot_benign ~= "14" then
+		table.insert(snd.setting_priority, "rot_benign 14")		 
+	end  
+  if snd.firstaidcuretrack.agoraphobia ~= "15" then
+		table.insert(snd.setting_priority, "agoraphobia 15")		 
+	end 
+  if snd.firstaidcuretrack.loneliness ~= "16" then
+		table.insert(snd.setting_priority, "loneliness 16")		 
+	end 
+  if snd.firstaidcuretrack.blindness ~= "0" then
+		table.insert(snd.setting_priority, "defence blindness reset")
+	end 
+  if snd.firstaidcuretrack.vertigo ~= "17" then
+		table.insert(snd.setting_priority, "vertigo 17")		 
+	end 
+  if snd.firstaidcuretrack.claustrophobia ~= "18" then
+		table.insert(snd.setting_priority, "claustrophobia 18")		 
+	end
+  if snd.firstaidcuretrack.commitment_fear ~= "19" then
+		table.insert(snd.setting_priority, "commitment_fear 19")		 
+	end
+  if snd.firstaidcuretrack.haemophilia ~= "20" then
+		table.insert(snd.setting_priority, "haemophilia 20")		 
+	end
+  if snd.firstaidcuretrack.exhausted ~= "21" then
+		table.insert(snd.setting_priority, "exhausted 21")		 
+	end
+  if snd.firstaidcuretrack.stupidity ~= "22" then
+		table.insert(snd.setting_priority, "stupidity 22")		 
+	end
+  if snd.firstaidcuretrack.dizziness ~= "23" then
+		table.insert(snd.setting_priority, "dizziness 23")		 
+	end
+  if snd.firstaidcuretrack.dissonance ~= "24" then
+		table.insert(snd.setting_priority, "dissonance 24")		 
+	end
+  if snd.firstaidcuretrack.frozen ~= "3" then
+		table.insert(snd.setting_priority, "frozen 3")		 
+	end    
+  if snd.firstaidcuretrack.voidgaze ~= "5" then
+		table.insert(snd.setting_priority, "voidgaze 5")		 
+	end    
+  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
+		table.insert(snd.setting_priority, "left_leg_crippled 6")		 
+	end 
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
+		table.insert(snd.setting_priority, "right_leg_crippled 6")		 
+	end 
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		table.insert(snd.setting_priority, "left_arm_crippled 7")		 
+	end 
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		table.insert(snd.setting_priority, "right_arm_crippled 7")		 
+	end  
+	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+		table.insert(snd.setting_priority, "left_leg_broken 9")		 
+	end   
+  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		table.insert(snd.setting_priority, "right_leg_broken 9")		 
+	end   
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+		table.insert(snd.setting_priority, "left_arm_broken 10")		 
+	end 
+  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
+		table.insert(snd.setting_priority, "right_arm_broken 10")		 
+	end 
+	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
+		table.insert(snd.setting_priority, "left_leg_mangled 11")		 
+	end   
+  if snd.firstaidcuretrack.right_leg_mangled ~= "11" then
+		table.insert(snd.setting_priority, "right_leg_mangled 11")		 
+	end   
+  if snd.firstaidcuretrack.left_arm_mangled ~= "12" then
+		table.insert(snd.setting_priority, "left_arm_mangled 12")		 
+	end 
+  if snd.firstaidcuretrack.right_arm_mangled ~= "12" then
+		table.insert(snd.setting_priority, "right_arm_mangled 12")		 
+	end 
+  if snd.firstaidcuretrack.shivering ~= "18" then
+		table.insert(snd.setting_priority, "shivering 18")		 
+	end 
+  if snd.firstaidcuretrack.gloom ~= "20" then
+		table.insert(snd.setting_priority, "gloom 20")		 
+	end   
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -27942,111 +28879,49 @@ function snd.firstaidassSentinel()
 	end
 end
 
-function snd.firstaidassZealot()
-  if snd.have_aff("left_leg_crippled") and snd.not_aff("left_leg_broken") and snd.firstaidcuretrack.left_leg_crippled ~= "4" then
-		table.insert(snd.setting_priority, "left_leg_crippled 4")		 
-	elseif snd.firstaidcuretrack.left_leg_crippled ~= "7" then
-		table.insert(snd.setting_priority, "left_leg_crippled 7")		 
+function snd.firstaidassShaman()
+  if snd.firstaidcuretrack.impatience ~= "2" then
+		table.insert(snd.setting_priority, "impatience 2")		 
+	end 
+  if snd.firstaidcuretrack.paranoia ~= "4" then
+		table.insert(snd.setting_priority, "paranoia 4")		 
 	end
-	if snd.have_aff("right_leg_crippled") and snd.not_aff("right_leg_broken") then
-		table.insert(snd.setting_priority, "right_leg_crippled 4")		 
-	elseif snd.firstaidcuretrack.right_leg_crippled ~= "7" then
-		table.insert(snd.setting_priority, "right_leg_crippled 7") 		 
-	end   
-	if snd.firstaidcuretrack.torso_mangled ~= "5" then
-		table.insert(snd.setting_priority, "torso_mangled 5") 		 
+  if snd.firstaidcuretrack.stormtouched ~= "4" then
+		table.insert(snd.setting_priority, "stormtouched 4")		 
 	end
-	if snd.firstaidcuretrack.torso_broken ~= "5" then
-		table.insert(snd.setting_priority, "torso_broken 5") 		 
-	end      
-	if snd.firstaidcuretrack.heatspear ~= "6" then
-		table.insert(snd.setting_priority, "heatspear 6")		 
-	end	
-	if snd.firstaidcuretrack.ablaze ~= "4" and snd.not_aff("heatspear") and snd.not_aff("torso_broken") then
-	  table.insert(snd.setting_priority, "ablaze 4")	   
-	elseif snd.firstaidcuretrack.ablaze ~= "7" and (snd.have_aff("heatspear") or snd.have_aff("torso_broken")) then
-		table.insert(snd.setting_priority, "ablaze 7")		 
-	end	  
-	if snd.firstaidcuretrack.lightwound ~= "3" and snd.not_aff("heatspear") and snd.have_aff("ablaze") and snd.not_aff("torso_broken") then
-	  table.insert(snd.setting_priority, "lightwound 3")	   
-	elseif snd.firstaidcuretrack.lightwound ~= "7" then
-		table.insert(snd.setting_priority, "lightwound 7")		 
-	end	
-  if snd.firstaidcuretrack.left_leg_crippled ~= "7" then
-		table.insert(snd.setting_priority, "left_leg_crippled 7")		 
-	end 
- 	if snd.firstaidcuretrack.right_leg_crippled ~= "7" then
-		table.insert(snd.setting_priority, "right_leg_crippled 7")		 
-	end 
- 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
-		table.insert(snd.setting_priority, "left_arm_crippled 7")		 
-	end 
- 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
-		table.insert(snd.setting_priority, "right_arm_crippled 7")		 
-	end   
-  if snd.firstaidcuretrack.left_leg_dislocated ~= "8" then
-		table.insert(snd.setting_priority, "left_leg_dislocated 8")		 
-	end  
-	if snd.firstaidcuretrack.right_leg_dislocated ~= "8" then
-		table.insert(snd.setting_priority, "right_leg_dislocated 8")		 
-	end 
-	if snd.firstaidcuretrack.left_arm_dislocated ~= "8" then
-		table.insert(snd.setting_priority, "left_arm_dislocated 8")		 
-	end 
-	if snd.firstaidcuretrack.right_arm_dislocated ~= "8" then
-		table.insert(snd.setting_priority, "right_arm_dislocated 8")		 
-	end   
- 	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
-		table.insert(snd.setting_priority, "left_leg_broken 9")		 
-	end   
-  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
-		table.insert(snd.setting_priority, "right_leg_broken 9")		 
-	end   
-  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
-		table.insert(snd.setting_priority, "left_arm_broken 10")		 
-	end 
-  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
-		table.insert(snd.setting_priority, "right_arm_broken 10")		 
-	end   
-  if snd.firstaidcuretrack.head_broken ~= "11" then
-		table.insert(snd.setting_priority, "head_broken 11")		 
-	end         
-	if snd.firstaidcuretrack.backstrain ~= "16" then
-		table.insert(snd.setting_priority, "backstrain 16")		 
-	end	  
-	if snd.firstaidcuretrack.muscle_spasms ~= "15" then
-		table.insert(snd.setting_priority, "muscle_spasms 15")		 
-	end	
-	if snd.firstaidcuretrack.stiffness ~= "14" then
-		table.insert(snd.setting_priority, "stiffness 14")		 
-	end	
-	if snd.firstaidcuretrack.sore_wrist ~= "13" then
-		table.insert(snd.setting_priority, "sore_wrist 13")		 
-	end	
-	if snd.firstaidcuretrack.whiplash ~= "12" then
-		table.insert(snd.setting_priority, "whiplash 12")		 
-	end	   
-	if snd.firstaidcuretrack.deepwound ~= "20" then
-		table.insert(snd.setting_priority, "deepwound 20")		 
-	end	  
-	if snd.firstaidcuretrack.torso ~= "21" and snd.firstaidcuretrack.pretorso ~= "15" then
-		table.insert(snd.setting_priority, "PRESTORE torso 15% 21")		 
-	end 
-	if snd.firstaidcuretrack.rightleg ~= "22" and snd.firstaidcuretrack.prerightleg ~= "15" then
-		table.insert(snd.setting_priority, "PRESTORE right leg 15% 22")		 
+  if snd.firstaidcuretrack.agoraphobia ~= "3" then
+		table.insert(snd.setting_priority, "agoraphobia 3")		 
 	end
-	if snd.firstaidcuretrack.leftleg ~= "22" and snd.firstaidcuretrack.preleftleg ~= "15" then
-		table.insert(snd.setting_priority, "PRESTORE left leg 15% 22")		 
+  if snd.firstaidcuretrack.claustrophobia ~= "5" then
+		table.insert(snd.setting_priority, "claustrophobia 5")		 
+	end
+  if snd.firstaidcuretrack.shyness ~= "6" then
+		table.insert(snd.setting_priority, "shyness 6")		 
+	end
+  if snd.firstaidcuretrack.stupidity ~= "6" then
+		table.insert(snd.setting_priority, "stupidity 6")		 
+	end
+  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Infiltrator") then
+    if snd.firstaidcuretrack.clumsiness ~= "5" then
+  		table.insert(snd.setting_priority, "clumsiness 5")		 
+  	end 
+  else
+    if snd.firstaidcuretrack.clumsiness ~= "7" then
+  		table.insert(snd.setting_priority, "clumsiness 7")		 
+  	end     
+  end
+  if snd.firstaidcuretrack.infested ~= "7" then
+		table.insert(snd.setting_priority, "infested 7")		 
+	end
+  if snd.firstaidcuretrack.peace ~= "8" then
+		table.insert(snd.setting_priority, "peace 8")		 
+	end
+  if snd.firstaidcuretrack.blindness ~= "8" then
+		table.insert(snd.setting_priority, "defence blindness 8")		 
 	end 
-  if snd.firstaidcuretrack.leftarm ~= "23" or snd.firstaidcuretrack.preleftarm ~= "15" then
-		table.insert(snd.setting_priority, "PRESTORE left arm 15% 23")		 
-	end
-	if snd.firstaidcuretrack.rightarm ~= "23" and snd.firstaidcuretrack.prerightarm ~= "15" then
-		table.insert(snd.setting_priority, "PRESTORE right arm 15% 23")		 
-	end
-	if snd.firstaidcuretrack.head ~= "24" and snd.firstaidcuretrack.prehead ~= "15" then
-  table.insert(snd.setting_priority, "PRESTORE head 15% 24")		 
-	end	  
+  if snd.firstaidcuretrack.deafness ~= "9" then
+		table.insert(snd.setting_priority, "defence deafness 9")		 
+	end   
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -28156,132 +29031,130 @@ function snd.firstaidassShapeshifter()
 	end
 end
 
-function snd.firstaidassWayfarer()
-	if snd.firstaidcuretrack.anorexia ~= "1" then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.clumsiness ~= "2" then
-		table.insert(snd.setting_priority, "clumsiness 2")		 
-	end		
-	if snd.firstaidcuretrack.rightleg ~= "3" and snd.firstaidcuretrack.prerightleg ~= "20" then
-		table.insert(snd.setting_priority, "PRESTORE right leg 20% 3")		 
+function snd.firstaidassSiderealist() 
+	if snd.firstaidcuretrack.paralysis ~= "1" then
+		table.insert(snd.setting_priority, "paralysis 1")		 
 	end
-	if snd.firstaidcuretrack.left_leg ~= "3" and snd.firstaidcuretrack.preleftleg ~= "20" then
-		table.insert(snd.setting_priority, "PRESTORE left leg 20% 3")		 
+	if snd.firstaidcuretrack.asthma ~= "2" then
+		table.insert(snd.setting_priority, "asthma 2")		 
 	end
-	if snd.firstaidcuretrack.left_arm_crippled ~= "3" and snd.class == "Infiltrator" then
-		table.insert(snd.setting_priority, "left_arm_crippled 3")
-  elseif snd.firstaidcuretrack.left_arm_crippled ~= "7" then
-    table.insert(snd.setting_priority, "left_arm_crippled 7")
-	end  
- 	if snd.firstaidcuretrack.left_arm_crippled ~= "3" and snd.class == "Infiltrator" then
-		table.insert(snd.setting_priority, "right_arm_crippled 3")
-  elseif snd.firstaidcuretrack.left_arm_crippled ~= "7" then
-    table.insert(snd.setting_priority, "right_arm_crippled 7")
-	end	
-  if snd.firstaidcuretrack.head_broken ~= "5" then
-		table.insert(snd.setting_priority, "head_broken 5")		 
+	if snd.firstaidcuretrack.rot_body ~= "3" then
+		table.insert(snd.setting_priority, "rot_body 3")		 
+	end
+	if snd.firstaidcuretrack.rot_wither ~= "3" then
+		table.insert(snd.setting_priority, "rot_wither 3")		 
+	end
+	if snd.firstaidcuretrack.dementia ~= "4" then
+		table.insert(snd.setting_priority, "dementia 4")		 
+	end
+	if snd.firstaidcuretrack.paresis ~= "5" then
+		table.insert(snd.setting_priority, "paresis 5")		 
 	end 
-	if snd.firstaidcuretrack.head ~= "5" and snd.firstaidcuretrack.prehead ~= "20" then
-		table.insert(snd.setting_priority, "PRESTORE head 20% 5")		 
+	if snd.firstaidcuretrack.lethargy ~= "6" then
+		table.insert(snd.setting_priority, "lethargy 6")		 
+	end 
+	if snd.firstaidcuretrack.vomiting ~= "7" then
+		table.insert(snd.setting_priority, "vomiting 7")		 
+	end  
+  if snd.firstaidcuretrack.rot_heat ~= "9" then
+		table.insert(snd.setting_priority, "rot_heat 9")		 
+	end   
+  if snd.firstaidcuretrack.clumsiness ~= "10" then
+		table.insert(snd.setting_priority, "clumsiness 10")		 
+	end  
+  if snd.firstaidcuretrack.nyctophobia ~= "11" then
+		table.insert(snd.setting_priority, "nyctophobia 11")		 
+	end 
+  if snd.firstaidcuretrack.weariness ~= "12" then
+		table.insert(snd.setting_priority, "weariness 12")		 
+	end 
+  if snd.firstaidcuretrack.rot_spirit ~= "13" then
+		table.insert(snd.setting_priority, "rot_spirit 13")		 
+	end 
+  if snd.firstaidcuretrack.rot_benign ~= "14" then
+		table.insert(snd.setting_priority, "rot_benign 14")		 
+	end  
+  if snd.firstaidcuretrack.agoraphobia ~= "15" then
+		table.insert(snd.setting_priority, "agoraphobia 15")		 
+	end 
+  if snd.firstaidcuretrack.loneliness ~= "16" then
+		table.insert(snd.setting_priority, "loneliness 16")		 
+	end 
+  if snd.firstaidcuretrack.blindness ~= "0" then
+		table.insert(snd.setting_priority, "defence blindness reset")
+	end 
+  if snd.firstaidcuretrack.vertigo ~= "17" then
+		table.insert(snd.setting_priority, "vertigo 17")		 
+	end 
+  if snd.firstaidcuretrack.claustrophobia ~= "18" then
+		table.insert(snd.setting_priority, "claustrophobia 18")		 
 	end
-  if snd.firstaidcuretrack.left_arm ~= "6" and snd.firstaidcuretrack.preleftarm ~= "20" then
-		table.insert(snd.setting_priority, "PRESTORE left arm 20% 6")		 
+  if snd.firstaidcuretrack.commitment_fear ~= "19" then
+		table.insert(snd.setting_priority, "commitment_fear 19")		 
 	end
-	if snd.firstaidcuretrack.rightarm ~= "6" and snd.firstaidcuretrack.prerightarm ~= "20" then
-		table.insert(snd.setting_priority, "PRESTORE right arm 20% 6")		 
+  if snd.firstaidcuretrack.haemophilia ~= "20" then
+		table.insert(snd.setting_priority, "haemophilia 20")		 
 	end
- 	if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
+  if snd.firstaidcuretrack.exhausted ~= "21" then
+		table.insert(snd.setting_priority, "exhausted 21")		 
+	end
+  if snd.firstaidcuretrack.stupidity ~= "22" then
+		table.insert(snd.setting_priority, "stupidity 22")		 
+	end
+  if snd.firstaidcuretrack.dizziness ~= "23" then
+		table.insert(snd.setting_priority, "dizziness 23")		 
+	end
+  if snd.firstaidcuretrack.dissonance ~= "24" then
+		table.insert(snd.setting_priority, "dissonance 24")		 
+	end
+  if snd.firstaidcuretrack.frozen ~= "3" then
+		table.insert(snd.setting_priority, "frozen 3")		 
+	end    
+  if snd.firstaidcuretrack.voidgaze ~= "5" then
+		table.insert(snd.setting_priority, "voidgaze 5")		 
+	end    
+  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
 		table.insert(snd.setting_priority, "left_leg_crippled 6")		 
 	end 
  	if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
 		table.insert(snd.setting_priority, "right_leg_crippled 6")		 
 	end 
-	if snd.firstaidcuretrack.left_leg_broken ~= "7" then
-		table.insert(snd.setting_priority, "left_leg_broken 7")		 
-	end   
-  if snd.firstaidcuretrack.right_leg_broken ~= "7" then
-		table.insert(snd.setting_priority, "right_leg_broken 7")		 
-	end   
-  if snd.firstaidcuretrack.left_arm_broken ~= "8" then
-		table.insert(snd.setting_priority, "left_arm_broken 8")		 
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+		table.insert(snd.setting_priority, "left_arm_crippled 7")		 
 	end 
-  if snd.firstaidcuretrack.right_arm_broken ~= "8" then
-		table.insert(snd.setting_priority, "right_arm_broken 8")		 
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
+		table.insert(snd.setting_priority, "right_arm_crippled 7")		 
+	end  
+	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+		table.insert(snd.setting_priority, "left_leg_broken 9")		 
+	end   
+  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
+		table.insert(snd.setting_priority, "right_leg_broken 9")		 
+	end   
+  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
+		table.insert(snd.setting_priority, "left_arm_broken 10")		 
 	end 
-  if snd.firstaidcuretrack.torso ~= "8" and snd.firstaidcuretrack.pretorso ~= "20" then
-		table.insert(snd.setting_priority, "PRESTORE torso 20% 8")		 
-	end
-  if snd.firstaidcuretrack.exhausted ~= "12" then
-		table.insert(snd.setting_priority, "exhausted 12")		 
-  end 
-	snd.firstaidchangecure = false  -- keep last	
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
-	end
-end
-
-function snd.firstaidassCarnifex()
-	if snd.firstaidcuretrack.left_arm ~= "6" and snd.firstaidcuretrack.preleftarm ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE left arm 19% 6")		 
-	end
-	if snd.firstaidcuretrack.rightarm ~= "6" and snd.firstaidcuretrack.prerightarm ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE right arm 19% 6")		 
-	end
-	if snd.firstaidcuretrack.rightleg ~= "5" and snd.firstaidcuretrack.prerightleg ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE right leg 19% 4")		 
-	end
-	if snd.firstaidcuretrack.left_leg ~= "5" and snd.firstaidcuretrack.preleftleg ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE left leg 19% 4")		 
-	end
-	if snd.firstaidcuretrack.head ~= "7" and snd.firstaidcuretrack.prehead ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE head 19% 7")		 
-	end
-  if snd.firstaidcuretrack.torso ~= "7" and snd.firstaidcuretrack.pretorso ~= "19" then
-		table.insert(snd.setting_priority, "PRESTORE torso 19% 7")		 
-	end	
-  if snd.firstaidcuretrack.paresis ~= "2" then
-		table.insert(snd.setting_priority, "paresis 2")		 
-	end	
-	if snd.firstaidcuretrack.paralysis ~= "1" then
-		table.insert(snd.setting_priority, "paralysis 1")		 
-	end	
-	if snd.firstaidcuretrack.slickness ~= "2" then
-		table.insert(snd.setting_priority, "slickness 2")		 
-	end	
-	if snd.firstaidcuretrack.anorexia ~= "2" then
-		table.insert(snd.setting_priority, "anorexia 2")		 
-	end	
-	if snd.firstaidcuretrack.asthma ~= "2" then
-		table.insert(snd.setting_priority, "asthma 2")		 
-	end	
-	if snd.firstaidcuretrack.ringing_ears ~= "2" then
-		table.insert(snd.setting_priority, "ringing_ears 2")		 
-	end	
-	if snd.firstaidcuretrack.clumsiness ~= "2" then
-		table.insert(snd.setting_priority, "clumsiness 2")		 
-	end	
-	if snd.firstaidcuretrack.crushed_chest ~= "3" then
-		table.insert(snd.setting_priority, "crushed_chest 3")		 
-	end		
-	if snd.firstaidcuretrack.weariness ~= "3" then
-		table.insert(snd.setting_priority, "weariness 3")		 
-	end		
-	if snd.firstaidcuretrack.impairment ~= "3" then
-		table.insert(snd.setting_priority, "impairment 3")		 
-	end	
-	if snd.firstaidcuretrack.hypochondria ~= "3" then
-		table.insert(snd.setting_priority, "hypochondria 3")		 
-	end
-	if snd.firstaidcuretrack.sensitivity ~= "4" then
-		table.insert(snd.setting_priority, "sensitivity 4")		 
-	end
-	if snd.firstaidcuretrack.crippled ~= "3" then
-		table.insert(snd.setting_priority, "crippled 3")		 
-	end		
-	if snd.firstaidcuretrack.frozen ~= "4" then
-		table.insert(snd.setting_priority, "frozen 4")		 
-	end	
+  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
+		table.insert(snd.setting_priority, "right_arm_broken 10")		 
+	end 
+	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
+		table.insert(snd.setting_priority, "left_leg_mangled 11")		 
+	end   
+  if snd.firstaidcuretrack.right_leg_mangled ~= "11" then
+		table.insert(snd.setting_priority, "right_leg_mangled 11")		 
+	end   
+  if snd.firstaidcuretrack.left_arm_mangled ~= "12" then
+		table.insert(snd.setting_priority, "left_arm_mangled 12")		 
+	end 
+  if snd.firstaidcuretrack.right_arm_mangled ~= "12" then
+		table.insert(snd.setting_priority, "right_arm_mangled 12")		 
+	end 
+  if snd.firstaidcuretrack.shivering ~= "18" then
+		table.insert(snd.setting_priority, "shivering 18")		 
+	end 
+  if snd.firstaidcuretrack.gloom ~= "20" then
+		table.insert(snd.setting_priority, "gloom 20")		 
+	end   
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -28459,101 +29332,126 @@ function snd.firstaidassTeradrim()
 	end	
 end
 
-function snd.firstaidassSciomancer() 
-	if snd.firstaidcuretrack.paralysis ~= "1" then
-		table.insert(snd.setting_priority, "paralysis 1")		 
+function snd.firstaidassWayfarer()
+	if snd.firstaidcuretrack.anorexia ~= "1" then
+		table.insert(snd.setting_priority, "anorexia 1")		 
+	end	
+	if snd.firstaidcuretrack.clumsiness ~= "2" then
+		table.insert(snd.setting_priority, "clumsiness 2")		 
+	end		
+	if snd.firstaidcuretrack.rightleg ~= "3" and snd.firstaidcuretrack.prerightleg ~= "20" then
+		table.insert(snd.setting_priority, "PRESTORE right leg 20% 3")		 
 	end
-	if snd.firstaidcuretrack.asthma ~= "2" then
-		table.insert(snd.setting_priority, "asthma 2")		 
+	if snd.firstaidcuretrack.left_leg ~= "3" and snd.firstaidcuretrack.preleftleg ~= "20" then
+		table.insert(snd.setting_priority, "PRESTORE left leg 20% 3")		 
 	end
-	if snd.firstaidcuretrack.rot_body ~= "3" then
-		table.insert(snd.setting_priority, "rot_body 3")		 
-	end
-	if snd.firstaidcuretrack.rot_wither ~= "3" then
-		table.insert(snd.setting_priority, "rot_wither 3")		 
-	end
-	if snd.firstaidcuretrack.dementia ~= "4" then
-		table.insert(snd.setting_priority, "dementia 4")		 
-	end
-	if snd.firstaidcuretrack.paresis ~= "5" then
-		table.insert(snd.setting_priority, "paresis 5")		 
-	end 
-	if snd.firstaidcuretrack.lethargy ~= "6" then
-		table.insert(snd.setting_priority, "lethargy 6")		 
-	end 
-	if snd.firstaidcuretrack.vomiting ~= "7" then
-		table.insert(snd.setting_priority, "vomiting 7")		 
+	if snd.firstaidcuretrack.left_arm_crippled ~= "3" and snd.class == "Infiltrator" then
+		table.insert(snd.setting_priority, "left_arm_crippled 3")
+  elseif snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+    table.insert(snd.setting_priority, "left_arm_crippled 7")
 	end  
-  if snd.firstaidcuretrack.rot_heat ~= "9" then
-		table.insert(snd.setting_priority, "rot_heat 9")		 
-	end   
-  if snd.firstaidcuretrack.clumsiness ~= "10" then
-		table.insert(snd.setting_priority, "clumsiness 10")		 
-	end  
-  if snd.firstaidcuretrack.nyctophobia ~= "11" then
-		table.insert(snd.setting_priority, "nyctophobia 11")		 
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "3" and snd.class == "Infiltrator" then
+		table.insert(snd.setting_priority, "right_arm_crippled 3")
+  elseif snd.firstaidcuretrack.left_arm_crippled ~= "7" then
+    table.insert(snd.setting_priority, "right_arm_crippled 7")
+	end	
+  if snd.firstaidcuretrack.head_broken ~= "5" then
+		table.insert(snd.setting_priority, "head_broken 5")		 
 	end 
-  if snd.firstaidcuretrack.weariness ~= "12" then
-		table.insert(snd.setting_priority, "weariness 12")		 
-	end 
-  if snd.firstaidcuretrack.rot_spirit ~= "13" then
-		table.insert(snd.setting_priority, "rot_spirit 13")		 
-	end 
-  if snd.firstaidcuretrack.rot_benign ~= "14" then
-		table.insert(snd.setting_priority, "rot_benign 14")		 
-	end  
-  if snd.firstaidcuretrack.agoraphobia ~= "15" then
-		table.insert(snd.setting_priority, "agoraphobia 15")		 
-	end 
-  if snd.firstaidcuretrack.loneliness ~= "16" then
-		table.insert(snd.setting_priority, "loneliness 16")		 
-	end 
-  if snd.firstaidcuretrack.blindness ~= "0" then
-		table.insert(snd.setting_priority, "defence blindness reset")
-	end 
-  if snd.firstaidcuretrack.vertigo ~= "17" then
-		table.insert(snd.setting_priority, "vertigo 17")		 
-	end 
-  if snd.firstaidcuretrack.claustrophobia ~= "18" then
-		table.insert(snd.setting_priority, "claustrophobia 18")		 
+	if snd.firstaidcuretrack.head ~= "5" and snd.firstaidcuretrack.prehead ~= "20" then
+		table.insert(snd.setting_priority, "PRESTORE head 20% 5")		 
 	end
-  if snd.firstaidcuretrack.commitment_fear ~= "19" then
-		table.insert(snd.setting_priority, "commitment_fear 19")		 
+  if snd.firstaidcuretrack.left_arm ~= "6" and snd.firstaidcuretrack.preleftarm ~= "20" then
+		table.insert(snd.setting_priority, "PRESTORE left arm 20% 6")		 
 	end
-  if snd.firstaidcuretrack.haemophilia ~= "20" then
-		table.insert(snd.setting_priority, "haemophilia 20")		 
+	if snd.firstaidcuretrack.rightarm ~= "6" and snd.firstaidcuretrack.prerightarm ~= "20" then
+		table.insert(snd.setting_priority, "PRESTORE right arm 20% 6")		 
 	end
-  if snd.firstaidcuretrack.exhausted ~= "21" then
-		table.insert(snd.setting_priority, "exhausted 21")		 
-	end
-  if snd.firstaidcuretrack.stupidity ~= "22" then
-		table.insert(snd.setting_priority, "stupidity 22")		 
-	end
-  if snd.firstaidcuretrack.dizziness ~= "23" then
-		table.insert(snd.setting_priority, "dizziness 23")		 
-	end
-  if snd.firstaidcuretrack.dissonance ~= "24" then
-		table.insert(snd.setting_priority, "dissonance 24")		 
-	end
-  if snd.firstaidcuretrack.frozen ~= "3" then
-		table.insert(snd.setting_priority, "frozen 3")		 
-	end    
-  if snd.firstaidcuretrack.voidgaze ~= "5" then
-		table.insert(snd.setting_priority, "voidgaze 5")		 
-	end    
-  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
+ 	if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
 		table.insert(snd.setting_priority, "left_leg_crippled 6")		 
 	end 
  	if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
 		table.insert(snd.setting_priority, "right_leg_crippled 6")		 
+	end 
+	if snd.firstaidcuretrack.left_leg_broken ~= "7" then
+		table.insert(snd.setting_priority, "left_leg_broken 7")		 
+	end   
+  if snd.firstaidcuretrack.right_leg_broken ~= "7" then
+		table.insert(snd.setting_priority, "right_leg_broken 7")		 
+	end   
+  if snd.firstaidcuretrack.left_arm_broken ~= "8" then
+		table.insert(snd.setting_priority, "left_arm_broken 8")		 
+	end 
+  if snd.firstaidcuretrack.right_arm_broken ~= "8" then
+		table.insert(snd.setting_priority, "right_arm_broken 8")		 
+	end 
+  if snd.firstaidcuretrack.torso ~= "8" and snd.firstaidcuretrack.pretorso ~= "20" then
+		table.insert(snd.setting_priority, "PRESTORE torso 20% 8")		 
+	end
+  if snd.firstaidcuretrack.exhausted ~= "12" then
+		table.insert(snd.setting_priority, "exhausted 12")		 
+  end 
+	snd.firstaidchangecure = false  -- keep last	
+	if #snd.setting_priority &gt; 0 then
+		enableTimer("reset check")
+	end
+end
+
+function snd.firstaidassZealot()
+  if snd.have_aff("left_leg_crippled") and snd.not_aff("left_leg_broken") and snd.firstaidcuretrack.left_leg_crippled ~= "4" then
+		table.insert(snd.setting_priority, "left_leg_crippled 4")		 
+	elseif snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+		table.insert(snd.setting_priority, "left_leg_crippled 7")		 
+	end
+	if snd.have_aff("right_leg_crippled") and snd.not_aff("right_leg_broken") then
+		table.insert(snd.setting_priority, "right_leg_crippled 4")		 
+	elseif snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+		table.insert(snd.setting_priority, "right_leg_crippled 7") 		 
+	end   
+	if snd.firstaidcuretrack.torso_mangled ~= "5" then
+		table.insert(snd.setting_priority, "torso_mangled 5") 		 
+	end
+	if snd.firstaidcuretrack.torso_broken ~= "5" then
+		table.insert(snd.setting_priority, "torso_broken 5") 		 
+	end      
+	if snd.firstaidcuretrack.heatspear ~= "6" then
+		table.insert(snd.setting_priority, "heatspear 6")		 
+	end	
+	if snd.firstaidcuretrack.ablaze ~= "4" and snd.not_aff("heatspear") and snd.not_aff("torso_broken") then
+	  table.insert(snd.setting_priority, "ablaze 4")	   
+	elseif snd.firstaidcuretrack.ablaze ~= "7" and (snd.have_aff("heatspear") or snd.have_aff("torso_broken")) then
+		table.insert(snd.setting_priority, "ablaze 7")		 
+	end	  
+	if snd.firstaidcuretrack.lightwound ~= "3" and snd.not_aff("heatspear") and snd.have_aff("ablaze") and snd.not_aff("torso_broken") then
+	  table.insert(snd.setting_priority, "lightwound 3")	   
+	elseif snd.firstaidcuretrack.lightwound ~= "7" then
+		table.insert(snd.setting_priority, "lightwound 7")		 
+	end	
+  if snd.firstaidcuretrack.left_leg_crippled ~= "7" then
+		table.insert(snd.setting_priority, "left_leg_crippled 7")		 
+	end 
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "7" then
+		table.insert(snd.setting_priority, "right_leg_crippled 7")		 
 	end 
  	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
 		table.insert(snd.setting_priority, "left_arm_crippled 7")		 
 	end 
  	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
 		table.insert(snd.setting_priority, "right_arm_crippled 7")		 
+	end   
+  if snd.firstaidcuretrack.left_leg_dislocated ~= "8" then
+		table.insert(snd.setting_priority, "left_leg_dislocated 8")		 
 	end  
-	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
+	if snd.firstaidcuretrack.right_leg_dislocated ~= "8" then
+		table.insert(snd.setting_priority, "right_leg_dislocated 8")		 
+	end 
+	if snd.firstaidcuretrack.left_arm_dislocated ~= "8" then
+		table.insert(snd.setting_priority, "left_arm_dislocated 8")		 
+	end 
+	if snd.firstaidcuretrack.right_arm_dislocated ~= "8" then
+		table.insert(snd.setting_priority, "right_arm_dislocated 8")		 
+	end   
+ 	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
 		table.insert(snd.setting_priority, "left_leg_broken 9")		 
 	end   
   if snd.firstaidcuretrack.right_leg_broken ~= "9" then
@@ -28564,304 +29462,50 @@ function snd.firstaidassSciomancer()
 	end 
   if snd.firstaidcuretrack.right_arm_broken ~= "10" then
 		table.insert(snd.setting_priority, "right_arm_broken 10")		 
-	end 
-	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
-		table.insert(snd.setting_priority, "left_leg_mangled 11")		 
 	end   
-  if snd.firstaidcuretrack.right_leg_mangled ~= "11" then
-		table.insert(snd.setting_priority, "right_leg_mangled 11")		 
-	end   
-  if snd.firstaidcuretrack.left_arm_mangled ~= "12" then
-		table.insert(snd.setting_priority, "left_arm_mangled 12")		 
-	end 
-  if snd.firstaidcuretrack.right_arm_mangled ~= "12" then
-		table.insert(snd.setting_priority, "right_arm_mangled 12")		 
-	end 
-  if snd.firstaidcuretrack.shivering ~= "18" then
-		table.insert(snd.setting_priority, "shivering 18")		 
-	end 
-  if snd.firstaidcuretrack.gloom ~= "20" then
-		table.insert(snd.setting_priority, "gloom 20")		 
-	end   
-	snd.firstaidchangecure = false  -- keep last	
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
+  if snd.firstaidcuretrack.head_broken ~= "11" then
+		table.insert(snd.setting_priority, "head_broken 11")		 
+	end         
+	if snd.firstaidcuretrack.backstrain ~= "16" then
+		table.insert(snd.setting_priority, "backstrain 16")		 
+	end	  
+	if snd.firstaidcuretrack.muscle_spasms ~= "15" then
+		table.insert(snd.setting_priority, "muscle_spasms 15")		 
 	end	
-end
-
-function snd.firstaidassPraenomen()
-  if snd.firstaidcuretrack.blindness ~= "4" then
-		table.insert(snd.setting_priority, "defence blindness 4")		 
-	end 
-  if snd.firstaidcuretrack.asthma ~= "1" then
-		table.insert(snd.setting_priority, "asthma 1")		 
-	end
-  if snd.firstaidcuretrack.clumsiness ~= "2" then
-		table.insert(snd.setting_priority, "clumsiness 2")		 
-	end
-	if snd.firstaidcuretrack.paralysis ~= "3" then
-		table.insert(snd.setting_priority, "paralysis 3")		 
-	end
- 	if snd.firstaidcuretrack.paresis ~= "6" then
-		table.insert(snd.setting_priority, "paresis 6")		 
-	end
-  if snd.firstaidcuretrack.weariness ~= "5" then
-		table.insert(snd.setting_priority, "weariness 5")		 
-	end
-	if snd.firstaidcuretrack.confusion ~= "5" then
-		table.insert(snd.setting_priority, "confusion 5")		 
-	end
-	if snd.firstaidcuretrack.blood_curse ~= "5" then
-		table.insert(snd.setting_priority, "blood_curse 5")		 
-	end
-	if snd.firstaidcuretrack.blood_poison ~= "5" then
-		table.insert(snd.setting_priority, "blood_poison 5")		 
-	end
-	if snd.firstaidcuretrack.epilepsy ~= "6" then
-		table.insert(snd.setting_priority, "epilepsy 6")		 
-	end
-	if snd.firstaidcuretrack.stupidity ~= "6" then
-		table.insert(snd.setting_priority, "stupidity 6")		 
-	end
-	if snd.firstaidcuretrack.peace ~= "7" then
-		table.insert(snd.setting_priority, "peace 7")		 
-	end
-	if snd.firstaidcuretrack.masochism ~= "7" then
-		table.insert(snd.setting_priority, "masochism 7")		 
-	end
-	if snd.firstaidcuretrack.haemophilia ~= "7" then
-		table.insert(snd.setting_priority, "haemophilia 7")		 
-	end
-	if snd.firstaidcuretrack.vomiting ~= "7" then
-		table.insert(snd.setting_priority, "vomiting 7")		 
-	end
-	if snd.firstaidcuretrack.allergies ~= "7" then
-		table.insert(snd.setting_priority, "allergies 7")		 
-	end
-	if snd.firstaidcuretrack.recklessness ~= "8" then
-		table.insert(snd.setting_priority, "recklessness 8")		 
-	end
-	if snd.firstaidcuretrack.rend ~= "9" then
-		table.insert(snd.setting_priority, "rend 9")		 
-	end
-	if snd.firstaidcuretrack.sensitivity ~= "9" then
-		table.insert(snd.setting_priority, "sensitivity 9")		 
+	if snd.firstaidcuretrack.stiffness ~= "14" then
+		table.insert(snd.setting_priority, "stiffness 14")		 
 	end	
-	if snd.firstaidcuretrack.loneliness ~= "25" then
-		table.insert(snd.setting_priority, "loneliness 25")		 
-	end
-  
-	snd.firstaidchangecure = false  -- keep last	
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
+	if snd.firstaidcuretrack.sore_wrist ~= "13" then
+		table.insert(snd.setting_priority, "sore_wrist 13")		 
 	end	
-end
-
-function snd.firstaidassPredator() 
-	if snd.firstaidcuretrack.asthma ~= "1" then
-		table.insert(snd.setting_priority, "asthma 1")		 
-	end
-  if snd.firstaidcuretrack.clumsiness ~= "2" then
-		table.insert(snd.setting_priority, "clumsiness 2")		 
-	end
-	if snd.firstaidcuretrack.paralysis ~= "3" then
-		table.insert(snd.setting_priority, "paralysis 3")		 
-	end
- 	if snd.firstaidcuretrack.paresis ~= "3" then
-		table.insert(snd.setting_priority, "paresis 3")		 
+	if snd.firstaidcuretrack.whiplash ~= "12" then
+		table.insert(snd.setting_priority, "whiplash 12")		 
+	end	   
+	if snd.firstaidcuretrack.deepwound ~= "20" then
+		table.insert(snd.setting_priority, "deepwound 20")		 
+	end	  
+	if snd.firstaidcuretrack.torso ~= "21" and snd.firstaidcuretrack.pretorso ~= "15" then
+		table.insert(snd.setting_priority, "PRESTORE torso 15% 21")		 
 	end 
-  if snd.firstaidcuretrack.weariness ~= "5" then
-		table.insert(snd.setting_priority, "weariness 5")		 
+	if snd.firstaidcuretrack.rightleg ~= "22" and snd.firstaidcuretrack.prerightleg ~= "15" then
+		table.insert(snd.setting_priority, "PRESTORE right leg 15% 22")		 
 	end
-	if snd.firstaidcuretrack.confusion ~= "5" then
-		table.insert(snd.setting_priority, "confusion 5")		 
+	if snd.firstaidcuretrack.leftleg ~= "22" and snd.firstaidcuretrack.preleftleg ~= "15" then
+		table.insert(snd.setting_priority, "PRESTORE left leg 15% 22")		 
+	end 
+  if snd.firstaidcuretrack.leftarm ~= "23" or snd.firstaidcuretrack.preleftarm ~= "15" then
+		table.insert(snd.setting_priority, "PRESTORE left arm 15% 23")		 
 	end
-	if snd.firstaidcuretrack.blood_curse ~= "5" then
-		table.insert(snd.setting_priority, "blood_curse 5")		 
+	if snd.firstaidcuretrack.rightarm ~= "23" and snd.firstaidcuretrack.prerightarm ~= "15" then
+		table.insert(snd.setting_priority, "PRESTORE right arm 15% 23")		 
 	end
-	if snd.firstaidcuretrack.blood_poison ~= "5" then
-		table.insert(snd.setting_priority, "blood_poison 5")		 
-	end
-	if snd.firstaidcuretrack.impatience ~= "6" then
-		table.insert(snd.setting_priority, "impatience 6")		 
-	end
-	if snd.firstaidcuretrack.epilepsy ~= "6" then
-		table.insert(snd.setting_priority, "epilepsy 6")		 
-	end
-	if snd.firstaidcuretrack.peace ~= "7" then
-		table.insert(snd.setting_priority, "peace 7")		 
-	end
-	if snd.firstaidcuretrack.masochism ~= "7" then
-		table.insert(snd.setting_priority, "masochism 7")		 
-	end
-	if snd.firstaidcuretrack.haemophilia ~= "7" then
-		table.insert(snd.setting_priority, "haemophilia 7")		 
-	end
-	if snd.firstaidcuretrack.loneliness ~= "7" then
-		table.insert(snd.setting_priority, "loneliness 7")		 
-	end
-	if snd.firstaidcuretrack.vomiting ~= "7" then
-		table.insert(snd.setting_priority, "vomiting 7")		 
-	end
-	if snd.firstaidcuretrack.allergies ~= "7" then
-		table.insert(snd.setting_priority, "allergies 7")		 
-	end
-	if snd.firstaidcuretrack.recklessness ~= "8" then
-		table.insert(snd.setting_priority, "recklessness 8")		 
-	end
-	if snd.firstaidcuretrack.rend ~= "9" then
-		table.insert(snd.setting_priority, "rend 9")		 
-	end
-	if snd.firstaidcuretrack.sensitivity ~= "9" then
-		table.insert(snd.setting_priority, "sensitivity 9")		 
+	if snd.firstaidcuretrack.head ~= "24" and snd.firstaidcuretrack.prehead ~= "15" then
+  table.insert(snd.setting_priority, "PRESTORE head 15% 24")		 
 	end	  
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
 	end	
-end
-
-function snd.firstaidassShaman()
-  if snd.firstaidcuretrack.impatience ~= "2" then
-		table.insert(snd.setting_priority, "impatience 2")		 
-	end 
-  if snd.firstaidcuretrack.paranoia ~= "4" then
-		table.insert(snd.setting_priority, "paranoia 4")		 
-	end
-  if snd.firstaidcuretrack.stormtouched ~= "4" then
-		table.insert(snd.setting_priority, "stormtouched 4")		 
-	end
-  if snd.firstaidcuretrack.agoraphobia ~= "3" then
-		table.insert(snd.setting_priority, "agoraphobia 3")		 
-	end
-  if snd.firstaidcuretrack.claustrophobia ~= "5" then
-		table.insert(snd.setting_priority, "claustrophobia 5")		 
-	end
-  if snd.firstaidcuretrack.shyness ~= "6" then
-		table.insert(snd.setting_priority, "shyness 6")		 
-	end
-  if snd.firstaidcuretrack.stupidity ~= "6" then
-		table.insert(snd.setting_priority, "stupidity 6")		 
-	end
-  if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Infiltrator") then
-    if snd.firstaidcuretrack.clumsiness ~= "5" then
-  		table.insert(snd.setting_priority, "clumsiness 5")		 
-  	end 
-  else
-    if snd.firstaidcuretrack.clumsiness ~= "7" then
-  		table.insert(snd.setting_priority, "clumsiness 7")		 
-  	end     
-  end
-  if snd.firstaidcuretrack.infested ~= "7" then
-		table.insert(snd.setting_priority, "infested 7")		 
-	end
-  if snd.firstaidcuretrack.peace ~= "8" then
-		table.insert(snd.setting_priority, "peace 8")		 
-	end
-  if snd.firstaidcuretrack.blindness ~= "8" then
-		table.insert(snd.setting_priority, "defence blindness 8")		 
-	end 
-  if snd.firstaidcuretrack.deafness ~= "9" then
-		table.insert(snd.setting_priority, "defence deafness 9")		 
-	end   
-	snd.firstaidchangecure = false  -- keep last	
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
-	end	
-end
-
-function snd.firstaidassBard() 
-  if snd.firstaidcuretrack.paralysis ~= "1" then
-    table.insert(snd.setting_priority, "paralysis 1")	 
-  end
-  if snd.firstaidcuretrack.perplexed ~= "2" then
-    table.insert(snd.setting_priority, "perplexed 2")		 
-  end
-  if snd.firstaidcuretrack.shyness ~= "3" then
-    table.insert(snd.setting_priority, "shyness 3")		 
-  end 
-  if snd.firstaidcuretrack.thin_blood ~= "4" then
-    table.insert(snd.setting_priority, "thin_blood 4")		 
-  end 
-  if snd.firstaidcuretrack.worrywart ~= "5" then
-    table.insert(snd.setting_priority, "worrywart 5")		 
-  end 
-  if snd.firstaidcuretrack.misery ~= "6" then
-    table.insert(snd.setting_priority, "misery 6")		 
-  end 
-  if snd.firstaidcuretrack.hollow ~= "7" then
-    table.insert(snd.setting_priority, "hollow 7")		 
-  end 
-  if snd.firstaidcuretrack.narcolepsy ~= "8" then
-    table.insert(snd.setting_priority, "narcolepsy 8")		 
-  end 
-  if snd.firstaidcuretrack.self_loathing ~= "8" then
-    table.insert(snd.setting_priority, "self_loathing 8")		 
-  end 
-  if snd.firstaidcuretrack.slickness ~= "9" then
-    table.insert(snd.setting_priority, "slickness 9")		 
-  end 
-  if snd.firstaidcuretrack.stupidity ~= "10" then
-    table.insert(snd.setting_priority, "stupidity 10")		 
-  end  
-  if snd.firstaidcuretrack.dizziness ~= "10" then
-    table.insert(snd.setting_priority, "dizziness 10")		 
-  end  
-  if snd.firstaidcuretrack.magnanimity ~= "11" then
-    table.insert(snd.setting_priority, "magnanimity 11")		 
-  end  
-  if snd.firstaidcuretrack.faintness ~= "12" then
-    table.insert(snd.setting_priority, "faintness 12")		 
-  end  
-  if snd.firstaidcuretrack.addiction ~= "13" then		 
-    table.insert(snd.setting_priority, "addiction 13")
-  end 
-  if snd.firstaidcuretrack.allergies ~= "14" then		 
-    table.insert(snd.setting_priority, "allergies 14")
-  end 	
-	snd.firstaidchangecure = false  -- keep last	
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
-	end	
-end
-
-function snd.firstaidassInfiltrator() 
-	if snd.firstaidcuretrack.paresis ~= "2" then
-		table.insert(snd.setting_priority, "paresis 1")
-		 
-	end	
-	if snd.firstaidcuretrack.paralysis ~= "1" then
-		table.insert(snd.setting_priority, "paralysis 1")
-		 
-	end	
-	if snd.firstaidcuretrack.slickness ~= "2" then
-		table.insert(snd.setting_priority, "slickness 2")
-		 
-	end	
-	if snd.firstaidcuretrack.anorexia ~= "2" then
-		table.insert(snd.setting_priority, "anorexia 2")
-		 
-	end	
-	if snd.firstaidcuretrack.asthma ~= "2" then
-		table.insert(snd.setting_priority, "asthma 2")
-		 
-	end	
-	if snd.firstaidcuretrack.addiction ~= "2" then
-		table.insert(snd.setting_priority, "addiction 2")
-		 
-	end	
-	if snd.firstaidcuretrack.hypersomnia ~= "1" then
-		table.insert(snd.setting_priority, "hypersomnia 1")
-		 
-	end	
-	if snd.firstaidcuretrack.clumsiness ~= "3" then
-		table.insert(snd.setting_priority, "clumsiness 1")
-		 
-	end	
-	snd.firstaidchangecure = false  -- keep last		
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
-	end
 end</script>
 									<eventHandlerList />
 								</Script>
@@ -28876,11 +29520,6 @@ if not snd.channeling then
     snd.sync = true 
   end
 
-  if snd.hatredcheck then
-    snd.hatredcheck = false
-    snd.send("order entourage attack me"..snd.sep.."order entourage passive"..snd.sep.."order entourage kill " ..snd.target)
-  end
-
   if snd.not_aff("stun") and snd.toggles.active then
     if ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
       snd.send(snd.endgamehealth)
@@ -28890,10 +29529,6 @@ if not snd.channeling then
       snd.send(snd.endgamehealth)
       snd.endgame_sent = true
       tempTimer(1, [[snd.endgame_sent = false]])
-    elseif snd.hidden_afflictions &gt; 2 and snd.not_aff("hypochondria") and not snd.diag_sent then
-      snd.send("qeb diag")
-      snd.blackoutdone = true
-      snd.diag_sent = true
     end
   end
 end
@@ -29547,7 +30182,7 @@ end</script>
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>alogin</name>
+								<name>Initiate</name>
 								<packageName></packageName>
 								<script>function snd.initiate()
 
@@ -30569,6 +31204,13 @@ def_salivate = "on",
 
 },
 
+siderealist = {
+  def_luminesce = "on",
+  def_blueshift = "on",
+  def_foresight = "once",
+  def_stargleam = "on",
+},
+
 templar = {
 def_maingauche = "once",
 },
@@ -30828,7 +31470,7 @@ chaos = {
     else
       snd.toparry = "head"
     end
-  elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage") then
+  elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage" or snd.cureset == "templar" or snd.cureset == "revenant") then
     local bruised = 0
     if snd.checksomeSelfAffs({"left_leg_bruised_moderate","left_leg_bruised_moderate","right_leg_bruised_moderate","right_leg_bruised_critical", "right_arm_bruised_moderate", "right_arm_bruised_critical", "left_arm_bruised_moderate", "left_arm_bruised_critical", "torso_bruised_moderate", "torso_bruised_critical", "head_bruised_moderate", "torso_bruised_critical"},2) then
       bruised = 2
@@ -30862,34 +31504,6 @@ chaos = {
       else
         snd.toparry = "head"
       end
-    end
-  elseif (snd.cureset == "templar" or snd.cureset == "revenant") then
-    if snd.have_aff("left_leg_bruised_critical") then
-      snd.toparry = "left leg"
-    elseif snd.have_aff("right_leg_bruised_critical") then
-      snd.toparry = "right leg"
-    elseif snd.have_aff("right_arm_bruised_critical") then
-      snd.toparry = "right arm"
-    elseif snd.have_aff("left_arm_bruised_critical") then
-      snd.toparry = "left arm"
-    elseif snd.have_aff("head_bruised_critical") then
-      snd.toparry = "head"
-    elseif snd.have_aff("torso_bruised_critical") then
-      snd.toparry = "torso"
-    elseif snd.have_aff("left_leg_bruised_moderate") then
-      snd.toparry = "left leg"
-    elseif snd.have_aff("right_leg_bruised_moderate") then
-      snd.toparry = "right leg"
-    elseif snd.have_aff("right_arm_bruised_moderate") then
-      snd.toparry = "right arm"
-    elseif snd.have_aff("left_arm_bruised_moderate") then
-      snd.toparry = "left arm"
-    elseif snd.have_aff("head_bruised_moderate") then
-      snd.toparry = "head"
-    elseif snd.have_aff("torso_bruised_moderate") then
-      snd.toparry = "torso"
-    else
-      snd.toparry = "head"
     end
   elseif snd.cureset == "shapeshifter" then
     if snd.have_aff("blurry_vision") and snd.not_aff("mauled_face") and (snd.class == "Executor" or snd.class == "Indorani" or snd.class == "Carnifex" or snd.class == "Teradrim" or snd.class == "Oneiromancer" or snd.class == "Sentinel" or snd.class == "Shaman" or snd.class == "Warden" or snd.class == "Earthcaller" or snd.class == "Luminary") then
@@ -31086,6 +31700,8 @@ snd.last_cure = ""
 snd.last_cured = ""
 snd.mana_percent = 100
 snd.health_percent = 100
+snd.crescentable = true
+snd.target_aegis = false
 
 -- Firstaid assistance stuff
 snd.setting_priority = {}
@@ -31916,6 +32532,7 @@ sciomancer = {"Sciomancy", "Sorcery", "Gravitation"},
 sentinel = {"Dhuriv", "Woodlore", "Tracking"},
 shaman = {"Primality", "Shamanism", "Naturalism"},
 shapeshifter = {"Ferality", "Shapeshifting", "Vocalizing"},
+siderealist = {"Ostension", "Astranomia", "Crystalism"},
 templar = {"Battlefury", "Righteousness", "Bladefire"},
 teradrim = {"Terramancy", "Animation", "Desiccation"},
 tidesage = {"Wavebreaking", "Synthesis", "Inundation"},
@@ -32899,14 +33516,30 @@ function snd.attack(attack)
   local string = ""
   if snd.can_fitness() and snd.need_fitness and snd.have_aff("asthma") then
     if (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
-      string = "fitness"..snd.sep.."smoke yarrow"..snd.sep.."apply epidermal to torso"
+      string = "fitness"..snd.sep.."smoke yarrow"..snd.sep.."apply epidermal to torso"..snd.sep
     elseif (snd.have_aff("slickness") or snd.have_aff("slough")) then
-      string = "fitness"..snd.sep.."smoke yarrow"
+      string = "fitness"..snd.sep.."smoke yarrow"..snd.sep
     else
-      string = "fitness"
+      string = "fitness"..snd.sep
     end
   else
     string = attack
+  end
+  if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") and not snd.diag_sent then
+    string = "diagnose"..snd.sep..string..snd.sep
+    snd.blackoutdone = true
+    snd.diag_sent = true
+  end
+  if snd.not_aff("stun") then
+    if ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
+      string = snd.endgamehealth
+      snd.endgame_sent = true
+      tempTimer(1, [[snd.endgame_sent = false]])
+    elseif ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and snd.not_aff("stun") and snd.not_aff("asleep") and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
+      snd.send(snd.endgamehealth)
+      snd.endgame_sent = true
+      tempTimer(1, [[snd.endgame_sent = false]])
+    end
   end
   if (snd.balance.nimbleness and snd.not_aff("fallen") and not snd.nimble_sent) then
     string = "nimbleness"..snd.sep..string..snd.sep
@@ -36387,6 +37020,75 @@ end</script>
   ["Tracking"] = {
         
 
+  },
+  
+--Siderealist
+  
+  ["Astranomia"] = {
+    Ray = function(target)
+    end,
+    Erode = function(target)
+      snd.used.shield = false
+    end,
+    Dustring = function(target, failure)
+      if not failure then
+        snd.target_got("dustring")
+        snd.affTimers.start("dustring", 150)
+      end
+    end,
+    Inflict = function(target, conditional)
+      local map = {
+        burning = {"red","recklessness"},
+        crushing = {"orange", "gnawing"},
+        radiant = {"yellow", "dizziness"},
+        noxious = {"green", "clumsiness"},
+        frigid = {"blue", "mindfog"},
+        temporal = {"indigo", "paresis"},
+        twisted = {"violet", "paranoia"},
+      }
+      local aff = map[conditional][2]
+      snd.target_got(aff)
+      local color = map[conditional][1]
+    end,
+    Asterism = function(target, failure)
+      if not failure then
+        snd.target_got("asterism")
+        snd.affTimers.start("asterism", 150)
+      end
+    end,
+    Moonlet = function(target, condition)
+      if condition == "end" then
+        snd.target_got("moonlet")
+        snd.affTimers.start("moonlet", 150)
+      end
+    end,
+    Stillness = function(target)
+      local afflist = {"stupidity", "confusion", "dementia", "hallucinations"}
+      local affcount = 0
+      for _, v in ipairs(afflist) do 
+        if not snd.checkAff(v) then
+        snd.target_got(v)
+        affcount = affcount + 1
+        if affcount == 2 then break end
+        end
+      end
+    end,
+    Alteration = function(target, conditional)
+      local aff = conditional:gsub("from ","")
+      snd.target_cured(aff)
+    end,
+    Syzygy = function(target)
+      snd.target_cured("dustring")
+      snd.target_cured("moonlet")
+      snd.target_cured("asterism")
+    end,
+  },
+  ["Crystalism"] = {
+  
+  },
+  ["Ostension"] = {
+  
+  
   },
   
   ["Seraph"] = {
@@ -45234,7 +45936,7 @@ snd.timers.induce = snd.timers.induce or {}
 snd.timers.eqbal = snd.timers.eqbal or {}
 snd.timers.fury = snd.timers.fury or {}
 snd.timers.axes = snd.timers.axes or {}
-
+snd.timers.elixir = snd.timers.elixir or {}
 
 for k, _ in pairs(snd.timers) do
   snd.timers[k] = {["start"] = nil, ["limit"] = nil}
@@ -45365,6 +46067,24 @@ function snd.track_eqbal(time)
   if not snd.timer_check("eqbal", time) then
     snd.timers.eqbal.start = getEpoch()
     snd.timers.eqbal.limit = time
+  end
+end
+
+local times = {
+  harmony = 4.75,
+  health = 4.75,
+  mana = 4.75,
+  infusion = 4.75,
+  levitation = 1.4,
+  immunity = 1.4,
+  speed = 1.4,
+  vigor = 1.4,
+  arcane = 1.4,
+}
+function snd.track_elixir(target, elixir)
+  if target:lower() == snd.target:lower() and times[elixir] then
+    snd.timers.elixir.start = getEpoch()
+    snd.timers.elixir.limit = times[elixir]
   end
 end
 
@@ -45801,6 +46521,35 @@ snd.fishinginfo = snd.fishinginfo or
 						<script>function snd.fishmsg(string)
   cecho("\n&lt;white&gt;[&lt;LightSeaGreen&gt;FISHING&lt;white&gt;] "..string)
 end</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Utilities</name>
+					<packageName></packageName>
+					<script></script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Mapper automount</name>
+						<packageName></packageName>
+						<script>local mountTimer
+
+function snd.mapperAutoMount()
+  if not snd.toggles.automount then return end
+  if gmcp.Char.Vitals.mounted~="0" then return end
+  if mountTimer then killTimer(mountTimer) end
+  mountTimer =
+  tempTimer(
+    0,
+    function()
+      if #mmp.speedWalkPath &gt; 10 then
+        send("qeb recall " .. snd.toggles.mount .. snd.sep .. "recall mount" .. snd.sep .. "quickmount " .. snd.toggles.mount)
+      end
+    end
+  )
+end
+
+registerAnonymousEventHandler("mmp link externals", "snd.mapperAutoMount")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
