@@ -78,18 +78,7 @@ fish = fish or {}</script>
   send("config prettynumbers off", false)
   enableTrigger("Separator Check/Update")
   send("config separator", false)
-  
-  tempTimer(1, function() raiseEvent("sunder_login") end)
-  tempTimer(2.5, function() snd.changeClass() sendGMCP("Char.Skills.get") send("") end)
-  tempTimer(4, [[send("tattoos", false)]])
-  snd.registerCityMarks()
-  local x, y = string.match(gmcp.Char.Status.level, "(.*) (.*)")
-  local level = tonumber(x)
-  if level &gt;= 99 then
-    tempTimer(5, [[send("raceskill active", false)]])
-  end                
-  end)
-  
+    
   if not snd.toggles.parrying then
     expandAlias("tpry")
   end
@@ -114,6 +103,17 @@ fish = fish or {}</script>
   snd.initiate()
   enableTimer("Firstaidstatustimer")
   snd.firstaidstart()
+  
+  tempTimer(1, function() raiseEvent("sunder_login") end)
+  tempTimer(2.5, function() snd.changeClass() sendGMCP("Char.Skills.get") send("") end)
+  tempTimer(4, [[send("tattoos", false)]])
+  snd.registerCityMarks()
+  local x, y = string.match(gmcp.Char.Status.level, "(.*) (.*)")
+  local level = tonumber(x)
+  if level &gt;= 99 then
+    tempTimer(5, [[send("raceskill active", false)]])
+  end                
+  end)
   
 end
 
@@ -740,9 +740,6 @@ end</script>
 							<name>options</name>
 							<packageName></packageName>
 							<script>snd.sep = snd.sep or "##" -- important! CONFIG SEPARATOR value
---snd.mount = snd.mount or "416056" -- your horse's ID number
-
-
 snd.faction = snd.faction or "" -- your faction, spirit or shadow
 snd.class = snd.class or "" -- your class, used for bashing
 snd.limb_dmg_done = snd.limb_dmg_done or 6.5 -- really only for Templars
@@ -782,9 +779,6 @@ rockharvest = false, -- are you harvesting rocks?
 disperse = false, -- use disperse to remove writhes from allies
 questing = false, -- Used to stop you from randomly questing while doing other stuff
 vermin = false, -- Toggle vermin walker/basher
-goggles = true, -- Do you have the antiquated artifact goggles?
-goggle_level = 20,
-gauntlet_level = 20,
 diagaffs = 2,
 nontargetgags = true, -- spam filter for removing non-target curing
 fitness = true, -- have access to the fitness ability
@@ -798,13 +792,24 @@ fastwalk = false,
 prism = false,
 enrich = false,
 gags = true,
-targetrune = true,
 alerts = false,
 laesan = true, --try to use laesan while predator bashing. If false, will go for Ein-fasit instead.
-ascendedtype = "none",
 survive = false,
-mount = "416056",
-}</script>
+}
+
+if gmcp.Char.Status.name == "Kayentesh" then
+  snd.toggles.goggles = false
+  snd.toggles.goggle_level = 0
+  snd.toggles.gauntlet_level = 0
+  snd.toggles.ascendedtype = "none"
+else
+  snd.toggles.goggles = true
+  snd.toggles.goggle_level = 20
+  snd.toggles.gauntlet_level = 20
+  snd.toggles.mount = "416056"
+  snd.toggles.ascendedtype = "chaos"
+  snd.toggles.targetrune = true
+end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -2283,11 +2288,7 @@ end
 
 function snd.self_prone()
 
-  if snd.not_aff("frozen") or snd.have_aff("indifference") or snd.have_aff("paralysis") or 
-      snd.have_aff("writhe_transfix") or snd.have_aff("writhe_web") or snd.have_aff("writhe_impaled") or
-      snd.have_aff("writhe_thighlock") or snd.have_aff("writhe_armpitlock") or 
-      snd.have_aff("writhe_necklock") or snd.have_aff("writhe_ropes") or snd.have_aff("writhe_vines") or 
-      snd.have_aff("fallen") or snd.have_aff("asleep") or snd.have_aff("writhe_dartpinned") or gmcp.Char.Vitals.prone == "1" then
+  if gmcp.Char.Vitals.prone == "0" then
     return false
   
   else
@@ -3091,6 +3092,18 @@ registerAnonymousEventHandler("gmcp.Comm.Channel.Text", "snd.targetListening")</
     
       if snd.toggles.active and snd.healing_loaded and snd.have_aff("asleep") and snd.toggles.standing then
         snd.send("wake")
+      end
+      
+      if snd.not_aff("stun") then
+        if ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
+          snd.send(snd.endgamehealth)
+          snd.endgame_sent = true
+          tempTimer(1, [[snd.endgame_sent = false]])
+        elseif ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and snd.not_aff("stun") and snd.not_aff("asleep") and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
+          snd.send(snd.endgamehealth)
+          snd.endgame_sent = true
+          tempTimer(1, [[snd.endgame_sent = false]])
+        end
       end
     
       if snd.functional() then
@@ -3925,7 +3938,6 @@ snd.method_priority = {
         table.insert(snd.queue, "rage")
       end
       if snd.hidden_afflictions &gt;= 2 then
-        snd.staone()
         snd.hiddencheckfunc()
         table.insert(snd.queue, "diagnose")
       end
@@ -4117,6 +4129,8 @@ aff_airwreath = {state = "healed", effect = "dmg over time", cures = {}, assess 
 aff_arrow_wound = {state = "healed", effect = "delayed by stacks of arrows", cures = {}, assess = false, timer = createStopWatch()},
 aff_ashen_feet = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_asphyxiation_weakness = {state = "healed", effect = "more dmg from asphyx source", cures = {}, assess = false, timer = createStopWatch()},
+aff_asterism = {state = "healed", effect = "anomaly", cures = {}, assess = false, timer = createStopWatch()},
+aff_atrophy = {state = "healed", effect = "half damage except against giver of affliction", cures = {}, assess = false, timer = createStopWatch()},
 aff_attuned = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_backstabbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_backstrain = {state = "healed", effect = "torso dmg on standing", cures = {tree = "send", salve = "soothing to torso"}, assess = false, timer = createStopWatch()},
@@ -4168,6 +4182,7 @@ aff_disrupted = {state = "healed", effect = "", cures = {special = "concentrate"
 aff_dissonance = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_distortion = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_dizziness = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_dustring = {state = "healed", effect = "anomaly", cures = {}, assess = false, timer = createStopWatch()},
 aff_effused_blood = {state = "healed", effect = "", cures = {salve = "epidermal to torso"}, assess = false, timer = createStopWatch()},
 aff_eldritch_invocation = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_electric_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4218,8 +4233,9 @@ aff_hypochondria = {state = "healed", effect = "", cures = {herb = "kelp", tree 
 aff_hypothermia = {state = "healed", effect = "", cures = {salve = "epidermal to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_idiocy = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_impeded = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
-aff_impairment = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_impairment = {state = "healed", effect = "longer stuns, no racials", cures = {herb = "decongestant"}, assess = false, timer = createStopWatch()},
 aff_ice_encased = {state = "healed", effect = "longer salve bal, extra blunt dmg", cures = {}, assess = false, timer = createStopWatch()},
+aff_illgrasp = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_imbued = {state = "healed", effect = "auto gravity from scio spells", cures = {}, assess = false, timer = createStopWatch()},
 aff_impatience = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_indifference = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
@@ -4227,6 +4243,7 @@ aff_infernal_seal = {state = "healed", effect = "", cures = {}, assess = false, 
 aff_infernal_shroud = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infested = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_insomnia = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_irradiated_limb = {state = "healed", effect = "more damage from bolt", cures = {}, assess = false, timer = createStopWatch()},
 aff_itchy = {state = "healed", effect = "tree has to cure this first always", cures = { tree = "send" }, assess = false, timer = createStopWatch()},
 aff_intimidated = {state = "healed", effect = "can't heal above 90%", cures = {}, assess = false, timer = createStopWatch()},
 aff_justice = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -4253,6 +4270,7 @@ aff_left_leg_mangled = {state = "healed", effect = "", cures = {salve = "restora
 aff_left_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_leg_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
 aff_lemniscate = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_lesser_atrophy = {state = "healed", effect = "do less damage", cures = {}, timer = createStopWatch()},
 aff_lethargy = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_lifebane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lightwound = {state = "healed", effect = "extra bleeding", cures = {salve = "mending to body"}, assess = false, timer = createStopWatch()},
@@ -4276,6 +4294,7 @@ aff_mind_clamped = {state = "healed", effect = "", cures = {}, assess = false, t
 aff_mirroring = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_misery = {state = "healed", effect = "messes with resist aff defenses", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_mistbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_moonlet = {state = "healed", effect = "anomaly", cures = {}, assess = false, timer = createStopWatch()},
 aff_muddled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_muscle_spasms = {state = "healed", effect = "chance to apply incorrectly", cures = {tree = "send", salve = "soothing to torso"}, assess = false, timer = createStopWatch()},
 aff_mutagen = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4305,6 +4324,7 @@ aff_pre_restore_right_arm = {state = "healed", effect = "", cures = {salve = "re
 aff_pre_restore_right_leg = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_pre_restore_torso = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_premonition = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_pressured = {state = "healed", effect = "?", cures = {}, assess = false, timer = createStopWatch()},
 aff_psi_tether = {state = "healed", effect = "hurts you if you walk too far from zealot", cures = {}, assess = false, timer = createStopWatch()},
 aff_psychic_weakness = {state = "healed", effect = "more dmg from psychic source", cures = {}, assess = false, timer = createStopWatch()},
 aff_punished_arms = {state = "healed", effect = "unable to parry", cures = {}, assess = false, timer = createStopWatch()},
@@ -4356,6 +4376,7 @@ aff_sapped_dexterity = {state = "healed", effect = "", cures = {}, assess = fals
 aff_sapped_intelligence = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sapped_stats = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sapped_strength = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_sapped_wisdom = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sealing_circle = {state = "healed", effect = "circle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
 aff_sealing_square = {state = "healed", effect = "square affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
 aff_sealing_triangle = {state = "healed", effect = "triangle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
@@ -4420,9 +4441,10 @@ aff_vomiting = {state = "healed", effect = "", cures = {herb = "ginseng", tree =
 aff_voyria = {state = "healed", effect = "", cures = {vial = "immunity"}, assess = false, timer = createStopWatch()},
 aff_weak_grip = {state = "healed", effect = "bypass fist sigil", cures = {tree = "send", salve = "soothing to arms"}, assess = false, timer = createStopWatch()},
 aff_weakvoid = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_whiplash = {state = "healed", effect = "head dmg", cures = {tree = "send", salve = "soothing to legs"}, assess = false, timer = createStopWatch()},
 aff_weariness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_whiplash = {state = "healed", effect = "head dmg", cures = {tree = "send", salve = "soothing to legs"}, assess = false, timer = createStopWatch()},
 aff_windbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_winterheart = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_withering = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_worrywart = {state = "healed", effect = "eucrasia anxiety", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_wraith = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4605,7 +4627,7 @@ function snd.aff_gain(affliction)
 end
 
 function snd.aff_have(affliction)
- if snd.cureset == "archivist" or snd.cureset == "voidseer" then
+ if snd.cureset == "archivist" then
 	if table.contains(snd.circle_affs, affliction) then
 	 hit_aff = false
 	 for aff in pairs(snd.circle_affs) do
@@ -4950,9 +4972,9 @@ def_deafness = {defense = "deafness", type = "normal", effect = "Protects from s
 def_blindness = {defense = "blindness", type = "normal", effect = "Protects from visual effects", balance = {herb = "amaurosis"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_waterbreathing = {defense = "waterbreathing", type = "normal", effect = "Prevents choking underwater", balance = {herb = "waterbreathing"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_kola = {defense = "instawake", type = "normal", effect = "Removes the WAKE delay", balance = {eat = "stimulant"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
-def_insomnia = {defense = "insomnia", type = "normal", effect = "Prevents sleep effects", balance = {eat = "kawhepill"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
-def_deathsight = {defense = "deathsight", type = "normal", effect = "Reports player deaths", balance = {eat = "thanatonin"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
-def_thirdeye = {defense = "thirdeye", type = "normal", effect = "Adds locations to WHO", balance = {eat = "acuity"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_insomnia = {defense = "insomnia", type = "normal", effect = "Prevents sleep effects", balance = {special = "insomnia"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_deathsight = {defense = "deathsight", type = "normal", effect = "Reports player deaths", balance = {special = "deathsight"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
+def_thirdeye = {defense = "thirdeye", type = "normal", effect = "Adds locations to WHO", balance = {special = "thirdeye"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_harmony = {defense = "harmony", type = "normal", effect = "Protects against poison damage", balance = {vial = "harmony"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_levitation = {defense = "levitation", type = "normal", effect = "Protects against falling effects", balance = {vial = "levitation"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
 def_arcane = {defense = "arcane", type = "normal", effect = "Protects against fire damage", balance = {vial = "arcane"}, state = "down", needit = false, timer = createStopWatch(), skill = "Generic"},
@@ -12101,7 +12123,7 @@ snd.vermin = 0</script>
 {area = "the Shattered Vortex (Shadow)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
 {area = "the Shattered Vortex (All)", level = "90-100", targets = {"a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a warped turtle", "a warrior of the Demonsbane", "a reinforcement warrior of the demonsbane", "a fetish-decorated shaman", "a guardian angel", "a nimble sentinel", "a stalwart templar", "an agile Sentaari monk", "a battle-worn Ascendril", "an Ascendril mage","a chaos worm", "a chimera", "a pathfinder", "a sharp-toothed gremlin", "a minion of chaos", "a chaos orb", "a bloodleech", "a bubonis", "a humbug", "a chaos hound", "a green slime", "an ethereal firelord", "a simpering Sycophant", "a soulmaster", "a dervish", "a withered crone", "a chaos storm", "a Sciomancer mage", "a warped indorani", "a strained indorani", "a crazed indorani", "a reinforcement warrior of the aztob", "a warrior of the Aztob", "a warped turtle", "a petrified treant", "a piece of an amalgamation"}, items = {"a finger", "a chunk grey stone", "a chunk of obsidian glass", "a chunk of green and blue stone", "a broken shard of ruby"}},
 {area = "a memory of Relovec Mansion", level = "85-95", targets = {"an enraged memory of a female servant", "an enraged memory of a male servant", "an enraged memory of a female villager", "an enraged memory of a male villager"}},
-{area = "Tiyen Esityi", level = "95+", targets = {"an ashamed, Nazetu female","a brawny, Nazetu female", "Commander Marakhi", "Tirahl the Necromancer", "Lieutenant Gharvoi", "a ball of chitinous legs", "insubstantial whispers", "Quartermaster Kuius", "Lieutenant Chiakhi", "a crazed Nazetu cutter", "a mutated Nazetu intercessor", "a Nazetu cook", "a Nazetu provost", "a deformed Nazetu priest", "a Nazetu corrupter", "a Nazetu necromancer", "a supply officer", "a Nazetu captain", "a Nazetu crossbowman", "a Nazetu halberdier", "a bound shade", "a canerous stallion", "a tangible malevolence", "a victimised intruder", "a massive, sacred serpent"}},
+{area = "Tiyen Esityi", level = "95+", targets = {"an ashamed, Nazetu female","a brawny, Nazetu female", "Commander Marakhi", "Tirahl the Necromancer", "Lieutenant Gharvoi", "a ball of chitinous legs", "insubstantial whispers", "Quartermaster Kuius", "Lieutenant Chiakhi", "a crazed Nazetu cutter", "a mutated Nazetu intercessor", "a Nazetu cook", "a Nazetu provost", "a deformed Nazetu priest", "a Nazetu corrupter", "a Nazetu necromancer", "a supply officer", "a Nazetu captain", "a Nazetu crossbowman", "a Nazetu halberdier", "a bound shade", "a canerous stallion", "a tangible malevolence", "a victimised intruder"}},
 {area = "the Nal'jin Depths", level = "95+", targets = {"an enormous spinelash fish", "a sinewy Nal'jin eel", "a shadow ray", "a serpentine jawsnapper"}},
 {area = "the Forgotten Dome", level = "95+", targets = {"a gibbering kelki reaver", "a deformed kelki ravener", "a mutated kelki ravager", "a vile kelki prowler"}},
 {area = "Luzith's Lair", level = "95+", targets = {"a mass of deadly trap spiders", "a deadly trap spider", "a monstrous arachnid", "a vicious little spider", "a large, crystalline spider", "a flying spider", "a sentinel spider", "a slender, female arachnoid"}},
@@ -24409,35 +24431,20 @@ end</script>
 						<name>class bashing functions</name>
 						<packageName></packageName>
 						<script>snd.class_list = {
-{class = "Akkari", func = function(current) snd.akkari_bash() end},
 {class = "Alchemist", func = function(current) snd.alchemist_bash() end},
 {class = "Archivist", func = function(current) snd.archivist_bash() end}, 
-{class = "Ascendril", func = function(current) snd.ascendril_bash() end},
 {class = "Bard", func = function(current) snd.bard_bash() end},
-{class = "Bloodborn", func = function(current) snd.bloodborn_bash() end}, 
 {class = "Carnifex", func = function(current) snd.carnifex_bash() end},
 {class = "Earthcaller", func = function(current) snd.earthcaller_bash() end},
 {class = "Executor", func = function(current) snd.executor_bash() end}, 
 {class = "Indorani", func = function(current) snd.indorani_bash() end}, 
 {class = "Infiltrator", func = function(current) snd.infiltrator_bash() end},
-{class = "Luminary", func = function(current) snd.luminary_bash() end}, 
 {class = "Monk", func = function(current) snd.monk_bash() end}, 
-{class = "Oneiromancer", func = function(current) snd.oneiromancer_bash() end},
-{class = "Praenomen", func = function(current) snd.praenomen_bash() end}, 
-{class = "Predator", func = function(current) snd.predator_bash() end}, 
 {class = "Ravager", func = function(current) snd.ravager_bash() end},
 {class = "Revenant", func = function(current) snd.revenant_bash() end},
-{class = "Runecarver", func = function(current) snd.runecarver_bash() end},
 {class = "Sciomancer", func = function(current) snd.sciomancer_bash() end}, 
-{class = "Sentinel", func = function(current) snd.sentinel_bash() end}, 
-{class = "Shaman", func = function(current) snd.shaman_bash() end}, 
 {class = "Shapeshifter", func = function(current) snd.shapeshifter_bash() end}, 
-{class = "Siderealist", func = function(current) snd.siderealist_bash() end}, 
-{class = "Templar", func = function(current) snd.templar_bash() end},
 {class = "Teradrim", func = function(current) snd.teradrim_bash() end},
-{class = "Tidesage", func = function(current) snd.tidesage_bash() end},
-{class = "Voidseer", func = function(current) snd.voidseer_bash() end}, 
-{class = "Warden", func = function(current) snd.warden_bash() end},
 {class = "Wayfarer", func = function(current) snd.wayfarer_bash() end}, 
 {class = "Zealot", func = function(current) snd.zealot_bash() end},
 {class = "None", func = function(current) snd.chaos_lord_bash() end},
@@ -24453,26 +24460,28 @@ function snd.bashing_function()
       snd.runBasher()
     else
 			battack = "none" -- set attack to none
-      if not snd.counterattack_active then -- if the npc isn't counter attacking (tcanna/drakkum/torturer), then check class skills
-				for k,v in pairs(snd.class_list) do
-					if snd.class_list[k].class == snd.class then -- check current class to class bash list above
-            battack = "" -- set attack from 'none' to "" so it can be set in the class basher, will provide error if it can't get a class ability
-						if snd[v.class:lower().."_bash_override"] then
-              snd[v.class:lower().."_bash_override"]()
-            else
-              v.func() -- set attack from class basher
-            end 
-						if snd.have_aff("shock") and hasSkill("Overdrive") then -- let's use overdrive if we have shock, adds to new class bashing attack line
-							battack = "overdrive"..snd.sep..battack..snd.sep.."recoup"..snd.sep
-						elseif snd.pushattack then  -- if they are a pushable npc (tcanna/drakuum/torturer) and we know we can shove, do it first
-							battack = "push "..snd.bashing.target..snd.sep.."recoup"..snd.sep
-							snd.pushattack = false
-						end
+      for k,v in pairs(snd.class_list) do
+        if snd.class_list[k].class == snd.class then -- check current class to class bash list above
+          battack = "" -- set attack from 'none' to "" so it can be set in the class basher, will provide error if it can't get a class ability
+					if snd[v.class:lower().."_bash_override"] then
+            snd[v.class:lower().."_bash_override"]()
+          else
+            v.func() -- set attack from class basher
+          end 
+				  if snd.have_aff("shock") and hasSkill("Overdrive") then -- let's use overdrive if we have shock, adds to new class bashing attack line
+            battack = "overdrive"..snd.sep..battack..snd.sep.."recoup"..snd.sep
+					elseif snd.pushattack then  -- if they are a pushable npc (tcanna/drakuum/torturer) and we know we can shove, do it first
+						battack = "push "..snd.bashing.target..snd.sep.."recoup"..snd.sep
+						snd.pushattack = false
 					end
 				end
-      else -- if they're counter attacking, let's not do anything
-        battack = ""
 			end
+      
+      if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") and not snd.diag_sent then
+        battack = "diag"..snd.sep
+        snd.blackoutdone = true
+        snd.diag_sent = true
+      end
         
 			if tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 and hasSkill("Clotting") then -- if you are bleeding a lot and can clot, clot with your attack
         mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
@@ -24480,18 +24489,22 @@ function snd.bashing_function()
           battack = "clot 500"..snd.sep..battack..snd.sep
         end  
       end 
-      if (snd.balance.nimbleness and snd.not_aff("fallen") and not snd.nimble_sent) then
+      if (snd.balance.nimbleness and snd.not_aff("fallen") and not snd.nimble_sent and hasSkill("Nimbleness")) then
         battack = "nimbleness"..snd.sep..battack..snd.sep
         snd.nimble_sent = true
         tempTimer(1, [[snd.nimble_sent = false]])
       end 
     
-			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 and snd.ylem_check then battack = battack..snd.sep.."absorb ylem" end -- if you have a level 2 gauntlet, auto-absorb
+			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep.."absorb ylem" end -- if you have a level 2 gauntlet, auto-absorb
       
       if battack == "" and (snd.counterattack_active or not snd.defenses.def_reflection.state == "deffed") then -- if the basher couldn't change battack to something from your class, it will give an error
         echo("\nTried to bash, no class ability set.")
       elseif battack ~= snd.last_attack and not snd.ylem_check then -- if your battack isn't the same as your last attempted attack, and you aren't trying to capture ylem
-        snd.last_attack = battack -- ATTACK
+        if snd.elementalcount &gt;= 30 then
+          snd.last_attack = "sacrifice corpses"..snd.sep..battack
+        else
+          snd.last_attack = battack -- ATTACK
+        end
         if battack ~= "none" then -- if for some reason it's none as your attack, stand
           snd.send("qeb stand"..snd.sep..snd.last_attack)
         end
@@ -24515,29 +24528,6 @@ function snd.chaos_lord_bash()
   else
     battack = "chaos havoc "..snd.bashing.target
  	end
-end
-
-function snd.akkari_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  bp = tonumber(gmcp.Char.Vitals.blood)
-  battack = ""
-  
-	if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield" -- otherwise, shield
-  elseif hp &lt;= 45 and bp &gt;= 30 and snd.balance.mend and hasSkill("Vivify") then
-    battack = "vivify"
-  elseif bp &gt;= 50 and hp &lt;= 30 and hasSkill("Unbroken") then
-    if snd.balance.unbroken and snd.defenses.def_unbroken.state == "down" then
-      battack = "spirit unbroken"..snd.sep.."denounce "..snd.bashing.target
-    else
-      battack = "denounce "..snd.bashing.target
-    end
-  elseif bp &lt;= 25 then
-    battack = "deliver corpse"
-  else
-    battack = "denounce "..snd.bashing.target
-  end
 end
 
 function snd.alchemist_bash()
@@ -24598,57 +24588,6 @@ function snd.archivist_bash()
     end
 end
 
-function snd.ascendril_bash()
-
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  
-	if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
-  -- let the reflection do its job
-  elseif hp &lt;= 60 then
-    if snd.reflection_charge &gt; 0 then
-      battack = "cast reflection"
-    else
-      if snd.shield_check then 
-        battack = "touch shield"
-      end
-    end
-  elseif hasSkill("Quickcast") then
-    if not snd.fulcrum_exists then
-      battack = "fulcrum construct"
-    elseif snd.fulcrum_call then
-      battack = "fulcrum recall"
-    else
-      if snd.toggles.enrich and snd.balance.enrich and wp &gt;= 40 then
-        if (gmcp.Char.Vitals.resonance == "fire" or gmcp.Char.Vitals.resonance == "air") then
-          battack = "fulcrum enrich water"..snd.sep
-        end
-      end
-      if snd.toggles.prism then
-        if gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "air" then
-          battack = battack.."cast prism frostblade "..snd.bashing.target
-        elseif gmcp.Char.Vitals.resonance == "water" then
-          battack = "cast prism firelash "..snd.bashing.target
-        elseif gmcp.Char.Vitals.resonance == "fire" then
-          battack = "cast prism windlance "..snd.bashing.target
-        end
-      else
-        if gmcp.Char.Vitals.resonance == "" or gmcp.Char.Vitals.resonance == "air"  then
-          battack = "cast frostblade "..snd.bashing.target
-        elseif gmcp.Char.Vitals.resonance == "water" then
-          battack = "cast firelash "..snd.bashing.target
-        elseif gmcp.Char.Vitals.resonance == "fire" then
-          battack = "cast windlance "..snd.bashing.target
-        end
-      end
-    end
-  else
-    battack = "cast firelash "..snd.bashing.target
-  end
-end
-
 function snd.bard_bash()
 
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
@@ -24661,51 +24600,6 @@ function snd.bard_bash()
     else
       battack = "weave tearing "..snd.bashing.target
     end
-  end
-end
-
-function snd.bloodborn_bash()
-
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  
-  if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
-  -- let the reflection do its job
-  elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
-    battack = "unleash geminate"
-  elseif hasSkill("Primacy") then    
-    if not snd.fulcrum_exists then
-      battack = "well draw"
-    elseif snd.fulcrum_call then
-      battack = "well recall"
-    else
-      if snd.toggles.enrich and snd.balance.enrich and wp &gt;= 40 then
-        if (gmcp.Char.Vitals.aspect == "yellow" or gmcp.Char.Vitals.aspect == "black") then
-          battack = "well contaminate phlegm"..snd.sep
-        end
-      end
-      if snd.toggles.prism then
-        if gmcp.Char.Vitals.aspect == "" or gmcp.Char.Vitals.aspect == "black" then
-          battack = battack.."unleash triplicate flense "..snd.bashing.target
-        elseif gmcp.Char.Vitals.aspect == "phlegm" then
-          battack = "unleash triplicate disgorge "..snd.bashing.target
-        elseif gmcp.Char.Vitals.aspect == "yellow" then
-          battack = "unleash triplicate befoul "..snd.bashing.target
-        end
-      else
-        if gmcp.Char.Vitals.aspect == "" or gmcp.Char.Vitals.aspect == "black"  then
-          battack = "humour flense "..snd.bashing.target
-        elseif gmcp.Char.Vitals.aspect == "phlegm" then
-          battack = battack.."humour disgorge "..snd.bashing.target
-        elseif gmcp.Char.Vitals.aspect == "yellow" then
-          battack = "humour befoul "..snd.bashing.target
-        end
-      end
-    end
-  else
-    battack = "humour disgorge "..snd.bashing.target
   end
 end
 
@@ -24762,17 +24656,6 @@ function snd.indorani_bash()
   end
 end
 
-function snd.luminary_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	if hp &lt;=40 and snd.shield_check then
-      battack = "angel aura me"
-	elseif snd.toggles.lightning then
-  	battack = "evoke lightning "..snd.bashing.target
- 	else
-  	battack = "smite "..snd.bashing.target.." angel empathy"
- 	end
-end
-
 function snd.monk_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
@@ -24805,64 +24688,9 @@ function snd.monk_bash()
 	end
 end
 
-function snd.oneiromancer_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-
-  if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif hp &lt;= 55 and hasSkill("Flower") then
-    battack = "unfurl flower at me"
-  elseif snd.toggles.newbie then
-    battack = "starlight "..snd.bashing.target
-  else
-    if snd.wielded.left.name == "athame" or snd.wielded.right.name == "athame" then
-       battack = "impel athame at "..snd.bashing.target
-    else
-       battack = "starlight "..snd.bashing.target
-    end
-  end
-end
-
-function snd.praenomen_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  bp = tonumber(gmcp.Char.Vitals.blood)
- 
-  if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif hp &lt;= 45 and bp &gt;= 30 and snd.balance.mend and hasSkill("Mending") then
-    battack = "mend"
-  elseif bp &gt;= 50 and hasSkill("Deluge") then
-    if snd.balance.unbroken and snd.defenses.def_unbroken.state == "down" then
-      battack = "blood deluge"..snd.sep.."frenzy "..snd.bashing.target
-    else
-      battack = "frenzy "..snd.bashing.target
-    end
-  elseif bp &lt;= 25 then
-    battack = "feed corpse"
-  else
-    battack = "frenzy "..snd.bashing.target
-  end
-end
-
-function snd.predator_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  
-  battack = ""
-  local stance = gmcp.Char.Vitals.knife_stance or "None"
-  local attacks = snd.get_predator_bash_attacks()
-  if hp &lt;= 40 and snd.shield_check then
-    battack = "touch shield"
-  else
-    battack = "wolf flank "..snd.bashing.target..snd.sep..attacks[stance].." "..snd.bashing.target
-  end
-  
-end
-
 function snd.ravager_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
   battack = ""
   
   if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 and snd.cauterize and mp &gt;= 15 then
@@ -24907,35 +24735,6 @@ function snd.revenant_bash()
   end
 end
 
-function snd.runecarver_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  shadowprice = tonumber(gmcp.Char.Vitals.spiritpact)
-  
-  if tonumber(snd.repay) == 0 and hp &gt;= 55 and shadowprice &gt; 0 and snd.not_aff("recklessness") then
-		 battack = "hex obeisance"..snd.sep
-	end -- let's try to get pacts back up to 2 times without getting too hurt
-      
-  if hp &lt;=40 and snd.shield_check then
-    if snd.reflection_charge &gt; 0 and snd.defenses.def_reflection.state ~= "deffed" then
-        battack = battack.."runecarve branch"
-    else
-      battack = battack.."touch shield"
-    end 
-  elseif snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
-  -- let the reflection do its job
-  elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
-    battack = battack.."runecarve branch"
-	elseif snd.toggles.newbie then
-  	battack = battack.."hex enervate "..snd.bashing.target
-  else
-    if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 4 and hasSkill("Spiritpact") then
-      battack = battack.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
-    else
-      battack = battack.."hex malady " ..snd.bashing.target
-    end
-  end
-end
-
 function snd.sciomancer_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   shadowprice = tonumber(gmcp.Char.Vitals.shadowprice)
@@ -24965,47 +24764,6 @@ function snd.sciomancer_bash()
       battack = battack.."cast fever " ..snd.bashing.target
     end
   end
-end
- 
-function snd.sentinel_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	
-  if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif snd.toggles.newbie then
-  	battack = "dhuriv combo "..snd.bashing.target.." slash stab"
- 	else
-  	battack = "dhuriv combo "..snd.bashing.target.." crosscut thrust"
- 	end
-end
-
-function snd.shaman_bash()
-
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp) 
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  battack = ""
-  if snd.familiar and snd.balance.morph and hasSkill("Morph") then
-    if snd.shamanpet == "bear" then
-      battack = "order spirit passive"..snd.sep.."familiar morph spider"
-    elseif snd.shamanpet == "spider" then
-      battack = "order spirit passive"..snd.sep.."familiar morph bear"
-    else
-      battack = "order spirit passive"..snd.sep.."familiar morph bear"
-    end
-  else
-    battack = "familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"
-  end
-
-  if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-	else
-    if tonumber(gmcp.Char.Vitals.energy) &gt; 3 then
-      battack = battack..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
-    else
-      battack = battack..snd.sep.."commune lightning "..snd.bashing.target
-    end 
-	end
 end
 
 function snd.shapeshifter_bash()
@@ -25061,28 +24819,6 @@ function snd.infiltrator_bash()
  	end
 end
 
-function snd.templar_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
-
-	if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif snd.toggles.newbie then
-		battack = "strikebash "..snd.bashing.target
-  elseif (snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") or snd.wielded.left.name:find("glaive")) and hasSkill("Doubleswing") then
-    battack = "dsw "..snd.bashing.target
-  else
-  	battack = "dsk "..snd.bashing.target
-	end
-	if (hp &gt;= 61 and wp &gt;= 50 and hasSkill("Sacrifice")) and not snd.toggles.newbie then 
-    battack = battack.. " sacrifice sacrifice"
-  elseif not snd.toggles.newbie and hasSkill("Cleanse") then
-    battack = "cleanse left"..snd.sep.."cleanse right"..snd.sep..battack
-  end
-end
-
 function snd.teradrim_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
@@ -25111,42 +24847,6 @@ function snd.tidesage_bash()
 	end
 end
 
-function snd.voidseer_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  bioessence = tonumber(gmcp.Char.Vitals.insight) or 0
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  
-    if hp &lt;= 70 and not snd.knit and bioessence &gt; 0 and hasSkill("Alleviate") then
-        battack = "void alleviate"
-    elseif hp &lt;= 60 and bioessence &gt; 1 and not snd.balance.ethereal and hasSkill("Disjoint") then
-        battack = "void disjoint"
-    elseif hp &lt;=40 and snd.shield_check then
-        battack = "touch shield"
-    else
-      if bioessence &gt; 1 and hasSkill("Aplomb") then
-        battack = "foment sadness "..snd.bashing.target..snd.sep.."void aplomb"
-      else
-        battack = "foment sadness " ..snd.bashing.target
-      end
-    end
-end
-
-function snd.warden_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	
-  if hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-  elseif hp &lt;= 60 and snd.soul &gt;= 60 then
-    battack = "ancest suffuse health"
-	else
-    if gmcp.Char.Vitals.wield_left:find("scythe") or gmcp.Char.Vitals.wield_left:find("greatspear") then
-      battack = "warden lacerate "..snd.bashing.target
-    else
-      battack = "warden maul "..snd.bashing.target
-	 end
-  end
-end
-
 function snd.wayfarer_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   
@@ -25161,32 +24861,6 @@ function snd.wayfarer_bash()
   else
     battack = "axe chop "..snd.bashing.target
   end
-end
-
-function snd.zealot_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  battack = ""
-  if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 and snd.cauterize and hasSkill("Cauterize") and mp &gt;= 15 then
-    battack = "enact cauterize me"..snd.sep
-    snd.cauterize = false
-    tempTimer(2,[[snd.cauterize = true]])
-  end
-
-  if snd.have_aff("blackout") or (hp &lt;= 45 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 50) then
-    if snd.shield_check then
-      battack = battack.."touch shield"
-    else
-      if hasSkill("Respiration") then
-        battack = battack.."respiration"
-      end
-    end
-  elseif not snd.can_arms() or snd.swagger &gt; 3 then
-    battack = battack.."sunkick "..snd.bashing.target
-	else
-		battack = battack.."flow "..snd.bashing.target.." pummel pummel"
-	end
 end</script>
 						<eventHandlerList />
 					</Script>
@@ -26997,7 +26671,7 @@ function snd.purge_check()
     
     if #purgable &gt;= purge_threshold then
       return true
-    elseif (snd.have_aff("physical_disruption") and (snd.cureset == "templar" or snd.cureset == "revenant")) and #purgable &gt;= 2 then
+    elseif (snd.have_aff("physical_disruption") and snd.cureset == "templar" ) and #purgable &gt;= 2 then
       return true
     else
       return false
@@ -27235,7 +26909,7 @@ end
 							<script>
 function snd.do_diagnose()
  if snd.full_balance() then
-  snd.send("diagnose")
+  snd.send("diag")
   snd.last_type = "diagnose"
   snd.last_item = "send"
   snd.waiting.balance = true
@@ -27283,7 +26957,7 @@ snd.topdamageprelimb = "none"
 
 	if (snd.count(snd.people_hitting_me)) &lt; 3 then
 		damageset = 1
-	elseif snd.cureset ==  "indorani" or snd.cureset ==  "oneiromancer" then
+	elseif snd.cureset ==  "indorani" then
 		damageset = 15		
 	end
 
@@ -28011,11 +27685,11 @@ if snd.toggles.active then
     if snd.not_aff("gloom") and not snd.focusing then
       send("firstaid use focus on")
     else
-      if (snd.cureset == "runecarver" or snd.cureset == "sciomancer") and snd.have_aff("gloom") then
+      if snd.cureset == "runecarver" and snd.have_aff("gloom") then
         send("firstaid use focus off")
       end
     end
-    if snd.cureset == "shaman" or snd.cureset == "alchemist" then
+    if snd.cureset == "shaman" then
       if snd.have_aff("paralysis") and snd.stormtouching then
         send("firstaid stormtouched off")	
       elseif not snd.stormtouching then
@@ -28023,46 +27697,48 @@ if snd.toggles.active then
       end
     elseif snd.stormtouching then
       send("firstaid stormtouched off")
-    end		
-	elseif (snd.cureset == "archivist" or snd.cureset == "voidseer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassArchivist()
-	elseif (snd.cureset == "ascendril" or snd.cureset == "bloodborn") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassAscendril()
-  elseif snd.cureset == "bard" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassBard()	
-	elseif (snd.cureset == "carnifex" or snd.cureset == "warden") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassCarnifex()	
-	elseif (snd.cureset == "indorani" or snd.cureset == "oneiromancer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassIndorani()	
-  elseif snd.cureset == "infiltrator" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassInfiltrator()
-	elseif (snd.cureset == "earthcaller" or snd.cureset == "luminary") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassLuminary()	
-	elseif snd.cureset == "monk" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassMonk()		
-  elseif (snd.cureset == "akkari" or snd.cureset == "praenomen") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassPraenomen()	
-	elseif snd.cureset == "predator" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassPredator()	
-	elseif (snd.cureset == "runecarver" or snd.cureset == "sciomancer") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassSciomancer()				
-	elseif (snd.cureset == "executor" or snd.cureset == "sentinel") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassSentinel()
-	elseif (snd.cureset == "alchemist" or snd.cureset == "shaman") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassShaman()
-  elseif snd.cureset == "shapeshifter" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassShapeshifter()						
-	elseif snd.cureset == "siderealist" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassSiderealist()
-	elseif (snd.cureset == "revenant" or snd.cureset == "templar") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassTemplar()		
-	elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassTeradrim()		
-	elseif snd.cureset == "wayfarer" and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassWayfarer()
-  elseif (snd.cureset == "ravager" or snd.cureset == "zealot") and (snd.count(snd.people_hitting_me)) &lt; 3 then
-		snd.firstaidassZealot()			
-	end
+    end
+  elseif (snd.count(snd.people_hitting_me)) &lt; 3 then
+    if snd.cureset == "archivist" then
+		  snd.firstaidassArchivist()
+    elseif snd.cureset == "ascendril" then
+		  snd.firstaidassAscendril()
+    elseif snd.cureset == "bard" then
+      snd.firstaidassBard()	
+    elseif snd.cureset == "carnifex" then
+      snd.firstaidassCarnifex()	
+    elseif snd.cureset == "indorani" then
+		  snd.firstaidassIndorani()	
+    elseif snd.cureset == "infiltrator" then
+		  snd.firstaidassInfiltrator()
+    elseif snd.cureset == "luminary" then
+      snd.firstaidassLuminary()	
+    elseif snd.cureset == "monk" then
+      snd.firstaidassMonk()		
+    elseif snd.cureset == "praenomen" then
+		  snd.firstaidassPraenomen()	
+    elseif snd.cureset == "predator" then
+		  snd.firstaidassPredator()	
+    elseif snd.cureset == "sciomancer" then
+		  snd.firstaidassSciomancer()				
+    elseif snd.cureset == "sentinel" then
+		  snd.firstaidassSentinel()
+    elseif snd.cureset == "shaman" then
+		  snd.firstaidassShaman()
+    elseif snd.cureset == "shapeshifter" then
+		  snd.firstaidassShapeshifter()						
+    elseif snd.cureset == "siderealist" then
+		  snd.firstaidassSiderealist()
+    elseif snd.cureset == "templar" then
+		  snd.firstaidassTemplar()		
+    elseif snd.cureset == "teradrim" then
+		  snd.firstaidassTeradrim()		
+    elseif snd.cureset == "wayfarer" then
+		  snd.firstaidassWayfarer()
+    elseif snd.cureset == "zealot" then
+		  snd.firstaidassZealot()			
+    end
+  end
 
 	if not firstaidclassset then
 		snd.firstaidclass()
@@ -29038,12 +28714,6 @@ function snd.firstaidassSiderealist()
 	if snd.firstaidcuretrack.asthma ~= "2" then
 		table.insert(snd.setting_priority, "asthma 2")		 
 	end
-	if snd.firstaidcuretrack.rot_body ~= "3" then
-		table.insert(snd.setting_priority, "rot_body 3")		 
-	end
-	if snd.firstaidcuretrack.rot_wither ~= "3" then
-		table.insert(snd.setting_priority, "rot_wither 3")		 
-	end
 	if snd.firstaidcuretrack.dementia ~= "4" then
 		table.insert(snd.setting_priority, "dementia 4")		 
 	end
@@ -29056,24 +28726,12 @@ function snd.firstaidassSiderealist()
 	if snd.firstaidcuretrack.vomiting ~= "7" then
 		table.insert(snd.setting_priority, "vomiting 7")		 
 	end  
-  if snd.firstaidcuretrack.rot_heat ~= "9" then
-		table.insert(snd.setting_priority, "rot_heat 9")		 
-	end   
   if snd.firstaidcuretrack.clumsiness ~= "10" then
 		table.insert(snd.setting_priority, "clumsiness 10")		 
 	end  
-  if snd.firstaidcuretrack.nyctophobia ~= "11" then
-		table.insert(snd.setting_priority, "nyctophobia 11")		 
-	end 
   if snd.firstaidcuretrack.weariness ~= "12" then
 		table.insert(snd.setting_priority, "weariness 12")		 
 	end 
-  if snd.firstaidcuretrack.rot_spirit ~= "13" then
-		table.insert(snd.setting_priority, "rot_spirit 13")		 
-	end 
-  if snd.firstaidcuretrack.rot_benign ~= "14" then
-		table.insert(snd.setting_priority, "rot_benign 14")		 
-	end  
   if snd.firstaidcuretrack.agoraphobia ~= "15" then
 		table.insert(snd.setting_priority, "agoraphobia 15")		 
 	end 
@@ -29109,9 +28767,6 @@ function snd.firstaidassSiderealist()
 	end
   if snd.firstaidcuretrack.frozen ~= "3" then
 		table.insert(snd.setting_priority, "frozen 3")		 
-	end    
-  if snd.firstaidcuretrack.voidgaze ~= "5" then
-		table.insert(snd.setting_priority, "voidgaze 5")		 
 	end    
   if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
 		table.insert(snd.setting_priority, "left_leg_crippled 6")		 
@@ -29152,9 +28807,6 @@ function snd.firstaidassSiderealist()
   if snd.firstaidcuretrack.shivering ~= "18" then
 		table.insert(snd.setting_priority, "shivering 18")		 
 	end 
-  if snd.firstaidcuretrack.gloom ~= "20" then
-		table.insert(snd.setting_priority, "gloom 20")		 
-	end   
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -29511,32 +29163,6 @@ end</script>
 								</Script>
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>staone script</name>
-								<packageName></packageName>
-								<script>function snd.staone()
-if not snd.channeling then
-
-  if gmcp.Char.Vitals.equilibrium == "1" and gmcp.Char.Vitals.balance == "1" and gmcp.Char.Vitals.left_arm == "1" and gmcp.Char.Vitals.right_arm == "1" and snd.not_aff("blackout")then 
-    snd.sync = true 
-  end
-
-  if snd.not_aff("stun") and snd.toggles.active then
-    if ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
-      snd.send(snd.endgamehealth)
-      snd.endgame_sent = true
-      tempTimer(1, [[snd.endgame_sent = false]])
-    elseif ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and snd.not_aff("stun") and snd.not_aff("asleep") and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout")) and snd.sync and not snd.endgame_sent then
-      snd.send(snd.endgamehealth)
-      snd.endgame_sent = true
-      tempTimer(1, [[snd.endgame_sent = false]])
-    end
-  end
-end
-  
-end</script>
-								<eventHandlerList />
-							</Script>
-							<Script isActive="yes" isFolder="no">
 								<name>Clot Check</name>
 								<packageName></packageName>
 								<script>function snd.clotcheck()
@@ -29545,13 +29171,13 @@ end</script>
 		if tonumber(snd.percentmana) &lt; 60 then -- 4
 			if snd.toggles.bashing and snd.firstaidclotlevel ~= "20" then -- 3
     		snd.send("firstaid clot above 40")
-			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and (snd.cureset == "praenomen" or snd.cureset == "akkari") and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and snd.firstaidclotlevel ~= "45" then 
+			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and snd.cureset == "praenomen" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and snd.firstaidclotlevel ~= "45" then 
 				snd.send("firstaid clot above 45")
-			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and (snd.cureset == "luminary" or snd.cureset == "earthcaller")  and tonumber(gmcp.Char.Vitals.bleeding) &gt; 60 and snd.firstaidclotlevel ~= "60" then 
+			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and snd.cureset == "luminary" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 60 and snd.firstaidclotlevel ~= "60" then 
 				snd.send("firstaid clot above 60")
-			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and (snd.cureset == "sentinel" or snd.cureset == "executor") and tonumber(gmcp.Char.Vitals.bleeding) &gt; 60 and snd.firstaidclotlevel ~= "40" then 
+			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and snd.cureset == "sentinel" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 60 and snd.firstaidclotlevel ~= "40" then 
 				snd.send("firstaid clot above 40")
-			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and not (snd.cureset == "luminary" or snd.cureset == "akkari" or snd.cureset == "praenomen" or snd.cureset == "earthcaller") then
+			elseif (snd.count(snd.people_hitting_me)) &lt; 2 and not snd.cureset == "luminary" and not snd.cureset == "praenomen" then
 				if tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 and snd.firstaidclotlevel ~= "30" then -- 2
 					snd.send("firstaid clot above 30")
 				elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 200 and snd.firstaidclotlevel ~= "20" then 
@@ -29567,16 +29193,16 @@ end</script>
 		if snd.toggles.bashing and tonumber(snd.percentestmana) &gt; 20 then -- 2
 			snd.send("clot 50")
 			snd.percentestmana = snd.percentestmana - 200
-		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and (snd.cureset == "praenomen" or snd.cureset == "akkari") and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and tonumber(snd.percentestmana) &gt; 45 then 
+		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and snd.cureset == "praenomen" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and tonumber(snd.percentestmana) &gt; 45 then 
 			send("clot 80")
 			snd.percentestmana = snd.percentestmana - 320
-		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and (snd.cureset == "luminary" or snd.cureset == "earthcaller")  and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentestmana) &gt; 60 then 
+		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and snd.cureset == "luminary" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentestmana) &gt; 60 then 
 			send("clot 60")
 			snd.percentestmana = snd.percentestmana - 240
-		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and (snd.cureset == "sentinel" or snd.cureset == "executor") and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentmana) &gt; 40 then 
+		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and snd.cureset == "sentinel" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentmana) &gt; 40 then 
 			send("clot 60")
 			snd.percentestmana = snd.percentestmana - 240
-		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and not (snd.cureset == "luminary" or snd.cureset == "akkari" or snd.cureset == "praenomen" or snd.cureset == "earthcaller") then
+		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and not snd.cureset == "luminary" and not snd.cureset == "praenomen" then
 			if tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 and tonumber((snd.percentestmana/100)) &gt; 30 then 
 				send("clot 120")
 				snd.percentestmana = snd.percentestmana - 480
@@ -29587,7 +29213,7 @@ end</script>
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 100 and tonumber(snd.percentestmana) &gt; 20 then 
 			send("clot 40")
 			snd.percentestmana = snd.percentestmana - 160
-		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and not (snd.cureset == "praenomen" or snd.cureset == "akkari" or snd.cureset == "luminary" or snd.cureset == "earthcaller")  then
+		elseif (snd.count(snd.people_hitting_me)) &lt; 3 and not snd.cureset == "praenomen" and not snd.cureset == "luminary"  then
 			if tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 and tonumber(snd.percentestmana) &gt; 78 then -- 1
 				send("clot 60") 
 				snd.percentestmana = snd.percentestmana - 240
@@ -29597,7 +29223,7 @@ end</script>
 			elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 100 and tonumber(snd.percentestmana) &gt; 60 then 
 				send("clot 40")
 				snd.percentestmana = snd.percentestmana - 160
-			elseif (snd.count(snd.people_hitting_me)) &lt; 3 and not (snd.cureset == "praenomen" or snd.cureset == "akkari") and not (snd.cureset == "luminary" or snd.cureset == "earthcaller")  and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentestmana) &gt; 20 then 
+			elseif (snd.count(snd.people_hitting_me)) &lt; 3 and not snd.cureset == "praenomen" and not snd.cureset == "luminary" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentestmana) &gt; 20 then 
 				send("clot 40")
 				snd.percentestmana = snd.percentestmana - 160
 			end  	-- 1
@@ -29617,7 +29243,7 @@ end  			-- main function</script>
 								<packageName></packageName>
 								<script>function snd.hiddencheckfunc()
 if not snd.hidden_check then
-	if snd.hiddentype == "shine" and (snd.cureset == "luminary" or snd.cureset == "earthcaller") and (snd.count(snd.people_hitting_me) &lt; 3) then  -- Disfigurement, dizziness, stiffness, weariness, and ablaze.
+	if snd.hiddentype == "shine" and snd.cureset == "luminary" and (snd.count(snd.people_hitting_me) &lt; 3) then  -- Disfigurement, dizziness, stiffness, weariness, and ablaze.
 		if snd.not_aff("hellsight") and snd.not_aff("slickness") then
 			send("smoke yarrow"..snd.sep.."apply paste")
 		end    
@@ -29775,8 +29401,6 @@ end</script>
 		  table.insert(snd.limbbrokencount, "left_arm_crippled")
 	 end
   end
-
-  snd.staone()
 end
 </script>
 								<eventHandlerList />
@@ -29835,9 +29459,6 @@ end
 		table.insert(snd.limbbrokencount, "left_arm_crippled")
 	 end
   end
-
-  snd.staone()
-
 end</script>
 								<eventHandlerList />
 							</Script>
@@ -29850,7 +29471,7 @@ end</script>
 			snd.send("divert ranged")
 			snd.send("dodge ranged")
 			snd.avoidanceset = "ranged"
-		elseif (snd.cureset == "sentinel" or snd.cureset == "executor" or snd.cureset == "shaman" or snd.cureset == "alchemist" or snd.cureset == "archivist" or snd.cureset == "voidseer") and snd.avoidanceset ~= "upsets" and snd.dodgestance ~= "upsets" and snd.divertstance ~= "upsets" then
+		elseif (snd.cureset == "sentinel" or snd.cureset == "shaman" or snd.cureset == "archivist") and snd.avoidanceset ~= "upsets" and snd.dodgestance ~= "upsets" and snd.divertstance ~= "upsets" then
 			snd.send("dodge upsets")
 			snd.send("divert upsets")
 			snd.avoidanceset = "upsets"	
@@ -30115,8 +29736,6 @@ if snd.toggles.active then
 			end
 		end
 	end
-  
-  snd.staone()
 
 	if snd.clottime and tonumber(gmcp.Char.Vitals.bleeding) &gt; 30 and not (snd.have_aff("haemophilia") or snd.have_aff("stun"))  then 
 		snd.clotcheck()
@@ -30562,7 +30181,7 @@ elseif (table.isMember(ordered_list, "crippled_body") or table.isMember(ordered_
 		table.insert(ordered_list, 1, "haemophilia")
 elseif table.isMember(ordered_list, "ruptured_eardrum") then
 		table.remove(ordered_list, "hearing")
-elseif (table.isMember(ordered_list, "paresis") or table.isMember(ordered_list, "paralysis")) and (snd.cureset == "sentinel" or snd.cureset == "executor") then
+elseif (table.isMember(ordered_list, "paresis") or table.isMember(ordered_list, "paralysis")) and snd.cureset == "sentinel" then
 		if table.isMember(ordered_list, "paresis") then 
 			table.remove(ordered_list, "paresis")
 			table.insert(ordered_list, 1, "paresis")
@@ -31436,7 +31055,7 @@ chaos = {
         aff = "pre_restore_"..limb
       end
       
-  if (snd.cureset == "sentinel" or snd.cureset == "executor") then
+  if snd.cureset == "sentinel" then
     if not snd.checksomeSelfAffs({"slickness","paresis","heartflutter","destroyed_throat","anorexia","asthma"},3) then
       snd.toparry = "torso"
     elseif snd.have_aff("impatience") then
@@ -31456,7 +31075,7 @@ chaos = {
     else
       snd.toparry = "head"
     end
-  elseif (snd.cureset == "luminary" or snd.cureset == "earthcaller") then
+  elseif snd.cureset == "luminary" then
     if snd.my_limb_damage["left leg"] &gt; 22 then
       snd.toparry = "left leg"
     elseif snd.my_limb_damage["right leg"] &gt; 22 then
@@ -31470,7 +31089,7 @@ chaos = {
     else
       snd.toparry = "head"
     end
-  elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage" or snd.cureset == "templar" or snd.cureset == "revenant") then
+  elseif (snd.cureset == "teradrim" or snd.cureset == "templar") then
     local bruised = 0
     if snd.checksomeSelfAffs({"left_leg_bruised_moderate","left_leg_bruised_moderate","right_leg_bruised_moderate","right_leg_bruised_critical", "right_arm_bruised_moderate", "right_arm_bruised_critical", "left_arm_bruised_moderate", "left_arm_bruised_critical", "torso_bruised_moderate", "torso_bruised_critical", "head_bruised_moderate", "torso_bruised_critical"},2) then
       bruised = 2
@@ -31587,7 +31206,7 @@ chaos = {
     else
       snd.toparry = "left leg"
     end
-  elseif (snd.cureset == "zealot" or snd.cureset == "ravager") then
+  elseif snd.cureset == "zealot" then
     if snd.heelrush ~= snd.toparry then
       snd.toparry = snd.heelrush
     elseif snd.my_limb_damage["torso"] &gt; 12 and snd.restorationlimbfail ~= "torso" then
@@ -31623,7 +31242,7 @@ chaos = {
     else
       snd.toparry = "left leg"
     end
-  elseif (snd.cureset == "ascendril" or snd.cureset == "bloodborn") then
+  elseif snd.cureset == "ascendril" then
     if snd.have_aff("blisters") or snd.have_aff("impairment") then
       snd.toparry = "head"
     elseif snd.rimespear then
@@ -32508,38 +32127,25 @@ snd.entangleaffs = {
 
 
 snd.cureset_skills = {
-akkari = {"Ascendance", "Dictum", "Discipline"},
-alchemist = {"Alchemy", "Experimentation", "Botany"},
-archivist = {"Geometrics", "Numerology", "Bioessence"},
-ascendril = {"Elemancy", "Arcanism", "Thaumaturgy"},
+archivist = {"Geometrics", "Numerology", "Bioessence","Cultivation", "Enlightenment", "Voidgazing"},
+ascendril = {"Elemancy", "Arcanism", "Thaumaturgy", "Humourism", "Esoterica", "Hematurgy"},
 bard = {"Weaving", "Performance", "Songcalling"},
-bloodborn = {"Humourism", "Esoterica", "Hematurgy"},
-carnifex = {"Savagery", "Deathlore", "Warhounds"},
-earthcaller = {"Subjugation", "Apocalyptia", "Tectonics"},
-executor = {"Shadowdancing", "Artifice", "Subversion"},
-sentinel = {"Dhuriv", "Woodlore", "Tracking"},
-indorani = {"Necromancy", "Tarot", "Domination"},
+carnifex = {"Savagery", "Deathlore", "Warhounds", "Warding", "Ancestry", "Communion"},
+sentinel = {"Dhuriv", "Woodlore", "Tracking", "Shadowdancing", "Artifice", "Subversion"},
+indorani = {"Necromancy", "Tarot", "Domination", "Oneiromancy", "Hyalincuru", "Contracts"},
 infiltrator = {"Assassination", "Subterfuge", "Hypnosis"},
-luminary = {"Spirituality", "Devotation", "Illumination"},
+luminary = {"Spirituality", "Devotation", "Illumination", "Subjugation", "Apocalyptia", "Tectonics"},
 monk = {"Tekura", "Kaido", "Telepathy"},
-oneiromancer = {"Oneiromancy", "Hyalincuru", "Contracts"},
-praenomen = {"Corpus", "Mentis", "Sanguis"},
+praenomen = {"Corpus", "Mentis", "Sanguis", "Ascendance", "Dictum", "Discipline"},
 predator = {"Knifeplay", "Predation", "Beastmastery"},
-ravager = {"Brutality", "Ravaging", "Egotism"},
-revenant = {"Riving", "Manifestation", "Chirography"},
-runecarver = {"Malediction", "Runecarving", "Sporulation"},
-sciomancer = {"Sciomancy", "Sorcery", "Gravitation"},
-sentinel = {"Dhuriv", "Woodlore", "Tracking"},
-shaman = {"Primality", "Shamanism", "Naturalism"},
+sciomancer = {"Sciomancy", "Sorcery", "Gravitation", "Malediction", "Runecarving", "Sporulation"},
+shaman = {"Primality", "Shamanism", "Naturalism", "Alchemy", "Experimentation", "Botany"},
 shapeshifter = {"Ferality", "Shapeshifting", "Vocalizing"},
 siderealist = {"Ostension", "Astranomia", "Crystalism"},
-templar = {"Battlefury", "Righteousness", "Bladefire"},
-teradrim = {"Terramancy", "Animation", "Desiccation"},
-tidesage = {"Wavebreaking", "Synthesis", "Inundation"},
-warden = {"Warding", "Ancestry", "Communion"},
+templar = {"Battlefury", "Righteousness", "Bladefire", "Riving", "Manifestation", "Chirography"},
+teradrim = {"Terramancy", "Animation", "Desiccation", "Wavebreaking", "Synthesis", "Inundation"},
 wayfarer = {"Tenacity", "Wayfaring", "Fury"},
-voidseer = {"Cultivation", "Enlightenment", "Voidgazing"},
-zealot = {"Zeal", "Purification", "Psionics"},
+zealot = {"Zeal", "Purification", "Psionics","Brutality", "Ravaging", "Egotism"},
 }</script>
 						<eventHandlerList />
 					</Script>
@@ -33526,7 +33132,7 @@ function snd.attack(attack)
     string = attack
   end
   if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") and not snd.diag_sent then
-    string = "diagnose"..snd.sep..string..snd.sep
+    string = "diag"..snd.sep..string..snd.sep
     snd.blackoutdone = true
     snd.diag_sent = true
   end
@@ -33541,7 +33147,7 @@ function snd.attack(attack)
       tempTimer(1, [[snd.endgame_sent = false]])
     end
   end
-  if (snd.balance.nimbleness and snd.not_aff("fallen") and not snd.nimble_sent) then
+  if (snd.balance.nimbleness and snd.not_aff("fallen") and not snd.nimble_sent and hasSkill("Nimbleness")) then
     string = "nimbleness"..snd.sep..string..snd.sep
     snd.nimble_sent = true
     tempTimer(1, [[snd.nimble_sent = false]])
@@ -33938,7 +33544,7 @@ function snd.no_parry()
  if snd.class == "Sentinel" or snd.class == "Executor" then
   table.insert(noparryaffs, "heartflutter")
  end
- if snd.cureset == "zealot" or snd.cureset == "ravager" then
+ if snd.cureset == "zealot" then
   table.insert(noparryaffs, "paresis")
  end
  if snd.checksomeAffs(noparryaffs, 1) then no_parry = true end
@@ -37023,7 +36629,6 @@ end</script>
   },
   
 --Siderealist
-  
   ["Astranomia"] = {
     Ray = function(target)
     end,
@@ -37036,7 +36641,7 @@ end</script>
         snd.affTimers.start("dustring", 150)
       end
     end,
-    Inflict = function(target, conditional)
+    Gleam = function(target, inflict, conditional)
       local map = {
         burning = {"red","recklessness"},
         crushing = {"orange", "gnawing"},
@@ -37084,7 +36689,54 @@ end</script>
     end,
   },
   ["Crystalism"] = {
-  
+  Tones =
+    function(target, vibe)
+      if vibe == "Dissipate" then
+        if snd.checkAff("confusion") then
+          snd.vital_change("mana", -14)
+        else
+          snd.vital_change("mana", -7)
+        end
+      elseif vibe == "Palpitation" then
+        if snd.checkAff("paralysis") then
+          snd.vital_change("health", -6)
+        else
+          snd.vital_change("health", -4)
+        end
+      elseif vibe == "Tremors" then
+        snd.target_got("fallen")
+      elseif vibe == "Creeps" then
+        if snd.checkAff("loneliness") then
+          snd.target_got("masochism")
+        else
+          snd.target_got("loneliness")
+        end
+      elseif vibe == "Oscillate" then
+        snd.target_got("muddled")
+      elseif vibe == "Disorientation" then
+        if snd.checkAff("epilepsy") then
+          snd.target_got("berserking")
+        else
+          snd.target_got("epilepsy")
+        end
+      elseif vibe == "Stridulation" then
+        if snd.checkAff("hearing") then
+          snd.target_got("sensitivity")
+        else
+          snd.target_got("hearing")
+        end
+      elseif vibe == "Gravity" then
+        snd.lev_gone = true
+      elseif vibe == "Crystalforest" then
+        snd.used.shield = false
+      elseif vibe == "Dissension" then
+        snd.target_got("dissonance")
+      elseif vibe == "Lullaby" then
+        snd.target_got("sleep")
+      elseif vibe == "Plague" then
+        --add in a flag here to detect plague tone secondary line, for anti illusion purposes?
+      end
+    end
   },
   ["Ostension"] = {
   
@@ -40161,15 +39813,15 @@ end</script>
   local asthmaready = false
   if snd.cureset == "infiltrator" and snd.shruggingcheck(time) then
     canasthma = true
-  elseif (snd.cureset == "sciomancer" or snd.cureset == "runecarver") and snd.leechcheck(time) then
+  elseif snd.cureset == "sciomancer" and snd.leechcheck(time) then
     canasthma = true
-  elseif (snd.cureset == "indorani" or snd.cureset == "oneiromancer") and snd.foolcheck(time) then
+  elseif snd.cureset == "indorani" and snd.foolcheck(time) then
     canasthma = true
-  elseif (snd.cureset == "praenomen" or snd.cureset == "akkari") and snd.purifycheck(time) then
+  elseif snd.cureset == "praenomen" and snd.purifycheck(time) then
     canasthma = true
   elseif snd.cureset == "shapeshifter" and snd.shedcheck(time) then
     canslickness = true
-  elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage") and snd.absorbcheck(time) then
+  elseif snd.cureset == "teradrim" and snd.absorbcheck(time) then
     canasthma = true
   --elseif (table.isMember(snd.classattacks, "Earthcaller") or table.isMember(snd.classattacks, "Luminary")) and 
   --elseif table.isMember(snd.classattacks, "Sentinel")
@@ -40195,8 +39847,7 @@ end</script>
 							<packageName></packageName>
 							<script>function snd.reboundingtimerfunc()
   if reboundenemy_timer then killTimer(reboundenemy_timer) end
-	reboundenemy_timer = tempTimer(6.15,[[snd.used.rebounding = true
-  snd.staone()]])
+	reboundenemy_timer = tempTimer(6.15,[[snd.used.rebounding = true]])
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -40300,7 +39951,7 @@ end</script>
       snd.scythevenomapp = "slike"
       snd.scythevenom1 = "anorexia"
 
-    elseif (not snd.checkAff("clumsiness") and not snd.checkAff("weariness")) and not (snd.cureset == "templar" or snd.cureset == "revenant") then
+    elseif (not snd.checkAff("clumsiness") and not snd.checkAff("weariness")) and not snd.cureset == "templar"then
       snd.scythevenomapp = "xentio"
       snd.scythevenom1 = "clumsiness"
       
@@ -40308,7 +39959,7 @@ end</script>
       snd.scythevenomapp = "aconite"
       snd.scythevenom1 = "stupidity"     
     
-    elseif not snd.checkAff("clumsiness") and not (snd.cureset == "templar" or snd.cureset == "revenant") then
+    elseif not snd.checkAff("clumsiness") and not snd.cureset == "templar" then
       snd.scythevenomapp = "xentio"
       snd.scythevenom1 = "clumsiness"
       
@@ -40674,7 +40325,7 @@ end</script>
       snd.scythevenomapp = "slike"
       snd.scythevenom1 = "anorexia"
       
-    elseif not snd.checkAff("clumsiness") and not snd.checkAff("weariness") and not (snd.cureset == "templar" or snd.cureset == "revenant") then
+    elseif not snd.checkAff("clumsiness") and not snd.checkAff("weariness") and not snd.cureset == "templar" then
       snd.scythevenomapp = "xentio"
       snd.scythevenom1 = "clumsiness"
       
@@ -40685,7 +40336,7 @@ end</script>
       snd.scythevenomapp = "aconite"
       snd.scythevenom1 = "stupidity"     
     
-    elseif not snd.checkAff("clumsiness") and not (snd.cureset == "templar" or snd.cureset == "revenant") then
+    elseif not snd.checkAff("clumsiness") and not snd.cureset == "templar" then
       snd.scythevenomapp = "xentio"
       snd.scythevenom1 = "clumsiness"
     
@@ -41220,12 +40871,12 @@ end</script>
 	end
   
 	local consume = false
-	if snd.shadowpricecount &gt; 0 or (snd.canforgive and not snd.cureset == "luminary" and not snd.cureset == "earthcaller" and not snd.cureset == "praenomen" and not snd.cureset == "akkari") then  -- consume conditions with shadowprice
+	if snd.shadowpricecount &gt; 0 or (snd.canforgive and not snd.cureset == "luminary" and not snd.cureset == "praenomen") then  -- consume conditions with shadowprice
 		consume = true
 	end
   
 	local forgiving = false
-	if snd.canforgive and snd.shadowpricecount &lt; 2 and (not snd.cureset == "luminary" and not snd.cureset == "earthcaller" and not snd.cureset == "praenomen" and not snd.cureset == "akkari") then
+	if snd.canforgive and snd.shadowpricecount &lt; 2 and not snd.cureset == "luminary" and not snd.cureset == "praenomen" then
 		snd.praeattack = "cast forgive" ..snd.sep
 		forgiving = true
 	end
@@ -41795,7 +41446,7 @@ end</script>
 			string = string.."bio stimulant"..snd.sep.."bio stimulant"..snd.sep.."bio stimulant"
 			echo("\nSETTING UP UNRAVEL")
 		end
-  elseif snd.defenses.def_speed.state ~= "deffed" and snd.checkAff("aeon") and (snd.cureset == "oneiromancer" or snd.cureset == "indorani") and bioessence &gt; 0 then 
+  elseif snd.defenses.def_speed.state ~= "deffed" and snd.checkAff("aeon") and snd.cureset == "oneiromancer" and bioessence &gt; 0 then 
 		string = "bio jolt" ..snd.sep
   elseif mentcount &gt; 2 and physcount &lt; 3 and bioessence &gt; 0 and tonumber(ashcountone) &gt; 1 and not snd.checkAff("addiction") and snd.growth then 
 		if not snd.checkAff("hypochondria") and not snd.conjoin then  -- hex diagnose
@@ -46552,17 +46203,10 @@ end
 registerAnonymousEventHandler("mmp link externals", "snd.mapperAutoMount")</script>
 						<eventHandlerList />
 					</Script>
-				</ScriptGroup>
-			</ScriptGroup>
-			<ScriptGroup isActive="yes" isFolder="yes">
-				<name>Sysaa Scripts</name>
-				<packageName></packageName>
-				<script></script>
-				<eventHandlerList />
-				<Script isActive="yes" isFolder="no">
-					<name>Deathsense script</name>
-					<packageName></packageName>
-					<script>function snd.deathsense()
+					<Script isActive="yes" isFolder="no">
+						<name>Deathsense script</name>
+						<packageName></packageName>
+						<script>function snd.deathsense()
   local x = #A
   outputs = {}
   while x &gt; 0 do
@@ -46573,22 +46217,22 @@ registerAnonymousEventHandler("mmp link externals", "snd.mapperAutoMount")</scri
   return table.concat(outputs, ", ") 
 
 end</script>
-					<eventHandlerList />
-				</Script>
-				<ScriptGroup isActive="yes" isFolder="yes">
-					<name>Wayfarer Identify</name>
-					<packageName>Wayfarer Identify</packageName>
-					<script></script>
-					<eventHandlerList />
+						<eventHandlerList />
+					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Wayfarer Identify</name>
-						<packageName></packageName>
+						<packageName>Wayfarer Identify</packageName>
 						<script></script>
 						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Wayfarer Identify Script</name>
+						<ScriptGroup isActive="yes" isFolder="yes">
+							<name>Wayfarer Identify</name>
 							<packageName></packageName>
-							<script>identify_target = nil
+							<script></script>
+							<eventHandlerList />
+							<Script isActive="yes" isFolder="no">
+								<name>Wayfarer Identify Script</name>
+								<packageName></packageName>
+								<script>identify_target = nil
 comma_color = "honeydew"
 count_color = "red"
 multi_mob_color = "orchid"
@@ -46660,19 +46304,19 @@ function split_string(str)
   return temp_list
 end
 </script>
-							<eventHandlerList />
-						</Script>
+								<eventHandlerList />
+							</Script>
+						</ScriptGroup>
 					</ScriptGroup>
-				</ScriptGroup>
-				<ScriptGroup isActive="yes" isFolder="yes">
-					<name>Aetolia Hunt Tracking</name>
-					<packageName>Aetolia Hunt Tracking</packageName>
-					<script></script>
-					<eventHandlerList />
 					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>Hunt Tracker</name>
-						<packageName></packageName>
-						<script>--[Written by Akrios of Aetolia; 09/06/2022]
+						<name>Aetolia Hunt Tracking</name>
+						<packageName>Aetolia Hunt Tracking</packageName>
+						<script></script>
+						<eventHandlerList />
+						<ScriptGroup isActive="yes" isFolder="yes">
+							<name>Hunt Tracker</name>
+							<packageName></packageName>
+							<script>--[Written by Akrios of Aetolia; 09/06/2022]
  --[Hopefully nothing breaks in the export!]
  
 huntdata = huntdata or {}
@@ -46681,11 +46325,11 @@ huntdata.tmpdata = nil
 function huntdata.echo(text)
   cecho("\n&lt;NavajoWhite&gt;(&lt;goldenrod&gt;stats&lt;NavajoWhite&gt;): &lt;DodgerBlue&gt;"..text)
 end</script>
-						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Tracking Functions</name>
-							<packageName></packageName>
-							<script>--This will keep track of our current area, and update as needed.
+							<eventHandlerList />
+							<Script isActive="yes" isFolder="no">
+								<name>Tracking Functions</name>
+								<packageName></packageName>
+								<script>--This will keep track of our current area, and update as needed.
 function huntdata.enterarea()
   local area = gmcp.Room.Info.area
   if not huntdata.tmpdata then
@@ -46841,12 +46485,12 @@ else
     huntdata.echo("Cannot find any matching area containing '"..area.."'")
   end
 end]]</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Save/Load</name>
-							<packageName></packageName>
-							<script>--function for saving data when we leave.
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>Save/Load</name>
+								<packageName></packageName>
+								<script>--function for saving data when we leave.
 function huntdata.savedata()
   if huntdata.trackeddata then
     local separator = string.char(getMudletHomeDir():byte()) == "/" and "/" or "\\"
@@ -46878,12 +46522,12 @@ function huntdata.install()
   huntdata.savedata()
 end
 </script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>String Library Additions</name>
-							<packageName></packageName>
-							<script>--Thanks to Lin from Aetolia.
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>String Library Additions</name>
+								<packageName></packageName>
+								<script>--Thanks to Lin from Aetolia.
 
 local strip_cecho_tokens = function (str)
   return str:gsub("&lt;[%w_]+&gt;", "")
@@ -46928,12 +46572,12 @@ function math.round(number, decimals, method)
     if (method == "ceil" or method == "floor") then return math[method](number * factor) / factor 
     else return tonumber(("%."..decimals.."f"):format(number)) end 
 end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Information Display</name>
-							<packageName></packageName>
-							<script>function huntdata.showhunt(area, num)
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>Information Display</name>
+								<packageName></packageName>
+								<script>function huntdata.showhunt(area, num)
   --Various failsafe checks to ensure everything is being sent as intended.
   if not huntdata.trackeddata then huntdata.echo("System not installed properly!") return end
   if not huntdata.trackeddata[area] then huntdata.echo("We have no data for that area!") return end
@@ -47040,52 +46684,28 @@ function huntdata.searchruns(query)
   end
   send(" ",false)
 end</script>
-							<eventHandlerList />
-						</Script>
+								<eventHandlerList />
+							</Script>
+						</ScriptGroup>
 					</ScriptGroup>
-				</ScriptGroup>
-				<ScriptGroup isActive="yes" isFolder="yes">
-					<name>MapOverlaySub-Optional-Script</name>
-					<packageName>MapOverlaySub-Optional-Script</packageName>
-					<script></script>
-					<eventHandlerList />
 					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>MapScript</name>
-						<packageName>MapScript</packageName>
+						<name>Aetolia Exploration</name>
+						<packageName>Aetolia Exploration</packageName>
 						<script></script>
 						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Map</name>
+						<ScriptGroup isActive="yes" isFolder="yes">
+							<name>Exploration</name>
 							<packageName></packageName>
-							<script>mapDisplay = Geyser.MiniConsole:new({
-	name = "mapDisplay",
-	x="70%",y="0%",
-	width="100%",height="40%"
-}, rightDisplay)
-mapDisplay:setColor("black")
-mapDisplay:setWrap(60)</script>
-							<eventHandlerList />
-						</Script>
-					</ScriptGroup>
-				</ScriptGroup>
-				<ScriptGroup isActive="yes" isFolder="yes">
-					<name>Aetolia Exploration</name>
-					<packageName>Aetolia Exploration</packageName>
-					<script></script>
-					<eventHandlerList />
-					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>Exploration</name>
-						<packageName></packageName>
-						<script>aatlas = aatlas or {}
+							<script>aatlas = aatlas or {}
 
 function aatlas.echo(text)
   cecho("\n&lt;pale_turquoise&gt;[&lt;medium_aquamarine&gt;atlas&lt;pale_turquoise&gt;]: &lt;LightSeaGreen&gt;"..text)
 end</script>
-						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Save/Load</name>
-							<packageName></packageName>
-							<script>function aatlas.default()
+							<eventHandlerList />
+							<Script isActive="yes" isFolder="no">
+								<name>Save/Load</name>
+								<packageName></packageName>
+								<script>function aatlas.default()
   if not aatlas.explored then
     aatlas.explored = {}
     aatlas.echo("Atlas details not found. Starting from scratch!")
@@ -47126,12 +46746,12 @@ end
 
 registerAnonymousEventHandler("sysDisconnectionEvent", "aatlas.save", true)
 registerAnonymousEventHandler("sysLoadEvent", "aatlas.load")</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Exploration Functions</name>
-							<packageName></packageName>
-							<script>function aatlas.autoSurvey()
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>Exploration Functions</name>
+								<packageName></packageName>
+								<script>function aatlas.autoSurvey()
   if not gmcp or not gmcp.Room or not gmcp.Room.Info.area then return end
   if not aatlas.explored then return end
   
@@ -47139,11 +46759,11 @@ registerAnonymousEventHandler("sysLoadEvent", "aatlas.load")</script>
   if string.find(x, "unstable section") then x = x:gsub("an unstable section of ", "") end
   
   if not aatlas.explored[x] and not surveyAttempt then
-    send("survey",false)
+    --send("survey",false)
     surveyAttempt = tempTimer(1, [[surveyAttempt = nil]])
   elseif aatlas.explored[x] then
     if aatlas.explored[x].per &lt; 95 and (aatlas.dayDiff(x) &gt;= 7) and not surveyAttempt then
-      send("survey",false)
+     -- send("survey",false)
       surveyAttempt = tempTimer(1, [[surveyAttempt = nil]])    
     end
   end
@@ -47247,24 +46867,24 @@ function aatlas.update(num, area, time)
 end
 
 registerAnonymousEventHandler("gmcp.Room", "aatlas.autoSurvey")</script>
-							<eventHandlerList />
-						</Script>
+								<eventHandlerList />
+							</Script>
+						</ScriptGroup>
 					</ScriptGroup>
-				</ScriptGroup>
-				<ScriptGroup isActive="yes" isFolder="yes">
-					<name>WHOMST</name>
-					<packageName>WHOMST</packageName>
-					<script></script>
-					<eventHandlerList />
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>WHOMST</name>
-						<packageName></packageName>
+						<packageName>WHOMST</packageName>
 						<script></script>
 						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Whomst Delivers</name>
+						<ScriptGroup isActive="yes" isFolder="yes">
+							<name>WHOMST</name>
 							<packageName></packageName>
-							<script>  Whomst = Whomst or { deliverer = "", delid = "", item = "", owner = ""}
+							<script></script>
+							<eventHandlerList />
+							<Script isActive="yes" isFolder="no">
+								<name>Whomst Delivers</name>
+								<packageName></packageName>
+								<script>  Whomst = Whomst or { deliverer = "", delid = "", item = "", owner = ""}
   Whomst.mebe = Whomst.mebe or { deliverer = "", delid = "", item = "", owner = ""}
   Whomst.announce = function() 
                       local width = getColumnCount()
@@ -47288,9 +46908,34 @@ registerAnonymousEventHandler("gmcp.Room", "aatlas.autoSurvey")</script>
   registerNamedEventHandler("MENTAT", "Whomst", "gmcp.Char.Items.Add", "WhomstDelivers")
 
 </script>
-							<eventHandlerList />
-						</Script>
+								<eventHandlerList />
+							</Script>
+						</ScriptGroup>
 					</ScriptGroup>
+				</ScriptGroup>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>MapOverlaySub-Optional-Script</name>
+				<packageName>MapOverlaySub-Optional-Script</packageName>
+				<script></script>
+				<eventHandlerList />
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>MapScript</name>
+					<packageName>MapScript</packageName>
+					<script></script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Map</name>
+						<packageName></packageName>
+						<script>mapDisplay = Geyser.MiniConsole:new({
+	name = "mapDisplay",
+	x="70%",y="0%",
+	width="100%",height="40%"
+}, rightDisplay)
+mapDisplay:setColor("black")
+mapDisplay:setWrap(60)</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 			</ScriptGroup>
 		</ScriptGroup>
