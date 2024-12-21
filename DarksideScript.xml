@@ -99,10 +99,12 @@ fish = fish or {}</script>
   snd.firstaidstart()
   
   if gmcp.Char.Status.name == "Kayentesh" then
-    snd.toggles.goggles = false
-    snd.toggles.goggle_level = 0
-    snd.toggles.gauntlet_level = 0
+    snd.toggles.goggles = true
+    snd.toggles.goggle_level = 1
+    snd.toggles.gauntlet_level = 2
+    snd.toggles.mount = "483107"
     snd.toggles.ascendedtype = "none"
+    snd.toggles.targetrune = false
   else
     snd.toggles.goggles = true
     snd.toggles.goggle_level = 20
@@ -238,11 +240,19 @@ function snd.setTarget(target)
 end
 
 function snd.mount()
-  snd.send("qeb recall "..snd.toggles.mount..snd.sep.."recall mount"..snd.sep.."quickmount "..snd.toggles.mount)
+  if hasSkill("Quickmounting") then
+    snd.send("qeb recall "..snd.toggles.mount..snd.sep.."recall mount"..snd.sep.."quickmount "..snd.toggles.mount)
+  else
+    snd.send("qeb recall "..snd.toggles.mount..snd.sep.."recall mount"..snd.sep.."mount "..snd.toggles.mount)
+  end
 end
 
 function snd.dismount()
-  snd.send("qeb qdmount"..snd.sep.."order "..snd.toggles.mount.." follow me")
+  if hasSkill("Quickdismounting") then
+    snd.send("qeb qdmount"..snd.sep.."order "..snd.toggles.mount.." follow me")
+  else
+    snd.send("qeb dismount"..snd.sep.."order "..snd.toggles.mount.." follow me")
+  end
 end</script>
 						<eventHandlerList />
 					</Script>
@@ -900,6 +910,13 @@ end
   exploit = true, --executor exploit
   barrier = true,
   smash = true, --luminary smash
+  foresight = true,
+  centrum = true,
+  ejawave = true,
+  ejamend = true,
+  equinox = true,
+  eventide = true,
+  rattle = true, -- teradrim/tidesage rattle/reprisal
 }
 
 snd.waiting = snd.waiting or {
@@ -4032,6 +4049,7 @@ snd.priorities =
     "def_axe_obstruct",
     "def_brutality",
     "def_boneshaking",
+    "def_consciousness",
     
     --200 stuffs
     
@@ -5539,6 +5557,7 @@ def_boosted_regen = {defense = "boosted_regen", type = "normal", effect = "Even 
 def_insight = {defense = "insight", type = "normal", effect = "See the thoughts of others", balance = {needyequilibriumtake = "mind insight on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Insight"},
 def_toughness = {defense = "toughness", type = "normal", effect = "Cutting resistance", balance = {needyequilibriumtake = "toughness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Toughness"},
 def_resistance = {defense = "resistance", type = "normal", effect = "Magic resistance", balance = {needyequilibriumtake = "resistance"}, state = "down", needit = false, timer = createStopWatch(), skill = "Resistance"},
+def_consciousness = {defense = "consciousness", type = "normal", effect = "Raises WILL by 2 and increases willpower regen", balance = {balanceequilibriumtake = "consciousness"}, state = "down", needit = false, timer = createStopWatch(), skill = "Consciousness"},
 
 --Oneiromancer
 def_redoubt = {defense = "redoubt", type = "normal", effect = "Your soul is harder to sense.", balance = {special = "redoubt"}, state = "down", needit = false, timer = createStopWatch(), skill = "Redoubt" },
@@ -12412,7 +12431,10 @@ snd.vermin = 0</script>
 {area = "Spinesreach", level = "globes only", targets = {"a massive elemental"}},
 {area = "the neighborhoods of Enorian", level = "globes only", targets = {"a massive elemental"}},
 {area = "the neighborhoods of Duiran", level = "globes only", targets = {"a massive elemental"}},
---{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
+{area = "Difohr Passage", level = "Quest", targets = {"a skittering onyx eld"}},
+{area = "Myesian Run", level = "Quest", targets = {"a skittering verdant eld"}},
+{area = "Cinderbreach Mine", level = "Quest", targets = {"a fiery crimson fragmented eld", "a shattered eld monstrosity", "a skittering crimson eld"}, items = {}},
+{area = "Radial Dig Shaft #15", level = "Quest", targets = {"a shattered eld monstrosity", "an icy azure fragmented eld", "a skittering azure eld"}, items = {}},
 {area = "the Holy Impire of Sehal", level = "newbie", targets = {"a soulless pixie", "a stern Imp warrior", "a boisterous Imp boy", "a charming Imp girl", "a fluffy white sheep", "a fuzzy grey rabbit"}, items = {}},
 {area = "the Valley of Lodi", level = "newbie", targets = {"a cave bat", "a sheep", "a white hen", "a juvenile wildcat", "an adult wildcat"}, items = {}},
 {area = "the village of Gorshire", level = "newbie", targets = {"a guard pig", "a portly gnome sentry", "a gnome man", "a gnome woman", "a little gnome boy", "a gnome sentry", "a little gnome girl", "a skinny gnome sentry", "a deputy constable", "a lithe weasel", "a large grey goose", "a large gray goose"}, items = {}},
@@ -12421,19 +12443,22 @@ snd.vermin = 0</script>
 {area = "the village of Rahveir", level = "Newbie", targets = {"a disgustingly warped missionary", "a malevolent poltergeist", "a corrupted spirit"}, items = {"a strange black sphere"}},
 {area = "Forsaken Evlasu", level = "Newbie", targets = {"an unnaturally lithe, shadowy aberration", "a hideous winged aberration", "a grotesque, warped aberration", "a corrupted cultist"}, items = {"a cluster of pure white starflower", "a corrupted aberration's feather", "a blighted branch", "a minute, corrupted totem"}},
 {area = "Yohanan Village", level = "Newbie", targets = {"a fleshless skeleton", "a female villager", "a villager", "an old guard", "a small girl", "a young village guard", "a mangy rat", "a cave bat"}, items = {}},
-{area = "Difohr Passage", level = "Quest", targets = {"a skittering onyx eld"}},
-{area = "Myesian Run", level = "Quest", targets = {"a skittering verdant eld"}},
-{area = "Cinderbreach Mine", level = "Quest", targets = {"a fiery crimson fragmented eld", "a shattered eld monstrosity", "a skittering crimson eld"}, items = {}},
-{area = "Radial Dig Shaft #15", level = "Quest", targets = {"a shattered eld monstrosity", "an icy azure fragmented eld", "a skittering azure eld"}, items = {}},
+{area = "Raim Vale", level = "20-30", targets = {} },
+{area = "Raugol Fissure", level = "20-30", targets = {"a scything skitterer", "a stonescale ravager", "a stonescale mephit", "a splintering earthrager"} },
+{area = "the village of Kornar", level = "25-35", targets = {"a necromantic guard", "a conjured wraith", "a Bloodloch soldier", "a Bloodloch lich", "an undead villager", "a female villager", "Mala, the Artisan", "an undead minion", "Firthar", "Rovena, the widow", "Moritsio, Owner of the Pub", "an undead child", "Igrar, Captain of the Gral", "a wealthy sailor", "a cautious captain", "a weathered sailor", "a young sailor" } },
 {area = "the Centipede Cave", level = "25-35", targets = {"a large centipede", "a skittering centipede", "a chitinous centipede", "a venomous centipede", "a juvenile centipede", "a massive centipede queen"}, items = {}},
 {area = "Riparium", level = "25-50", targets = {"a large red crab", "a moray eel", "a mantaglow fish", "a large, deepwater salmon", "an angler fish"}, items = {}},
+{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
 {area = "the Siroccian Mountains", level = "30+", targets = {"a vicious wolverine", "a powerful wolverine"}},
 {area = "the Festering Wastes", level = "30-40", targets = {"a darkly patterned sand viper", "a gray, spotted bobcat", "a ragged brown coyote", "a tiny black scorpion", "a deep green lizard", "a shivering jackrabbit", "a small yellow rattlesnake"}, items = {}},
 {area = "Halls of Tornos", level = "30-40", targets = {"a speckled tinyok", "a snowy armadilleon", "a malformed beast", "a botched phase-hound", "a rabid blood-fiend", "a crazed blood-fiend", "a mutated blood-fiend"}},
 {area = "Rebels' Ridge", level = "30-40", targets = {"a tenacious tough", "a rebellious rancher", "a former farmer", "a naive neo-Ankyrean", "a seditious scholar", "a dingy dog", "a gamey goat", "a chittering chicken"}, items = {}},
 {area = "Scidve", level = "30-45", targets = {"a large gray and black dugger", "a rock devil", "a Drakt guard"}},
 {area = "the Central Wilderness", level = "35-50", targets = {"a mottled green bullfrog", "a dragonfly"}},
+{area = "the Vilimo Fields", level = "35-40", targets = {}},
 {area = "Mount Humgurd", level = "40+", targets = {"a black-spotted cow"}},
+{area = "the Temple of Sonn", level = "40+", targets = {"a menacing black rojalli", "a choke creeper", "a darkling", "a shadowdrop", "a giant mosquito", "an elongated black serpent", "a glossy black silk-spinner", "a giant fly"}},
+{area = "the Teshen Caldera", level = "40-60? Maybe", targets  = {"a Teshen raider", "a Teshen scout", "a Teshen reaver", "a Teshen worker"}},
 {area = "the Western Itzatl Rainforest", level = "40-50", targets = {"a xenosaurus lizard", "a razor nahuac", "a playful oniro", "a frilled lizard", "a lithe black panther", "a katydid", "a spunky white tamarin", "a serpentine couatl", "an ecru axolotl", "an energetic orangutan", "a rojalli cub", "a tiny aurivv bug", "a furry coatimundi", "an orange, black-striped tiger", "a colorful toucan", "an iridescent tizapez", "a poisonous purple lora", "an enormous anaconda", "a swarm of tsetse flies", "a striped tzatica", "a menacing black rojalli"}, items = {"a glistening iridescent pearl", "a beautiful rough sapphire"}},
 {area = "the Azdun dungeon", level = "40-50", targets = {"a huge pulsating spider", "a medium pulsating spider", "a large pulsating spider"}},
 {area = "the Dolbodi Campsite", level = "45-60", targets = {"a brawny hunter", "a slender forager", "a burly lumberjack", "a grizzly foreman", "a lithe buckawn"}, items = {}},
@@ -12487,27 +12512,19 @@ snd.vermin = 0</script>
 {area = "The Forgotten Mausoleum", level = "95+", targets = {"a reanimated Dwarf woman", "a rotting Dwarf archer", "a decomposing Dwarf", "a robed reanimated Dwarf"}},
 {area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a box jellyfish", "a vicious copperhead snake", "a white goose", "an oversized tortoise", "a dark green alligator", "a blue crab", "a black bear", "a white-tailed deer", "a lithe cougar", "a spotted jaguar", "a ragged coyote", "a great white stag", "a diseased raccoon", "a black and white badger", "a small ocelot", "a large capybara", "a spotted leopard", "a howler monkey", "a striped tiger", "a water buffalo", "an enormous elephant", "a Horkvali butcher", "a long billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a Troll guard", "a Troll cook", "a Nazetu officer", "a thick boa constrictor", "a brown-furred bat", "an ebon crow", "a silverback gorilla", "a venomous bushmaster", "a long-billed toucan", "an Atavian slave", "a pathetic slave", "a Horkvali butcher", "a tailless Rajamala"}},
 {area = "Trapped within a mirror", level = "Quest", targets = {"a fragment of living glass"}},
-{area = "the Teshen Caldera", level = "40-60? Maybe", targets  = {"a Teshen raider", "a Teshen scout", "a Teshen reaver", "a Teshen worker"}},
 {area = "the Teshen Undercroft", level = "80-99", targets  = {"a Teshen raider", "a Teshen scout", "a Teshen reaver", "a Teshen worker", "a gargantuan Teshen drone"}},
-{area = "the Temple of Sonn", level = "40+", targets = {"a menacing black rojalli", "a choke creeper", "a darkling", "a shadowdrop", "a giant mosquito", "an elongated black serpent", "a glossy black silk-spinner", "a giant fly"}},
 {area = "Perilaus", level = "50+", targets = { "a school of spinebacks", "a striped sea krait", "a school of shadowy minnows", "a water viper", "a grey spider" }},
 {area = "a volcano", level = "lolnope", targets = {"a large earth elemental", "a large smoke elemental", "a large fire elemental", "a lava daemon", "a glowing lava daemon" } },
-{area = "Raim Vale", level = "20-30", targets = {"a misshapen woman", "a rabid dog", "Jehanne", "a deformed man", "a diseased man", "Midolo Raim", "a mutilated creature"} },
-{area = "Raugol Fissure", level = "20-30", targets = {"a scything skitterer", "a stonescale ravager", "a stonescale mephit", "a splintering earthrager"} },
 {area = "Chapel Garden", level = "90+", targets = {"a diminutive necromancer", "a zombie cleric", "a foul-smelling zombie", "Broondac, the vampire strategist"  } },
 {area = "the Caverns of Telfinne", level = "40-60", targets = {"a cave-dwelling avisme", "a fanged lugore", "a slimy aryeim", "a tentacled morbol", "a draconic zogura", "a slender synicant",  } },
-{area = "the village of Kornar", level = "25-35", targets = {"a necromantic guard", "a conjured wraith", "a Bloodloch soldier", "a Bloodloch lich", "an undead villager", "a female villager", "Mala, the Artisan", "an undead minion", "Firthar", "Rovena, the widow", "Moritsio, Owner of the Pub", "an undead child", "Igrar, Captain of the Gral", "a wealthy sailor", "a cautious captain", "a weathered sailor", "a young sailor" } },
 {area = "the Arurer Haven", level = "60", targets = {"a striking supernal angel", "a youthful priest", "a savvy priestess", "a budding priestess", "an aged priest", "Gunder, a retired sailor", "Father Garron, the priest", "Tisian, a young priest", "a young celestial angel" } },
 {area = "the lost city of Iviofiyiedu", level = "45-55", targets = { "a ghost of a Mhun guard", "a ghost of a Mhun soldier", "General Abeshentesh", "a ghost of a male Mhun", "a ghost of a female Mhun", "a ghost of a young Mhun", "a mhun instructor", "Blacksmith Udhomentesh", "Fathientesh, a mhun crafter", "Dhemosh, a mhun miner" } },
 {area = "the Village of Torston", level = "40+", targets = {"a mottled brown frog", "a venomous water snake", "a vicious snapping turtle", "a fierce crocodile", "an irritated crow", "a tall Horkvali woman", "a wary Xorani guard", "a stalwart Horkvali guard", "Estok, the guard captain", "a dusky-skinned Grook man", "a plump white grub", "a dark-skinned Grook woman", "a carefree Grook boy", "the impish outcast, Qezirath", "a frail Xorani man", "a little Grook girl", "Lesiv, the Torstonite chieftain"}},
 {area = "the Cathedral of Gloaming", level = "35-40", targets = {"a Dwarven priest"}},
-{area = "the Vilimo Fields", level = "35-40", targets = {"Nysaac", "a field harvester", "a field monitor", "a decaying donkey", "Laoghaire, the monitor", "Maeron, the Quartermaster", "Administrator Kamakshi", "a semi-conscious young woman", "a semi-conscious young man","a semi-conscious elderly man", "a semi-conscious elderly woman", "a semi-conscious man", "a semi-conscious woman", "an undead bloodhound", "a field hauler", "a spectral minion"}},
 {area = "the Village of Craneskull", level = "35-40", targets = {"a savage mutant pumpkin", "a muddy Trollish child", "a slender mud adder", "a rugged Trollish man", "a plump Trollish woman", "a lumbering Troll guard", "an elderly Troll priest", "a lean guard hound", "a traitorous Mitrine hunter","a black ram", "a militant Troll warrior", "a Troll ritualist", "an arachnid Chiav guard", "an arachnid Chiav enforcer", "an arachnid Chiav archer","an immense Trollish chieftain", "a lanky, Trollish witch doctor"}},
 {area = "Mount Hubride", level = "55-60", targets = {"a troll warrior", "a rugged roll miner", "a female troll villager", "a small, troll child", "a male troll villager"}},
 {area = "Mount Heylai", level = "55-60", targets = {"a young dwarf", "an adolescent dwarf", "an armored dwarf", "a dwarf geared up for battle", "a dwarven warrior", "a dwarven miner", "a female dwarven villager", "a dwarven girl", "a dwarven boy"}},
 {area = "the Siroccian Tunnels", level = "65-75", targets = {"a lurking shadow", "a spatial anomaly", "a crystal-encrusted golem", "a massive striped worm", "a disembodied soul", "a voracious blind-fish"}},
-{area = "Rotfang Warren", level = "20-30", targets = {"a large rat", "a robed and cowled priest", "a spindly village alpha", "a white-nosed bat", "a large, juicy cavehopper", "a hunched villager", "a gaunt villager", "a drooling village child"}},
-{area = "the Isle of Polyargos", level = "20-25", targets = {"a filthy harpy", "a barnacle-encrusted oyster", "a pathetic leper", "a leper child", "an old leper", "Kru'lax, the Harpy Queen", "a speckled, brown turtle"}},
 {area = "the Khauskin Mines", level = "50-60", targets = {"a soft-shelled klikkin", "a grotesque fangtooth", "a burly Dwarven miner"}, items = {"a durable pickaxe", "a rough and jagged diamond", "a rough and jagged emerald", "a rough and jagged sapphire", "a small sack of black powder"}},
 {area = "the Morgun Forest", level = "45+", targets = {"a sturdy oak", "a poisonous hemlock bush", "a pine sapling", "a strong pine", "a young beech tree", "a sinuous willow tree", "a willow sappling", "an enchanting meayan", "an oak sapling", "a prickly raspberry bush", "a handsom nayar", "a young willow tree", "a fluffy jambaali", "a young maple tree", "a young pine tree", "a young oak", "a wild boar", "a young beech tree"}},
 {area = "Catacombs beneath Djeir", level = "40+", targets = {"a djeirani ghost",}},
@@ -24446,9 +24463,9 @@ end</script>
 						<packageName></packageName>
 						<script>
 snd.global_items = {
--- "a sample of fur and hide",
--- "a dirt sample",
--- "a delicate flora sample",
+"a sample of fur and hide",
+"a dirt sample",
+"a delicate flora sample",
 "an antipsychotic pill",
 "a decongestant pill",
 "a steroid pill",
@@ -24569,9 +24586,6 @@ snd.global_items = {
 "a stack of 6 anabiotic pills",
 "a stack of 6 euphoriant pills",
 "a stack of 6 depressant pills",
---"a sample of fur and hide",
---"a delicate flora sample",
---"a dirt sample",
 
 }
 
@@ -27340,52 +27354,48 @@ end</script>
   if snd.firstaidcuretrack.rebounding ~= "20" then
     table.insert(snd.setting_priority, "defence rebounding 20")     
   end
-
--- level 1 cures, priority
-  if snd.firstaidcuretrack.crippled_body ~= "1" then
-    table.insert(snd.setting_priority, "crippled_body 1")     
-  end
-  if snd.firstaidcuretrack.paralysis ~= "1" then
-    table.insert(snd.setting_priority, "paralysis 1")     
-  end
+  
+  -- level 1
   if snd.firstaidcuretrack.burnt_skin ~= "1" then
     table.insert(snd.setting_priority, "burnt_skin 1")     
   end
-  if snd.firstaidcuretrack.writhe_hoist ~= "1" then
-    table.insert(snd.setting_priority, "writhe_hoist 1")     
-  end
   
- -- level 2 cures  
+  -- level 2  
   if snd.firstaidcuretrack.asleep ~= "2" then
     table.insert(snd.setting_priority, "asleep 2")     
   end
+  if snd.firstaidcuretrack.writhe_ice ~= "2" then
+    table.insert(snd.setting_priority, "writhe_ice 2")     
+  end 
+  if snd.firstaidcuretrack.paralysis ~= "2" then
+    table.insert(snd.setting_priority, "paralysis 2")     
+  end
+  if snd.firstaidcuretrack.dazed ~= "2" then
+    table.insert(snd.setting_priority, "dazed 2")     
+  end 
   if snd.firstaidcuretrack.itchy ~= "2" then
     table.insert(snd.setting_priority, "itchy 2")     
   end 
   if snd.firstaidcuretrack.fear ~= "2" then
     table.insert(snd.setting_priority, "fear 2")     
-  end
-  if snd.firstaidcuretrack.asthma ~= "2" then
-    table.insert(snd.setting_priority, "asthma 2")     
-  end
-  if snd.firstaidcuretrack.ringing_ears ~= "2" then
-    table.insert(snd.setting_priority, "ringing_ears 2")     
-  end
-  if snd.firstaidcuretrack.clumsiness ~= "2" then
-    table.insert(snd.setting_priority, "clumsiness 2")     
-  end
-  if snd.firstaidcuretrack.destroyed_throat ~= "2" then
-    table.insert(snd.setting_priority, "destroyed_throat 2")   
   end  
   if snd.firstaidcuretrack.anorexia ~= "2" then
     table.insert(snd.setting_priority, "anorexia 2")     
- end
-  if snd.firstaidcuretrack.gorged ~= "2" then
-    table.insert(snd.setting_priority, "gorged 2")     
- end
-  if snd.firstaidcuretrack.writhe_impaled ~= "2" then
-    table.insert(snd.setting_priority, "writhe_impaled 2")     
- end
+  end
+
+  -- level 3
+  if snd.firstaidcuretrack.writhe_impaled ~= "3" then
+    table.insert(snd.setting_priority, "writhe_impaled 3")     
+  end
+  if snd.firstaidcuretrack.destroyed_throat ~= "3" then
+    table.insert(snd.setting_priority, "destroyed_throat 3")   
+  end  
+  if snd.firstaidcuretrack.crippled_body ~= "3" then
+    table.insert(snd.setting_priority, "crippled_body 3")     
+  end
+  if snd.firstaidcuretrack.asthma ~= "3" then
+    table.insert(snd.setting_priority, "asthma 3")     
+  end
 	if snd.firstaidcuretrack.frozen ~= "3" then
 		table.insert(snd.setting_priority, "frozen 3")     
 	end  
@@ -27395,7 +27405,7 @@ end</script>
   if snd.firstaidcuretrack.crushed_chest ~= "3" then
     table.insert(snd.setting_priority, "crushed_chest 3")     
   end 
-	if snd.firstaidcuretrack.paresis ~= "3" and not (snd.class == "Shaman" or snd.class == "Archivist" or snd.class == "Voidseer" or snd.class == "Alchemist" or snd.class == "Sciomancer" or snd.class == "Runecarver") then
+	if snd.firstaidcuretrack.paresis ~= "3" and not (snd.class == "Archivist" or snd.class == "Alchemist" or snd.class == "Sciomancer") then
 		table.insert(snd.setting_priority, "paresis 3")     
 	end
 	if snd.firstaidcuretrack.slough ~= "3" then
@@ -27450,7 +27460,13 @@ end</script>
     table.insert(snd.setting_priority, "voyria 3")     
  end
 
- -- level 4
+  -- level 4
+  if snd.firstaidcuretrack.writhe_hoist ~= "4" then
+    table.insert(snd.setting_priority, "writhe_hoist 4")     
+  end
+  if snd.firstaidcuretrack.clumsiness ~= "4" then
+    table.insert(snd.setting_priority, "clumsiness 4")     
+  end
   if snd.firstaidcuretrack.aeon ~= "4" and snd.not_aff("anorexia") then
     table.insert(snd.setting_priority, "aeon 4")      
   elseif snd.firstaidcuretrack.aeon ~= "5" and snd.have_aff("slickness") then
@@ -27474,7 +27490,7 @@ end</script>
 	if snd.firstaidcuretrack.mirroring ~= "4" then
 		table.insert(snd.setting_priority, "mirroring 4")     
 	end
-	if snd.firstaidcuretrack.pacifism ~= "4" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.pacifism ~= "4" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "pacifism 4")     
 	end
 	if snd.firstaidcuretrack.patterns ~= "4" then
@@ -27486,10 +27502,8 @@ end</script>
   if snd.firstaidcuretrack.vinethorns ~= "4" then
     table.insert(snd.setting_priority, "vinethorns 4")     
   end
-  if snd.firstaidcuretrack.slickness ~= "4" and snd.have_aff("anorexia") then
-    table.insert(snd.setting_priority, "slickness 4")      
-  elseif snd.firstaidcuretrack.slickness ~= "5" then
-    table.insert(snd.setting_priority, "slickness 5")      
+  if snd.firstaidcuretrack.slickness ~= "3" then
+    table.insert(snd.setting_priority, "slickness 3")      
   end
 
 -- level 5
@@ -27539,9 +27553,11 @@ end</script>
 		table.insert(snd.setting_priority, "plodding 5")     
 	end
   if snd.firstaidcuretrack.hellsight ~= "6" then
-    table.insert(snd.setting_priority, "hellsight 6")
-     
- end 
+    table.insert(snd.setting_priority, "hellsight 6")     
+  end 
+  if snd.firstaidcuretrack.echoes ~= "6" then
+    table.insert(snd.setting_priority, "echoes 6")     
+  end 
 
 -- level 6
 	if snd.firstaidcuretrack.frigid ~= "6" then
@@ -27654,16 +27670,16 @@ end</script>
 	if snd.firstaidcuretrack.hypersomnia ~= "7" then
 		table.insert(snd.setting_priority, "hypersomnia 7")     
 	end
-	if snd.firstaidcuretrack.justice ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.justice ~= "7" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "justice 7")     
 	end
-	if snd.firstaidcuretrack.laxity ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.laxity ~= "7" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "laxity 7")     
 	end
-	if snd.firstaidcuretrack.lovers_effect ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.lovers_effect ~= "7" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "lovers_effect 7")     
 	end
-	if snd.firstaidcuretrack.peace ~= "7" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.peace ~= "7" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "peace 7")     
 	end
 	if snd.firstaidcuretrack.stupidity ~= "7" then
@@ -27715,9 +27731,9 @@ end</script>
 	end
 
 -- level 9
-  if snd.firstaidcuretrack.disfigurement ~= "9" and (snd.class == "Carnifex" or snd.class == "Earthcaller" or snd.class == "Luminary" or snd.class == "Indorani" or snd.class == "Praenomen" or snd.class == "Ravager" or snd.class == "Teradrim" or snd.class == "Shaman" or snd.class == "Warden" or snd.class == "Sentinel" or snd.class == "Executor" or snd.class == "Oneiromancer" or snd.class == "Sciomancer" or snd.class == "Ascendril" or snd.class == "Bloodborn" or snd.class == "Runecarver") then
+  if snd.firstaidcuretrack.disfigurement ~= "9" and (snd.class == "Carnifex" or snd.class == "Earthcaller" or snd.class == "Indorani" or snd.class == "Praenomen" or snd.class == "Ravager" or snd.class == "Teradrim" or snd.class == "Executor" or snd.class == "Sciomancer" or snd.class == "Bloodborn") then
     table.insert(snd.setting_priority, "disfigurement 9")
-  elseif snd.firstaidcuretrack.disfigurement ~= "13" and (snd.class == "Monk" or snd.class == "Infiltrator" or snd.class == "Bard" or snd.class == "Archivist" or snd.class == "Voidseer" or snd.class == "Revenant" or snd.class == "Templar" or snd.class == "Shapeshifter" or snd.class == "Wayfarer") then
+  elseif snd.firstaidcuretrack.disfigurement ~= "13" and (snd.class == "Monk" or snd.class == "Infiltrator" or snd.class == "Bard" or snd.class == "Archivist" or snd.class == "Revenant" or snd.class == "Shapeshifter" or snd.class == "Wayfarer") then
     table.insert(snd.setting_priority, "disfigurement 13")
   end  
   if snd.firstaidcuretrack.left_leg_broken ~= "9" then
@@ -27747,10 +27763,10 @@ end</script>
 	if snd.firstaidcuretrack.commitment_fear ~= "9" then
 		table.insert(snd.setting_priority, "commitment_fear 9")
 	end
-	if snd.firstaidcuretrack.hubris ~= "9" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.hubris ~= "9" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "hubris 9")     
 	end
-	if snd.firstaidcuretrack.magnanimity ~= "9" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.magnanimity ~= "9" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "magnanimity 9")     
 	end
 	if snd.firstaidcuretrack.sadness ~= "9" then
@@ -27785,10 +27801,10 @@ end</script>
 	if snd.firstaidcuretrack.blisters ~= "10" then
 		table.insert(snd.setting_priority, "blisters 10")     
 	end
-	if snd.firstaidcuretrack.generosity ~= "10" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.generosity ~= "10" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "generosity 10")     
 	end
-	if snd.firstaidcuretrack.superstition ~= "10" and not (snd.class == "Revenant" or snd.class == "Templar") then
+	if snd.firstaidcuretrack.superstition ~= "10" and not snd.class == "Revenant" then
 		table.insert(snd.setting_priority, "superstition 10")     
 	end
 
@@ -27859,12 +27875,18 @@ end</script>
 	end     
   if snd.firstaidcuretrack.ablaze ~= "16" then
 		table.insert(snd.setting_priority, "ablaze 16")     
-	end   
+	end
+  if snd.firstaidcuretrack.ringing_ears ~= "16" then
+    table.insert(snd.setting_priority, "ringing_ears 16")     
+  end
 
 -- level 17
   if snd.firstaidcuretrack.hypothermia ~= "17" then
 		table.insert(snd.setting_priority, "hypothermia 17")     
 	end
+  if snd.firstaidcuretrack.gorged ~= "17" then
+    table.insert(snd.setting_priority, "gorged 17")     
+  end
   
 -- level 18
   if snd.firstaidcuretrack.shivering ~= "18" then
@@ -28314,54 +28336,42 @@ function snd.firstaidassAscendril()
 end
 
 function snd.firstaidassBard() 
-  if snd.firstaidcuretrack.paralysis ~= "1" then
-    table.insert(snd.setting_priority, "paralysis 1")	 
+  if snd.firstaidcuretrack.misery ~= "2" then
+    table.insert(snd.setting_priority, "misery 2")		 
   end
-  if snd.firstaidcuretrack.perplexed ~= "2" then
-    table.insert(snd.setting_priority, "perplexed 2")		 
+  if snd.firstaidcuretrack.dizziness ~= "2" then
+    table.insert(snd.setting_priority, "dizziness 2")		 
+  end 
+  if snd.firstaidcuretrack.paranoia ~= "2" then
+    table.insert(snd.setting_priority, "paranoia 2")		 
+  end 
+  if snd.firstaidcuretrack.perplexed ~= "3" then
+    table.insert(snd.setting_priority, "perplexed 3")		 
   end
-  if snd.firstaidcuretrack.shyness ~= "3" then
-    table.insert(snd.setting_priority, "shyness 3")		 
+  if snd.firstaidcuretrack.stupidity ~= "3" then
+    table.insert(snd.setting_priority, "stupidity 3")		 
   end 
-  if snd.firstaidcuretrack.thin_blood ~= "4" then
-    table.insert(snd.setting_priority, "thin_blood 4")		 
+  if snd.firstaidcuretrack.hatred ~= "4" then
+    table.insert(snd.setting_priority, "hatred 4")		 
   end 
-  if snd.firstaidcuretrack.worrywart ~= "5" then
-    table.insert(snd.setting_priority, "worrywart 5")		 
+  if snd.firstaidcuretrack.shyness ~= "4" then
+    table.insert(snd.setting_priority, "shyness 4")		 
   end 
-  if snd.firstaidcuretrack.misery ~= "6" then
-    table.insert(snd.setting_priority, "misery 6")		 
+  if snd.firstaidcuretrack.misery ~= "4" then
+    table.insert(snd.setting_priority, "misery 4")		 
   end 
-  if snd.firstaidcuretrack.hollow ~= "7" then
-    table.insert(snd.setting_priority, "hollow 7")		 
+  if snd.firstaidcuretrack.self_loathing ~= "4" then
+    table.insert(snd.setting_priority, "self_loathing 4")		 
   end 
-  if snd.firstaidcuretrack.narcolepsy ~= "8" then
-    table.insert(snd.setting_priority, "narcolepsy 8")		 
+  if snd.firstaidcuretrack.masochism ~= "4" then
+    table.insert(snd.setting_priority, "masochism 4")		 
   end 
-  if snd.firstaidcuretrack.self_loathing ~= "8" then
-    table.insert(snd.setting_priority, "self_loathing 8")		 
-  end 
-  if snd.firstaidcuretrack.slickness ~= "9" then
-    table.insert(snd.setting_priority, "slickness 9")		 
-  end 
-  if snd.firstaidcuretrack.stupidity ~= "10" then
-    table.insert(snd.setting_priority, "stupidity 10")		 
-  end  
-  if snd.firstaidcuretrack.dizziness ~= "10" then
-    table.insert(snd.setting_priority, "dizziness 10")		 
-  end  
   if snd.firstaidcuretrack.magnanimity ~= "11" then
     table.insert(snd.setting_priority, "magnanimity 11")		 
   end  
-  if snd.firstaidcuretrack.faintness ~= "12" then
-    table.insert(snd.setting_priority, "faintness 12")		 
+  if snd.firstaidcuretrack.berserking ~= "11" then
+    table.insert(snd.setting_priority, "berserking 11")		 
   end  
-  if snd.firstaidcuretrack.addiction ~= "13" then		 
-    table.insert(snd.setting_priority, "addiction 13")
-  end 
-  if snd.firstaidcuretrack.allergies ~= "14" then		 
-    table.insert(snd.setting_priority, "allergies 14")
-  end 	
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -28460,31 +28470,76 @@ function snd.firstaidassIndorani()
 	end
 end
 
-function snd.firstaidassInfiltrator() 
-	if snd.firstaidcuretrack.paresis ~= "2" then
-		table.insert(snd.setting_priority, "paresis 1")		 
-	end	
-	if snd.firstaidcuretrack.paralysis ~= "1" then
-		table.insert(snd.setting_priority, "paralysis 1")		 
-	end	
-	if snd.firstaidcuretrack.slickness ~= "2" then
-		table.insert(snd.setting_priority, "slickness 2")		 
+function snd.firstaidassInfiltrator()
+	if snd.firstaidcuretrack.paralysis ~= "2" then
+		table.insert(snd.setting_priority, "paralysis 2")		 
 	end	
 	if snd.firstaidcuretrack.anorexia ~= "2" then
 		table.insert(snd.setting_priority, "anorexia 2")		 
 	end	
-	if snd.firstaidcuretrack.asthma ~= "2" then
-		table.insert(snd.setting_priority, "asthma 2")		 
+	if snd.firstaidcuretrack.indifference ~= "2" then
+		table.insert(snd.setting_priority, "indifference 2")		 
 	end	
-	if snd.firstaidcuretrack.addiction ~= "2" then
-		table.insert(snd.setting_priority, "addiction 2")		 
+	if snd.firstaidcuretrack.slickness ~= "3" then
+		table.insert(snd.setting_priority, "slickness 3")		 
 	end	
-	if snd.firstaidcuretrack.hypersomnia ~= "1" then
-		table.insert(snd.setting_priority, "hypersomnia 1")		 
+	if snd.firstaidcuretrack.asthma ~= "3" then
+		table.insert(snd.setting_priority, "asthma 3")		 
 	end	
-	if snd.firstaidcuretrack.clumsiness ~= "3" then
-		table.insert(snd.setting_priority, "clumsiness 1")		 
+	if snd.firstaidcuretrack.voyria ~= "3" then
+		table.insert(snd.setting_priority, "voyria 3")		 
 	end	
+	if snd.firstaidcuretrack.thin_blood ~= "4" then
+		table.insert(snd.setting_priority, "thin_blood 4")		 
+	end	
+	if snd.firstaidcuretrack.clumsiness ~= "4" then
+		table.insert(snd.setting_priority, "clumsiness 4")		 
+	end	
+  if snd.firstaidcuretrack.paresis ~= "5" then
+		table.insert(snd.setting_priority, "paresis 5")		 
+	end
+  if snd.firstaidcuretrack.hypochondria ~= "7" then
+		table.insert(snd.setting_priority, "hypochondria 7")		 
+	end
+  if snd.firstaidcuretrack.weariness ~= "8" then
+		table.insert(snd.setting_priority, "weariness 8")		 
+	end
+  if snd.firstaidcuretrack.squelched ~= "8" then
+		table.insert(snd.setting_priority, "squelched 8")		 
+	end
+  if snd.firstaidcuretrack.disrupted ~= "9" then
+		table.insert(snd.setting_priority, "disrupted 9")		 
+	end
+  if snd.firstaidcuretrack.confusion ~= "9" then
+		table.insert(snd.setting_priority, "confusion 9")		 
+	end
+  if snd.firstaidcuretrack.impatience ~= "13" then
+		table.insert(snd.setting_priority, "impatience 13")		 
+	end
+  if snd.firstaidcuretrack.lethargy ~= "14" then
+		table.insert(snd.setting_priority, "lethargy 14")		 
+	end
+  if snd.firstaidcuretrack.sensitivity ~= "15" then
+		table.insert(snd.setting_priority, "sensitivity 15")		 
+	end
+	if snd.firstaidcuretrack.recklessness ~= "15" then
+		table.insert(snd.setting_priority, "recklessness 15")		 
+	end	
+  if snd.firstaidcuretrack.stupidity ~= "16" then
+		table.insert(snd.setting_priority, "stupidity 16")		 
+	end
+  if snd.firstaidcuretrack.haemophilia ~= "17" then
+		table.insert(snd.setting_priority, "haemophilia 17")		 
+	end
+  if snd.firstaidcuretrack.vomiting ~= "19" then
+		table.insert(snd.setting_priority, "vomiting 19")		 
+	end
+	if snd.firstaidcuretrack.hypersomnia ~= "20" then
+		table.insert(snd.setting_priority, "hypersomnia 20")		 
+	end	
+  if snd.firstaidcuretrack.shyness ~= "22" then
+		table.insert(snd.setting_priority, "shyness 22")		 
+	end
 	snd.firstaidchangecure = false  -- keep last		
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -29021,104 +29076,23 @@ function snd.firstaidassShapeshifter()
 end
 
 function snd.firstaidassSiderealist() 
-	if snd.firstaidcuretrack.paralysis ~= "1" then
-		table.insert(snd.setting_priority, "paralysis 1")		 
-	end
-	if snd.firstaidcuretrack.asthma ~= "2" then
-		table.insert(snd.setting_priority, "asthma 2")		 
-	end
-	if snd.firstaidcuretrack.dementia ~= "4" then
-		table.insert(snd.setting_priority, "dementia 4")		 
-	end
-	if snd.firstaidcuretrack.paresis ~= "5" then
-		table.insert(snd.setting_priority, "paresis 5")		 
-	end 
-	if snd.firstaidcuretrack.lethargy ~= "6" then
-		table.insert(snd.setting_priority, "lethargy 6")		 
-	end 
-	if snd.firstaidcuretrack.vomiting ~= "7" then
-		table.insert(snd.setting_priority, "vomiting 7")		 
-	end  
-  if snd.firstaidcuretrack.clumsiness ~= "10" then
-		table.insert(snd.setting_priority, "clumsiness 10")		 
-	end  
-  if snd.firstaidcuretrack.weariness ~= "12" then
-		table.insert(snd.setting_priority, "weariness 12")		 
-	end 
-  if snd.firstaidcuretrack.agoraphobia ~= "15" then
-		table.insert(snd.setting_priority, "agoraphobia 15")		 
-	end 
-  if snd.firstaidcuretrack.loneliness ~= "16" then
-		table.insert(snd.setting_priority, "loneliness 16")		 
-	end 
-  if snd.firstaidcuretrack.blindness ~= "0" then
-		table.insert(snd.setting_priority, "defence blindness reset")
-	end 
-  if snd.firstaidcuretrack.vertigo ~= "17" then
-		table.insert(snd.setting_priority, "vertigo 17")		 
-	end 
-  if snd.firstaidcuretrack.claustrophobia ~= "18" then
-		table.insert(snd.setting_priority, "claustrophobia 18")		 
-	end
-  if snd.firstaidcuretrack.commitment_fear ~= "19" then
-		table.insert(snd.setting_priority, "commitment_fear 19")		 
-	end
-  if snd.firstaidcuretrack.haemophilia ~= "20" then
-		table.insert(snd.setting_priority, "haemophilia 20")		 
-	end
-  if snd.firstaidcuretrack.exhausted ~= "21" then
-		table.insert(snd.setting_priority, "exhausted 21")		 
-	end
-  if snd.firstaidcuretrack.stupidity ~= "22" then
-		table.insert(snd.setting_priority, "stupidity 22")		 
-	end
-  if snd.firstaidcuretrack.dizziness ~= "23" then
-		table.insert(snd.setting_priority, "dizziness 23")		 
-	end
-  if snd.firstaidcuretrack.dissonance ~= "24" then
-		table.insert(snd.setting_priority, "dissonance 24")		 
-	end
-  if snd.firstaidcuretrack.frozen ~= "3" then
-		table.insert(snd.setting_priority, "frozen 3")		 
-	end    
-  if snd.firstaidcuretrack.left_leg_crippled ~= "6" then
-		table.insert(snd.setting_priority, "left_leg_crippled 6")		 
-	end 
- 	if snd.firstaidcuretrack.right_leg_crippled ~= "6" then
-		table.insert(snd.setting_priority, "right_leg_crippled 6")		 
-	end 
- 	if snd.firstaidcuretrack.left_arm_crippled ~= "7" then
-		table.insert(snd.setting_priority, "left_arm_crippled 7")		 
-	end 
- 	if snd.firstaidcuretrack.right_arm_crippled ~= "7" then
-		table.insert(snd.setting_priority, "right_arm_crippled 7")		 
-	end  
-	if snd.firstaidcuretrack.left_leg_broken ~= "9" then
-		table.insert(snd.setting_priority, "left_leg_broken 9")		 
-	end   
-  if snd.firstaidcuretrack.right_leg_broken ~= "9" then
-		table.insert(snd.setting_priority, "right_leg_broken 9")		 
-	end   
-  if snd.firstaidcuretrack.left_arm_broken ~= "10" then
-		table.insert(snd.setting_priority, "left_arm_broken 10")		 
-	end 
-  if snd.firstaidcuretrack.right_arm_broken ~= "10" then
-		table.insert(snd.setting_priority, "right_arm_broken 10")		 
-	end 
-	if snd.firstaidcuretrack.left_leg_mangled ~= "11" then
-		table.insert(snd.setting_priority, "left_leg_mangled 11")		 
-	end   
-  if snd.firstaidcuretrack.right_leg_mangled ~= "11" then
-		table.insert(snd.setting_priority, "right_leg_mangled 11")		 
-	end   
-  if snd.firstaidcuretrack.left_arm_mangled ~= "12" then
-		table.insert(snd.setting_priority, "left_arm_mangled 12")		 
-	end 
-  if snd.firstaidcuretrack.right_arm_mangled ~= "12" then
-		table.insert(snd.setting_priority, "right_arm_mangled 12")		 
-	end 
-  if snd.firstaidcuretrack.shivering ~= "18" then
-		table.insert(snd.setting_priority, "shivering 18")		 
+	if snd.firstaidcuretrack.dementia ~= "2" then
+    table.insert(snd.setting_priority, "dementia 2")     
+  end 
+  if snd.firstaidcuretrack.hallucinations  ~= "3" then
+    table.insert(snd.setting_priority, "hallucinations  3")     
+  end 
+  if snd.firstaidcuretrack.confusion  ~= "4" then
+    table.insert(snd.setting_priority, "confusion  4")     
+  end 
+  if snd.firstaidcuretrack.stupidity ~= "5" then
+    table.insert(snd.setting_priority, "stupidity 5")     
+  end 
+  if snd.firstaidcuretrack.dizziness ~= "6" then
+    table.insert(snd.setting_priority, "dizziness 6")     
+  end 
+  if snd.firstaidcuretrack.blindness ~= "20" then
+		table.insert(snd.setting_priority, "defence blindness 20")		 
 	end 
 	snd.firstaidchangecure = false  -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -29232,10 +29206,10 @@ function snd.firstaidassTemplar()
 	end	
 end
 
-function snd.firstaidassTeradrim() 
-	if snd.firstaidcuretrack.paresis ~= "1" then
-		table.insert(snd.setting_priority, "paresis 1")		 
-	end	
+function snd.firstaidassTeradrim()
+  if snd.firstaidcuretrack.blindness ~= "2" then
+		table.insert(snd.setting_priority, "defence levitation 2")		 
+	end 
   if snd.firstaidcuretrack.left_arm ~= "8" and snd.firstaidcuretrack.preleftarm ~= "19" then
 		table.insert(snd.setting_priority, "PRESTORE left arm 19% 8")		 
 	end
@@ -29282,8 +29256,7 @@ function snd.firstaidassTeradrim()
 		table.insert(snd.setting_priority, "right_leg_bruised_moderate 2")		 
   end
   if snd.firstaidcuretrack.left_arm_bruised_moderate ~= "2" then
-		table.insert(snd.setting_priority, "left_arm_bruised_moderate 2")
-		 
+		table.insert(snd.setting_priority, "left_arm_bruised_moderate 2")		 
   end
   if snd.firstaidcuretrack.right_arm_bruised_moderate ~= "2" then
 		table.insert(snd.setting_priority, "right_arm_bruised_moderate 2")		 
@@ -29588,7 +29561,7 @@ if not snd.hidden_check then
     end
   elseif snd.hiddentype == "bedazzle" then  -- Vomiting, stuttering, blurry_vision, dizziness, weariness, or laxity.
     if gmcp.Room.Info.num ~= 9330 then
-      send("yell .")
+      send("yell hmph")
     end  
   elseif snd.hiddentype == "scourge" then  -- dizziness, nyctophobia, confusion, dementia
     if snd.not_aff("dizziness") then
@@ -29685,7 +29658,7 @@ end</script>
   	enableTimer("recklessblackouttimer")
   end
   if table.isMember(snd.howlfulllist, afftest) and not table.isMember(snd.howllist, afftest) then 
-		table.insert(Msys.howllist, afftest)
+		table.insert(snd.howllist, afftest)
 	end
 	
   if table.isMember(snd.herbaffs, afftest) then 
@@ -30636,7 +30609,7 @@ end
 	elseif snd.healingcall == "Your blood regains its ability to clot." then 
 		aff = "haemophilia"
 	elseif snd.healingcall == "You decide that you aren't that bad after all." then 
-		aff = "self_pity"
+		aff = "self-pity"
 	elseif snd.healingcall == "You aren't such a complete idiot anymore." then
 		aff = "stupidity"
 	elseif snd.healingcall == "You are no longer dizzy." then		 
@@ -30713,6 +30686,10 @@ end
     aff = "destroyed_throat"
   elseif snd.healingcall == "You breathe deeply, feeling a little more free." then
     aff = "squelched"
+  elseif snd.healingcall == "Your dissonant nature becomes harmonious." then
+    aff = "dissonance"
+  elseif snd.healingcall == "Your shyness has been cured. You can now face the world boldly." then
+    aff = "shyness"
 	end
   snd.healingcall = ""
   	
@@ -30960,6 +30937,7 @@ def_constitution = "on",
 def_split_mind = "on",
 def_kaido_immunity = "on",
 def_boosted_regen = "on",
+def_consciousness = "on",
 },
 
 oneiromancer = {
@@ -31639,7 +31617,6 @@ snd.endgamehealth =""
 snd.focusaffs = {"agoraphobia", "anorexia", "berserking", "claustrophobia", "confusion", "dementia", "dizziness", "egocentric", "epilepsy", "faintness", "generosity", "hallucinations", "hatred", "impatience", "indifference", "laxity", "loneliness", "lovers_effect", "masochism", "mental_disruption", "mirroring", "pacifism", "paranoia", "peace", "premonition", "recklessness", "stupidity", "vertigo", "weariness"}
 snd.hiddentype = "none"
 snd.last_healed = ""
-snd.mendingtrack = false
 snd.howllist = {}
 snd.snarlcount = 0
 snd.healingcall = ""
@@ -33027,7 +33004,12 @@ function snd.took_bruise(limb)
   if snd.limb_bruising[limb] &lt; 3 then
     snd.limb_bruising[limb] = snd.limb_bruising[limb]+1
     snd.bruisingHit = true
+    snd.bruisingEcho(limb, true)
   end
+end
+
+function snd.bruisingEcho(limb, gain)
+  cecho((gain and " &lt;green&gt;" or " &lt;red&gt;")..limb.." bruised "..snd.limb_bruising[limb])
 end</script>
 						<eventHandlerList />
 					</Script>
@@ -33641,7 +33623,6 @@ end</script>
   snd.canprerestorenow = true
   snd.firstaidresetlistnone()
   snd.restotrack = 0
-  snd.mendingtrack = false
   snd.howllist = {}
   snd.snarlcount = 0
  
@@ -36907,8 +36888,21 @@ end</script>
   },
   
 --Siderealist
+
   ["Astranomia"] = {
     Ray = function(target)
+      local baseTime = 8
+      if snd.checkAff("asterism") then
+        baseTime = baseTime + 3
+      end
+      if snd.checkAff("moonlet") then
+        baseTime = baseTime + 3
+      end
+      if snd.checkAff("dustring") then
+        baseTime = baseTime + 3
+      end
+      snd.target_got("magic_weakness")
+      snd.affTimers.start("magic_weakness", baseTime, true)
     end,
     Erode = function(target)
       snd.used.shield = false
@@ -36920,6 +36914,7 @@ end</script>
       end
     end,
     Gleam = function(target, inflict, conditional)
+      if not inflict or not conditional then return end
       local map = {
         burning = {"red","recklessness"},
         crushing = {"orange", "gnawing"},
@@ -37017,13 +37012,37 @@ end</script>
     end
   },
   ["Ostension"] = {
-  Averroes = function(target, bolt, limb)
+    Averroes = function(target, bolt, limb)
       snd.last_hit_limb = limb
       snd.last_limb_dmg = 15
       snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
       snd.onHit2({"Parry"})
-    end
-  
+    end,
+    Eja = function(target, kodosa, ability) -- "kodosa" is a filler conditional for this ability
+      if ability == "mend" then
+        for _, limb in ipairs({"left_arm","right_arm","left_leg","right_leg"}) do
+          if snd.checkAff(limb.."_crippled") and not snd.checkAff(limb.."_broken") then snd.target_cured(limb.."_crippled") return end
+        end
+      end
+    end,
+    Vayua = function(target, ability)
+      if ability == "Attack" then
+        snd.onHit2({"Parry", "Dodge"})
+      end
+    end,
+    Gulbedim = function(target, ability)
+      if ability == "Despair" then
+        snd.target_got("despair") -- lasts for 60s
+        snd.affTimers.start("despair", 60)
+      end
+    end,
+    Ontesme = function(target, ability)
+      if ability == "Illgrasp" then
+        snd.target_got("illgrasp")
+        snd.illgraspcounter = 4
+        snd.affTimers.start("illgrasp", 180)
+      end
+    end,
   },
   
   ["Seraph"] = {
@@ -40114,15 +40133,6 @@ end</script>
   end
   
   --if canslickness
-end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Rebounding timer</name>
-							<packageName></packageName>
-							<script>function snd.reboundingtimerfunc()
-  if reboundenemy_timer then killTimer(reboundenemy_timer) end
-	reboundenemy_timer = tempTimer(6.15,[[snd.used.rebounding = true]])
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -45863,6 +45873,7 @@ snd.timers.eqbal = snd.timers.eqbal or {}
 snd.timers.fury = snd.timers.fury or {}
 snd.timers.axes = snd.timers.axes or {}
 snd.timers.elixir = snd.timers.elixir or {}
+snd.timers.poultice = snd.timers.poultice or {}
 
 for k, _ in pairs(snd.timers) do
   snd.timers[k] = {["start"] = nil, ["limit"] = nil}
@@ -46006,11 +46017,27 @@ local times = {
   speed = 1.4,
   vigor = 1.4,
   arcane = 1.4,
+  restoration = 4.15,
+  mending = 1,
+  epidermal = 1,
+  soothing = 1,
+  caloric = 1,
 }
 function snd.track_elixir(target, elixir)
   if target:lower() == snd.target:lower() and times[elixir] then
     snd.timers.elixir.start = getEpoch()
     snd.timers.elixir.limit = times[elixir]
+  end
+end
+
+function snd.track_poultice(target, poultice)
+  if target:lower() == snd.target:lower() and times[poultice] then
+    snd.timers.poultice.start = getEpoch()
+    local limit = times[poultice]
+    if snd.checkAff("rot_body")then
+      limit = limit+4.3
+    end
+    snd.timers.poultice.limit = limit
   end
 end
 
