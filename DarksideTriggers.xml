@@ -1644,10 +1644,16 @@ if table.isMember(snd.firstaidpredict, matches[2]) then
 end
 
 if matches[2] == "paresis" then
-  if not snd.swaggered and snd.swagger &lt;= 2 and snd.class == "Ravager" then
-    snd.send("qeb contempt")
-    snd.swaggered = true
-    tempTimer(5,[[snd.swaggered = false]])
+  if not snd.swaggered and snd.swagger &lt;= 2 then
+    if snd.class == "Ravager" then
+      snd.send("qeb contempt")
+      snd.swaggered = true
+      tempTimer(5,[[snd.swaggered = false]])
+    elseif snd.class == "Zealot" then
+      snd.send("qeb swagger")
+      snd.swaggered = true
+      tempTimer(5,[[snd.swaggered = false]])
+    end
   elseif #snd.elevatedaff &lt; 1 and not snd.elevatedaff["paresis"] then
     if not snd.class == "Carnifex" then
       send("firstaid elevate paresis")
@@ -3884,9 +3890,13 @@ end
 if matches[2] == "paresis" then
   if not snd.queuesent and not snd.waiting.queue then
     send("queue clear")
-  elseif not snd.swaggered and matches[2] == "paresis" then
-    if snd.swagger &lt;= 2 and snd.class == "Ravager" then
+  elseif not snd.swaggered and snd.swagger &lt;= 2 then
+    if snd.class == "Ravager" then
       snd.send("qeb contempt")
+      snd.swaggered = true
+      tempTimer(5,[[snd.swaggered = false]])
+    elseif snd.class == "Zealot" then
+      snd.send("qeb swagger")
       snd.swaggered = true
       tempTimer(5,[[snd.swaggered = false]])
     end
@@ -6688,8 +6698,10 @@ end</script>
 										<name>leg broken secondary</name>
 										<script>if snd.not_aff("right_leg_broken") and snd.not_aff("left_leg_broken") then 
   snd.affsec("firstaid_predict_legs") 
-  snd.send("firstaid predict right_leg_broken")
-  snd.send("firstaid predict left_leg_broken")
+  send("firstaid predict right_leg_broken")
+  send("firstaid predict left_leg_broken")
+	send("firstaid predict left_leg_crippled")
+  send("firstaid predict right_leg_crippled")
 end
 </script>
 										<triggerType>0</triggerType>
@@ -7507,14 +7519,16 @@ end</script>
 									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 										<name>Paresis / Paralysis</name>
 										<script>snd.affsec("paresis")
-if not snd.swaggered then
-  if snd.swagger &lt;= 2 then
+if not snd.swaggered and snd.swagger &lt;= 2 then
     if snd.class == "Ravager" then
       snd.send("qeb contempt")
+      snd.swaggered = true
+      tempTimer(5,[[snd.swaggered = false]])
+    elseif snd.class == "Zealot" then
+      snd.send("qeb swagger")
+      snd.swaggered = true
+      tempTimer(5,[[snd.swaggered = false]])
     end
-    snd.swaggered = true
-    tempTimer(5,[[snd.swaggered = false]])
-  end
 end</script>
 										<triggerType>0</triggerType>
 										<conditonLineDelta>0</conditonLineDelta>
@@ -13488,12 +13502,16 @@ end</script>
 }
 
 if hasSkill("Returning") then
-  snd.send("qdmount"..snd.sep.."return mount "..stable_check[gmcp.Char.Status.city])
+  if gmcp.Char.Status.city ~= "(None)" then
+    snd.send("qdmount"..snd.sep.."return mount "..stable_check[gmcp.Char.Status.city])
+  else
+    snd.send("qdmount"..snd.sep.."return mount esterportstable")
+  end
 end
 
+disableTimer("Firstaidstatustimer")
 snd_saveAreas(true)
 snd_toggleSave(true)
-disableTimer("Firstaidstatustimer")
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -14515,24 +14533,24 @@ snd.resummon = false</script>
     if snd.class ~= "None" then
       if snd.resummon then
         if snd.elementalcount &lt; 30 then
-          snd.set_queue("drain globe"..snd.sep.."qeb summon elemental"..snd.sep.."kill elemental")
+          snd.send("drain globe"..snd.sep.."summon elemental"..snd.sep.."qeb kill elemental")
         else
-          snd.set_queue("drai globe"..snd.sep.."qeb summon elemental"..snd.sep.."sacrifice corpses"..snd.sep.."kill elemental")
+          snd.send("drain globe"..snd.sep.."qeb summon elemental"..snd.sep.."sacrifice corpses"..snd.sep.."kill elemental")
         end
         snd.elementalcount = snd.elementalcount + 1 
       else
         if snd.elementalcount &lt; 30 then
-          snd.set_queue("summon elemental"..snd.sep.."kill elemental")
+          snd.send("summon elemental"..snd.sep.."qeb kill elemental")
         else
-          snd.set_queue("summon elemental"..snd.sep.."qeb sacrifice corpses"..snd.sep.."kill elemental")
+          snd.send("summon elemental"..snd.sep.."qeb sacrifice corpses"..snd.sep.."kill elemental")
         end
         snd.elementalcount = snd.elementalcount + 1 
       end   
     else
       if snd.elementalcount &lt; 30 then
-        snd.set_queue("summon elemental"..snd.sep.."chaos havoc elemental")
+        snd.send("summon elemental"..snd.sep.."astral evert elemental")
       else
-        snd.set_queue("summon elemental"..snd.sep.."qeb sacrifice corpses"..snd.sep.."chaos havoc elemental")
+        snd.send("summon elemental"..snd.sep.."qeb sacrifice corpses"..snd.sep.."astral evert elemental")
       end
       snd.elementalcount = snd.elementalcount + 1
     end
@@ -14552,8 +14570,10 @@ end</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>^Having slain (.+), you retrieve the corpse.$</string>
+							<string>^Having slain (.+), Leomaris retrieves the corpse.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
@@ -14622,7 +14642,7 @@ snd.send("qeb avert")</script>
 if snd.class ~= "None" then
   snd.set_queue("qeb k vermin")
 else
-  snd.set_queue("qeb chaos havoc vermin")
+  snd.set_queue("qeb astral evert vermin")
 end
 --end
 snd.vermin = snd.vermin + 1
@@ -14850,7 +14870,7 @@ end</script>
 						<name>Redrain</name>
 						<script>if snd.toggles.bashing or snd.toggles.fasthunt then
   snd.resummon = true
-  snd.set_queue("qeb drain globe"..snd.sep.."summon elemental")
+  snd.send("drain globe"..snd.sep.."summon elemental")
   snd.localcount = snd.localcount+1
   if snd.localcount &gt; 3 then
     disableTrigger("Redrain")
@@ -15522,33 +15542,6 @@ end</script>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>0</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Prolong</name>
-							<script>--snd.send("qeb invoke prolong tysios")
-snd.send("qeb chaos mend tysios")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand></mCommand>
-							<packageName></packageName>
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile></mSoundFile>
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>Tysios uses Tattoos Moss.</string>
-								<string>Tysios uses Artifice Coagulation.</string>
-								<string>The wounds in Tysios's stomach open up and begin bleeding profusely.</string>
-								<string>Tysios uses Astranomia Coruscation.</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-								<integer>3</integer>
-								<integer>3</integer>
-								<integer>3</integer>
 							</regexCodePropertyList>
 						</Trigger>
 					</TriggerGroup>
@@ -17666,7 +17659,7 @@ end</script>
    snd.message("Gave: "..matches[2])
   end
   
-  local attacks = {Lob = true, Assault = true, Slaughter = true, Carve = true, Cripple = true, Bloodscourge = true, Fleshbane = true, Butterfly = true}
+  local attacks = {Backstab = true, Lob = true, Assault = true, Slaughter = true, Carve = true, Cripple = true, Bloodscourge = true, Fleshbane = true, Butterfly = true}
   if attacks[snd.skill_being_used] == nil then
     snd.used.rebounding = false
   end
@@ -23255,6 +23248,7 @@ end
 										<name>secondary gutcheck</name>
 										<script>if snd.target == matches[2] then
   snd.target_got("fallen")
+  snd.target_got("gnawing")
   snd.target_got("anorexia")
 end</script>
 										<triggerType>0</triggerType>
@@ -24687,7 +24681,7 @@ end</script>
 											<colorTriggerFgColor>#000000</colorTriggerFgColor>
 											<colorTriggerBgColor>#000000</colorTriggerBgColor>
 											<regexCodeList>
-												<string>^(\w+) tears the noxious Diamond shape from \w+ body, wincing in pain\.$</string>
+												<string>^(\w+) tears the noxious diamond shape from \w+ body, wincing in pain\.$</string>
 											</regexCodeList>
 											<regexCodePropertyList>
 												<integer>1</integer>
@@ -35990,7 +35984,7 @@ end</script>
 								<colorTriggerFgColor>#000000</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>^(\w+) looks mildly stressed in pain, but .+ (\w+ \w+) resists breaking\.$</string>
+									<string>^(\w+) looks mildly stressed in pain, but .+ (\w+ \w+) endures\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
 									<integer>1</integer>
@@ -37185,7 +37179,7 @@ end</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>broke</name>
 									<script>if matches[2] == snd.target then
-  snd.target_cured("ravaged")
+  --snd.target_cured("ravaged")
   
   if matches[2] == snd.target and matches[3]~= "head" and matches[3] ~= "torso" then
     snd.target_got(matches[3].." broken")
@@ -37223,7 +37217,7 @@ end</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>mangled</name>
 									<script>if matches[2] == snd.target then
-  snd.target_cured("ravaged")
+  --snd.target_cured("ravaged")
   
   snd.message("&lt;red&gt;"..matches[2].."'s &lt;white&gt;"..matches[3].." was mangled!")
   if matches[2] == snd.target then
@@ -37311,7 +37305,7 @@ end</script>
 									<colorTriggerFgColor>#000000</colorTriggerFgColor>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
-										<string>^(\w+) crackles with blue energy that wreathes itself about (the )?\w+ limbs.$</string>
+										<string>^(\w+) crackles with blue energy that wreathes itself about \w+ limbs.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -38935,8 +38929,14 @@ end</script>
 									<regexCodeList>
 										<string>^Flames leap from .+ and ignite (\w+)\.$</string>
 										<string>^Flames spew from a firelord, engulfing (\w+) and consuming \w+ flesh.$</string>
+										<string>^Your burning fist catches (\w+) alight in a pale, triumphant w+.$</string>
+										<string>^Flames lick at (\w+)'s body as \w+ strikes at your fire-wreathed body,setting \w+ ablaze.$</string>
+										<string>^Flames lick out at (\w+) from your body and scorch \w+ flesh.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
+										<integer>1</integer>
+										<integer>1</integer>
+										<integer>1</integer>
 										<integer>1</integer>
 										<integer>1</integer>
 									</regexCodePropertyList>
@@ -47543,6 +47543,7 @@ end
 								<string>You use Bioessence Steroid.</string>
 								<string>Blood races through your veins as your muscles contract.</string>
 								<string>Exhilaration grows within as your core swells with shadow.</string>
+								<string>Splinters of your spirit reach out and help right your balance.</string>
 							</regexCodeList>
 							<regexCodePropertyList>
 								<integer>1</integer>
@@ -47558,6 +47559,7 @@ end
 								<integer>2</integer>
 								<integer>3</integer>
 								<integer>0</integer>
+								<integer>3</integer>
 								<integer>3</integer>
 								<integer>3</integer>
 								<integer>3</integer>
@@ -53975,6 +53977,11 @@ end</script>
 ["Which now lost art was practised by the Bloodborn prior to its reemergence?"] = "Rituos",
 ["Who prophecized about the coming of the Three Children?"] = "Azaeru",
 ["What is the name of the Father within Arurer Haven?"] = "Garron",
+["Which Sapient God was the first to travel to Albedos?"] = "Dhar, the Underking",
+["In what age was the underwater city of Kelsys constructed?"] = "Age of Providence",
+["Which person was responsible for inadvertently disturbing Varach Scolrys' tomb, resulting in his reawakening?"] = "Lord Sorrelion Sammonward the Fifth",
+["What device provides information about your shell's previous lifetimes?"] = "The Soul Index",
+["Which two opposing groups fought to a stalemate, marking the end of the First Mortal Epoch?"] = "Indoron and Ankyreans",
 }
 if herolt_questions[matches[2]] then 
 tempTimer(3, [[ send("say ]]..herolt_questions[matches[2]]..[[") ]])
