@@ -2600,7 +2600,7 @@ aatlas.default()</script>
 					</Alias>
 				</AliasGroup>
 			</AliasGroup>
-			<AliasGroup isActive="yes" isFolder="yes">
+			<AliasGroup isActive="no" isFolder="yes">
 				<name>Aetolia Hunt Tracking</name>
 				<script></script>
 				<command></command>
@@ -4341,37 +4341,33 @@ end</script>
     if not snd.waiting.queue then
 
       limbs = {"left leg", "right leg", "left arm", "right arm", "head", "torso"}
-      snd.giving = {"anorexia", "stupidity", "epilepsy", "amnesia", "deadening", "recklessness"}
+      snd.giving = {"anorexia", "stupidity", "paresis", "pacifism", "epilepsy", "amnesia", "deadening", "recklessness"}
       
-      if (snd.limb_dmg["head"] or snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt; 33.33 and not snd.checkAff("stupidity") then 
-        snd.mindAffliction = "stupidity"
-	    elseif not snd.checkAff("confusion") and snd.checkAff("blackout") then 
-        snd.mindAffliction = "confuse"
-      elseif not snd.checkAff("paresis") or snd.checkAff("paralysis") then
-        snd.mindAffliction = "paralyse"
-      elseif not snd.checkAff("pacifism") then
-        snd.mindAffliction = "pacify"
-	    else
-        snd.mindAffliction = "none"
-        for i in pairs(snd.giving) do
-          if not snd.checkAff(snd.giving[i]) then
-            if snd.mindAffliction == "none" then
-              snd.mindAffliction = snd.giving[i]
+        if not snd.checkAff(snd.giving[i]) then
+          if snd.mindAffliction == "none" then
+            snd.mindAffliction = snd.giving[i]
+            if (snd.limb_dmg["head"] or snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt; 33.33 and not snd.checkAff("stupidity") then 
+              snd.mindAffliction = "stupidity"
+            elseif snd.mindAffliction == "confusion" then
+              snd.mindAffliction = "confuse"
+            elseif snd.mindAffliction == "paresis" then
+              snd.mindAffliction = "paralyse"
+            elseif snd.mindAffliction == "pacifism" then
+              snd.mindAffliction = "pacify"
             end
           end
-        end    
-      end
+        end
 
       if snd.used.shield then
 	       tekuraKick = "sck"
       elseif (snd.limb_dmg["head"] &gt;= 66.66 or snd.checkAff("head_mangled")) and snd.checkAff("fallen") and snd.resto_limb ~= "head" then
 		     tekuraKick = "axk"
+      elseif snd.checksomeSelfAffs({"clumsiness","blurry_vision"},1) and snd.stance ~= "wolf" then
+         tekuraKick = "axk"
 	    elseif snd.stance ~= "bear" and not snd.can_arms() and snd.not_aff("fallen") then
-		     tekuraKick = "brs"
-	    elseif snd.stance ~= "dragon" and snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},2) then
+		     tekuraKick = "wfs"
+	    elseif snd.stance ~= "dragon" then
 		     tekuraKick = "drs"
-	    elseif snd.stance ~= "tiger" then
-		     tekuraKick = "tgs"
 	    elseif not snd.checkAff("fallen") and ((snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt;= 33.33 or snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1)) then
 		     tekuraKick = "swk"
 	    elseif snd.checkAff("fallen") and (snd.limb_dmg["left leg"] &lt; 33.33 or not snd.checkAff("left_leg_broken") or not snd.checkAff("left_leg_crippled")) and snd.no_parry() and snd.resto_limb ~= "left leg" then
@@ -4452,15 +4448,13 @@ end</script>
            string = "mind push "..snd.target
       elseif snd.checkAff("fallen") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then 
          string = "bbt "..snd.target
-      elseif snd.parried_limb ~= "torso" and snd.limb_dmg["torso"] &gt; 19.99 and snd.balance.kaistrike then
+      elseif snd.parried_limb ~= "torso" and snd.resto_limb == "torso" and snd.limb_dmg["torso"] &gt; 19.99 and snd.balance.kaistrike and snd.timer_check("poultice", 3, "more than") then
          string = "kai strike "..snd.target
       elseif (snd.limb_dmg["head"] &gt;= 56 or snd.checkAff("head_mangled")) and snd.checkAff("fallen")  and snd.no_parry() then
     	   string = "combo "..snd.target.." axk ucp ucp"
-      elseif kai &gt;= 40 and snd.resto_limb ~= "none" and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},2) then
+      elseif kai &gt;= 40 and snd.resto_limb ~= "none" and snd.timer_check("poultice", 2, "more than") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},2) and snd.checksomeAffs({"left_leg_broken", "right_leg_broken", "right_arm_broken", "left_arm_broken"},2) then
 			    string = "kai cripple "..snd.target
-      --elseif snd.checkAff("blackout") and not snd.checkAff("disrupted") then
-			 --  string = "mind disrupt "..snd.target
-		  elseif not snd.checkAff("fallen") then
+      elseif not snd.checkAff("fallen") then
 	       if snd.limb_dmg["left leg"] &gt;= 33.33 and snd.limb_dmg["right leg"] &gt;= 33.33 and snd.limb_dmg["left arm"] &gt;= 33.33 and snd.limb_dmg["right arm"] &gt;= 33.33 and snd.limb_dmg["head"] &lt; 66.66 then 
 			     string = "combo "..snd.target.." wrt left leg ucp ucp "..snd.sep.."mind "..snd.mindAffliction.." "..snd.target
 		     --elseif ((snd.limb_dmg["left arm"] &gt;= 26 and snd.limb_dmg["left arm"] &lt;= 33.33 and snd.resto_limb ~= "left arm") or (snd.limb_dmg["right arm"] &gt;= 26 and snd.limb_dmg["right arm"] &lt;= 33.33 and snd.resto_limb ~= "right arm") or (snd.limb_dmg["left leg"] &gt;= 26 and snd.limb_dmg["left leg"] &lt;= 33.33 and snd.resto_limb ~= "left leg") or (snd.limb_dmg["right leg"] &gt;= 26 and snd.limb_dmg["right leg"] &lt;= 33.33 and snd.resto_limb ~= "right leg")) and snd.balance.blackout and snd.mindlocked then
@@ -4531,7 +4525,7 @@ end</script>
 		     tekuraKick = "brs"
 	    elseif snd.stance ~= "tiger" then
 		     tekuraKick = "tgs"
-	    elseif snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled"},1) and not snd.checkAff("fallen") then
+	    elseif snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1) and not snd.checkAff("fallen") then
         tekuraKick = "swk"
       elseif (snd.checkAff("writhe_impaled") or snd.checkAff("head_mangled") or snd.limb_dmg["head"] &gt;= 66.66) and snd.checkAff("fallen") then
         tekuraKick = "axk"
@@ -4561,14 +4555,14 @@ end</script>
       
       if snd.theytumbling then
         string = "slt "..snd.target
-      elseif (snd.aff_tally() &gt; 4 or (snd.have_aff("paresis") and snd.have_aff("asthma") and snd.have_aff("slickness")) or snd.have_aff("aeon") or (snd.have_aff("ablaze") and snd.have_aff("heatspear"))) and snd.balance.mindpush then
-           string = "mind push "..snd.target
+      --elseif (snd.aff_tally() &gt; 4 or (snd.have_aff("paresis") and snd.have_aff("asthma") and snd.have_aff("slickness")) or snd.have_aff("aeon") or (snd.have_aff("ablaze") and snd.have_aff("heatspear"))) and snd.balance.mindpush then
+       --    string = "mind push "..snd.target
       elseif kai &gt;= 40 and not snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},4) then
 			     string = "kai cripple "..snd.target
       elseif snd.checkAff("fallen") and not snd.checkAff("writhe_impaled") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then
            string = "bbt "..snd.target
-      elseif not snd.mindlocked and not snd.locking then
-           string = "mind lock "..snd.target
+      --elseif not snd.mindlocked and not snd.locking then
+      --     string = "mind lock "..snd.target
 		  else
         string = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
         call = "wt Afflicting "..snd.target..": "..snd.mindAffliction..snd.sep
@@ -4593,340 +4587,6 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^limbs$</regex>
-							</Alias>
-							<Alias isActive="yes" isFolder="no">
-								<name>Kll Route 2</name>
-								<script>if snd.class == "Monk" then
-
-  snd.starting_attack()
-  function snd.attack_function()
-
-    local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-    local kai = tonumber(gmcp.Char.Vitals.kai) 
-    local string = "" -- this will populate with our attack
-    local call = "" -- this will be for affliction calling
-    wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-
-    if not snd.waiting.queue then
-
-      limbs = {"left leg", "right leg", "left arm", "right arm", "head", "torso"}
-      snd.giving = {"anorexia", "stupidity", "epilepsy", "amnesia", "deadening", "recklessness"}
-      
-      if (snd.limb_dmg["head"] or snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt; 33.33 and not snd.checkAff("stupidity") then 
-        snd.mindAffliction = "stupidity"
-	    elseif not snd.checkAff("confusion") and snd.checkAff("blackout") then 
-        snd.mindAffliction = "confuse"
-      elseif not snd.checkAff("paresis") or snd.checkAff("paralysis") then
-        snd.mindAffliction = "paralyse"
-      elseif not snd.checkAff("pacifism") then
-        snd.mindAffliction = "pacify"
-	    else
-        snd.mindAffliction = "none"
-        for i in pairs(snd.giving) do
-          if not snd.checkAff(snd.giving[i]) then
-            if snd.mindAffliction == "none" then
-              snd.mindAffliction = snd.giving[i]
-            end
-          end
-        end    
-      end
-
-      if snd.used.shield then
-	       tekuraKick = "sck"
-      elseif (snd.limb_dmg["head"] &gt;= 66.66 or snd.checkAff("head_mangled")) and snd.checkAff("fallen") and snd.resto_limb ~= "head" then
-		     tekuraKick = "axk"
-	    elseif snd.stance ~= "bear" and not snd.can_arms() and snd.not_aff("fallen") then
-		     tekuraKick = "brs"
-	    elseif snd.stance ~= "dragon" and snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},2) then
-		     tekuraKick = "drs"
-	    elseif snd.stance ~= "tiger" then
-		     tekuraKick = "tgs"
-	    elseif not snd.checkAff("fallen") and ((snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt;= 33.33 or snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1)) then
-		     tekuraKick = "swk"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["left leg"] &lt; 33.33 or not snd.checkAff("left_leg_broken") or not snd.checkAff("left_leg_crippled")) and snd.no_parry() and snd.resto_limb ~= "left leg" then
-		     tekuraKick = "wrt left leg"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["right leg"] &lt; 33.33 or not snd.checkAff("right_leg_broken") or not snd.checkAff("right_leg_crippled")) and snd.no_parry() and snd.resto_limb ~= "right leg" then
-		     tekuraKick = "wrt right leg"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["left arm"] &lt; 33.33 or not snd.checkAff("left_arm_broken") or not snd.checkAff("left_arm_crippled")) and snd.no_parry() and snd.resto_limb ~= "left arm" then
-		     tekuraKick = "wrt left arm"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["right arm"] &lt; 33.33 or not snd.checkAff("right_arm_broken") or not snd.checkAff("right_arm_crippled")) and snd.no_parry() and snd.resto_limb ~= "right arm" then
-		     tekuraKick = "wrt right arm"
-	    elseif snd.resto_limb ~= "head" and snd.resto_limb ~= "none" and snd.parried_limb ~= "head" and not snd.no_parry() then
-      	 tekuraKick = "wwk"
-	    elseif snd.limb_dmg["left leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.resto_limb ~= "left leg" then
-		     tekuraKick = "snk left"
-	    elseif snd.limb_dmg["right arm"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "right arm") and snd.resto_limb ~= "right arm" then
-		     tekuraKick = "mnk right"			
-	    elseif snd.limb_dmg["left arm"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "left arm") and snd.resto_limb ~= "left arm" then
-		     tekuraKick = "mnk left"
-	    elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.resto_limb ~= "right leg" then
-		     tekuraKick = "snk right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.resto_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 66.66 then
-		     tekuraKick = "snk left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right arm") and snd.resto_limb ~= "left arm" and snd.limb_dmg["right arm"] &lt; 66.66 then
-		     tekuraKick = "mnk right"		
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left arm") and snd.resto_limb ~= "right arm" and snd.limb_dmg["left arm"] &lt; 66.66 then
-		     tekuraKick = "mnk left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.resto_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 66.66 then
-		     tekuraKick = "snk right"
-	    else 
-		     tekuraKick = "wwk"
-      end
-
-      if snd.checkAff("fallen") and snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
-		     firstPunch = "hfp left"
-	    elseif snd.checkAff("fallen") and snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
-		     firstPunch = "hfp right"
-	    elseif snd.mindAffliction == "stupidity" and not snd.checkAff("blurry_vision") then
-		     firstPunch = "pmp"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left arm") and not snd.resto_limb ~= "left arm" and snd.limb_dmg["left arm"] &lt; 66.66 and tekuraKick ~= "mnk left" then
-		     firstPunch = "spp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left leg") and not snd.checkAff("left_leg_broken") and snd.resto_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 66.66 and tekuraKick ~= "snk left" then
-		     firstPunch = "hfp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right leg") and not snd.checkAff("right_leg_broken") and snd.resto_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 66.66 and tekuraKick ~= "snk right" then
-		     firstPunch = "hfp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right arm") and not snd.checkAff("right_arm_broken") and snd.resto_limb ~= "right arm" and snd.limb_dmg["right arm"] &lt; 66.66 and tekuraKick ~= "mnk right" then
-		     firstPunch = "spp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "head") and not snd.checkAff("head_broken") and snd.resto_limb ~= "head" then
-		     firstPunch = "ucp"
-	    else
-		     firstPunch = "hkp"
-      end
-
-      if snd.checkAff("fallen") and snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
-		     secondPunch = "hfp left"
-	    elseif snd.checkAff("fallen") and snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
-		     secondPunch = "hfp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 66.66 then
-		     secondPunch = "hfp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right arm") and snd.limb_dmg["right arm"] &lt; 33.33 and snd.resto_limb ~= "right arm" and snd.limb_dmg["right arm"] &lt; 66.66 then
-		     secondPunch = "spp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left arm") and snd.limb_dmg["left arm"] &lt; 33.33 and snd.resto_limb ~= "left arm" and snd.limb_dmg["left arm"] &lt; 66.66 then
-		     secondPunch = "spp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 66.66 then
-		     secondPunch = "hfp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "head") and snd.resto_limb ~= "head" then
-		     secondPunch = "ucp"
-	    else
-		     secondPunch = "hkp"
-      end      
-      
-      if snd.theytumbling then
-           string = "slt "..snd.target
-      elseif snd.used.shield then
-		       string = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
-		  elseif not snd.mindlocked and not snd.locking then
-           string = "mind lock "..snd.target
-		  elseif snd.aff_tally() &gt; 4 and snd.not_aff("paresis") and (snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon") or snd.have_aff("ablaze") or snd.have_aff("heatspear")) and snd.balance.mindpush then
-           string = "mind push "..snd.target
-      elseif snd.checkAff("fallen") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then 
-         string = "bbt "..snd.target
-      elseif snd.parried_limb ~= "torso" and snd.limb_dmg["torso"] &gt; 19.99 and snd.balance.kaistrike then
-         string = "kai strike "..snd.target
-      elseif not snd.checkAff("fallen") then
-	       if snd.limb_dmg["left leg"] &gt;= 33.33 and snd.limb_dmg["right leg"] &gt;= 33.33 and snd.limb_dmg["left arm"] &gt;= 33.33 and snd.limb_dmg["right arm"] &gt;= 33.33 and snd.limb_dmg["head"] &lt; 66.66 then 
-			     string = "combo "..snd.target.." wrt left leg ucp ucp "..snd.sep.."mind "..snd.mindAffliction.." "..snd.target
-		     elseif snd.checkAff("blackout") and kai &gt;= 40 then
-			    string = "kai cripple "..snd.target
-		     elseif ((snd.limb_dmg["left arm"] &gt;= 26 and snd.limb_dmg["left arm"] &lt;= 33.33 and snd.resto_limb ~= "left arm") or (snd.limb_dmg["right arm"] &gt;= 26 and snd.limb_dmg["right arm"] &lt;= 33.33 and snd.resto_limb ~= "right arm") or (snd.limb_dmg["left leg"] &gt;= 26 and snd.limb_dmg["left leg"] &lt;= 33.33 and snd.resto_limb ~= "left leg") or (snd.limb_dmg["right leg"] &gt;= 26 and snd.limb_dmg["right leg"] &lt;= 33.33 and snd.resto_limb ~= "right leg")) and snd.balance.blackout and snd.mindlocked then
-			     string = "mind blackout"
-		     elseif kai &gt;= 40 and snd.resto_limb~="none" and snd.checksomeAffs({"left_leg_broken", "right_leg_broken", "right_arm_broken", "left_arm_broken"},2) then
-			     string = "kai cripple "..snd.target
-		     else
-			     string = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
-		     end
-       elseif snd.checkAff("blackout") and kai &gt;= 40 then
-			   string = "kai cripple "..snd.target
-		   elseif snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},2) and snd.checkAff("fallen") then 
-			   if snd.balance.blackout and snd.mindlocked then
-				    string = "mind blackout"
-			   else
-				    string = "mind batter "..snd.target.." epilepsy dizziness stupidity"
-			   end
-       else
-         string = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
-		   end
-    
-		   if snd.toggles.affcalling and not snd.target_gone then
-			   string = call..snd.sep..string
-		   end
-
-       if string ~= snd.last_attack and not snd.waiting.queue then
-         snd.last_attack = string
-         snd.attack(snd.last_attack)
-         snd.waiting.queue = true
-         tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-       end
-    end
-  end
-snd.attack_function()
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^kll2$</regex>
-							</Alias>
-							<Alias isActive="yes" isFolder="no">
-								<name>Arms</name>
-								<script>if snd.class == "Monk" then
-
-  snd.starting_attack()
-  function snd.attack_function()
-
-    local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-    local kai = tonumber(gmcp.Char.Vitals.kai) 
-    local string = "" -- this will populate with our attack
-    local call = "" -- this will be for affliction calling
-    wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-
-    if not snd.waiting.queue then
-
-      limbs = {"left leg", "right leg", "left arm", "right arm", "head", "torso"}
-      snd.giving = {"anorexia", "stupidity", "epilepsy", "amnesia", "deadening", "recklessness"}
-      
-      if (snd.limb_dmg["head"] or snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt; 33.33 and not snd.checkAff("stupidity") then 
-        snd.mindAffliction = "stupidity"
-	    elseif not snd.checkAff("confusion") and snd.checkAff("blackout") then 
-        snd.mindAffliction = "confuse"
-      elseif not snd.checkAff("paresis") or snd.checkAff("paralysis") then
-        snd.mindAffliction = "paralyse"
-      elseif not snd.checkAff("pacifism") then
-        snd.mindAffliction = "pacify"
-	    else
-        snd.mindAffliction = "none"
-        for i in pairs(snd.giving) do
-          if not snd.checkAff(snd.giving[i]) then
-            if snd.mindAffliction == "none" then
-              snd.mindAffliction = snd.giving[i]
-            end
-          end
-        end    
-      end
-
-      if snd.used.shield then
-	       tekuraKick = "sck"
-      elseif (snd.limb_dmg["head"] &gt;= 66.66 or snd.checkAff("head_mangled")) and snd.checkAff("fallen") and snd.resto_limb ~= "head" then
-		     tekuraKick = "axk"
-	    elseif snd.stance ~= "dragon" and snd.checksomeAffs({"left_arm_broken", "right_arm_broken"},2) then
-		     tekuraKick = "drs"
-	    elseif snd.stance ~= "bear" and not snd.can_arms() and snd.not_aff("fallen") then
-		     tekuraKick = "brs"
-	    elseif snd.stance ~= "tiger" then
-		     tekuraKick = "tgs"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right arm") and snd.resto_limb ~= "left arm" and snd.limb_dmg["right arm"] &lt; 66.66 then
-		     tekuraKick = "mnk right"		
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left arm") and snd.resto_limb ~= "right arm" and snd.limb_dmg["left arm"] &lt; 66.66 then
-		     tekuraKick = "mnk left"
-	    elseif snd.limb_dmg["right arm"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "right arm") and snd.resto_limb ~= "right arm" then
-		     tekuraKick = "mnk right"			
-	    elseif snd.limb_dmg["left arm"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "left arm") and snd.resto_limb ~= "left arm" then
-		     tekuraKick = "mnk left"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["left arm"] &lt; 33.33 or not snd.checkAff("left_arm_broken") or not snd.checkAff("left_arm_crippled")) and snd.no_parry() and snd.resto_limb ~= "left arm" then
-		     tekuraKick = "wrt left arm"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["right arm"] &lt; 33.33 or not snd.checkAff("right_arm_broken") or not snd.checkAff("right_arm_crippled")) and snd.no_parry() and snd.resto_limb ~= "right arm" then
-		     tekuraKick = "wrt right arm"
-	    elseif not snd.checkAff("fallen") and ((snd.limb_dmg["left leg"] or snd.limb_dmg["right leg"]) &gt;= 33.33 or snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1)) then
-		     tekuraKick = "swk"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["left leg"] &lt; 33.33 or not snd.checkAff("left_leg_broken") or not snd.checkAff("left_leg_crippled")) and snd.no_parry() and snd.resto_limb ~= "left leg" then
-		     tekuraKick = "wrt left leg"
-	    elseif snd.checkAff("fallen") and (snd.limb_dmg["right leg"] &lt; 33.33 or not snd.checkAff("right_leg_broken") or not snd.checkAff("right_leg_crippled")) and snd.no_parry() and snd.resto_limb ~= "right leg" then
-		     tekuraKick = "wrt right leg"
-	    elseif snd.resto_limb ~= "head" and snd.resto_limb ~= "none" and snd.parried_limb ~= "head" and not snd.no_parry() then
-      	 tekuraKick = "wwk"
-	    elseif snd.limb_dmg["left leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.resto_limb ~= "left leg" then
-		     tekuraKick = "snk left"
-	    elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.resto_limb ~= "right leg" then
-		     tekuraKick = "snk right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.resto_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 66.66 then
-		     tekuraKick = "snk left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.resto_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 66.66 then
-		     tekuraKick = "snk right"
-	    else 
-		     tekuraKick = "wwk"
-      end
-
-      if (snd.no_parry() or snd.parried_limb ~= "left arm") and not snd.resto_limb ~= "left arm" and snd.limb_dmg["left arm"] &lt; 66.66 and tekuraKick ~= "mnk left" then
-		     firstPunch = "spp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right arm") and not snd.checkAff("right_arm_broken") and snd.resto_limb ~= "right arm" and snd.limb_dmg["right arm"] &lt; 66.66 and tekuraKick ~= "mnk right" then
-		     firstPunch = "spp right"
-	    elseif snd.checkAff("fallen") and snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
-		     firstPunch = "hfp left"
-	    elseif snd.checkAff("fallen") and snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
-		     firstPunch = "hfp right"
-	    elseif snd.mindAffliction == "stupidity" and not snd.checkAff("blurry_vision") then
-		     firstPunch = "pmp"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "head") and not snd.checkAff("head_broken") and snd.resto_limb ~= "head" then
-		     firstPunch = "ucp"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left leg") and not snd.checkAff("left_leg_broken") and snd.resto_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 66.66 and tekuraKick ~= "snk left" then
-		     firstPunch = "hfp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right leg") and not snd.checkAff("right_leg_broken") and snd.resto_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 66.66 and tekuraKick ~= "snk right" then
-		     firstPunch = "hfp right"
-	    else
-		     firstPunch = "hkp"
-      end
-
-      if (snd.no_parry() or snd.parried_limb ~= "right arm") and snd.limb_dmg["right arm"] &lt; 33.33 and snd.resto_limb ~= "right arm" and snd.limb_dmg["right arm"] &lt; 66.66 then
-		     secondPunch = "spp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left arm") and snd.limb_dmg["left arm"] &lt; 33.33 and snd.resto_limb ~= "left arm" and snd.limb_dmg["left arm"] &lt; 66.66 then
-		     secondPunch = "spp left"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "head") and snd.resto_limb ~= "head" then
-		     secondPunch = "ucp"
-	    elseif snd.checkAff("fallen") and snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
-		     secondPunch = "hfp left"
-	    elseif snd.checkAff("fallen") and snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
-		     secondPunch = "hfp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 66.66 then
-		     secondPunch = "hfp right"
-	    elseif (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 66.66 then
-		     secondPunch = "hfp left"
-	    else
-		     secondPunch = "hkp"
-      end      
-      
-      if snd.theytumbling then
-           string = "slt "..snd.target
-      elseif snd.used.shield then
-		       string = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
-		  elseif not snd.mindlocked and not snd.locking then
-           string = "mind lock "..snd.target
-		  elseif snd.aff_tally() &gt; 4 and wp &gt; 50 and (snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon") or snd.have_aff("ablaze") or snd.have_aff("heatspear")) and snd.balance.mindpush then
-           string = "mind push "..snd.target
-      elseif snd.checkAff("fallen") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then 
-         string = "bbt "..snd.target
-      elseif snd.parried_limb ~= "torso" and snd.limb_dmg["torso"] &gt; 19.99 and snd.balance.kaistrike then
-         string = "kai strike "..snd.target
-      elseif (snd.limb_dmg["head"] &gt;= 56 or snd.checkAff("head_mangled")) and snd.checkAff("fallen")  and snd.no_parry() then
-    	   string = "combo "..snd.target.." axk ucp ucp"
-      elseif snd.checkAff("blackout") and kai &gt;= 40 then
-			   string = "kai cripple "..snd.target
-		  elseif snd.balance.blackout and snd.mindlocked then
-			   string = "mind blackout"
-		  elseif snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},2) and snd.checkAff("fallen") then 
-			   if snd.balance.blackout and snd.mindlocked then
-				    string = "mind blackout"
-			   else
-				    string = "mind batter "..snd.target.." epilepsy dizziness stupidity"
-			   end
-       else
-         string = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
-		   end
-    
-		   if snd.toggles.affcalling and not snd.target_gone then
-			   string = call..snd.sep..string
-		   end
-
-       if string ~= snd.last_attack and not snd.waiting.queue then
-         snd.last_attack = string
-         snd.attack(snd.last_attack)
-         snd.waiting.queue = true
-         tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-       end
-    end
-  end
-snd.attack_function()
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^arms$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
@@ -6169,6 +5829,14 @@ function snd.attack_function()
     }
     cecho("\n&lt;red&gt;Starter table.")
 	end
+  
+  snd.bite_giving = {}
+  
+  if snd.checksomeAffs({"anorexia", "allergies", "vomiting"},1) and not snd.checkAff("thin_blood") then
+    table.insert(snd.bite_giving, "scytherus")
+  elseif snd.target_locked() and snd.checkAff("sensitivity") then
+    table.insert(snd.bite_giving, "scytherus")
+  end
 
   for i in pairs(snd.giving) do
     if not snd.checkAff(snd.giving[i]) then
@@ -20016,7 +19684,7 @@ end</script>
 								<packageName></packageName>
 								<regex>^kll$</regex>
 							</Alias>
-							<Alias isActive="yes" isFolder="no">
+							<Alias isActive="no" isFolder="no">
 								<name>Alt 1v1 - More Overpower (Damage)</name>
 								<script>if snd.class == "Ravager" then
 	snd.starting_attack()
@@ -25468,7 +25136,7 @@ snd.akkari_attend()
 
   for i in pairs(snd.primary_aff) do
     if not snd.checkAff(snd.primary_aff[i]) 
- --   and not (snd.used.rebounding and table.isMember(snd.censure_affs, snd.primary_aff[i]))
+ --   and not (snd.used.rebounding and table.contains(snd.censure_affs, snd.primary_aff[i]))
 
     and not (snd.primary_aff[i] == "paresis" and snd.checkAff("paralysis")) 
     then
@@ -25478,21 +25146,21 @@ snd.akkari_attend()
     end
   end
 
-  if table.isMember(snd.censure_affs, gashaff[1]) then
+  if table.contains(snd.censure_affs, gashaff[1]) then
       if gashaff[1] == "sight" then
      	pattack = "wipe left"..snd.sep.."censure "..snd.target.." lenient "..snd.effects[gashaff[1]]..snd.sep
       else
     	pattack = "wipe left"..snd.sep.."censure "..snd.target.." "..snd.effects[gashaff[1]]..snd.sep
       end
       fcall = "Afflicting "..snd.target..": "..gashaff[1].." "
-  elseif table.isMember(snd.akkari_bal_affs, gashaff[1]) then
+  elseif table.contains(snd.akkari_bal_affs, gashaff[1]) then
       if gashaff[1] == "black_bile" then
       pattack = "denounce "..snd.target.." corruption"..snd.sep
       fcall = ""
       else
       pattack = snd.akkari_bal_attacks[gashaff[1]].." "..snd.target..snd.sep
       end
-  elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+  elseif table.contains(snd.akkari_eq_affs, gashaff[1]) then
       pattack = snd.akkari_eq_attacks[gashaff[1]].." "..snd.target..snd.sep
   else
       pattack = "denounce "..snd.target..snd.sep
@@ -25586,7 +25254,7 @@ snd.akkari_attend()
     elseif snd.checkAff("no_paste") and (snd.checkAff("feast") or snd.can_deliver()) then
       string = "deliver "..snd.target..snd.sep..sattack
       fcall = ""
-    elseif snd.used.rebounding and table.isMember(snd.censure_affs, gashaff[1]) then
+    elseif snd.used.rebounding and table.contains(snd.censure_affs, gashaff[1]) then
         string = "denounce "..snd.target.." corruption"..snd.sep..sattack
         fcall = ""
         --fcall = "Afflicting "..snd.target..": black_bile"
@@ -25603,7 +25271,7 @@ snd.akkari_attend()
       string = "spirit inquisition "..snd.target
       fcall = ""
       scall = ""
-    elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+    elseif table.contains(snd.akkari_eq_affs, gashaff[1]) then
       string = pattack
       fcall = ""
       scall = ""
@@ -25930,20 +25598,20 @@ snd.akkari_attend()
     end
   end
 
-  if table.isMember(snd.censure_affs, gashaff[1]) then
+  if table.contains(snd.censure_affs, gashaff[1]) then
       if gashaff[1] == "sight" then
      	pattack = "wipe left"..snd.sep.."censure "..snd.target.." lenient "..snd.effects[gashaff[1]]..snd.sep
       else
     	pattack = "wipe left"..snd.sep.."censure "..snd.target.." "..snd.effects[gashaff[1]]..snd.sep
       end
       fcall = "Afflicting "..snd.target..": "..gashaff[1].." "
-  elseif table.isMember(snd.akkari_bal_affs, gashaff[1]) then
+  elseif table.contains(snd.akkari_bal_affs, gashaff[1]) then
       if gashaff[1] == "black_bile" then
       pattack = "denounce "..snd.target.." corruption"..snd.sep
       else
       pattack = snd.akkari_bal_attacks[gashaff[1]].." "..snd.target..snd.sep
       end
-  elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+  elseif table.contains(snd.akkari_eq_affs, gashaff[1]) then
       pattack = snd.akkari_eq_attacks[gashaff[1]].." "..snd.target..snd.sep
   else
       pattack = "denounce "..snd.target..snd.sep
@@ -26028,7 +25696,7 @@ snd.akkari_attend()
       string = "spirit vilify"..snd.sep.."dumavai "..snd.target
       fcall = ""
       scall = ""
-    elseif snd.used.rebounding and table.isMember(snd.censure_affs, gashaff[1]) then
+    elseif snd.used.rebounding and table.contains(snd.censure_affs, gashaff[1]) then
         string = "denounce "..snd.target.." corruption"..snd.sep..sattack
         fcall = ""
     elseif snd.checkAff("impatience") and snd.checksomeAffs({"sadness", "confusion",}, 2) 
@@ -26044,7 +25712,7 @@ snd.akkari_attend()
       string = "spirit inquisition "..snd.target
       fcall = ""
       scall = ""
-    elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+    elseif table.contains(snd.akkari_eq_affs, gashaff[1]) then
       string = pattack
       fcall = ""
       scall = ""
@@ -26222,7 +25890,7 @@ snd.akkari_attend()
 
   for i in pairs(snd.primary_aff) do
     if not snd.checkAff(snd.primary_aff[i]) 
- --   and not (snd.used.rebounding and table.isMember(snd.censure_affs, snd.primary_aff[i]))
+ --   and not (snd.used.rebounding and table.contains(snd.censure_affs, snd.primary_aff[i]))
 
     and not (snd.primary_aff[i] == "paresis" and snd.checkAff("paralysis")) 
     then
@@ -26232,20 +25900,20 @@ snd.akkari_attend()
     end
   end
 
-  if table.isMember(snd.censure_affs, gashaff[1]) then
+  if table.contains(snd.censure_affs, gashaff[1]) then
       if gashaff[1] == "sight" then
      	pattack = "wipe left"..snd.sep.."censure "..snd.target.." lenient "..snd.effects[gashaff[1]]..snd.sep
       else
     	pattack = "wipe left"..snd.sep.."censure "..snd.target.." "..snd.effects[gashaff[1]]..snd.sep
       end
       fcall = "Afflicting "..snd.target..": "..gashaff[1].." "
-  elseif table.isMember(snd.akkari_bal_affs, gashaff[1]) then
+  elseif table.contains(snd.akkari_bal_affs, gashaff[1]) then
       if gashaff[1] == "black_bile" then
       pattack = "denounce "..snd.target.." corruption"..snd.sep
       else
       pattack = snd.akkari_bal_attacks[gashaff[1]].." "..snd.target..snd.sep
       end
-  elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+  elseif table.contains(snd.akkari_eq_affs, gashaff[1]) then
       pattack = snd.akkari_eq_attacks[gashaff[1]].." "..snd.target..snd.sep
   else
       pattack = "denounce "..snd.target..snd.sep
@@ -26330,7 +25998,7 @@ snd.akkari_attend()
       string = "spirit vilify"..snd.sep.."dumavai "..snd.target
       fcall = ""
       scall = ""
-    elseif snd.used.rebounding and table.isMember(snd.censure_affs, gashaff[1]) then
+    elseif snd.used.rebounding and table.contains(snd.censure_affs, gashaff[1]) then
         string = "denounce "..snd.target.." corruption"..snd.sep..sattack
         fcall = ""
     elseif snd.checkAff("impatience") and snd.checksomeAffs({"sadness", "confusion",}, 2) 
@@ -26346,13 +26014,13 @@ snd.akkari_attend()
       string = "spirit inquisition "..snd.target
       fcall = ""
       scall = ""
-    elseif table.isMember(snd.akkari_eq_affs, gashaff[1]) then
+    elseif table.contains(snd.akkari_eq_affs, gashaff[1]) then
       string = pattack
       fcall = ""
       scall = ""
     else
       string = pattack..snd.sep..sattack
-      if table.isMember(snd.censure_affs, gashaff[1]) then
+      if table.contains(snd.censure_affs, gashaff[1]) then
       end
     end
 
@@ -30526,7 +30194,7 @@ if snd.class == "Templar" then
       
       local lightning = false
       if tonumber(gmcp.Char.Vitals.charge_left) &gt;= 90 and tonumber(gmcp.Char.Vitals.charge_right) &gt;= 90 then
-        if not snd.checkAff("epilepsy") and not table.isMember(gmcp.Room.Info.details, "indoors") then
+        if not snd.checkAff("epilepsy") and not table.contains(gmcp.Room.Info.details, "indoors") then
           lightning = true
         end
       end
@@ -31533,7 +31201,7 @@ end</script>
 							<command></command>
 							<packageName></packageName>
 							<regex></regex>
-							<Alias isActive="yes" isFolder="no">
+							<Alias isActive="no" isFolder="no">
 								<name>Bleed/Damage</name>
 								<script>if snd.class == "Zealot" then
   snd.starting_attack()
@@ -31568,7 +31236,7 @@ end</script>
 			  string = "enact cauterize"..snd.sep
 		  elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
 			  string = "psi recover"..snd.sep
-		  elseif ((snd.have_aff("asthma") and snd.have_aff("impatience")) or (snd.have_aff("asthma") and snd.have_aff("slickness")) or (snd.have_aff("impatience") and snd.have_aff("anorexia")) or (snd.have_aff("anorexia") and snd.have_aff("slickness"))) and snd.can_arms() and not (snd.cureset ~= "indorani" or snd.cureset ~= "oneiromancer") and not snd.have_aff("berserking") then
+		  elseif ((snd.have_aff("asthma") and snd.have_aff("impatience")) or (snd.have_aff("asthma") and snd.have_aff("slickness")) or (snd.have_aff("impatience") and snd.have_aff("anorexia")) or (snd.have_aff("anorexia") and snd.have_aff("slickness"))) and snd.can_arms() and not (snd.cureset ~= "indorani" or snd.cureset ~= "oneiromancer") and snd.not_aff("berserking") then
 			  string = "enact rejection"..snd.sep
 		  elseif snd.theytumbling then
         string = "psi tether "..snd.target
@@ -31663,6 +31331,190 @@ end</script>
 								<packageName></packageName>
 								<regex>^dmg$</regex>
 							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>New Bleed/Damage</name>
+								<script>if snd.class == "Zealot" then
+	snd.starting_attack()
+
+	function snd.attack_function()
+  
+    local string = ""
+    local hackleAttack = ""
+    local zenithAbility = ""
+    local firstFlow = ""
+    local secondFlow = ""
+	  local zenithdoing = ""
+    hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+    mymental_aff_count = 0
+    for aff in pairs(snd.mental_affs) do
+      if table.contains(snd.have_aff, snd.mental_affs[aff]) then
+        mymental_aff_count = mymental_aff_count + 1
+      end
+    end      
+    local mentcount = 0 
+    for aff in pairs(snd.mental_affs) do
+      if table.contains(snd.target_has, snd.mental_affs[aff]) then
+        mentcount = mentcount + 1
+      end
+    end
+    
+    if not snd.waiting.queue then
+	
+		if snd.zenith then 
+			if snd.checkAff("heatspear") and snd.checkAff("ablaze") then
+				zenithAbility = "enact quicken "..snd.target..snd.sep
+				zenithdoing = "intensify"
+			elseif not snd.pyromania then
+				zenithAbility = "enact pyromania"..snd.sep
+				zenithdoing = "hellfire"
+			elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") then
+				zenithAbility = "enact heatspear "..snd.target..snd.sep
+				zenithdoing = "lance"
+			else
+				zenithAbility = "enact scorch "..snd.target..snd.sep
+				zenithdoing = "torment"
+			end
+		end
+    
+		if snd.flamestack &gt;= 11 or snd.checkAff("heatspear") then
+			hackleAttack = "whipburst"
+		else
+			hackleAttack = "rive"
+		end
+		
+		if snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" and snd.can_arms() and not snd.checkAff("torso_broken") then
+			firstFlow = "clawtwist"
+		elseif (snd.checkAff("ablaze") or snd.firefist or not snd.firefist_cooldown) and not snd.checkAff("lightwound") and (snd.parried_limb ~= "torso" or snd.no_parry()) and snd.resto_limb ~= "torso" and snd.can_arms() then
+			firstFlow = "direblow"
+		elseif snd.resto_limb ~= "torso" and snd.parried_limb ~= "torso" and not snd.checksomeAffs({"infernal_seal","torso_mangled"},2) and not snd.zenith and snd.can_legs() then
+			firstFlow = "heelrush torso" 
+		elseif snd.resto_limb ~= "head" and snd.parried_limb ~= "head" and not snd.checkAff("head_broken") and not snd.zenith and snd.can_legs() then
+			firstFlow = "heelrush head"    
+		elseif snd.checkAff("ablaze") and not snd.checkAff("crippled_throat") and (snd.checkAff("muscle_spasms") or snd.cureset == "praenomen") and (snd.parried_limb ~= "head" or snd.no_parry()) and snd.can_legs() then
+			firstFlow = "edgekick"
+		elseif snd.checksomeAffs({"lightwound","muscle_spasms"},2) and not snd.checkAff("crippled_throat") and snd.not_aff("left_leg_broken") and (snd.parried_limb ~= "head" or snd.no_parry()) then
+			firstFlow = "edgekick"
+		elseif snd.parried_limb ~= "head" and snd.resto_limb ~= "head" and snd.can_legs() then
+			firstFlow = "sunkick"
+		elseif not snd.checkAff("fallen") then
+			firstFlow = "palmforce"
+		elseif not snd.checkAff("left_leg_broken") and snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" and snd.can_legs() then
+			firstFlow = "wanekick left"
+		elseif not snd.checkAff("right_leg_broken") and snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" and snd.can_legs() then
+			firstFlow = "wanekick right"
+		else
+			firstFlow = "pummel"
+		end	
+		
+		if snd.checksomeAffs({"ablaze","heatspear"},2) and not snd.checkAff("lightwound") and not snd.zenith and ((snd.parried_limb ~= "torso" and snd.checkAff("sore_wrist")) or snd.no_parry()) and snd.can_arms() and firstFlow ~= "heelrush left leg" and firstFlow ~= "heelrush torso" and firstFlow ~= "heelrush right leg" and firstFlow ~= "heelrush right arm" and firstFlow ~= "heelrush left arm" and firstFlow ~= "heelrush head" and (snd.checkAff("crippled_throat") or firstFlow == "edgekick") and firstFlow ~= "direblow" then
+			secondFlow = "direblow"
+		elseif (snd.zenith and zenithdoing == "lance") or (snd.checkAff("heatspear") and snd.resto_limb ~= "torso") and not snd.checksomeAffs({"muscle_spasms","stiffness"},2) then
+			secondFlow = "twinpress"
+		elseif ((snd.checkAff("left_leg_broken") and snd.resto_limb ~= "left leg") or (snd.checkAff("right_leg_broken") and snd.resto_limb ~= "right leg")) and not snd.checkAff("fallen") and firstFlow ~= "palmforce" then
+			secondFlow = "palmforce"
+		elseif snd.limb_dmg["torso"] &gt;= 24 and firstFlow == "clawtwist" and (snd.checkAff("ablaze") or snd.firefist or not snd.firefist_cooldown) and not snd.checkAff("lightwound") and (snd.parried_limb ~= "torso" or snd.no_parry()) and snd.resto_limb ~= "torso" and snd.can_arms() and firstFlow ~= "direblow" then
+			secondFlow = "direblow"
+		elseif snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" and snd.can_arms() and not snd.checkAff("torso_broken") then
+			secondFlow = "clawtwist"
+		elseif snd.resto_limb ~= "head" and snd.parried_limb ~= "head" and snd.can_legs() then
+			secondFlow = "sunkick" 
+		elseif firstFlow == "palmforce" then
+			secondFlow = "clawtwist"
+		elseif not snd.checkAff("fallen") and firstFlow ~= "palmforce" then
+			secondFlow = "palmforce"
+		elseif not snd.checkAff("right_leg_broken") and snd.limb_dmg["right leg"] &gt;= 24 and firstFlow ~= "wanekick right" and snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" and snd.can_arms() then
+			secondFlow = "wanekick right"
+		elseif not snd.checkAff("left_leg_broken") and snd.limb_dmg["left leg"] &gt;= 24 and firstFlow ~= "wanekick left" and snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" and snd.can_arms() then
+			secondFlow = "wanekick left"
+		else
+			secondFlow = "pummel"
+		end	
+      
+		if snd.theytumbling then
+			string = "psi tether "..snd.target
+		elseif snd.theyran then
+			string = "psi fetch "..snd.target
+		elseif (snd.flamestack &gt;= 12 or (snd.flamestack == 11 and snd.hackles)) and not snd.used.shield then
+			if snd.hackles then
+				string = "hackles "..snd.target.." whipburst"..snd.sep.."enact immolation "..snd.target..snd.sep
+			else
+				string = "enact immolation "..snd.target..snd.sep
+			end
+		elseif hp &lt;= 40 and (snd.checkAff("heatspear") or not snd.checkAff("torso_broken")) then
+			string = "respiration"..snd.sep
+		elseif tonumber(gmcp.Char.Vitals.psi) &gt;= 100 and snd.recover and ((snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience"))) or (mymental_aff_count &gt;= 4)) then 
+			string = "psi recover"..snd.sep
+		elseif not snd.zenith and not snd.zenith_coming and snd.flamestack &lt; 10 then
+			string = "enact zenith"..snd.sep
+		else
+						if not snd.firefist and snd.firefist_cooldown then
+				string = string.."enact firefist"..snd.sep
+			end
+			if not snd.zenith and snd.flamestack &lt; 9 then
+				if tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 then
+					string = "enact cauterize"..snd.sep
+				elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 3)) then 
+					string = "psi recover"..snd.sep
+				elseif not snd.zenith_coming then
+					string = "enact zenith"..snd.sep
+				else
+					if snd.flamestack &lt;= 9 then
+						if ((snd.checksomeAffs({"torso_broken","heatspear"},2) and snd.resto_limb ~= torso) or snd.checkAff("torso_mangled")) and snd.checkAff("ablaze") then
+							string = "enact quicken "..snd.target..snd.sep
+						elseif not snd.checkAff("heatspear") and snd.checksomeAffs({"torso_broken","ablaze"},2) then
+							string = "enact heatspear "..snd.target..snd.sep
+						else
+							string = string.."flow "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep..hackleAttack
+						end
+					else
+						if snd.checkAff("torso_broken") and snd.checkAff("heatspear") then
+							string = "enact scorch "..snd.target..snd.sep
+						elseif not snd.checkAff("heatspear") and snd.checksomeAffs({"torso_broken","ablaze"},2) then
+							string = "enact heatspear "..snd.target..snd.sep
+						else
+							string = "enact quicken "..snd.target..snd.sep
+						end
+					end
+				end
+			else
+				string = string.."flow "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep..hackleAttack..snd.sep..zenithAbility..snd.sep..string
+			end
+			if (not snd.can_legs() and snd.checksomeSelfAffs({"left_arm_broken","right_arm_broken"},1) and not snd.checksomeSelfAffs({"left_arm_broken","right_arm_broken"},2)) and gmcp.Char.Vitals.ability_bal == "1" then
+				string = hackleAttack.." "..snd.target..snd.sep
+			end
+			if tonumber(gmcp.Char.Vitals.psi) &gt;= 500 and mentcount &gt;= 3 then
+				string = string..snd.sep.."psi shock "..snd.target..snd.sep
+			end      
+			if snd.used.shield then
+				if not snd.checkAff("ablaze") then
+					string = "touch hammer "..snd.target..snd.sep..hackleAttack.." "..snd.target..snd.sep
+				else
+					string = "enact scorch "..snd.target..snd.sep..hackleAttack.." "..snd.target..snd.sep
+				end
+			end      
+			if snd.nopets then
+				string = "call cinderkin"..snd.sep.."order loyals kill "..snd.target
+			elseif not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end  
+       
+		end  
+      
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = string
+			snd.attack(snd.last_attack)
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
+    end
+end
+
+snd.attack_function()
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^dmg$</regex>
+							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>1v1</name>
@@ -31672,7 +31524,9 @@ end</script>
 							<regex></regex>
 							<Alias isActive="yes" isFolder="no">
 								<name>WORKS LIKE A CHARM</name>
-								<script>if snd.class == "Zealot" then
+								<script>-- dislocate with a break, indifference with maim
+
+if snd.class == "Zealot" then
 	snd.starting_attack()
 
 	function snd.attack_function()
@@ -31833,7 +31687,7 @@ end</script>
 				hackleAttack = hackleAttack.."whipburst"
 			elseif not snd.checkAff("sore_ankle") then
 				hackleAttack = hackleAttack.."anklepin"
-			elseif not snd.checkAff("uprise") then
+			elseif not snd.checkAff("whiplash") then
 				hackleAttack = hackleAttack.."uprise"
 			elseif not snd.checkAff("backstrain") then
 				hackleAttack = hackleAttack.."descent"
@@ -31900,7 +31754,7 @@ end</script>
 					end
 				end
 			else
-				string = string.."flow "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep..hackleAttack..snd.sep..zenithAbility..snd.sep..string
+				string = string.."flow "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep..hackleAttack..snd.sep..zenithAbility..snd.sep
 			end
 			if (not snd.can_legs() and snd.checksomeSelfAffs({"left_arm_broken","right_arm_broken"},1) and not snd.checksomeSelfAffs({"left_arm_broken","right_arm_broken"},2)) and gmcp.Char.Vitals.ability_bal == "1" then
 				string = hackleAttack.." "..snd.target..snd.sep
@@ -31937,7 +31791,7 @@ end</script>
 								<packageName></packageName>
 								<regex>^kll$</regex>
 							</Alias>
-							<Alias isActive="no" isFolder="no">
+							<Alias isActive="yes" isFolder="no">
 								<name>Main 1v1 - Less Overpower (Fire) - OLD</name>
 								<script>if snd.class == "Zealot" then
 	snd.starting_attack()
@@ -32429,128 +32283,6 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^old2$</regex>
-							</Alias>
-							<Alias isActive="no" isFolder="no">
-								<name>Enebish Test</name>
-								<script>if snd.class == "Ravager" then  
-  snd.starting_attack()
-  
-  function snd.attack_function()
-
-    if not snd.loyalsattacking then
-      string = "order loyals kill "..snd.target..snd.sep 
-    end
-   
-    -- Zeal Attacks Table
-    local zeal_attacks = {
-    ["left arm"] = "bully left",
-    ["right arm"] = "bully right",
-    ["left leg"] = "kneecap left",
-    ["right leg"] = "kneecap right",
-    torso = "plexus",
-    head = "concuss" }
- 
-    local limbs = {"torso", "left leg", "right leg", "left arm", "right arm"}
-    local left = "nothing"
-    local right = "nothing"
-    local string = ""
-    if snd.proned() then -- Go for legs on a prone.
-      if snd.parried_limb == "right leg" then
-        right = "left leg"
-      elseif snd.parried_limb == "left leg" then
-        right = "right leg"
-      else
-        right = "right leg"
-        left = "left leg"
-      end
-    else -- Target isn't prone...
-      for limb in pairs(limbs) do
-        if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
-          if (limbs[limb] == "left leg" or limbs[limb] == "right leg") and (snd.limb_dmg[limbs[limb]]+snd.limb_dmg_done &gt;= 33.3) then
-            if snd.zenith and not snd.used.shield and snd.resto_limb ~= "none" then
-              if right == "nothing" then
-                right = limbs[limb]
-              elseif left == "nothing" then
-                left = limbs[limb]
-              end
-            end
-          elseif right == "nothing" then
-            right = limbs[limb]
-          elseif left == "nothing" and limbs[limb] ~= right then
-            left = limbs[limb]
-          end
-        end
-      end
-    end
-    
-    if left == "nothing" then -- We only found one limb to hit!
-      left = right -- double up!
-    end
-    
-    if not snd.waiting.queue then
-      if snd.used.shield then
-        string = string.."touch hammer " ..snd.target
-      elseif snd.flamestack &gt;= 12 then
-        string = string.."invoke extinguish " ..snd.target
-      elseif snd.checksomeAffs({"torso_mangled","heatspear"}, 2) and not snd.zenith and not snd.zenith_coming then
-        string = string.."invoke dilirium"
-      elseif snd.checksomeAffs({"torso_mangled","heatspear","ablaze"}, 3) then
-        string = string.."invoke intensify " ..snd.target      
-      elseif snd.checkAff("torso_mangled") and not snd.checkAff("heatspear") then
-        string = string.."invoke lance " ..snd.target  
-      elseif snd.checksomeAffs({"muscle_spasm","ablaze"}, 2) and not snd.checksomeAffs({"left_arm_dislocated","left_arm_mangled","right_arm_dislocated","right_arm_mangled"}, 4) then
-        string = string.."onslaught " ..snd.target.. " bustup right arm bustup left arm" 
-      elseif not snd.checksomeAffs({"sore_wrist","muscle_spasm"}, 2) and (snd.checksomeAffs({"right_leg_broken","left_leg_broken"}, 1) or snd.checksomeAffs({"right_arm_broken","left_leg_broken"}, 1)) then
-        string = string.."onslaught " ..snd.target.. " maim pressure"
-      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken","ablaze"}, 3) and not snd.checkAff("muscle_spasm") then
-        string = string.."onslaught " ..snd.target.. " pressure haymaker"
-      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken","head_mangled"}, 3) then
-        string = string.."onslaught " ..snd.target.. " overpower head concuss"..snd.sep.."psi shock " ..snd.target
-      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken"}, 2) and not snd.checksomeAffs({"torso_broken","head_mangled"}, 1) then
-        string = string.."onslaught " ..snd.target.. " haymaker overpower head"    
-      elseif not snd.checksomeAffs({"whiplash","muscle_spasm"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then
-        string = string.."onslaught " ..snd.target.. " whiplash pressure"    
-      elseif not snd.checksomeAffs({"sore_wrist","muscle_spasm"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then
-        string = string.."onslaught " ..snd.target.. " maim pressure"    
-      elseif not snd.checksomeAffs({"whiplash","sore_wrist"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then 
-        string = string.."onslaught " ..snd.target.. " whiplash maim"
-      elseif snd.checkAff("backstrain") and not snd.checksomeAffs({"torso_broken","fallen"}, 2) and snd.checksomeAffs({"left_leg_broken","right_leg_broken"}, 1) then
-        string = string.."onslaught " ..snd.target.. "plexus clobber"
-      else
-        string = string.."onslaught "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]..snd.sep
-      end
-  
-      if gmcp.Char.Vitals.ability_bal == "1" and not snd.used.shield then
-        if snd.zenith and string.find(snd.welt_ready, "arm") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore_wrist") then
-          string = string.."assail "..snd.target.." maim "
-        elseif snd.zenith and string.find(snd.welt_ready, "leg") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore_ankle") then    
-          string = string.."assail "..snd.target.." hobble"
-        elseif not snd.checkAff("stuttering") then
-          string = string.."assail "..snd.target.." slug"
-        elseif snd.checkAff("heatspear") then
-          string = string.."assail "..snd.target.." tenderise"
-        elseif not snd.checkAff("sore_ankle") then
-          string = string.."assail "..snd.target.." hobble"
-        elseif not snd.checkAff("sore_wrist") then
-          string = string.."assail "..snd.target.." maim"
-        else
-          string = string.."assail "..snd.target.." tenderise"
-        end
-      end
-    
-      if string ~= snd.last_attack and not snd.waiting.queue then
-        snd.last_attack = string
-        snd.attack(snd.last_attack)
-        snd.waiting.queue = true
-        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      end
-    end
-  end
-  snd.attack_function()
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^kll3$</regex>
 							</Alias>
 							<Alias isActive="no" isFolder="no">
 								<name>Alt 1v1 - Overpower Arms</name>
@@ -33882,15 +33614,131 @@ end</script>
 								<packageName></packageName>
 								<regex>^test4$</regex>
 							</Alias>
-							<AliasGroup isActive="no" isFolder="yes">
-								<name>1v1</name>
-								<script></script>
+							<Alias isActive="yes" isFolder="no">
+								<name>Enebish Test</name>
+								<script>if snd.class == "Zealot" then  
+  snd.starting_attack()
+  
+  function snd.attack_function()
+
+    if not snd.loyalsattacking then
+      string = "order loyals kill "..snd.target..snd.sep 
+    end
+   
+-- Zeal Attacks Table
+    local zeal_attacks = {
+    ["left arm"] = "pummel left ",
+    ["right arm"] = "pummel right ",
+    ["left leg"] = "wanekick left ",
+    ["right leg"] = "wanekick right ",
+    torso = "clawtwist",
+    head = "sunkick" }
+ 
+    local limbs = {"torso", "left leg", "right leg", "left arm", "right arm"}
+    local left = "nothing"
+    local right = "nothing"
+    local string = ""
+    if snd.proned() then -- Go for legs on a prone.
+      if snd.parried_limb == "right leg" then
+        right = "left leg"
+      elseif snd.parried_limb == "left leg" then
+        right = "right leg"
+      else
+        right = "right leg"
+        left = "left leg"
+      end
+    else -- Target isn't prone...
+      for limb in pairs(limbs) do
+        if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
+          if (limbs[limb] == "left leg" or limbs[limb] == "right leg") and (snd.limb_dmg[limbs[limb]]+snd.limb_dmg_done &gt;= 33.3) then
+            if snd.zenith and not snd.used.shield and snd.resto_limb ~= "none" then
+              if right == "nothing" then
+                right = limbs[limb]
+              elseif left == "nothing" then
+                left = limbs[limb]
+              end
+            end
+          elseif right == "nothing" then
+            right = limbs[limb]
+          elseif left == "nothing" and limbs[limb] ~= right then
+            left = limbs[limb]
+          end
+        end
+      end
+    end
+    
+    if left == "nothing" then -- We only found one limb to hit!
+      left = right -- double up!
+    end
+    
+    if not snd.waiting.queue then
+      if snd.used.shield then
+        string = string.."touch hammer " ..snd.target
+      elseif snd.flamestack &gt;= 12 then
+        string = string.."enact immolation " ..snd.target
+      elseif snd.checksomeAffs({"torso_mangled","heatspear"}, 2) and not snd.zenith then
+        string = string.."enact zenith"
+      elseif snd.checksomeAffs({"torso_mangled","heatspear","ablaze"}, 3) then
+        string = string.."enact quicken " ..snd.target      
+      elseif snd.checkAff("torso_mangled") and not snd.checkAff("heatspear") then
+        string = string.."enact heatspear " ..snd.target  
+      elseif snd.checksomeAffs({"muscle_spasm","ablaze"}, 2) and not snd.checksomeAffs({"left_arm_dislocated","left_arm_mangled","right_arm_dislocated","right_arm_mangled"}, 4) then
+        string = string.."flow " ..snd.target.. " dislocate right arm dislocate left arm" 
+      elseif not snd.checksomeAffs({"sore_wrist","muscle_spasm"}, 2) and (snd.checksomeAffs({"right_leg_broken","left_leg_broken"}, 1) or snd.checksomeAffs({"right_arm_broken","left_leg_broken"}, 1)) then
+        string = string.."flow " ..snd.target.. " wristlash twinpress"
+      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken","ablaze"}, 3) and not snd.checkAff("muscle_spasm") then
+        string = string.."flow " ..snd.target.. " twinpress direblow"
+      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken","head_mangled"}, 3) then
+        string = string.."flow " ..snd.target.. " heelrush head sunkick"..snd.sep.."psi shock " ..snd.target
+      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken"}, 2) and not snd.checksomeAffs({"torso_broken","head_mangled"}, 1) then
+        string = string.."flow " ..snd.target.. " direblow heelrush head"    
+      elseif not snd.checksomeAffs({"whiplash","muscle_spasm"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then
+        string = string.."flow " ..snd.target.. " uprise twinpress"    
+      elseif not snd.checksomeAffs({"sore_wrist","muscle_spasm"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then
+        string = string.."flow " ..snd.target.. " wristlash twinpress"    
+      elseif not snd.checksomeAffs({"whiplash","sore_wrist"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then 
+        string = string.."flow " ..snd.target.. " uprise wristlash"
+      elseif snd.checkAff("backstrain") and not snd.checksomeAffs({"torso_broken","fallen"}, 2) and snd.checksomeAffs({"left_leg_broken","right_leg_broken"}, 1) then
+        string = string.."flow " ..snd.target.. "clawtwist palmforce"
+      else
+        string = string.."flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]..snd.sep
+      end
+  
+      if gmcp.Char.Vitals.ability_bal == "1" and not snd.used.shield then
+        if snd.zenith and string.find(snd.welt_ready, "arm") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore wrist") then
+          string = string.."hackles "..snd.target.." wristlash "
+        elseif snd.zenith and string.find(snd.welt_ready, "leg") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore ankle") then    
+          string = string.."hackles "..snd.target.." anklepin"
+        elseif not snd.checkAff("stuttering") then
+          string = string.."hackles "..snd.target.." jawcrack"
+        elseif snd.checkAff("heatspear") then
+          string = string.."hackles "..snd.target.." whipburst"
+        elseif not snd.checkAff("sore_ankle") then
+          string = string.."hackles "..snd.target.." anklepin"
+        elseif not snd.checkAff("sore_wrist") then
+          string = string.."hackles "..snd.target.." wristlash"
+        else
+          string = string.."hackles "..snd.target.." whipburst"
+        end
+      end
+    
+      if string ~= snd.last_attack and not snd.waiting.queue then
+        snd.last_attack = string
+        snd.attack(snd.last_attack)
+        snd.waiting.queue = true
+        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+      end
+    end
+  end
+  snd.attack_function()
+end</script>
 								<command></command>
 								<packageName></packageName>
-								<regex></regex>
-								<Alias isActive="yes" isFolder="no">
-									<name>Combo Attack</name>
-									<script>if snd.class == "Zealot" then
+								<regex>^banana$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Combo Attack</name>
+								<script>if snd.class == "Zealot" then
   snd.starting_attack()
 
   function snd.attack_function()
@@ -34031,388 +33879,207 @@ end</script>
 
   snd.attack_function()
 end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll2$</regex>
-								</Alias>
-								<Alias isActive="yes" isFolder="no">
-									<name>Enebish Test</name>
-									<script>if snd.class == "Zealot" then  
-  snd.starting_attack()
-  
-  function snd.attack_function()
+								<command></command>
+								<packageName></packageName>
+								<regex>^kll2$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Group Rime Shit</name>
+								<script>-- This is a group route based off of Rime's group route
 
-    if not snd.loyalsattacking then
-      string = "order loyals kill "..snd.target..snd.sep 
-    end
-   
--- Zeal Attacks Table
-    local zeal_attacks = {
-    ["left arm"] = "pummel left ",
-    ["right arm"] = "pummel right ",
-    ["left leg"] = "wanekick left ",
-    ["right leg"] = "wanekick right ",
-    torso = "clawtwist",
-    head = "sunkick" }
- 
-    local limbs = {"torso", "left leg", "right leg", "left arm", "right arm"}
-    local left = "nothing"
-    local right = "nothing"
-    local string = ""
-    if snd.proned() then -- Go for legs on a prone.
-      if snd.parried_limb == "right leg" then
-        right = "left leg"
-      elseif snd.parried_limb == "left leg" then
-        right = "right leg"
-      else
-        right = "right leg"
-        left = "left leg"
-      end
-    else -- Target isn't prone...
-      for limb in pairs(limbs) do
-        if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
-          if (limbs[limb] == "left leg" or limbs[limb] == "right leg") and (snd.limb_dmg[limbs[limb]]+snd.limb_dmg_done &gt;= 33.3) then
-            if snd.zenith and not snd.used.shield and snd.resto_limb ~= "none" then
-              if right == "nothing" then
-                right = limbs[limb]
-              elseif left == "nothing" then
-                left = limbs[limb]
-              end
-            end
-          elseif right == "nothing" then
-            right = limbs[limb]
-          elseif left == "nothing" and limbs[limb] ~= right then
-            left = limbs[limb]
-          end
-        end
-      end
-    end
-    
-    if left == "nothing" then -- We only found one limb to hit!
-      left = right -- double up!
-    end
-    
-    if not snd.waiting.queue then
-      if snd.used.shield then
-        string = string.."touch hammer " ..snd.target
-      elseif snd.flamestack &gt;= 12 then
-        string = string.."enact immolation " ..snd.target
-      elseif snd.checksomeAffs({"torso_mangled","heatspear"}, 2) and not snd.zenith then
-        string = string.."enact zenith"
-      elseif snd.checksomeAffs({"torso_mangled","heatspear","ablaze"}, 3) then
-        string = string.."enact quicken " ..snd.target      
-      elseif snd.checkAff("torso_mangled") and not snd.checkAff("heatspear") then
-        string = string.."enact heatspear " ..snd.target  
-      elseif snd.checksomeAffs({"muscle_spasm","ablaze"}, 2) and not snd.checksomeAffs({"left_arm_dislocated","left_arm_mangled","right_arm_dislocated","right_arm_mangled"}, 4) then
-        string = string.."flow " ..snd.target.. " dislocate right arm dislocate left arm" 
-      elseif not snd.checksomeAffs({"sore_wrist","muscle_spasm"}, 2) and (snd.checksomeAffs({"right_leg_broken","left_leg_broken"}, 1) or snd.checksomeAffs({"right_arm_broken","left_leg_broken"}, 1)) then
-        string = string.."flow " ..snd.target.. " wristlash twinpress"
-      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken","ablaze"}, 3) and not snd.checkAff("muscle_spasm") then
-        string = string.."flow " ..snd.target.. " twinpress direblow"
-      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken","head_mangled"}, 3) then
-        string = string.."flow " ..snd.target.. " heelrush head sunkick"..snd.sep.."psi shock " ..snd.target
-      elseif snd.checksomeAffs({"left_arm_broken","right_arm_broken"}, 2) and not snd.checksomeAffs({"torso_broken","head_mangled"}, 1) then
-        string = string.."flow " ..snd.target.. " direblow heelrush head"    
-      elseif not snd.checksomeAffs({"whiplash","muscle_spasm"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then
-        string = string.."flow " ..snd.target.. " uprise twinpress"    
-      elseif not snd.checksomeAffs({"sore_wrist","muscle_spasm"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then
-        string = string.."flow " ..snd.target.. " wristlash twinpress"    
-      elseif not snd.checksomeAffs({"whiplash","sore_wrist"}, 2) and snd.checksomeAffs({"right_leg_broken","left_leg_broken","right_arm_broken","left_arm_broken"}, 1) then 
-        string = string.."flow " ..snd.target.. " uprise wristlash"
-      elseif snd.checkAff("backstrain") and not snd.checksomeAffs({"torso_broken","fallen"}, 2) and snd.checksomeAffs({"left_leg_broken","right_leg_broken"}, 1) then
-        string = string.."flow " ..snd.target.. "clawtwist palmforce"
-      else
-        string = string.."flow "..snd.target.." "..zeal_attacks[left].." "..zeal_attacks[right]..snd.sep
-      end
-  
-      if gmcp.Char.Vitals.ability_bal == "1" and not snd.used.shield then
-        if snd.zenith and string.find(snd.welt_ready, "arm") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore wrist") then
-          string = string.."hackles "..snd.target.." wristlash "
-        elseif snd.zenith and string.find(snd.welt_ready, "leg") and (snd.limb_dmg[snd.welt_ready]+6.5 &gt;= 33.3) and snd.limb_dmg[snd.welt_ready] &lt;= 33.33 and not snd.checkAff("sore ankle") then    
-          string = string.."hackles "..snd.target.." anklepin"
-        elseif not snd.checkAff("stuttering") then
-          string = string.."hackles "..snd.target.." jawcrack"
-        elseif snd.checkAff("heatspear") then
-          string = string.."hackles "..snd.target.." whipburst"
-        elseif not snd.checkAff("sore_ankle") then
-          string = string.."hackles "..snd.target.." anklepin"
-        elseif not snd.checkAff("sore_wrist") then
-          string = string.."hackles "..snd.target.." wristlash"
-        else
-          string = string.."hackles "..snd.target.." whipburst"
-        end
-      end
-    
-      if string ~= snd.last_attack and not snd.waiting.queue then
-        snd.last_attack = string
-        snd.attack(snd.last_attack)
-        snd.waiting.queue = true
-        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      end
-    end
-  end
-  snd.attack_function()
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^banana$</regex>
-								</Alias>
-								<Alias isActive="yes" isFolder="no">
-									<name>Another Test</name>
-									<script>if snd.class == "Zealot" then
+if snd.class == "Zealot" then
 	snd.starting_attack()
 
 	function snd.attack_function()
     
 		local string = ""
-		local hackleAttack = ""
-		local zenithAbility = ""
-		local firstFlow = ""
-		local secondFlow = ""
-		hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-    mymental_aff_count = 0
-    for aff in pairs(snd.mental_affs) do
-      if table.contains(snd.have_aff, snd.mental_affs[aff]) then
-        mymental_aff_count = mymental_aff_count + 1
-      end
-    end
-    
-    --if tonumber(gmcp.Char.Vitals.psi) &gt;= "" then
-   --   snd.zenith_nope = false
-   -- end
-    
-     
-		if snd.checkAff("torso_broken") and not snd.checksomeAffs({"infernal_seal","infernal_shroud"},2) then
-			zenithAbility = "enact infernal "..snd.target..snd.sep
-		elseif snd.checkAff("ablaze") and not snd.checkAff("heatspear") then
-			zenithAbility = "enact heatspear "..snd.target..snd.sep
-		elseif snd.checkAff("heatspear") then
-			zenithAbility = "enact quicken "..snd.target..snd.sep
-		elseif not snd.pyromania then
-			zenithAbility = "enact pyromania"..snd.sep
-		else
-			zenithAbility = "enact scorch "..snd.target..snd.sep
-		end    
-    
-		if snd.flamestack &gt;= 11 then
-			hackleAttack = "whipburst"
-		elseif ((snd.welt_ready == "left arm" and snd.resto_limb ~= "left arm") or (snd.welt_ready == "right arm" and snd.resto_limb ~= "right arm")) or not snd.checkAff("sore_wrist") then
-			hackleAttack = "wristlash"
-		elseif ((snd.welt_ready == "left leg" and snd.resto_limb ~= "left leg") or (snd.welt_ready == "right leg" and snd.resto_limb ~= "right leg")) and not snd.checkAff("sore_ankle") then
-			hackleAttack = "anklepin"
-		elseif snd.welt_ready == "torso" and not snd.checkAff("backstrain") and snd.resto_limb ~= "torso" then
-			hackleAttack = "descent"
-		elseif snd.welt_ready == "head" and not snd.checkAff("whiplash") and snd.resto_limb ~= "head" then
-			hackleAttack = "uprise"
-		elseif ((snd.welt_ready == "left arm" and snd.resto_limb ~= "left arm") or (snd.welt_ready == "right arm" and snd.resto_limb ~= "right arm")) then
-			hackleAttack = "wristlash"
-		elseif ((snd.welt_ready == "left leg" and snd.resto_limb ~= "left leg") or (snd.welt_ready == "right leg" and snd.resto_limb ~= "right leg")) then
-			hackleAttack = "anklepin"   
-		elseif snd.welt_ready == "torso" and snd.resto_limb ~= "torso" then
-			hackleAttack = "descent"
-		elseif snd.checkAff("heatspear") then
-		  hackleAttack = "whipburst"
-		elseif snd.welt_ready == "head" and snd.resto_limb ~= "head" then
-			hackleAttack = "uprise" 
-		elseif not snd.checkAff("stuttering") then
-			hackleAttack = "jawcrack"      
-		elseif not snd.checkAff("sore_ankle") then
-			hackleAttack = "anklepin"
-		elseif not snd.checkAff("sore_wrist") then
-			hackleAttack = "wristlash"
-		elseif not snd.checkAff("whiplash") then
-			hackleAttack = "uprise"
-		elseif not snd.checkAff("backstrain") then
-			hackleAttack = "descent"
-		else
-			hackleAttack = "rive"
-		end
- 
-		if snd.checkAff("left_arm_broken") and not snd.checksomeAffs({"left_arm_mangled","left_arm_dislocated"},2) and snd.resto_limb ~= "left arm" and snd.can_arms() then
-			firstFlow = "dislocate left arm"
-		elseif snd.checkAff("right_arm_broken") and not snd.checksomeAffs({"right_arm_mangled","right_arm_dislocated"},2) and snd.resto_limb ~= "right arm" and snd.can_arms() then
-			firstFlow = "dislocate right arm"  
-		elseif (snd.checkAff("ablaze") or snd.firefist or not snd.firefist_cooldown) and not snd.checkAff("lightwound") and (snd.parried_limb ~= "torso" or snd.no_parry()) and snd.resto_limb ~= "torso" and snd.can_arms() then
-			firstFlow = "direblow"
-		elseif snd.resto_limb ~= "torso" and snd.parried_limb ~= "torso" and not snd.checksomeAffs({"infernal_seal","torso_mangled"},2) and not snd.zenith and snd.can_legs() then
-			firstFlow = "heelrush torso"    
-		elseif snd.resto_limb ~= "left leg" and snd.parried_limb ~= "left leg" and not snd.checkAff("left_leg_crippled") and not snd.zenith and snd.rebuke_limb ~= "left leg" and snd.can_legs() then
-			firstFlow = "heelrush left leg"
-		elseif snd.resto_limb ~= "right leg" and snd.parried_limb ~= "right leg" and not snd.checkAff("right_leg_crippled") and not snd.zenith and snd.rebuke_limb ~= "right leg" and snd.can_legs() then
-			firstFlow = "heelrush right leg"
-		elseif snd.resto_limb ~= "torso" and snd.parried_limb ~= "torso" and not snd.checkAff("torso_mangled") and not snd.zenith and not snd.checksomeAffs({"ablaze","heatspear"},2) and snd.can_legs() then
-			firstFlow = "heelrush torso"
-		elseif snd.resto_limb ~= "left arm" and snd.parried_limb ~= "left arm" and not snd.checkAff("left_arm_crippled") and not snd.zenith and snd.rebuke_limb ~= "left arm" and snd.can_legs() then
-			firstFlow = "heelrush left arm"
-		elseif snd.resto_limb ~= "right arm" and snd.parried_limb ~= "right arm" and not snd.checkAff("right_arm_crippled") and not snd.zenith and snd.rebuke_limb ~= "right arm" and snd.can_legs() then
-			firstFlow = "heelrush right arm"
-		elseif snd.resto_limb ~= "head" and snd.parried_limb ~= "head" and not snd.checkAff("head_broken") and not snd.zenith and snd.can_legs() then
-			firstFlow = "heelrush head"    
-		elseif snd.checksomeAffs({"ablaze","heatspear"},2) and not snd.checkAff("torso_broken") then
-			firstFlow = "clawtwist"   
-		elseif snd.checkAff("ablaze") and not snd.checkAff("crippled_throat") and (snd.checkAff("muscle_spasms") or (snd.cureset == "praenomen" or snd.cureset == "akkari")) and (snd.parried_limb ~= "head" or snd.no_parry()) and snd.can_legs() then
-			firstFlow = "edgekick"
-		elseif snd.checksomeAffs({"lightwound","muscle_spasms"},2) and not snd.checkAff("crippled_throat") and not snd.have_aff("left_leg_crippled") and (snd.parried_limb ~= "head" or snd.no_parry()) then
-			firstFlow = "edgekick"
-		elseif (snd.checkAff("ablaze") or snd.firefist or not snd.firefist_cooldown) and snd.checkAff("muscle_spasms") and not snd.checkAff("lightwound") and (snd.parried_limb ~= "torso" or snd.no_parry()) and snd.resto_limb ~= "torso" and snd.can_arms() then
-			firstFlow = "direblow"
-		elseif snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" and snd.can_arms() and not snd.checkAff("torso_broken") then
-			firstFlow = "clawtwist"
-		elseif not snd.checkAff("left_leg_broken") and snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" and snd.can_legs() and snd.rebuke_limb ~= "left leg" then
-			firstFlow = "wanekick left"
-		elseif not snd.checkAff("left_arm_broken") and snd.parried_limb ~= "left arm" and snd.resto_limb ~= "left arm" and snd.can_arms() and snd.rebuke_limb ~= "left arm" then
-			firstFlow = "pummel left"
-		elseif not snd.checkAff("right_leg_broken") and snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" and snd.can_legs() and snd.rebuke_limb ~= "right leg" then
-			firstFlow = "wanekick right"
-		elseif not snd.checkAff("right_arm_broken") and snd.parried_limb ~= "right arm" and snd.resto_limb ~= "right arm" and snd.can_arms() and snd.rebuke_limb ~= "right arm" then
-			firstFlow = "pummel right"
-		elseif snd.parried_limb ~= "head" and snd.resto_limb ~= "head" and not snd.have_aff("left_leg_crippled") then
-			firstFlow = "sunkick"
-		elseif snd.checksomeAffs({"ablaze","heatspear"},2) then
-			firstFlow = "clawtwist"
-		else
-			firstFlow = "palmforce strike"
-		end
- 
-		if (snd.checkAff("left_arm_broken") or (snd.limb_dmg["left arm"] &gt;= 24 and firstFlow == "pummel left" and not snd.checkAff("left_arm_broken"))) and not snd.checksomeAffs({"left_arm_mangled","left_arm_dislocated"},2) and firstFlow ~= "dislocate left arm" and snd.resto_limb ~= "left arm" then
-			secondFlow = "dislocate left arm"
-		elseif (snd.checkAff("right_arm_broken") or (snd.limb_dmg["right arm"] &gt;= 24 and firstFlow == "pummel right" and not snd.checkAff("right_arm_broken"))) and not snd.checksomeAffs({"right_arm_mangled","right_arm_dislocated"},2) and firstFlow ~= "dislocate right arm" and snd.resto_limb ~= "right arm" then
-			secondFlow = "dislocate right arm"
-		elseif ((snd.checkAff("left_leg_broken") and snd.resto_limb ~= "left leg") or (snd.checkAff("right_leg_broken") and snd.resto_limb ~= "right leg")) and not snd.checkAff("fallen") then
-			secondFlow = "palmforce strike"
-		elseif (snd.zenith and zenithAbility == "enact heatspear "..snd.target) or (snd.checkAff("heatspear") and snd.resto_limb ~= "torso") and not snd.checksomeAffs({"muscle_spasms","stiffness"},2) and firstFlow ~= "twinpress" then
-			secondFlow = "twinpress"
-		elseif snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" and snd.can_arms() and snd.checkAff("heatspear") and not snd.checkAff("torso_broken") then
-			secondFlow = "clawtwist"
-		elseif snd.no_parry() and snd.can_arms() and snd.resto_limb ~= "torso" and snd.checkAff("torso_broken") and not snd.checksomeAffs({"ablaze","heatspear"},2) then
-			secondFlow = "clawtwist"
-		elseif snd.welt_ready == "torso" and (hackleAttack ~= "descent" or not snd.hackles) and not snd.checkAff("backstrain") and snd.resto_limb ~= "torso" then
-			secondFlow = "descent"
-		elseif (snd.welt_ready == "left leg" and snd.resto_limb ~= "left leg") or (snd.welt_ready == "right leg" and snd.resto_limb ~= "right leg") and (hackleAttack ~= "anklepin" or not snd.hackles) and not snd.checkAff("sore_ankle") then
-			secondFlow = "anklepin" 
-		elseif (snd.welt_ready == "left arm" and snd.resto_limb ~= "left arm") or (snd.welt_ready == "right arm" and snd.resto_limb ~= "right arm") and (hackleAttack ~= "wristlash" or not snd.hackles) and not snd.checkAff("sore_wrist") then
-			secondFlow = "wristlash"
-		elseif snd.welt_ready == "head" and (hackleAttack ~= "uprise" or not snd.hackles) and not snd.checkAff("whiplash") and snd.resto_limb ~= "head" then
-			secondFlow = "uprise"
-		elseif snd.checksomeAffs({"ablaze","heatspear"},2) and not snd.checkAff("lightwound") and not snd.zenith and ((snd.parried_limb ~= "torso" and snd.checkAff("sore_wrist")) or snd.no_parry()) and snd.can_arms() and firstFlow ~= "heelrush left leg" and firstFlow ~= "heelrush torso" and firstFlow ~= "heelrush right leg" and firstFlow ~= "heelrush right arm" and firstFlow ~= "heelrush left arm" and firstFlow ~= "heelrush head" and (snd.checkAff("crippled_throat") or firstFlow == "edgekick") and firstFlow ~= "direblow" then
-			secondFlow = "direblow"
-		elseif snd.resto_limb ~= "head" and snd.parried_limb ~= "head" and snd.can_legs() then
-			secondFlow = "sunkick" 
-		elseif not snd.checkAff("right_leg_broken") and snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" and snd.can_arms() and snd.rebuke_limb ~= "right leg" then
-			secondFlow = "wanekick right"
-		elseif not snd.checkAff("right_arm_broken") and snd.parried_limb ~= "right arm" and snd.resto_limb ~= "right arm" and snd.can_arms() and snd.rebuke_limb ~= "right arm" then
-			secondFlow = "pummel right"
-		elseif not snd.checkAff("left_arm_broken") and snd.parried_limb ~= "left arm" and snd.resto_limb ~= "left arm" and snd.can_arms() and snd.rebuke_limb ~= "left arm" then
-			secondFlow = "pummel left"
-		elseif not snd.checkAff("left_leg_broken") and snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" and snd.can_arms() and snd.rebuke_limb ~= "left leg" then
-			secondFlow = "wanekick left"
-		elseif snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" and snd.can_arms() and not snd.checksomeAffs({"ablaze","heatspear"},2) then
-			secondFlow = "clawtwist"
-		end
+		local hackleAttack = "" -- set hackle attack string
+		local zenithAbility = "" -- set zenith attack string
+		local fist = {} -- punches table
+		local kick = {} -- kicks table
+		local dislocate = {} -- dislocate table
+		local attack1 = "" -- set your first attack
+		local attack2 = "" -- ste your second attack
 		
-		if snd.zenith and (firstFlow == "clawtwist" or secondFlow == "clawtwist") and limbs.torso &gt; 24 and not snd.checkAff("infernal_seal") then 
-			zenithAbility = "enact infernal "..snd.target..snd.sep
-		end
-
-		if (snd.checkAff("left_arm_broken") or (snd.limb_dmg["left arm"] &gt;= 24 and secondFlow == "pummel left" and not snd.checkAff("left_arm_broken"))) and not snd.checksomeAffs({"left_arm_mangled","left_arm_dislocated"},2) and secondFlow ~= "dislocate left arm" and snd.resto_limb ~= "left arm" then
-			firstFlow = "dislocate left arm"
-		elseif (snd.checkAff("right_arm_broken") or (snd.limb_dmg["right arm"] &gt;= 24 and secondFlow == "pummel right" and not snd.checkAff("right_arm_broken"))) and not snd.checksomeAffs({"right_arm_mangled","right_arm_dislocated"},2) and secondFlow ~= "dislocate right arm" and snd.resto_limb ~= "right arm" then
-			firstFlow = "dislocate right arm"
+		if snd.zenith then -- do we have zenith up? we can stack these with our flows!
+			if not snd.pyromania then -- let's put fire on the ground, can knock them down if their legs break
+				zenithAbility = "enact pyromania"
+			elseif not snd.checkAff("heatspear") and snd.checkAff("ablaze") then -- if they have heatspear and are ablaze, let's quicken up the flames
+				zenithAbility = "enact heatspear "..snd.target
+			elseif snd.checkAff("ablaze") and snd.flamestack &lt;= 9 then -- if they have heatspear and are ablaze, let's quicken up the flames
+				zenithAbility = "enact quicken "..snd.target
+			else -- otherwise, scorch a bitch
+				zenithAbility = "enact scorch "..snd.target
+			end
 		end
     
-		if secondFlow == "twinpress" and not snd.checkAff("backstrain") and snd.hackles then
-			hackleAttack = "descent"
-		end
-		
-		if (firstFlow == "clawtwist" or secondFlow == "clawtwist") and snd.limb_dmg["torso"] &gt;= 26 and not snd.checkAff("infernal_seal") then 
-			zenithAbility = "enact infernal "..snd.target..snd.sep
-		end
-		
-    if snd.theyran then
-        string = "order loyals kill "..snd.target..snd.sep .. "psi fetch "..snd.target 
-    elseif ((snd.flamestack &gt;= 12) or (snd.flamestack == 11 and snd.hackles and hackleAttack ~= "descent")) and not snd.used.shield and snd.have_aff("fallen") then
-			if snd.hackles or snd.have_aff("blackout") then
-				string = "hackles "..snd.target.." "..hackleAttack..snd.sep
-			end			
-			string = string.."enact immolation "..snd.target..snd.sep
-		elseif snd.have_aff("aeon") and not snd.shield_check then
-			string = "touch shield"..snd.sep
-		elseif hp &lt;= 40 and (snd.checkAff("heatspear") or not snd.checkAff("torso_broken")) then
-			string = "respiration"..snd.sep
-		elseif snd.defenses.def_focalmark.state ~= "deffed" and not snd.zenith then
-			string = "enact focalmark"..snd.sep
-		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
-			string = "enact cauterize"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "psi recover"..snd.sep
-		elseif ((snd.have_aff("asthma") and snd.have_aff("impatience")) or (snd.have_aff("asthma") and snd.have_aff("slickness")) or (snd.have_aff("impatience") and snd.have_aff("anorexia")) or (snd.have_aff("anorexia") and snd.have_aff("slickness"))) and snd.can_arms() and not (snd.cureset ~= "indorani" or snd.cureset ~= "oneiromancer") and not snd.have_aff("berserking") then
-			string = "enact rejection"..snd.sep
-		elseif not snd.zenith and not snd.zenith_coming then
-			string = "enact zenith"..snd.sep
-		elseif snd.checkAff("torso_broken") and not snd.checksomeAffs({"infernal_seal","infernal_shroud"},2) and not snd.zenith then
-			string = "enact infernal "..snd.target..snd.sep
-		elseif snd.checkAff("ablaze") and snd.resto_limb ~= "none" and not snd.checkAff("heatspear") and not snd.zenith then
-			string = "enact heatspear "..snd.target..snd.sep
-		elseif snd.checkAff("heatspear") and snd.resto_limb ~= "torso" and snd.checksomeAffs({"torso_broken","ablaze"},2) and not snd.zenith then
-			string = "enact quicken "..snd.target..snd.sep
-		elseif snd.checkAff("stuttering") and not snd.checkAff("indifference") and (snd.checksomeAffs({"dizziness","stupidity"},1)) then
-			string = "psi dull "..snd.target..snd.sep
-		else
-			if not snd.firefist and snd.firefist_cooldown then
-				string = "enact firefist"..snd.sep
-			elseif not snd.pyromania then
-			  string = "enact pyromania"..snd.sep
-      elseif snd.balance.pendulum and (snd.resto_limb == "left arm" or snd.resto_limb == "right arm" or snd.resto_limb == "left leg" or snd.resto_limb == "right leg") then
-				string = "enact pendulum "..snd.target..snd.sep
-			elseif (snd.cureset == "teradrim" or snd.cureset == "tidesage" or snd.cureset == "shapeshifter" or snd.cureset == "monk" or snd.cureset == "shaman" or snd.cureset == "alchemist" or snd.cureset == "zealot" or snd.cureset == "ravager" or snd.cureset == "sciomancer" or snd.cureset == "runecarver" or snd.cureset == "ascendril" or snd.cureset == "bloodborn") and snd.wrath and snd.swagger &lt; 3 then
-				string = "wrath extend"..snd.sep
-			elseif snd.wrath then
-				string = "wrath"..snd.sep
-			elseif snd.parrying == "left leg" and not snd.rebuke then
-        if not snd.rebuke then
-          string = "rebuke left leg"..snd.sep
-        else
-				  string = "rebuke right leg"..snd.sep
-       end
-			elseif snd.zenith then 
-				string = zenithAbility..snd.sep..string..snd.sep
-        cecho("\nWe are going to zenith: "..zenithAbility)
-			elseif gmcp.Char.Vitals.ability_bal == "1" then        
-				string = "hackles "..snd.target.." "..hackleAttack..snd.sep.."flow "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep
+		if gmcp.Char.Vitals.ability_bal == "1" then
+			hackleAttack = "hackles "..snd.target.." "
+			if snd.flamestack &gt;= 11 then -- always tenderise if you can immolate them
+				hackleAttack = hackleAttack.."whipburst"
+			elseif not snd.checkAff("stuttering") then -- this is epidermal to help bury salves
+				hackleAttack = hackleAttack.."jawcrack"
+			elseif snd.checkAff("ablaze") and snd.flamestack &gt;= 3 then -- if they have 3 stacks of flames, go ahead and add to it
+				hackleAttack = hackleAttack.."whipburst"
+			elseif not snd.checkAff("sore_wrist") then -- if they parry, they hurt themselves
+				hackleAttack = hackleAttack.."wristlash" 
+			elseif not snd.checkAff("backstrain") then -- if they manage to get knocked down, this'll hurt their torso on standing
+				hackleAttack = hackleAttack.."descent"  
+			elseif not snd.checkAff("whiplash") then -- if they drink, trauma to the head
+				hackleAttack = hackleAttack.."uprise"
 			else
-				string = "flow "..snd.target.." "..firstFlow.." "..secondFlow..snd.sep
+				hackleAttack = hackleAttack.."rive" -- damage and bleeding if you got nothing else to do
 			end
-      
-      if snd.used.shield then
-        if not snd.checkAff("ablaze") then
-          string = "touch hammer "..snd.target..snd.sep..string
-        else
-          string = "enact scorch "..snd.target..snd.sep..string
+		end
+		
+		if snd.theytumbling then -- if they are tumbling, let's try to slow them down
+			string = "psi tether "..snd.target
+		elseif snd.theyran then -- are they running? Let's go ahead and fetch them back to where we are
+			string = "psi fetch "..snd.target
+		elseif (snd.flamestack &gt;= 12 or (snd.flamestack == 11 and gmcp.Char.Vitals.ability_bal == "1")) and not snd.used.shield then
+			if gmcp.Char.Vitals.ability_bal == "1" then
+				string = "hackles "..snd.target.." whipburst"..snd.sep.."enact immolation "..snd.target..snd.sep -- tenderise kill
+			else
+				string = "enact immolation "..snd.target..snd.sep -- extinguish kill
+			end
+		else
+      if not snd.firefist and snd.firefist_cooldown then -- you should keep firefist up, duh
+			 string = "enact firefist"..snd.sep
+			end
+			if not snd.zenith and snd.timer_check("poultice", 1, "more than") and not snd.checkAff("heatspear") and snd.checkAff("ablaze") then -- if salve cure down, go ahead and heatspear if we can
+        string = string.."enact heatspear "..snd.target..snd.sep
+			elseif not snd.zenith and snd.checkAff("ablaze") and snd.flamestack &lt;= 9 and (snd.checkAff("torso_mangled") or (snd.checksomeAffs({"torso_broken","heatspear"},2)) or (snd.checkAff("heatspear") and snd.resto_limb ~= "torso")) then -- if they are flamestacked decent, let's quicken
+				string = string.."enact quicken "..snd.target..snd.sep
+			elseif not snd.zenith and snd.flamestack &gt;= 9 and snd.checkAff("torso_broken") and snd.checkAff("fallen") and ((snd.resto_limb ~= "left leg" and snd.checkAff("left_leg_broken")) or (snd.resto_limb ~= "right leg" and snd.checkAff("right_leg_broken"))) then -- scorch if our stacks are high enough, they are on the ground, and their torso is in rough shape
+			  string = string.."enact scorch "..snd.target..snd.sep
+			elseif not snd.zenith and not snd.zenith_coming then -- ZENITH TIME
+			  string = string.."enact zenith"..snd.sep
+			else -- this is where we select stuff regardless of zenith or not
+        if not (snd.parried_limb == "right leg" or snd.parried_limb == "left leg") and not snd.checksomeAffs({"left_leg_broken","right_leg_broken"},2) and (snd.limb_dmg["right leg"] &gt;= 24 or snd.limb_dmg["left leg"] &gt;= 24) then -- hit up both legs if they're getting pretty highly damaged
+				  attack1 = "wanekick left"
+				  attack2 = "wanekick right"
         end
-      end
-			
-			if not snd.loyalsattacking then
-				string = "order loyals kill "..snd.target..snd.sep..string
+			  if snd.resto_limb ~= "left leg" and snd.parried_limb ~= "left leg" and not snd.checkAff("fallen") and snd.limb_dmg["left leg"] &gt;= 24 and not snd.checkAff("left_leg_broken") then -- if left leg is nearly broken, do it and knock them down
+				  attack1 = "wanekick left"
+				  attack2 = "palmforce"
+        end
+        if snd.resto_limb ~= "left leg" and snd.parried_limb ~= "left leg" and (snd.limb_dmg["left leg"] &gt;= 16 and snd.limb_dmg["left leg"] &lt; 33) then -- if left leg can be broken in two hits, and they aren't parrying, double up 
+  				attack1 = "wanekick left"
+	   			attack2 = "wanekick left"
+        end
+        if snd.resto_limb ~= "right leg" and snd.parried_limb ~= "right leg" and not snd.checkAff("fallen") and snd.limb_dmg["right leg"] &gt;= 24 and not snd.checkAff("right_leg_broken") then -- if right leg is nearly broken, do it and knock them down
+				  attack1 = "wanekick right"
+				  attack2 = "palmforce"
+        end
+        if snd.resto_limb ~= "right leg" and snd.parried_limb ~= "right leg" and (snd.limb_dmg["right leg"] &gt;= 16 and snd.limb_dmg["right leg"] &lt; 33) then -- if right leg can be broken in two hits and no parry, double up
+				  attack1 = "wanekick right"
+				  attack2 = "wanekick right"
+        end
+        if not snd.checkAff("crippled_throat") and (snd.parried_limb ~= "head" or snd.no_parry()) then
+				  table.insert(kick, "edgekick")
+        end
+				if not snd.checkAff("muscle_spasms") then
+				  table.insert(fist, "twinpress")
+				end
+				if snd.parried_limb ~= "torso" and not snd.checkAff("lightwound") then
+				  table.insert(fist, "direblow")
+						end
+						if snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" then
+							attack1 = "clawtwist"
+							attack2 = "clawtwist"
+						end
+						if snd.parried_limb ~= "head" and not snd.checksomeAffs({"dizziness","stupidity"},1) then
+							table.insert(kick, "sunkick")
+						end
+						if snd.parried_limb ~= "left arm" and snd.resto_limb ~= "left arm" then
+							table.insert(fist, "pummel left")
+						end
+						if snd.parried_limb ~= "left leg" and snd.resto_limb ~= "left leg" then
+							table.insert(kick, "wanekick left")
+						end
+						if snd.parried_limb ~= "right leg" and snd.resto_limb ~= "right leg" then
+							table.insert(kick, "wanekick right")
+						end
+						if snd.parried_limb ~= "right arm" and snd.resto_limb ~= "right arm" then
+							table.insert(fist, "pummel right")
+						end
+						if snd.checkAff("torso_broken") and snd.parried_limb ~= "torso" and snd.resto_limb ~= "torso" then
+							table.insert(fist, "clawtwist")
+						end
+						if not snd.checkAff("left_arm_broken") and not snd.checkAff("left_arm_dislocated") and (snd.checkAff("heatspear") and (snd.resto_limb ~= "torso" or snd.checkAff("torso_broken"))) then
+							table.insert(dislocate, "dislocate left")
+						end
+						if not snd.checkAff("right_arm_broken") and not snd.checkAff("right_arm_dislocated") and (snd.checkAff("heatspear") and (snd.resto_limb ~= "torso" or snd.checkAff("torso_broken"))) then
+							table.insert(dislocate, "dislocate right")
+						end
+        
+				if attack1 ~= "" and attack2 ~= "" then
+					string = string.."flow "..snd.target.." "..attack1.." "..attack2..snd.sep..hackleAttack..snd.sep..zenithAbility..snd.sep
+				else
+					if #fist &gt;= 2 then
+						attack1 = fist[1]
+						attack2 = fist[2]
+					elseif #fist == 1 then
+						attack1 = fist[1]
+            attack2 = ""
+					end
+          if #kick &gt;= 2 and #fist == 0 then
+						attack1 = kick[1]
+						attack2 = kick[2]
+					elseif #kick == 1 and #fist == 1 then
+						attack1 = fist[1]
+						attack2 = kick[1]
+          end
+          if #fist == 0 and #kick == 1 then
+            attack1 = kick[1]
+            if #dislocate &gt;= 1 then
+              attack2 = dislocate[1]
+            else
+              attack2 = kick[1]
+            end
+          end
+					if attack1 ~= "" and attack2 ~= "" then
+						string = string.."flow "..snd.target.." "..attack1.." "..attack2..snd.sep..hackleAttack..snd.sep..zenithAbility..snd.sep
+					end
+					if attack2:find("dislocate") then
+						if attack1:find("pummel") then
+							string = string.."flow "..snd.target.." "..attack2.." "..attack1..snd.sep..hackleAttack..snd.sep..zenithAbility..snd.sep
+						end
+					end
+				end
 			end
-      
+			if not snd.can_legs() and snd.checksomeSelfAffs({"left_arm_broken","right_arm_broken"},1) and gmcp.Char.Vitals.ability_bal == "1" then
+				string = hackleAttack.." "..snd.target..snd.sep
+			end    
+			if snd.used.shield then
+				if not snd.checkAff("ablaze") then
+					string = "touch hammer "..snd.target..snd.sep..hackleAttack.." "..snd.target..snd.sep
+				else
+					string = "enact scorch "..snd.target..snd.sep..hackleAttack.." "..snd.target..snd.sep
+				end
+			end      
+			if snd.nopets then
+				string = "call cinderkin"..snd.sep.."order loyals kill "..snd.target
+			elseif not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end      
 		end
     
 		if string ~= snd.last_attack and not snd.waiting.queue then
 			snd.last_attack = string
 			snd.attack(snd.last_attack)
 			snd.waiting.queue = true
-			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+			tempTimer(0.2, [[snd.waiting.queue = false]])
 		end
       
 	end
 
   snd.attack_function()
 end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll$</regex>
-								</Alias>
-							</AliasGroup>
+								<command></command>
+								<packageName></packageName>
+								<regex>^group$</regex>
+							</Alias>
 						</AliasGroup>
 					</AliasGroup>
 					<AliasGroup isActive="yes" isFolder="yes">
@@ -35064,50 +34731,222 @@ end</script>
 								<packageName></packageName>
 								<regex>^bleed$</regex>
 							</Alias>
-						</AliasGroup>
-						<AliasGroup isActive="yes" isFolder="yes">
-							<name>Damage Offenses</name>
-							<script></script>
-							<command></command>
-							<packageName></packageName>
-							<regex></regex>
+							<Alias isActive="yes" isFolder="no">
+								<name>Physical aff route</name>
+								<script>--Uses Raloth, Rook, Gyrfalcon, Crocodile
+if snd.class == "Sentinel" then
+	snd.current_offense = "SentVLock"
+	
+	snd.starting_attack()
+	function snd.attack_function()
+	
+		local second_attack = ""
+
+		if not snd.waiting.queue then
+				
+			if snd.target_locked() then				
+				snd.giving = {
+				"heartflutter",
+				"confusion",
+				"fallen",
+				"paresis",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"clumsiness",
+				"stupidity",
+				"confusion",
+				"impairment",
+				"weariness",
+				"allergies",
+				}
+			elseif snd.parried_limb ~= "torso" then
+				snd.giving = {
+				"paresis",
+				"heartflutter",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"clumsiness",
+				"stupidity",
+				"confusion",
+				"impairment",
+				"weariness",
+				"allergies",
+				}
+			else
+				snd.giving = {
+				"paresis",
+        "disfigurement",
+				"impairment",
+				"clumsiness",
+        "vomiting",
+        "sensitivity",
+        "deadening",
+        "lethargy",
+				"allergies",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"heartflutter",
+				"stupidity",
+				"confusion",
+				"weariness",
+				}
+			end
+			
+			string = ""
+			call = ""
+			left = "none"
+			right = "none"
+
+			left, right = Sentinel_Attack_Choice(snd.giving, left, right) -- we send our aff list to a function to get our attacks.
+
+		  if left  == "none" then left  = "slike" end
+		  if right == "none" then right = "gecko" end
+      
+			if snd.no_parry() then 
+				second_attack = "thrust"
+			else
+				second_attack = "stab"
+			end
+				
+			if snd.nopets then
+				string = snd.sep.."call animals"..snd.sep 			
+			elseif snd.flying then
+				string = string.. "touch tentacle " ..snd.target..snd.sep
+			elseif snd.instakilltarget == snd.target then
+				string = string.."wipe dhurive"..snd.sep.."dhuriv combo "..snd.target.." slash curare thrust xentio"..snd.sep
+			elseif snd.checksomeAffs({"confusion", "left_leg_crippled", "right_leg_crippled", "fallen", "heartflutter"}, 5) then
+        string = "dhuriv spinecut "..snd.target..snd.sep
+      elseif snd.theytumbling and not snd.checkAff("writhe_impaled") then
+				string = "dhuriv impale "..snd.target..snd.sep
+			elseif snd.target_impaled then
+				string = "dhuriv gorge"..snd.sep
+			elseif snd.used.rebounding and snd.used.shield then
+				string = string.. "dhuriv dualraze " ..snd.target..snd.sep
+			elseif snd.my_raloth ~= "" and snd.proned() and snd.target_locked() and not snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled"}, 2) then         
+				string = "qdmount"..snd.sep.."qmount "..snd.my_raloth..snd.sep.."order "..snd.my_raloth.." trample "..snd.target..snd.sep
+			elseif (snd.checkAff("asthma") and snd.checkAff("slickness")) and snd.no_parry() and not snd.checkAff("destroyed_throat") then
+				string = "dhuriv throatcrush "..snd.target..snd.sep			
+			else
+				if table.contains(snd.dhuriv_affs, left) then
+					if not table.contains(snd.effects, right) then
+						string = snd.dhuriv_attacks[left].." "..snd.dhuriv_attacks[right]
+						string = "dhuriv combo "..snd.target.." "..string..snd.sep
+					else
+						string = snd.dhuriv_attacks[left].." "..second_attack.." "..snd.effects[right]
+						string = "dhuriv combo "..snd.target.." "..string..snd.sep
+					end
+				elseif table.contains(snd.dhuriv_affs, right) then
+					string = "dhuriv slash "..snd.dhuriv_attacks[right].." "..snd.effects[left]
+					string = "dhuriv combo "..snd.target.." "..string..snd.sep
+				else
+					string = "dhuriv slash "..second_attack.." "..snd.effects[left].." "..snd.effects[right]
+					string = "dhuriv combo "..snd.target.." "..string..snd.sep
+				end
+			end
+			
+			if snd.toggles.affcalling and not snd.target_gone then
+				if table.contains(snd.effects, left) then 
+					call = "wt Afflicting "..snd.target..": "..snd.effects[left]
+					if table.contains(snd.effects, right) then 
+						call = call..", "..snd.effects[right]
+					end
+					call = call..snd.sep
+				elseif table.contains(snd.effects, right) then 
+					call = "wt Afflicting "..snd.target..": "..snd.effects[right]..snd.sep
+				end
+			end
+			
+			if snd.balance.exploit then
+				string = "opportunity"..snd.sep..string
+			end
+			
+			if not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end
+			
+			string = string.."dhuriv riposte "..snd.target..snd.sep
+
+			if string:find("rampage") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") or string:find("tentacle") or string:find("alacrity") or string:find("might") then
+				call = ""
+			end
+
+			string = "wipe dhurive"..snd.sep..call..string
+    
+			if string ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = string
+				snd.attack(snd.last_attack)
+				snd.waiting.queue = true
+				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+			end
+		end
+	end
+
+	snd.attack_function()
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^phys$</regex>
+							</Alias>
 							<Alias isActive="yes" isFolder="no">
 								<name>Group spinecut</name>
 								<script>if snd.class == "Sentinel" then
-snd.current_offense = "SentGroup"
+  snd.current_offense = "SentVLock"
+  local second_attack = ""
+  snd.starting_attack()
+  
+  function snd.attack_function()
  
-local second_attack = ""
- 
-snd.starting_attack()
-function snd.attack_function()
- 
-        if not snd.waiting.queue then
-        if snd.checksomeAffs({"asthma", "clumsiness", "hypochondria", "weariness", "impatience", "slickness"}, 2) then
-            snd.giving = {
-            "asthma",
-            "slickness",
-            "confusion",
-            "heartflutter",
-            "weariness",
-            "dizziness",
-            "hearing",
-            "sensitivity",}
-        else
-            snd.giving = {
-            "paresis",
-            "clumsiness",
-            "asthma",
-            "slickness",
-            "anorexia",
-            "confusion",
-            "heartflutter",
-            "stupidity",
-            "vomiting",
-            "dizziness",
-            "sight",
-            "hearing",
-            "sensitivity",}
-        end
+  if not snd.waiting.queue then
+    if snd.target_locked() then				
+      snd.giving = {
+        "heartflutter",
+				"confusion",
+				"fallen",
+				"paresis",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"clumsiness",
+				"stupidity",
+				"confusion",
+				"impairment",
+				"weariness",
+				"allergies",
+				}      
+		elseif snd.parried_limb ~= "torso" then
+			snd.giving = {
+				"paresis",
+				"heartflutter",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"clumsiness",
+				"stupidity",
+				"confusion",
+				"impairment",
+				"weariness",
+				"allergies",
+				}
+    else
+      snd.giving = {
+				"paresis",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"clumsiness",
+				"heartflutter",
+				"stupidity",
+				"confusion",
+				"impairment",
+				"weariness",
+				"allergies",
+        "dizziness",
+        "sensitivity",
+        }
+    end
  
     call = ""
     left = "none"
@@ -35115,8 +34954,8 @@ function snd.attack_function()
  
      left, right = Sentinel_Attack_Choice(snd.giving, left, right) -- we send our aff list to a function to get our attacks.
  
-        if left  == "none" then left  = "epseth" end
-        if right == "none" then right = "epseth" end
+		  if left  == "none" then left  = "slike" end
+		  if right == "none" then right = "gecko" end
    
         if snd.no_parry() then
             second_attack = "thrust"
@@ -35124,53 +34963,69 @@ function snd.attack_function()
             second_attack = "stab"
         end
  
-        if snd.used.rebounding and snd.used.shield then
-            string = "dhuriv dualraze "..snd.target
-           
-        elseif left == "destroyed_throat" then
-            string = "dhuriv throatcrush "..snd.target
-           
-        elseif snd.dhuriv_attacks[left] == "daunt" or snd.dhuriv_attacks[left] == "icewyrm" then
-            left = snd.daunt_animals[left]
-            string = left..snd.target..snd.sep.."dhuriv flourish "..snd.target.." "..snd.effects[right]
-           
-        else
-            if table.contains(snd.dhuriv_affs, left) then
-                if not table.contains(snd.effects, right) then
-                    string = snd.dhuriv_attacks[left].." "..snd.dhuriv_attacks[right]
-                else
-                    string = snd.dhuriv_attacks[left].." "..second_attack.." "..snd.effects[right]
-                end
-            elseif table.contains(snd.dhuriv_affs, right) then
-                string = "slash "..snd.dhuriv_attacks[right].." "..snd.effects[left]
-            else
-                string = "slash "..second_attack.." "..snd.effects[left].." "..snd.effects[right]
-            end
-           
-            string = "dhuriv combo "..snd.target.." "..string
-        end
-       
-        if snd.toggles.affcalling and not snd.target_gone then
-            if table.contains(snd.effects, left) then
-                call = "wt Afflicting "..snd.target..": "..snd.effects[left]
-                if table.contains(snd.effects, right) then
-                    call = call..", "..snd.effects[right]
-                end
-                call = call..snd.sep
-            elseif table.contains(snd.effects, right) then
-                call = "wt Afflicting "..snd.target..": "..snd.effects[right]..snd.sep
-            end
-        end
- 
-        if snd.checksomeAffs({"confusion", "left_leg_crippled", "right_leg_crippled", "fallen", "heartflutter"}, 5) then
-            string = "dhuriv spinecut "..snd.target
-        end
-       
-        if string:find("impale") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") then
-            call = ""
-        end
- 
-        string = call..string
+      if snd.nopets then
+				string = snd.sep.."call animals"..snd.sep 			
+			elseif snd.flying then
+				string = string.. "touch tentacle " ..snd.target..snd.sep
+			elseif snd.instakilltarget == snd.target then
+				string = string.."wipe dhurive"..snd.sep.."dhuriv combo "..snd.target.." slash curare thrust xentio"..snd.sep
+			elseif snd.checksomeAffs({"confusion", "left_leg_crippled", "right_leg_crippled", "fallen", "heartflutter"}, 5) then
+        string = "dhuriv spinecut "..snd.target..snd.sep
+      elseif snd.theytumbling and not snd.checkAff("writhe_impaled") then
+				string = "dhuriv impale "..snd.target..snd.sep
+			elseif snd.target_impaled then
+				string = "dhuriv gorge"..snd.sep
+			elseif snd.used.rebounding and snd.used.shield then
+				string = string.. "dhuriv dualraze " ..snd.target..snd.sep
+			elseif snd.my_raloth ~= "" and snd.proned() and snd.target_locked() and not snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled"}, 2) then         
+				string = "qdmount"..snd.sep.."qmount "..snd.my_raloth..snd.sep.."order "..snd.my_raloth.." trample "..snd.target..snd.sep
+			elseif (snd.checkAff("asthma") and snd.checkAff("slickness")) and snd.no_parry() and not snd.checkAff("destroyed_throat") then
+				string = "dhuriv throatcrush "..snd.target..snd.sep			
+			else
+				if table.contains(snd.dhuriv_affs, left) then
+					if not table.contains(snd.effects, right) then
+						string = snd.dhuriv_attacks[left].." "..snd.dhuriv_attacks[right]
+						string = "dhuriv combo "..snd.target.." "..string..snd.sep
+					else
+						string = snd.dhuriv_attacks[left].." "..second_attack.." "..snd.effects[right]
+						string = "dhuriv combo "..snd.target.." "..string..snd.sep
+					end
+				elseif table.contains(snd.dhuriv_affs, right) then
+					string = "dhuriv slash "..snd.dhuriv_attacks[right].." "..snd.effects[left]
+					string = "dhuriv combo "..snd.target.." "..string..snd.sep
+				else
+					string = "dhuriv slash "..second_attack.." "..snd.effects[left].." "..snd.effects[right]
+					string = "dhuriv combo "..snd.target.." "..string..snd.sep
+				end
+			end
+			
+			if snd.toggles.affcalling and not snd.target_gone then
+				if table.contains(snd.effects, left) then 
+					call = "wt Afflicting "..snd.target..": "..snd.effects[left]
+					if table.contains(snd.effects, right) then 
+						call = call..", "..snd.effects[right]
+					end
+					call = call..snd.sep
+				elseif table.contains(snd.effects, right) then 
+					call = "wt Afflicting "..snd.target..": "..snd.effects[right]..snd.sep
+				end
+			end
+			
+			if snd.balance.exploit then
+				string = "opportunity"..snd.sep..string
+			end
+			
+			if not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end
+			
+			string = string.."dhuriv riposte "..snd.target..snd.sep
+
+			if string:find("rampage") or string:find("gorge") or string:find("throatcrush") or string:find("dualraze") or string:find("spinecut") or string:find("tentacle") or string:find("alacrity") or string:find("might") then
+				call = ""
+			end
+
+			string = "wipe dhurive"..snd.sep..call..string
    
         if string ~= snd.last_attack and not snd.waiting.queue then
             snd.last_attack = string
@@ -35187,6 +35042,13 @@ end</script>
 								<packageName></packageName>
 								<regex>^gsc$</regex>
 							</Alias>
+						</AliasGroup>
+						<AliasGroup isActive="yes" isFolder="yes">
+							<name>Damage Offenses</name>
+							<script></script>
+							<command></command>
+							<packageName></packageName>
+							<regex></regex>
 							<Alias isActive="yes" isFolder="no">
 								<name>Group Impale/Frozen</name>
 								<script>if snd.class == "Sentinel" then -- Requires Raloth and Icewyrm
@@ -36504,15 +36366,20 @@ end</script>
 				if not string.find(gmcp.Char.Vitals.wield_left, "dirk") then
 					string = "quickwield left dirk"..snd.sep..string
 				end
+				if not string.find(gmcp.Char.Vitals.wield_right, "stone") then
+					string = "quickwield left scryingstone"..snd.sep..string
+				end
 			else
-				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
+				if not string.find(gmcp.Char.Vitals.wield_left, "shield") then
 					string = "quickwield left buckler"..snd.sep..string
+				end
+				if not string.find(gmcp.Char.Vitals.wield_right, "stone") then
+					string = "quickwield left scryingstone"..snd.sep..string
 				end
 			end
 
       if snd.toggles.affcalling and not snd.target_gone then
-          string = call..string
-					call = "wt Afflicting "..snd.target..": "..string
+          string = call..snd.sep..string
       end
 
       if string ~= snd.last_attack and not snd.waiting.queue then
@@ -36857,7 +36724,7 @@ snd.send("revelation new three"..snd.sep.."revelation three experience unabating
 					string = "quickwield left dirk"..snd.sep..string
 				end
 			else
-				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
+				if not string.find(gmcp.Char.Vitals.wield_left, "shield") then
 					string = "quickwield left buckler"..snd.sep..string
 				end
 			end
@@ -37106,7 +36973,7 @@ end</script>
           string = "quickwield left dirk"..snd.sep..string
         end
       else
-        if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
+        if not string.find(gmcp.Char.Vitals.wield_left, "shield") then
           string = "quickwield left buckler"..snd.sep..string
         end
       end
@@ -37287,7 +37154,7 @@ end</script>
           string = "quickwield left dirk"..snd.sep..string
         end
       else
-        if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
+        if not string.find(gmcp.Char.Vitals.wield_left, "shield") then
           string = "quickwield left buckler"..snd.sep..string
         end
       end
