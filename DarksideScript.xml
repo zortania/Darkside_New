@@ -65,12 +65,12 @@ fish = fish or {}</script>
   if snd.class == "Voidseer" then send("affirm branch") end
   
   send("firstaid stormtouched off", false)
---  send("config affliction_view full", false)
+  send("config affliction_view full", false)
   send("config simple_diag on", false)
   send("config pagelength 250", false)
---  send("config grabcorpses on", false)
---  send("config viewtitles off", false)
---  send("config combatmessages on", false)
+  send("config grabcorpses on", false)
+  send("config viewtitles off", false)
+  send("config combatmessages on", false)
   send("config autodoors on", false)
   send("Config Ansi ON", false)
   send("Config mxp on", false)
@@ -96,9 +96,9 @@ fish = fish or {}</script>
   if gmcp.Char.Status.race == "Astral Noble" then 
 		snd.endgamedef = "miasma"
 		snd.endgamehealth = "shift"
-  elseif gmcp.Char.Status.race == "Yeleni" then
-		snd.endgamedef = "warmth"
-		snd.endgamehealth = "serenity"
+  elseif gmcp.Char.Status.race == "Azudim" then
+		snd.endgamedef = "miasma"
+		snd.endgamehealth = "shift"
 	else
 		snd.endgamedef = "none"
 		snd.endgamehealth = "none"
@@ -106,13 +106,12 @@ fish = fish or {}</script>
   
   snd.initiate()
   enableTimer("Firstaidstatustimer")
-  
-  snd.toggles.goggles = true
-  snd.toggles.goggle_level = 20
-  snd.toggles.gauntlet_level = 20
-  snd.toggles.mount = "416056"
-  snd.toggles.ascendedtype = "astral"
-  snd.toggles.targetrune = true
+  enableTimer("Stay online")
+    snd.toggles.goggles = true
+    snd.toggles.goggle_level = 8
+    snd.toggles.gauntlet_level = 2
+    snd.toggles.mount = "423833"
+    snd.toggles.targetrune = false
                  
   end)
   
@@ -224,9 +223,9 @@ function snd.setTarget(target)
    snd.send("wt Target: "..snd.target)
   end
   echo("Target: "..snd.target)
-  if sndNDB.players[snd.target] ~= nil then
-    send("acknowledge "..snd.target)
-  end
+  --if sndNDB.players[snd.target] ~= nil then
+   -- send("acknowledge "..snd.target)
+  --end
   send(" ")
   if snd.target_trigger_id then killTrigger(snd.target_trigger_id) end
   snd.target_trigger_id = tempTrigger(snd.target, [[selectString("]] .. snd.target .. [[", 1) fg("DarkOrchid") resetFormat()]])
@@ -1571,7 +1570,6 @@ end</script>
     end
     if snd.offense_loaded then
       snd.class_hitting = "none"
-      snd.person_hitting = "none"
     end
     if snd.ylem_loaded then
       if snd.my.room == tonumber(ylm.next_zone) then
@@ -12502,7 +12500,7 @@ snd.vermin = 0</script>
 {area = "the Ia'shal Barrow", level = "85+", targets = { "a foul spiderling", "a ravenous cave spider", "a bulbous cave spider", "an egg-laden spider"}},
 {area = "Arbothia", level = "85-95", targets = {"an enraged female servant", "an enraged male servant", "an enraged female villager", "an enraged male villager"}},
 {area = "the Eresh Mines", level = "85-95", targets = {"an angry vampire bat", "a blind wolf spider", "a swarm of black beetles", "a slimy brown salamander", "an enormous salamander"}, items = {}},
-{area = "the Fengard Keep", level = "85-95", targets = {"a massive argobole", "a fiery phenkyre", "an ogre berserker", "a horrid basilwyrm", "a shrieking grimshrill", "a vicious horned garwhol", "a brawny glaive knight", "a tall chempala", "a radiant lumore", "a pious invoker", "a pungent lichosphere", "an ethereal construct",}, items = {}},
+{area = "the Fengard Keep", level = "85-95", targets = {"an Ogre berserker", "a massive argobole", "a fiery phenkyre", "an ogre berserker", "a horrid basilwyrm", "a shrieking grimshrill", "a vicious horned garwhol", "a brawny glaive knight", "a tall chempala", "a radiant lumore", "a pious invoker", "a pungent lichosphere", "an ethereal construct",}, items = {}},
 {area = "the Ayhesa Cliffs", level = "90-100", targets = {"a massive elemental", "a Spellshaper Archon", "a Spellshaper Master", "a Spellshaper Adept"}, items = {"a flat metal disc"}},
 {area = "Yuzurai village", level = "90-100", targets = {"a massive rojalli matriarch", "a sleek black rojalli", "a savage rojalli"}},
 {area = "the Dramedo Warrens", level = "90-100", targets = {"a vast ochre ooze", "a winged fungal horror", "a shambling fungal abomination", "a gigantic fungal strider", "a cloud of fungal spores"}}, 
@@ -25181,6 +25179,22 @@ function snd.oneiromancer_bash()
   end
 end
 
+function snd.praenomen_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
+  bp = tonumber(gmcp.Char.Vitals.blood)
+ 
+  if hp &lt;=40 and snd.shield_check then
+    battack = "touch shield"
+  elseif hp &lt;= 45 and bp &gt;= 30 and snd.balance.mend and hasSkill("Mending") then
+    battack = "mend"
+  elseif bp &lt;= 25 then
+    battack = "feed corpse"
+  else
+    battack = "frenzy "..snd.bashing.target
+  end
+end
+
 function snd.ravager_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
@@ -25820,6 +25834,7 @@ snd.generic_bashing_table_specific_names = {
   ["a plump duck"] = "duck",
   ["a nimble sentinel"] = "sentinel",
   ["a massive argobole"] = "argobole",
+  ["an Ogre berserker"] = "ogre",
   ["Shanea, a village elder"] = "shanea",
   ["a withered crone"] = "crone",
   ["an elderly Dwarven gardener"] = "gardener",
@@ -27890,9 +27905,7 @@ if snd.cureset == "none" then
   if snd.firstaidcuretrack.slickness ~= "3" and not table.contains(snd.setting_priority, "slickness 3") then
     table.insert(snd.setting_priority, "slickness 3")      
   end
-  if snd.firstaidcuretrack.disfigurement ~= "3" and not table.contains(snd.setting_priority, "disfigurement 3") and (snd.class == "Carnifex" or snd.class == "Earthcaller" or snd.class == "Indorani" or snd.class == "Praenomen" or snd.class == "Ravager" or snd.class == "Teradrim" or snd.class == "Executor" or snd.class == "Sciomancer" or snd.class == "Bloodborn") then
-    table.insert(snd.setting_priority, "disfigurement 9")
-  elseif snd.firstaidcuretrack.disfigurement ~= "4" and not table.contains(snd.setting_priority, "disfigurement 4") then
+  if snd.firstaidcuretrack.disfigurement ~= "4" and not table.contains(snd.setting_priority, "disfigurement 4") then
     table.insert(snd.setting_priority, "disfigurement 4")
   end 
   if snd.firstaidcuretrack.besilence ~= "5" and not table.contains(snd.setting_priority, "besilence 5") then
@@ -30888,31 +30901,31 @@ end</script>
  	elseif snd.have_aff("recklessness") or snd.have_aff("blackout") then 
 		if snd.toggles.bashing and tonumber(snd.percentmana) &gt; 20 then
 			snd.send("clot 50")
-			snd.percentestmana = snd.percentestmana - ((200/tonumber(snd.percentmana))*100)
+			snd.percentmana = snd.percentmana - ((200/tonumber(snd.percentmana))*100)
     elseif snd.cureset == "praenomen" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and tonumber(snd.percentmana) &gt; 45 then 
 			send("clot 80")
-			snd.percentestmana = snd.percentestmana - ((320/tonumber(snd.percentmana))*100)
+			snd.percentmana = snd.percentmana - ((320/tonumber(snd.percentmana))*100)
 		elseif snd.cureset == "luminary" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentmana) &gt; 60 then 
 			send("clot 60")
-			snd.percentestmana = snd.percentestmana - ((240/tonumber(snd.percentmana))*100)
+			snd.percentmana = snd.percentmana - ((240/tonumber(snd.percentmana))*100)
 		elseif snd.cureset == "sentinel" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(snd.percentmana) &gt; 40 then 
 			send("clot 60")
-			snd.percentestmana = snd.percentestmana - ((240/tonumber(snd.percentmana))*100)
+			snd.percentmana = snd.percentmana - ((240/tonumber(snd.percentmana))*100)
 		else
 			if tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 then
         if tonumber(snd.percentmana) &gt; 78 then
           send("clot 60") 
-				  snd.percentestmana = snd.percentestmana - ((240/tonumber(snd.percentmana))*100)     
+				  snd.percentmana = snd.percentmana - ((240/tonumber(snd.percentmana))*100)     
         elseif tonumber(snd.percentmana) &gt; 30 then 
 				  send("clot 120")
-				  snd.percentestmana = snd.percentestmana - ((480/tonumber(snd.percentmana))*100)
+				  snd.percentmana = snd.percentmana - ((480/tonumber(snd.percentmana))*100)
         end
 		  elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 200 and tonumber(snd.percentmana) &gt; 20 then 
         send("clot 40") 
-			  snd.percentestmana = snd.percentestmana - ((160/tonumber(snd.percentmana))*100)
+			  snd.percentmana = snd.percentmana - ((160/tonumber(snd.percentmana))*100)
 		  elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 100 and tonumber(snd.percentmana) &gt; 20 then 
 			  send("clot 40")
-			  snd.percentestmana = snd.percentestmana - ((160/tonumber(snd.percentmana))*100)
+			  snd.percentmana = snd.percentmana - ((160/tonumber(snd.percentmana))*100)
       elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 200 and tonumber(snd.percentmana) &gt; 70 then 
 				send("clot 40")
 			end
@@ -32088,6 +32101,17 @@ end
 </script>
 								<eventHandlerList />
 							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>disconnecting</name>
+								<packageName></packageName>
+								<script>function disconnecting()
+	disableTimer("Stay online")
+	disableTimer("Firstaidstatustimer")
+end</script>
+								<eventHandlerList>
+									<string>sysDisconnectionEvent</string>
+								</eventHandlerList>
+							</Script>
 						</ScriptGroup>
 					</ScriptGroup>
 					<Script isActive="yes" isFolder="no">
@@ -32345,7 +32369,7 @@ def_potence_constitution = "once",
 def_fortify = "on",
 def_corpus_warding = "on",
 def_celerity = "once",
-def_lifescent = "once",
+--def_lifescent = "once",
 def_lifevision = "once",
 -- def_veil = "on",
 def_stalking = "once",
@@ -32930,27 +32954,43 @@ snd.offense_loaded = true
 snd.enemies = {}
 snd.allies = {}
 snd.hitting = "none"
-snd.aff_list = {}
-snd.def_needed = false
 snd.using_both_hands = 0
 snd.callers = {}
-snd.defended = false
 snd.last_attack = "none"
 snd.last_affs = {}
 snd.last_cure = ""
 snd.last_cured = ""
 snd.mana_percent = 100
 snd.health_percent = 100
-snd.crescentable = true
-snd.target_aegis = false
+snd.class_hitting = "none"
+snd.people_hitting_me = {}
+snd.players_here = {}
+snd.maybe_affs = {}
+snd.cureset = "none"
+snd.alert_tick = 0
+snd.alerts = {}
+snd.oldalerts = {}
+snd.panic = false
+snd.alertness = {}
+snd.alertnessDir = "none"
+snd.enemy_used_regenerate = false
+snd.who_called_affs = ""
+currently_fishing = false
+
+-- Event/Instance shit
 snowballs = 0
 flintstoogecount = 0
+snd.arraynumber = {}
+
+-- Misc me stuff
+snd.def_needed = false
+snd.defended = false
+
+-- Firstaid assistance stuff
 snd.my_last_cured = ""
 snd.ordered_list = {}
 snd.elevated = false
 snd.firstaidspam = false
-
--- Firstaid assistance stuff
 snd.setting_priority = {}
 snd.firstaidcuretrack = snd.firstaidcuretrack or {}
 snd.metawakeon = false
@@ -32980,8 +33020,6 @@ snd.stormtouching = false
 snd.limblist = {}
 snd.limblist = {head = 0, leftarm = 0, torso = 0, rightleg = 0, leftleg = 0, rightarm = 0}
 snd.backbroken = 0
-snd.topdamagelimb = "none"
-snd.secdamagelimb = "left leg"
 snd.topdamageprelimb = "none"
 snd.percentesthealth = 0
 snd.percentestmana = 0
@@ -32990,11 +33028,8 @@ snd.lastmana = 0
 snd.firstaid_go = true
 snd.update_priority = 0
 snd.firstaidtrack = ""
-snd.counttimes = 0
 reset_cures = false
-snd.arraynumber = {}
 snd.canprerestorenow = true
-snd.effuseready = true
 snd.endgamedef = ""
 snd.endgamehealth =""
 snd.focusaffs = {"agoraphobia", "anorexia", "berserking", "claustrophobia", "confusion", "dementia", "dizziness", "egocentric", "epilepsy", "faintness", "generosity", "hallucinations", "hatred", "impatience", "indifference", "laxity", "loneliness", "lovers_effect", "masochism", "mental_disruption", "mirroring", "pacifism", "paranoia", "peace", "premonition", "recklessness", "stupidity", "vertigo", "weariness"}
@@ -33007,7 +33042,7 @@ snd.healingcall = ""
 -- Bashing stuff
 snd.resolve = "0"
 
---Misc
+-- PvP Misc
 snd.spectype = ""
 snd.parried = false
 snd.block = ""
@@ -33034,12 +33069,11 @@ snd.instakilltarget = "none"
 snd.instakillstopper = false
 snd.flying = false
 snd.enemylist = false
-snd.enemycansalve = true
 snd.avoidanceset = "none"
 snd.dodgestance = "none"
 snd.divertstance = "none"
-snd.limb_dmg_done = 0
 snd.barriering = true
+snd.tailstrike = "none"
 
 --Bard
 snd.weaving = true
@@ -33088,7 +33122,6 @@ snd.kindleused = false
 snd.scythevenomapp = "none"
 snd.scythevenom1 = "none"
 snd.scythevenomapp2 = "none"
-snd.praeattack2 = "none"
 snd.splattercount = 0
 snd.splattertwo = "none"
 snd.splatterone = "none"
@@ -33102,15 +33135,11 @@ snd.my_token = "423796"
 snd.empowerready = false
 snd.geoinvert = false
 snd.geotrace = false
-snd.empowerready = false
 snd.empowertype = "nil"
 snd.my_mutagen = false
 snd.their_mutagen = false
 snd.my_incite = "nil"
 snd.my_impress = ""
-snd.squareseal = false
-snd.triangleseal = false
-snd.circleseal = false
 snd.conjoin = false
 snd.conjoincd = false
 snd.tree_used = false
@@ -33123,6 +33152,7 @@ snd.syncopatehave = false
 snd.syncopateready = true
 snd.bloodwork = true
 snd.hexcount = 0
+snd.crescentable = true
 
 --Shaman/Alchemist
 snd.shamanpet = ""
@@ -33171,7 +33201,6 @@ snd.need_deform = true
 snd.adderafflict = "none"
 snd.flowered = false
 snd.bowl = false
-snd.tailstrike = "none"
 snd.wheelused = false
 snd.deformed = false
 snd.cardcount = 0
@@ -33239,25 +33268,11 @@ snd.sleight = "void"
 --Luminary/Earthcaller
 snd.battle_aff = "none"
 snd.chasten_aff = "none"
-snd.flayingfang = false
-snd.class_hitting = "none"
-snd.person_hitting = "none"
-snd.people_hitting_me = {}
-snd.players_here = {}
-snd.maybe_affs = {}
-snd.cureset = "none"
-snd.alert_tick = 0
-snd.alerts = {}
-snd.oldalerts = {}
-snd.panic = false
-snd.alertness = {}
-snd.alertnessDir = "none"
-snd.enemy_used_regenerate = false
-snd.who_called_affs = ""
 snd.infiltrate = false
 
 --Predator
 snd.fleshbaneStacks = 0
+snd.swoopVenoms = {}
 
 snd.disperse = "none" -- Can be set to none, callers or all.
 
@@ -33267,6 +33282,7 @@ snd.last_hit_limb = "none" --not safe for use in routes.
 snd.last_struck_limb = "none" --this can be used in routes
 snd.last_limb_dmg = 0
 snd.resto_limb = "none"
+snd.limb_dmg_done = 0
 snd.current_restoration_aff = ""
 snd.limb_targeting = {
 left = "none",
@@ -33324,7 +33340,6 @@ peace = "ouabain",
 deadening = "vardrax",
 sleep = "delphinium",
 no_insomnia = "delphinium",
---no_instawake = "delphinium",
 asleep = "delphinium",
 
 stupidity = "aconite", 
@@ -33419,6 +33434,7 @@ asthma = "lambaste",
 haemophilia = "lambaste",
 confusion = "perform dazzle",
 writhe_transfix = "evoke transfixion",
+disrupted = "shield crash",
 }
 
 snd.subjugation_attacks = {
@@ -33451,6 +33467,8 @@ snd.hound_attacks = {
     no_insulation = "tundralhowl",
     blurry_vision = "ululate",
     mark = "mark",
+    loki = "contagion",
+    bite = "bite",
               },
   ["Warden"] = {
     recklessness = "chant",
@@ -33469,6 +33487,8 @@ snd.hound_attacks = {
     no_insulation = "freeze",
     blurry_vision = "dirge",
     mark = "mark",
+    loki = "sabotage",
+    assault = "assault",
   }
 }
 
@@ -34831,7 +34851,6 @@ function snd.starting_attack()
     snd.toggle("attacking")
   end
   snd.class_hitting = "none"
-  snd.person_hitting = "none"
   snd.active_hound = "none"
   snd.implant = "none"
 end
@@ -37674,7 +37693,7 @@ end</script>
                snd.target_got("sore_ankle")
              end,
     Slug = function(target)
-               snd.target_got("stuttering")
+               snd.target_got("blurry_vision")
              end,
     Flog = function(target)
                snd.target_got("backstrain")
@@ -37727,6 +37746,7 @@ end</script>
                 	snd.last_limb_dmg = 3.5
                 	snd.took_limb_dmg("head", snd.last_limb_dmg)
                   table.insert(snd.maybe_affs, 1, "crippled_throat")
+                  table.insert(snd.maybe_affs, 1, "stuttering")
                   snd.onHit2({"Parry", "Dodge"})
                 end,
     Concussion = function(target)
@@ -39938,7 +39958,7 @@ end</script>
                snd.target_got("sore_ankle")
              end,
     Jawcrack = function(target)
-               snd.target_got("stuttering")
+               snd.target_got("blurry_vision")
              end,
     Descent = function(target)
                snd.target_got("backstrain")
@@ -39998,6 +40018,7 @@ end</script>
                 	snd.last_limb_dmg = 3.5
                 	snd.took_limb_dmg("head", snd.last_limb_dmg)
                   table.insert(snd.maybe_affs, 1, "crippled_throat")
+                  table.insert(snd.maybe_affs, 1, "stuttering")
                   snd.onHit2({"Parry", "Dodge"})
                 end,
     Sunkick = function(target)

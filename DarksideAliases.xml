@@ -1090,7 +1090,6 @@ end</script>
 						<script>snd.reset_me()
 snd.defenses_loaded = false
 snd.crescentable = true
-snd.target_aegis = false
 snd.growbal = 0
 snd.infiltrate = false
 </script>
@@ -2429,7 +2428,8 @@ snd.get_new_target()</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Route Newbie Gold</name>
-						<script>expandAlias("bashpath fengard, rebels, three rock, squal, yuzurai, tiyen, caldera, drakuum, ollin, augerweald, ayhesa, dome, dovan, maul, ia'shal, sunwash")</script>
+						<script>expandAlias("bashpath fengard, rebels, three rock, squal, yuzurai, tiyen, caldera, drakuum, ollin, augerweald, ayhesa, dome, ia'shal, sunwash")
+--, dovan, maul</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^gold1$</regex>
@@ -7360,7 +7360,7 @@ function snd.attack_function()
     elseif snd.checkAff("barrier") and fury_amount &gt; 79 then
       string = string.."fury REVERBERATE "..snd.target.." boost"
 		
-    elseif snd.target_aegis and fury_amount &lt; 79 then
+    elseif snd.checkAff("dome") and fury_amount &lt; 79 then
       if tonumber(axenumbers) &gt; 1 then
 		    string = string.. "axe whirlwind curare"..snd.sep
 		  else
@@ -24378,7 +24378,7 @@ end</script>
 							<command></command>
 							<packageName></packageName>
 							<regex></regex>
-							<Alias isActive="yes" isFolder="no">
+							<Alias isActive="no" isFolder="no">
 								<name>Rituos Test</name>
 								<script>if snd.class == "Praenomen" then
 snd.starting_attack()
@@ -24500,7 +24500,7 @@ end</script>
 								<packageName></packageName>
 								<regex>^kll$</regex>
 							</Alias>
-							<Alias isActive="yes" isFolder="no">
+							<Alias isActive="no" isFolder="no">
 								<name>Sep Mockup Rituos Test</name>
 								<script>if snd.class == "Praenomen" then
 snd.starting_attack()
@@ -24644,6 +24644,195 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^kll2$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Testing Akkari</name>
+								<script>if snd.class == "Praenomen" then
+	snd.starting_attack()
+	
+	function snd.attack_function()
+		local string = "contemplate "..snd.target..snd.sep
+		local corpus = "none"
+		local touse = {}
+		local tohit = {}
+		local whis = {}
+		
+		if snd.timer_check("fitness", .5, "more than") then
+			snd.giving = {
+				"paresis",
+				"asthma",
+				"slickness",
+				"anorexia",
+				"stupidity",
+				"weariness",
+				"dizziness",
+				"stupidity",
+				"recklessness",
+				"haemophilia",
+				"sensitivity",
+				}
+			cecho("\n&lt;red&gt;Fitness is down.")        
+		elseif snd.timer_check("focus", .5, "more than") then
+			snd.giving = {
+				"anorexia",
+				"stupidity", 
+				"paresis",
+				"weariness",
+				"clumsiness",
+				"recklessness",
+				"sensitivity",
+				"dizziness",
+				"peace",
+			}
+			cecho("\n&lt;red&gt;Focus is down.")  
+		else	
+			snd.giving = {
+				"asthma",
+				"paresis",
+				"clumsiness",
+				"weariness",
+				"slickness",
+				"anorexia",
+				"shyness",
+				"sensitivity",
+				"vomiting",
+				"stupidity",
+				"allergies",
+				"haemophilia",
+				"recklessness",
+				"dizziness",
+				"voyria", 
+			}
+		end
+ 
+		snd.giving_whisper = {
+            "impatience",
+            "lovers",
+            "stupidity",
+            "peace",
+            "confusion",
+            "anorexia",
+            "berserking",
+            "recklessness",
+            "agoraphobia",
+            "vertigo",
+            "indifference",
+            "masochism",
+            "paranoia",
+ 
+		}
+		
+		for i in pairs(snd.giving) do
+			if not snd.checkAff(snd.giving[i]) then
+				if not table.contains(touse, snd.giving[i]) then
+					table.insert(touse, snd.giving[i])
+				end
+			end
+		end
+		for aff in pairs(touse) do
+			table.insert(tohit, snd.effects[touse[aff]])
+		end
+
+		for j in pairs(snd.giving_whisper) do
+			if not snd.checkAff(snd.giving_whisper[j]) then
+				if not table.contains(whis, snd.giving_whisper[j]) then
+					if whis == "lovers_effect" then
+						table.insert("lovers", snd.giving_whisper[j])
+					else
+						table.insert(whis, snd.giving_whisper[j])
+					end
+				end
+			end
+		end
+      
+		local mentcount = 0 
+		for aff in pairs(snd.mental_affs) do
+			if table.contains(snd.target_has, snd.mental_affs[aff]) then
+				mentcount = mentcount + 1
+			end
+		end
+    
+		local anticount = 0 
+		for aff2 in pairs(snd.cures.antipsychotic) do
+			if table.contains(snd.target_has, snd.cures.antipsychotic[aff2]) then
+				anticount = anticount + 1
+			end
+		end
+      
+      --if not snd.nopets then
+       -- string = string.."call minion"..snd.sep.."order loyals kill "..snd.target..snd.sep 
+		if not snd.loyalsattacking then
+			string = string.."order loyals kill "..snd.target..snd.sep
+		end
+    
+		local seizeMana = 0
+		local mAffBump = 4.00
+		seizeMana = tonumber((10.98) + (mentcount*mAffBump))
+    
+		if snd.checkAff("blood_curse") then
+			seizeMana = seizeMana+((seizeMana/10)*1.5)
+		end
+   
+		if not snd.waiting.queue then
+  
+		if not snd.balance.trepidation and gmcp.Char.Vitals.blood &gt;= "15" then
+			string = string..snd.sep.."blood trepidation"..snd.sep
+		elseif snd.balance.trepidation and gmcp.Char.Vitals.blood &lt;= "14" then
+			string = string..snd.sep.."blood trepidation off"..snd.sep
+		elseif snd.theytumbling then
+			string = string..snd.sep.."breathe "..snd.target..snd.sep.."qeb feed "..snd.target
+		elseif snd.theyran then
+			string = string..snd.sep.."lure "..snd.target
+		elseif snd.used.shield then
+			string = string..snd.sep.."frenzy "..snd.target.." upset"..snd.sep.."whisper "..whis[1].." "..whis[2].." "..snd.target
+		elseif snd.used.rebounding then
+			if not snd.checkAff("berksering") then
+				if whis[1] == "berserking" or whis[2] == "berserking" then
+					string = string..snd.sep.."frenzy "..snd.target..snd.sep.. "whisper "..whis[1].." "..whis[2].." "..snd.target
+				else
+					string = string..snd.sep.."frenzy "..snd.target..snd.sep.. "whisper berserking "..whis[1].." "..snd.target
+				end
+			else
+				string = string..snd.sep.."frenzy " ..snd.target..snd.sep.. "whisper "..whis[1].." "..whis[2].." "..snd.target
+			end
+		elseif snd.checksomeAffs({"asthma", "paresis", "anorexia", "impatience"}, 2) and not snd.checkAff("slickness") then
+			string = string..snd.sep.."breathe "..snd.target..snd.sep.."whisper "..whis[1].." "..whis[2].." "..snd.target
+		elseif not snd.checkAff("effused_blood") then
+			string = string..snd.sep.."blood effuse " ..snd.target..snd.sep.. "whisper temptation seduction "..snd.target
+		elseif (mentcount &gt;= 5 or anticount &gt;= 1) and not snd.checkAff("blood_curse") then
+			string = string..snd.sep.."wipe weapon"..snd.sep.."gash "..snd.target.." "..tohit[1].." lenient"..snd.sep.."blood curse " ..snd.target
+		elseif not snd.checkAff("blood_rune") and not snd.runeused then
+			string = string..snd.sep.."blood rune " ..snd.target
+		elseif ((snd.mana_percent - seizeMana) &lt;= 37 and snd.checkAff("blood_rune")) or ((snd.mana_percent - seizeMana) &lt;= 32) and snd.balance.seize then
+			string = string..snd.sep.."blood seize " ..snd.target
+		elseif snd.mana_percent &lt;= 37 and not snd.balance.seize and snd.runeused and snd.checkAff("blood_rune") then
+			string = string..snd.sep.."activate rune"
+		elseif snd.mana_percent &lt; 35 or (snd.mana_percent &lt; 44 and snd.checkAff("blood_rune")) then
+			string = string..snd.sep.."annihilate "..snd.target
+		else
+			if #tohit &gt; 0 then
+				string = string..snd.sep.."wipe weapon"..snd.sep.."gash "..snd.target.." "..tohit[1].." lenient"..snd.sep.."whisper "..whis[1].." "..whis[2].." "..snd.target..snd.sep
+			elseif not snd.used.paste then
+				string = string..snd.sep.."feed "..snd.target..snd.sep.."whisper "..whis[1].." "..whis[2].." "..snd.target..snd.sep
+			elseif not snd.checkAff("rend") then
+				string = string..snd.sep.."claw " ..snd.target..snd.sep.. "whisper "..whis[1].." "..whis[2].." "..snd.target
+			end
+		end
+	end
+   
+   
+	if string ~= snd.last_attack and not snd.waiting.queue then
+		snd.last_attack = string
+		snd.attack(snd.last_attack)
+		snd.waiting.queue = true
+		tempTimer(snd.delay(d), [[snd.waiting.queue = false]])
+	end
+end
+snd.attack_function()
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^test$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
@@ -25487,22 +25676,6 @@ end</script>
 									<command></command>
 									<packageName></packageName>
 									<regex>^test$</regex>
-								</Alias>
-							</AliasGroup>
-							<AliasGroup isActive="yes" isFolder="yes">
-								<name>Wielding</name>
-								<script></script>
-								<command></command>
-								<packageName></packageName>
-								<regex></regex>
-								<Alias isActive="no" isFolder="no">
-									<name>wield bashing</name>
-									<script>if snd.class == "Akkari" then
-  snd.send("quickwield both manta")
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^wbsh$</regex>
 								</Alias>
 							</AliasGroup>
 							<AliasGroup isActive="yes" isFolder="yes">
@@ -34764,15 +34937,21 @@ if snd.class == "Sentinel" then
 				snd.giving = {
 				"paresis",
 				"heartflutter",
+        "disfigurement",
+				"impairment",
+				"clumsiness",
+        "vomiting",
+        "sensitivity",
+        "deadening",
+        "lethargy",
+				"allergies",
 				"asthma",
 				"slickness",
 				"anorexia",
-				"clumsiness",
+				"heartflutter",
 				"stupidity",
 				"confusion",
-				"impairment",
 				"weariness",
-				"allergies",
 				}
 			else
 				snd.giving = {
