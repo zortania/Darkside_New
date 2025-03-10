@@ -93,12 +93,9 @@ fish = fish or {}</script>
     tempTimer(5, [[send("raceskill active", false)]])
   end
   
-  if gmcp.Char.Status.race == "Astral Noble" then 
-		snd.endgamedef = "miasma"
-		snd.endgamehealth = "shift"
-  elseif gmcp.Char.Status.race == "Azudim" then
-		snd.endgamedef = "miasma"
-		snd.endgamehealth = "shift"
+  if gmcp.Char.Status.race == "Idreth" then
+		snd.endgamedef = "safeguard"
+		snd.endgamehealth = "pulse"
 	else
 		snd.endgamedef = "none"
 		snd.endgamehealth = "none"
@@ -108,9 +105,9 @@ fish = fish or {}</script>
   enableTimer("Firstaidstatustimer")
   enableTimer("Stay online")
     snd.toggles.goggles = true
-    snd.toggles.goggle_level = 8
-    snd.toggles.gauntlet_level = 2
-    snd.toggles.mount = "423833"
+    snd.toggles.goggle_level = 11
+    snd.toggles.gauntlet_level = 8
+    snd.toggles.mount = "229071"
     snd.toggles.targetrune = false
                  
   end)
@@ -679,18 +676,22 @@ end
 end
 
 function npb.handleResponse(_, url, body)
-  if url == "https://api.aetolia.com/characters.json" then
+  if url == "https://api.aetolia.com/characters.json" or url == "http://api.aetolia.com/characters.json" then
     local data = yajl.to_value(body)
     if npb.qws then
       npb.qws = false
-      npb.qwsorted(data)
+      local people = {}
+      for _, person in pairs(data.characters) do
+        table.insert(people, person.name)
+      end
+      npb.qwsorted(people)
     end
   end
 end
 
 registerAnonymousEventHandler("sysGetHttpDone", "npb.handleResponse")
 
-local order = {"Bloodloch", "Duiran", "Enorian", "Spinesreach", "Rogues", "Divine"}
+local order = { "Bloodloch", "Duiran", "Enorian", "Spinesreach", "Rogues", "Divine" }
 local function newLine()
   moveCursorEnd()
   if getCurrentLine() ~= "" then
@@ -703,17 +704,16 @@ function npb.cformat(player, format)
   local str = "&lt;reset&gt;"
   local color = sndNDB_getColour(player)
   if color then
-    str = str.."&lt;"..color.."&gt;"
+    str = str .. "&lt;" .. color .. "&gt;"
   end
-  str = str..player:lower():title().."&lt;reset&gt;"..(format and format or "")
+  str = str .. player:lower():title() .. "&lt;reset&gt;" .. (format and format or "")
   return str
 end
 
 function npb.qwsorted(people)
   local wrap = getWindowWrap()
-  local sorted = {Bloodloch = {}, Duiran = {}, Enorian = {}, Spinesreach = {}, Rogues = {}, Divine = {}}
-  for _, person in pairs(people.characters) do
-    local name = person.name
+  local sorted = { Bloodloch = {}, Duiran = {}, Enorian = {}, Spinesreach = {}, Rogues = {}, Divine = {} }
+  for _, name in pairs(people) do
     local org = sndNDB_getCitizenship(name)
     if org == "Unknown" then org = "Rogues" end
     table.insert(sorted[org], name)
@@ -721,16 +721,18 @@ function npb.qwsorted(people)
   for _, org in ipairs(order) do
     local peoples = sorted[org]
     table.sort(peoples)
-    if #peoples&gt;0 then
+    if #peoples &gt; 0 then
       newLine()
-      cecho("&lt;"..npb.t.config.colors[org:lower()].."&gt;"..
-      string.rep(" ", 11-#org).."&lt;b&gt;&lt;u&gt;"..org:title().."&lt;reset&gt;"..(#peoples&gt;9 and "" or " ").."&lt;white&gt;(&lt;cyan&gt;"..#peoples.."&lt;white&gt;): ")
+      cecho("&lt;" .. npb.t.config.colors[org:lower()] .. "&gt;" ..
+        string.rep(" ", 11 - #org) ..
+        "&lt;b&gt;&lt;u&gt;" .. org:title() .. "&lt;reset&gt;" .. (#peoples &gt; 9 and "" or " ") .. "&lt;white&gt;(&lt;cyan&gt;" ..
+        #peoples .. "&lt;white&gt;): ")
       for i, v in pairs(peoples) do
         local linelength = #getCurrentLine()
         local comma = next(peoples, i)
         local personlength = (comma and 2 or 0) + #v
-        if linelength+personlength&gt;wrap then
-          echo("\n"..string.rep(" ",17))
+        if linelength + personlength &gt; wrap then
+          echo("\n" .. string.rep(" ", 17))
           moveCursorEnd()
         end
         cecho(npb.cformat(v))
@@ -740,7 +742,9 @@ function npb.qwsorted(people)
   end
   echo("\n")
   moveCursorEnd()
-end</script>
+end
+
+</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -1111,6 +1115,7 @@ snd.physical_affs = {
 "left_arm_crippled",
 "right_leg_crippled",
 "left_leg_crippled",
+"extravasation",
 "haemophilia",
 "asthma",
 "impairment",
@@ -1119,8 +1124,7 @@ snd.physical_affs = {
 "sensitivity",
 "ringing_ears",
 "lethargy",
-"blood_poison",
-"blood_curse",
+"sepsis",
 "crippled_throat",
 "slough",
 "disfigurement",
@@ -1128,16 +1132,17 @@ snd.physical_affs = {
 "lightwound",
 "ablaze",
 "hypothermia",
-"shivering",
 "frozen",
 "frigid",
-"limp_veins",
+"shivering",
+"dissonance",
+"hypotension",
 "rend",
-"exhausted",
+"exhaustion",
 "allergies",
 "addiction",
 "hypersomnia",
-"heartflutter",
+"arrhythmia",
 "whiplash",
 "backstrain",
 "sore_wrist",
@@ -1149,28 +1154,29 @@ snd.physical_affs = {
 }
 
 snd.mental_affs = {
-"egocentric",
+"egocentrism",
 "stupidity",
 "anorexia",
 "epilepsy",
 "mirroring",
-"mental_disruption",
+"delirium",
 "peace",
 "paranoia",
 "hallucinations",
 "dizziness",
 "indifference",
-"berserking",
-"pacifism",
-"lovers_effect",
+"mania",
+"infatuation",
 "laxity",
+"manablight",
 "hatred",
-"generosity",
 "claustrophobia",
 "vertigo",
 "faintness",
 "loneliness",
 "agoraphobia",
+"echoes",
+"gnawing",
 "masochism",
 "recklessness",
 "weariness",
@@ -1187,12 +1193,7 @@ snd.all_affs =  table.n_union(snd.physical_affs, snd.mental_affs, { "hypochondri
 snd.anxieties = {
 "sadness",
 "self_pity",
-"baldness",
-"commitment_fear",
-"body_odor",
 "hubris",
-"worrywart",
-"itchy",
 }
 
 snd.other_affs = {
@@ -1213,16 +1214,17 @@ snd.other_affs = {
 "superstition",
 "justice",
 "magnanimity",
-"thin_blood",
-"merciful",
+"dyscrasia",
+"mercy",
 "shyness",
 "dissonance",
-"infested",
-"blighted",
+"infestation",
+"psychosis",
+"blight",
 "misery",
 "hollow",
 "narcolepsy",
-"perplexed",
+"perplexity",
 "self_loathing",
 "aeon",
 "hellsight",
@@ -1250,7 +1252,7 @@ snd.venom_affs = {
 "anorexia",
 "stupidity",
 "squelched",
-"thin_blood",
+"dyscrasia",
 "slickness",
 "weariness",
 "peace",
@@ -1260,20 +1262,21 @@ snd.venom_affs = {
 "blurry_vision",
 "deadening",
 "stuttering",
+"sparsity",
 }
 
 snd.real_all_affs =  table.n_union(snd.physical_affs, snd.mental_affs, snd.anxieties, snd.other_affs)
 
 snd.circle_affs = {
-"merciful",
+"mercy",
 "masochism",
-"berserking",
+"mania",
 "recklessness",
 "sealing_circle"
 }
 snd.triangle_affs = {
 "laxity",
-"lovers_effect",
+"infatuation",
 "peace",
 "magnanimity",
 "sealing_triangle"
@@ -1653,7 +1656,7 @@ function gmcp_items()
     if not shrine_list then
 	   load_shrine_db()
     end
-    if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then
+    if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Hidden Cavern" then
       table.insert(snd.gathering, "sovereigns")
     elseif string.find(item, "shrine") or string.find(item, "totem") then
       -- Make sure tables actually exist.
@@ -1668,13 +1671,13 @@ function gmcp_items()
       end
       -- Save data.
       save_shrine_db()
-    elseif string.find(item, "pill") and #snd.items[item] &gt;= 1 then
+    elseif string.find(item, "pill") and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Hidden Cavern" then
       table.insert(snd.gathering, "pill")
-    elseif (string.find(item, "reishi") or string.find(item, "willow") or string.find(item, "yarrow")) and #snd.items[item] &gt;= 1 then
+    elseif (string.find(item, "reishi") or string.find(item, "willow") or string.find(item, "yarrow")) and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Hidden Cavern" then
       table.insert(snd.gathering, "plant")
-    elseif string.find(item, "paste") and #snd.items[item] &gt;= 1 then
+    elseif string.find(item, "paste") and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Hidden Cavern" then
       table.insert(snd.gathering, "paste")
-    elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
+    elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking and gmcp.Room.Info.name ~= "Hidden Cavern" then
       for id in pairs(snd.items[item]) do
         table.insert(snd.gathering, snd.items[item][id])
       end
@@ -2189,7 +2192,7 @@ function snd.can_fitness()
   local activelock = false
   local asthmacover = false
   
-  if snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria") or snd.have_aff("baldness") or snd.have_aff("impatience")) then
+  if snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria") or snd.have_aff("impatience")) then
     asthmacover = true
   end
   
@@ -2197,7 +2200,7 @@ function snd.can_fitness()
     activelock = true
   elseif asthmacover and (snd.have_aff("slickness") or snd.have_aff("slough")) and (snd.have_aff("left_leg_crippled") or snd.have_aff("right_leg_crippled")) and snd.have_aff("fallen") then
     activelock = true
-  elseif snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") and (snd.have_aff("impatience") or snd.have_aff("stupidity") or snd.have_aff("egocentric")) then
+  elseif snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") and (snd.have_aff("impatience") or snd.have_aff("stupidity") or snd.have_aff("egocentrism")) then
     activelock = true
   end
   
@@ -2608,7 +2611,7 @@ function snd.goggle_update()
     --heatsight = {level = 1, non_goggle_method = {needybalancetake = "heatsight"}, non_goggle_skill = "Heatsight"},
     nightsight = {level = 1, non_goggle = {special = "nightsight"} , non_goggle_skill = "Nightsight"},
     mindseye_tattoo = {level = 2, non_goggle = {balanceequilibrium = "touch allsight"}, non_goggle_skill = "Generic"},
-    thirdeye = {level = 2, non_goggle = {eat = "acuity"}, non_goggle_skill = "Generic"},
+    thirdeye = {level = 2, non_goggle = {special = "thirdeye"}, non_goggle_skill = "Generic"},
     overwatch = {level = 5, non_goggle = {""}, non_goggle_skill = "Generic"},
     insight = {level = 8, non_goggle = {needyequilibriumtake = "mind insight on"}, non_goggle_skill = "Insight"},
     lifevision = {level = 9, non_goggle = {balanceequilibriumtake = "lifevision"}, non_goggle_skill = "Lifevision"},
@@ -3442,7 +3445,7 @@ end</script>
 							<script>function snd.core()
   if not snd.channeling then
     if snd.toggles.active then
-      if not snd.waiting.lighting and snd.can_cast() and snd.not_aff("perplexed") and snd.not_aff("paresis")  then
+      if not snd.waiting.lighting and snd.can_cast() and snd.not_aff("perplexity") and snd.not_aff("paresis")  then
         local commandSent = false
         for pipe, isEmpty in pairs(snd.emptypipes) do
           if isEmpty then
@@ -3537,62 +3540,58 @@ snd.priorities =
     -- "aff_mirroring",
     -- "aff_crippled_body",
     -- "aff_crippled",
-    -- "aff_heartflutter",
+    -- "aff_arrhythmia",
     -- "aff_slough",
     -- "def_firefly_tattoo",
     -- "aff_rot_body",
     -- "aff_rot_wither",
-    -- "aff_baldness",
     -- "aff_clumsiness",
     -- "aff_hypochondria",
     -- "aff_weariness",
     -- "aff_asthma",
     -- "aff_sensitivity",
-    -- "aff_blood_poison",
-    -- "aff_limp_veins",
+    -- "aff_sepsis",
+    -- "aff_hypotension",
     -- "aff_slickness",
     -- "aff_disfigurement",
     -- "aff_squelched",
     -- "aff_migraine",
-    -- "aff_self-pity",
+    -- "aff_self_pity",
     -- "aff_stupidity",
     -- "aff_dizziness",
     -- "aff_shyness",
     -- "aff_epilepsy",
     -- "aff_impatience",
     -- "aff_dissonance",
-    -- "aff_infested",
-    -- "aff_itchy",
+    -- "aff_infestation",
     -- "aff_rot_heat",
     -- "aff_rot_spirit",
     -- "aff_accursed",
     -- "aff_agony",
-    -- "aff_body_odor",
     -- "aff_haemophilia",
-    -- "aff_mental_disruption",
-    -- "aff_physical_disruption",
+    -- "aff_delirium",
+    -- "aff_extravasation",
     -- "aff_allergies",
     -- "aff_vomiting",
-    -- "aff_thin_blood",
+    -- "aff_dyscrasia",
     -- "aff_rend",
     -- "aff_lethargy",
     -- "aff_ringing_ears",
     -- "aff_addiction",
-    -- "aff_exhausted",
+    -- "aff_exhaustion",
     -- "aff_hubris",
     -- "aff_pacifism",
     -- "aff_peace",
-    -- "aff_lovers_effect",
+    -- "aff_infatuation",
     -- "aff_superstition",
     -- "aff_generosity",
     -- "aff_justice",
-    -- "aff_egocentric",
-    -- "aff_commitment_fear",
+    -- "aff_egocentrism",
     -- "aff_recklessness",
     -- "aff_masochism",
     -- "aff_agoraphobia",
     -- "aff_loneliness",
-    -- "aff_berserking",
+    -- "aff_mania",
     -- "aff_vertigo",
     -- "aff_claustrophobia",
     -- "aff_nyctophobia",
@@ -3603,8 +3602,8 @@ snd.priorities =
     -- "aff_paranoia",
     -- "aff_hypersomnia",
     -- "aff_hatred",
-    -- "aff_blood_curse",
-    -- "aff_blighted",
+    -- "aff_psychosis",
+    -- "aff_blight",
     -- "aff_plodding",
     -- "aff_idiocy",
     -- "aff_withering",
@@ -4259,7 +4258,7 @@ snd.method_priority = {
         snd.firstaid_go = true
       end
       if snd.bashing_loaded then
-        if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
+        if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 and gmcp.Room.Info.name ~= "Hidden Cavern" then
           table.insert(snd.queue, "loot")
         end
         if snd.moving_to ~= "none" then
@@ -4269,10 +4268,10 @@ snd.method_priority = {
       if snd.toggles.parrying then
         snd.parry()
       end
-      if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria","baldness"},1) then
+      if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1) then
         if (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.have_aff("anorexia")) or 
           (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"left_leg_crippled","right_leg_crippled"},1) and snd.have_aff("fallen")) or 
-          (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"impatience","stupidity","egocentric"},1)) then
+          (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"impatience","stupidity","egocentrism"},1)) then
           snd.need_fitness = true
           table.insert(snd.queue, "fitness")
         end        
@@ -4500,20 +4499,18 @@ aff_atrophy = {state = "healed", effect = "half damage except against giver of a
 aff_attuned = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_backstabbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_backstrain = {state = "healed", effect = "torso dmg on standing", cures = {tree = "send", salve = "soothing to torso"}, assess = false, timer = createStopWatch()},
-aff_baldness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_barbs = {state = "healed", effect = "dmg per stack of barbs", cures = {balanceequilibrium = "pull barbs from body"}, assess = false, timer = createStopWatch()},
 aff_battle_hunger = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_besilence = {state = "healed", effect = "stops some actions", cures = {smoke = "reishi"}, assess = false, timer = createStopWatch()},
-aff_berserking = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_mania = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_blackout = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_blighted = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_blight = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_blisters = {state = "healed", effect = "poison dmg/bleeding when using bal/eq", cures = {tree = "send", herb = "bloodroot"}, assess = false, timer = createStopWatch()},
-aff_blood_curse = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_blood_poison = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_psychosis = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_sepsis = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_bloodlust = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_blunt_weakness = {state = "healed", effect = "more dmg from blunt source", cures = {}, assess = false, timer = createStopWatch()},
 aff_blurry_vision = {state = "healed", effect = "", cures = {salve = "epidermal to body", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_body_odor = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_bulimia = {state = "healed", effect = "vomit the next thing you eat", cures = {}, assess = false, timer = createStopWatch()},
 aff_burnt_eyes = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_burnt_skin = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
@@ -4522,7 +4519,6 @@ aff_claustrophobia = {state = "healed", effect = "", cures = {herb = "lobelia", 
 aff_clumsiness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_cold_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_collapsed_lung = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
-aff_commitment_fear = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_confusion = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_conviction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_corsin_weight = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4554,10 +4550,10 @@ aff_eldritch_invocation = {state = "healed", effect = "", cures = {}, assess = f
 aff_electric_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_echoes = {state = "healed", effect = "", cures = {herb = "eucrasia"}, assess = false, timer = createStopWatch()},
 aff_emberbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_egocentric = {state = "healed", effect = "can't help others", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_egocentrism = {state = "healed", effect = "can't help others", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_embedded_axe = {state = "healed", effect = "does major limb damage when pulled", cures = {balanceequilibrium = "pull axe from me"}, assess = false, timer = createStopWatch()},
 aff_epilepsy = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
-aff_exhausted = {state = "healed", effect = "dodge cut in half, slower movement", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_exhaustion = {state = "healed", effect = "dodge cut in half, slower movement", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_farag_rot = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_faintness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_fear = {state = "healed", effect = "", cures = {special = "compose"}, assess = false, timer = createStopWatch()},
@@ -4586,7 +4582,7 @@ aff_head_bruised_moderate = {state = "healed", effect = "", cures = {salve = "me
 aff_head_broken = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_mangled = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
-aff_heartflutter = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_arrhythmia = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hellsight = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_heatspear = {state = "healed", effect = "can't cure ablaze", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_hollow = {state = "healed", effect = "mana drain + aff if alone", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -4606,10 +4602,9 @@ aff_impatience = {state = "healed", effect = "", cures = {herb = "goldenseal", t
 aff_indifference = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_infernal_seal = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infernal_shroud = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_infested = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_infestation = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_insomnia = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_irradiated_limb = {state = "healed", effect = "more damage from bolt", cures = {}, assess = false, timer = createStopWatch()},
-aff_itchy = {state = "healed", effect = "tree has to cure this first always", cures = { tree = "send" }, assess = false, timer = createStopWatch()},
 aff_intimidated = {state = "healed", effect = "can't heal above 90%", cures = {}, assess = false, timer = createStopWatch()},
 aff_justice = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_laxity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -4639,9 +4634,9 @@ aff_lesser_atrophy = {state = "healed", effect = "do less damage", cures = {}, t
 aff_lethargy = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_lifebane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lightwound = {state = "healed", effect = "extra bleeding", cures = {salve = "mending to body"}, assess = false, timer = createStopWatch()},
-aff_limp_veins = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_loneliness = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
-aff_lovers_effect = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_hypotension = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_loneliness = {state = "healed", effect = "", cures = {herb = "eucrasia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_infatuation = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_magic_fire = {state = "healed", effect = "ablaze mask aff", cures = {salve = "mending"}, assess = false, timer = createStopWatch()},
 aff_magic_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_magnanimity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4650,9 +4645,9 @@ aff_manablight = {state = "healed", effect = "mana loss on torso hit", cures = {
 aff_marked  = {state = "healed", effect = "marked by a mage", cures = {}, assess = false, timer = createStopWatch()},
 aff_masochism = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_mauled_face = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
-aff_mental_disruption = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_delirium = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_mental_fatigue = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_merciful = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_mercy = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_migraine = {state = "healed", effect = "", cures = {smoke = "valerian", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_turmoil = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_mind_clamped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4676,10 +4671,10 @@ aff_paranoia = {state = "healed", effect = "", cures = {herb = "ash", tree = "se
 aff_patterns = {state = "healed", effect = "", cures = {herb = "panacea", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_peace = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_penance = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_perplexed = {state = "healed", effect = "can't manipulate items", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_perplexity = {state = "healed", effect = "can't manipulate items", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_petrified = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_plodding = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_physical_disruption = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_extravasation = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_polymorph = {state = "healed", effect = "divine only? unsure", cures = {}, assess = false, timer = createStopWatch()},
 aff_poison_weakness = {state = "healed", effect = "more dmg from poison source", cures = {}, assess = false, timer = createStopWatch()},
 aff_pre_restore_head = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
@@ -4749,7 +4744,7 @@ aff_sealing_square = {state = "healed", effect = "square affs cant be cured by p
 aff_sealing_triangle = {state = "healed", effect = "triangle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
 aff_selarnia = {state = "healed", effect = "", cures = {salve = "mending to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_self_loathing = {state = "healed", effect = "5s bal knock if left on for 12s", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
-["aff_self-pity"] = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_self_pity = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_seduction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sensitivity = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_stoneheld = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
@@ -4784,7 +4779,7 @@ aff_superstition = {state = "healed", effect = "", cures = {herb = "bellwort", t
 aff_temptation = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_taunted = {state = "healed", effect = "can only hit who taunted you", cures = {}, assess = false, timer = createStopWatch()},
 aff_terror = {state = "healed", effect = "prevents ability to compose", cures = {}, assess = false, timer = createStopWatch()},
-aff_thin_blood = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_dyscrasia = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_thorns = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_throatclaw = {state = "healed", effect = "", cures = {salve = "mending to head", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_throatslice = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4813,7 +4808,6 @@ aff_whiplash = {state = "healed", effect = "head dmg", cures = {tree = "send", s
 aff_windbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_winterheart = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_withering = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_worrywart = {state = "healed", effect = "eucrasia anxiety", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_wraith = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_writhe_armpitlock = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_bind = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
@@ -4937,13 +4931,14 @@ aff_fragments = {state = "healed", effect = "", cures = {}, assess = false, time
 aff_immobility = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
 aff_timewarped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_inaccuracy = {state = "healed", effect = "Reduced accuracy", cures = {}, assess = false, timer = createStopWatch()},
+
 aff_mindfog = {state = "healed", effect = "Can't cure mentals", cures = {salve = "caloric to head"}, assess = false, timer = createStopWatch()},
 aff_phosphenes = {state = "healed", effect = "Head trauma knocks eq", cures = {salve = "soothing to head"}, assess = false, timer = createStopWatch()},
 }</script>
 								<eventHandlerList />
 							</Script>
 							<Script isActive="yes" isFolder="no">
-								<name>give/take afflictions</name>
+								<name>give take afflictions</name>
 								<packageName></packageName>
 								<script>
 function snd.aff_check()
@@ -4961,6 +4956,20 @@ end
 function snd.aff_timeout(affliction)
  snd.afflictions[affliction].state = "afflicted"
  snd.message("[Resetting: &lt;white&gt;"..affliction.."&lt;brown&gt;]", "reset")
+end
+
+function snd.remove_all_affs()
+  snd.defer_ui_update = true
+
+  for i in pairs(snd.afflictions) do
+    snd.aff_remove(i)
+  end
+
+  snd.hidden_afflictions = 0
+
+  snd.defer_ui_update = nil
+  raiseEvent("sunder_my_affs_updated")
+  raiseEvent("sunder_my_limbs_updated")
 end
 
 function snd.aff_gain(affliction)
@@ -5070,9 +5079,9 @@ function snd.aff_diag(affliction)
 end
 
 function snd.aff_cure(affliction)
- snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
- snd.aff_remove(affliction)
-   if affliction == "asthma" then
+  snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
+  snd.aff_remove(affliction)
+  if affliction == "asthma" then
     snd.need_fitness = false
   end
 end
@@ -5253,7 +5262,7 @@ function snd.calc.writhetime()
     end
   end
   local time = 2 + (.7 * physcount)
-  if snd.checkAff("physical_disruption") then
+  if snd.checkAff("extravasation") then
     time = time + 1
   end
   return time
@@ -6840,7 +6849,7 @@ end</script>
 		guild = guild,
 		xp_rank = xp_rank,
 		city = city,
-		level = level,
+		--level = level,
 		class = class,
     race = race,
     tether = tether
@@ -12459,7 +12468,7 @@ snd.vermin = 0</script>
 {area = "the village of Kornar", level = "25-35", targets = {"a necromantic guard", "a conjured wraith", "a Bloodloch soldier", "a Bloodloch lich", "an undead villager", "a female villager", "Mala, the Artisan", "an undead minion", "Firthar", "Rovena, the widow", "Moritsio, Owner of the Pub", "an undead child", "Igrar, Captain of the Gral", "a wealthy sailor", "a cautious captain", "a weathered sailor", "a young sailor" } },
 {area = "the Centipede Cave", level = "25-35", targets = {"a large centipede", "a skittering centipede", "a chitinous centipede", "a venomous centipede", "a juvenile centipede", "a massive centipede queen"}, items = {}},
 {area = "Riparium", level = "25-50", targets = {"a large red crab", "a moray eel", "a mantaglow fish", "a large, deepwater salmon", "an angler fish"}, items = {}},
---{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
+{area = "Tainhelm", level = "30-40", targets = { "a stout Dwarven guard", "an elderly female Dwarf", "an elderly Dwarven man", "a calm Dwarven woman", "an elderly dwarf", "a tanned Dwarven farmer", "a female Dwarf", "an elderly Dwarven gardener", "a male Dwarf", "a Dwarven craftsman", "the Dwarven alemaster", "a Dwarven boy", "Gwenil, the Dwarven blacksmith", "Baruin, the Dwarven mason", "a Dwarven miner", "Tohrul, the Dwarven supervisor", "a Dwarven girl", "a Dwarven boy", "Nolid, the Dwarven fisherman", "the Dwarven miller", "Mayor Thurgil Redstein", "a liveried Dwarf servant"} },
 {area = "the Siroccian Mountains", level = "30+", targets = {"a vicious wolverine", "a powerful wolverine"}},
 {area = "the Festering Wastes", level = "30-40", targets = {"a darkly patterned sand viper", "a gray, spotted bobcat", "a ragged brown coyote", "a tiny black scorpion", "a deep green lizard", "a shivering jackrabbit", "a small yellow rattlesnake"}, items = {}},
 {area = "Halls of Tornos", level = "30-40", targets = {"a speckled tinyok", "a snowy armadilleon", "a malformed beast", "a botched phase-hound", "a rabid blood-fiend", "a crazed blood-fiend", "a mutated blood-fiend"}},
@@ -12482,7 +12491,8 @@ snd.vermin = 0</script>
 {area = "the Undercity of Djeir", level = "50+", targets = {"a gargantuan spider", "a mutated crawler fish", "a striped siriskal fish", "an electric eel", "an elusive black fish", "a giant squid", "a monstrous coelacanth", "a carnivorous weed", "a fearsome Suria serpent"}},
 {area = "the Three Rock Outpost", level = "60+", targets = {"a huge, scarred wildcat","a beautiful wild horse","a mountain wildcat",  "a wildcat kitten", "a long-haired buffalo", "an enormous Troll bandit","a shifty bandit", "the cave bear, White Ghost"}},
 {area = "the village of Bihrkaen", level = "60-80", targets = {"a grotesque snapping turtle", "a mire hound", "a bog hound", "a mire pup", "an alpha female hound", "a slender mud adder", "a speckled, brown turtle", "an alpha male hound"}},
-{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf", "a large, snowy fox", "silver-feathered orel", "a large bhfaol", "a gargantuan Augerweald rabbit", "a tall, white elk", }},
+--{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf", "a large, snowy fox", "silver-feathered orel", "a large bhfaol", "a gargantuan Augerweald rabbit", "a tall, white elk", }},
+{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf",}},
 {area = "the Fractal Bloom", level = "65+", targets = {"a towering crystalline entity", "a slender crystalline entity", "a radiant crystalline entity", "a squat crystalline entity", "a fractured crystalline entity", "a faceted crystalline entity"}}, 
 {area = "the Kalydian Forest", level = "65+", targets = {"a gaunt elk",  "a rabid rabbit", "a ravenous squirrel"}},
 {area = "the Salma Settlement", level = "70-80", targets = {"a busy mage", "a bemused artist", "an engrossed scholar", "an ordinary woman", "a dark-haired woman", "a Salmati guard", "a dark-furred bear", "a Salmati warrior", "a common man", "an energetic child", "an unclean miner", "a wild-eyed scientist"}},
@@ -12576,7 +12586,7 @@ snd.vermin = 0</script>
 {area = "the Den of Shadows", level = "99+", targets ={"Match:a %a+ krait", "Match:a %a+ python", "Match:a %a+ sidewinder", "Match:a %a+ boa", "Match:a %a+ adder", "Match:a %a+ cobra", "a horribly-mutated experiment", "a mutated child",}},
 {area = "a volcanic island", level = "99+", targets = {  "a many-legged cinder crawler", "a sinuous elemental of acerbic smoke",  "an enraged hyriamah", "a firebound terror", "a cumbrous magma beast", "a fierce, lithely limbed firedancer", }},
 {area = "a dimly lit subterranean river", level = "99+", targets = {"an iridescent bubble of elemental energies", "a long-finned, cerulean amphibian", "a billowing cloud of shifting luminescence", "a spiny many-armed water elemental", "a tempestuous wave elemental", "a shimmering piscine elemental"}},
-{area = "the Offspring", level = "90+", targets = {"a pudgy water badger", "a flat-snouted scaled sheep", "a chromatic aquatic dragonfly", " a muscular freshwater hound", "a long-tailed bullfrog", "an amphibious, ebon-winged hawk", "a predatory river canine",}},
+{area = "the Offspring", level = "90+", targets = {"a pudgy water badger", "a flat-snouted scaled sheep", "a chromatic aquatic dragonfly", "a muscular freshwater hound", "a long-tailed bullfrog", "an amphibious, ebon-winged hawk", "a predatory river canine",}},
 {area = "Endless Battlefield", level = "90+", targets = {"a blood-drenched soldier wielding a claymore", "a blood-drenched swordsman", "a blood-drenched spear fighter", "a blood-drenched archer",}},
 {area = "Sunwash Ascent", level = "90", targets = {"a menacing vrukh lurker", "a vrukh clutch-matron", "a grotesque, battle-torn vrukh", "a gnarled, decrepit vrukh", "a vicious, maimed vrukh", "a bald fledgling vrukh", "a disgusting fledgling vrukh",}},
 {area = "Beggar's Barrow", level = "99", targets = {"a wiry Aslinn cutthroat", "a morose Golban outcast", "a lithe Caentoi cutthroat", "an indolent Golban mercenary", "a scrawny Aslinn mercenary", "a bedraggled Caentoi outcast", "a one-legged Aslinn beggar", "a mangy Caentoi beggar",}},
@@ -24463,7 +24473,7 @@ function snd.load_targets(area)
    for h in ipairs(snd.possible_targets) do
     echo("\n "..snd.possible_targets[h])
    end
-   if areas[i].items then
+   if areas[i].items and gmcp.Room.Info.name ~= "Hidden Cavern" then
     snd.possible_items = areas[i].items
     cecho("\n&lt;green&gt;Gathering Items:")
     for k in ipairs(snd.possible_items) do
@@ -24483,7 +24493,7 @@ end</script>
 						<packageName></packageName>
 						<script>
 function snd.do_loot()
- if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
+ if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 and gmcp.Room.Info.name ~= "Hidden Cavern" then
   if snd.can_cast() and not snd.waiting.loot then
    snd.loot_it()
   end
@@ -24495,7 +24505,7 @@ function snd.loot_it()
  --for i in ipairs(snd.corpses) do
   --snd.send("get "..snd.corpses[i])
  --end
- for h in ipairs(snd.gathering) do
+ for h in ipairs(snd.gathering) do --and gmcp.Room.Info.name ~= "Hidden Cavern" 
     if not snd.toggles.attacking then
       snd.send("get "..snd.gathering[h])
     end
@@ -24517,6 +24527,9 @@ end</script>
 						<packageName></packageName>
 						<script>
 snd.global_items = {
+"a sample of fur and hide",
+"a dirt sample",
+"a delicate flora sample",
 "an antipsychotic pill",
 "a decongestant pill",
 "a steroid pill",
@@ -24916,12 +24929,12 @@ function snd.bashing_function()
         battack = "nimbleness"..snd.sep..battack..snd.sep
       end 
     
-			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 and snd.ylem_check then battack = battack..snd.sep.."absorb ylem" end -- if you have a level 2 gauntlet, auto-absorb
+			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep.."absorb ylem" end -- if you have a level 2 gauntlet, auto-absorb
       
       if battack == "" and not snd.defenses.def_reflection.state == "deffed" then -- if the basher couldn't change battack to something from your class, it will give an error
         echo("\nTried to bash, no class ability set.")
-      elseif battack ~= snd.last_attack and not snd.ylem_check then -- if your battack isn't the same as your last attempted attack, and you aren't trying to capture ylem
-        snd.last_attack = battack -- ATTACK
+      elseif battack ~= snd.last_attack then -- if your battack isn't the same as your last attempted attack, and you aren't trying to capture ylem
+        snd.last_attack = battack -- ATTACK and not snd.ylem_check
         if battack ~= "none" then -- if for some reason it's none as your attack, stand
           snd.send("qeb stand"..snd.sep..snd.last_attack)
         end
@@ -25076,7 +25089,7 @@ end
 function snd.executor_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	
-  if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria") or snd.have_aff("baldness")))) or snd.aff_tally() &gt; 6 then
+  if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
     battack = "grit"
   elseif (hp &lt;= 30 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
     battack = "touch shield"
@@ -27271,7 +27284,7 @@ function snd.purge_check()
     
     if #purgable &gt;= purge_threshold then
       return true
-    elseif (snd.have_aff("physical_disruption") and snd.cureset == "templar" ) and #purgable &gt;= 2 then
+    elseif (snd.have_aff("extravasation") and snd.cureset == "templar" ) and #purgable &gt;= 2 then
       return true
     else
       return false
@@ -27382,15 +27395,13 @@ function snd.rage_check()
 
   local rage_affs = {
     "aff_hubris",
-  "aff_pacifism",
   "aff_peace",
   "aff_agony",
   "aff_accursed",
-  "aff_limp_veins",
-  "aff_lovers_effect",
+  "aff_hypotension",
+  "aff_infatuation",
   "aff_laxity",
   "aff_superstition",
-  "aff_generosity",
   "aff_justice",
   "aff_magnanimity",}
   
@@ -27623,9 +27634,6 @@ if snd.cureset == "none" then
   if snd.firstaidcuretrack.dazed ~= "2" and not table.contains(snd.setting_priority, "dazed 2") then
     table.insert(snd.setting_priority, "dazed 2")     
   end 
-  if snd.firstaidcuretrack.itchy ~= "2" and not table.contains(snd.setting_priority, "itchy 2") then
-    table.insert(snd.setting_priority, "itchy 2")     
-  end
   if snd.firstaidcuretrack.vinethorns ~= "4" and not table.contains(snd.setting_priority, "vinethorns 4") then
     table.insert(snd.setting_priority, "vinethorns 4")     
   end
@@ -27646,8 +27654,8 @@ if snd.cureset == "none" then
   if snd.firstaidcuretrack.crippled_body ~= "1" and not table.contains(snd.setting_priority, "crippled_body 1") then
     table.insert(snd.setting_priority, "crippled_body 1")     
   end
-	if snd.firstaidcuretrack.exhausted ~= "2" and not table.contains(snd.setting_priority, "exhausted 2") then
-	  table.insert(snd.setting_priority, "exhausted 2")     
+	if snd.firstaidcuretrack.exhaustion ~= "2" and not table.contains(snd.setting_priority, "exhaustion 2") then
+	  table.insert(snd.setting_priority, "exhaustion 2")     
 	end
 	if snd.firstaidcuretrack.loneliness ~= "2" and not table.contains(snd.setting_priority, "loneliness 2") then
 		table.insert(snd.setting_priority, "loneliness 2")     
@@ -27661,11 +27669,11 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.vertigo ~= "3" and not table.contains(snd.setting_priority, "vertigo 3") then
 		table.insert(snd.setting_priority, "vertigo 3")     
 	end
-	if snd.firstaidcuretrack.blighted ~= "3" and not table.contains(snd.setting_priority, "blighted 3") then
-		table.insert(snd.setting_priority, "blighted 3")     
+	if snd.firstaidcuretrack.blight ~= "3" and not table.contains(snd.setting_priority, "blight 3") then
+		table.insert(snd.setting_priority, "blight 3")     
 	end
-	if snd.firstaidcuretrack.infested ~= "3" and not table.contains(snd.setting_priority, "infested 3") then
-		table.insert(snd.setting_priority, "infested 3")     
+	if snd.firstaidcuretrack.infestation ~= "3" and not table.contains(snd.setting_priority, "infestation 3") then
+		table.insert(snd.setting_priority, "infestation 3")     
 	end 
   if snd.firstaidcuretrack.self_loathing ~= "3" and not table.contains(snd.setting_priority, "self_loathing 3") then
     table.insert(snd.setting_priority, "self_loathing 3")		 
@@ -27673,14 +27681,11 @@ if snd.cureset == "none" then
   if snd.firstaidcuretrack.deafness ~= "3" and not table.contains(snd.setting_priority, "defence deafness 3") then
     table.insert(snd.setting_priority, "defence deafness 3")     
   end
-  if snd.firstaidcuretrack.perplexed ~= "4" and not table.contains(snd.setting_priority, "perplexed 4") then
-    table.insert(snd.setting_priority, "perplexed 4")		 
+  if snd.firstaidcuretrack.perplexity ~= "4" and not table.contains(snd.setting_priority, "perplexity 4") then
+    table.insert(snd.setting_priority, "perplexity 4")		 
   end
-	if snd.firstaidcuretrack.thin_blood ~= "4" and not table.contains(snd.setting_priority, "thin_blood 4") then
-		table.insert(snd.setting_priority, "thin_blood 4")
-	end
-	if snd.firstaidcuretrack.baldness ~= "4" and not table.contains(snd.setting_priority, "baldness 4") then
-		table.insert(snd.setting_priority, "baldness 4")     
+	if snd.firstaidcuretrack.dyscrasia ~= "4" and not table.contains(snd.setting_priority, "dyscrasia 4") then
+		table.insert(snd.setting_priority, "dyscrasia 4")
 	end
 	if snd.firstaidcuretrack.addiction ~= "4" and not table.contains(snd.setting_priority, "addiction 4") then
 		table.insert(snd.setting_priority, "addiction 4")
@@ -27721,17 +27726,17 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.accursed ~= "7" and not table.contains(snd.setting_priority, "accursed 7") then
 		table.insert(snd.setting_priority, "accursed 7")     
 	end
-	if snd.firstaidcuretrack.merciful ~= "7" and not table.contains(snd.setting_priority, "merciful 7") then
-		table.insert(snd.setting_priority, "merciful 7")     
+	if snd.firstaidcuretrack.mercy ~= "7" and not table.contains(snd.setting_priority, "mercy 7") then
+		table.insert(snd.setting_priority, "mercy 7")     
 	end
-	if snd.firstaidcuretrack.heartflutter ~= "7" and not table.contains(snd.setting_priority, "heartflutter 7") then
-		table.insert(snd.setting_priority, "heartflutter 7")     
+	if snd.firstaidcuretrack.arrhythmia ~= "7" and not table.contains(snd.setting_priority, "arrhythmia 7") then
+		table.insert(snd.setting_priority, "arrhythmia 7")     
 	end
-	if snd.firstaidcuretrack.blood_poison ~= "8" and not table.contains(snd.setting_priority, "blood_poison 8") then
-		table.insert(snd.setting_priority, "blood_poison 8")     
+	if snd.firstaidcuretrack.sepsis ~= "8" and not table.contains(snd.setting_priority, "sepsis 8") then
+		table.insert(snd.setting_priority, "sepsis 8")     
 	end
-	if snd.firstaidcuretrack.blood_curse ~= "8" and not table.contains(snd.setting_priority, "blood_curse 8") then
-		table.insert(snd.setting_priority, "blood_curse 8")     
+	if snd.firstaidcuretrack.psychosis ~= "8" and not table.contains(snd.setting_priority, "psychosis 8") then
+		table.insert(snd.setting_priority, "psychosis 8")     
 	end
 	if snd.firstaidcuretrack.paresis ~= "8" and not table.contains(snd.setting_priority, "paresis 8") then
 		table.insert(snd.setting_priority, "paresis 8")     
@@ -27751,14 +27756,11 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.peace ~= "9" and not table.contains(snd.setting_priority, "peace 9") then
 		table.insert(snd.setting_priority, "peace 9")     
 	end
-	if snd.firstaidcuretrack.lovers_effect ~= "10" and not table.contains(snd.setting_priority, "lovers_effect 10") then
-		table.insert(snd.setting_priority, "lovers_effect 10")     
+	if snd.firstaidcuretrack.infatuation ~= "10" and not table.contains(snd.setting_priority, "infatuation 10") then
+		table.insert(snd.setting_priority, "infatuation 10")     
 	end
 	if snd.firstaidcuretrack.lethargy ~= "10" and not table.contains(snd.setting_priority, "lethargy 10") then
 		table.insert(snd.setting_priority, "lethargy 10")     
-	end
-	if snd.firstaidcuretrack.generosity ~= "10" and not table.contains(snd.setting_priority, "generosity 10") then
-		table.insert(snd.setting_priority, "generosity 10")     
 	end
 	if snd.firstaidcuretrack.justice ~= "10" and not table.contains(snd.setting_priority, "justice 10") then
 		table.insert(snd.setting_priority, "justice 10")     
@@ -27766,17 +27768,14 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.mirroring ~= "11" and not table.contains(snd.setting_priority, "mirroring 11") then
 		table.insert(snd.setting_priority, "mirroring 11")     
 	end
-	if snd.firstaidcuretrack.egocentric ~= "11" and not table.contains(snd.setting_priority, "egocentric 11") then
-		table.insert(snd.setting_priority, "egocentric 11")     
+	if snd.firstaidcuretrack.egocentrism ~= "11" and not table.contains(snd.setting_priority, "egocentrism 11") then
+		table.insert(snd.setting_priority, "egocentrism 11")     
 	end
 	if snd.firstaidcuretrack.laxity ~= "11" and not table.contains(snd.setting_priority, "laxity 11") then
 		table.insert(snd.setting_priority, "laxity 11")     
 	end
 	if snd.firstaidcuretrack.crippled ~= "11" and not table.contains(snd.setting_priority, "crippled 11") then
 		table.insert(snd.setting_priority, "crippled 11")     
-	end
-	if snd.firstaidcuretrack.body_odor ~= "12" and not table.contains(snd.setting_priority, "body_odor 12") then
-		table.insert(snd.setting_priority, "body_odor 12")
 	end
 	if snd.firstaidcuretrack.slough ~= "12" and not table.contains(snd.setting_priority, "slough 12") then
 		table.insert(snd.setting_priority, "slough 12")     
@@ -27790,11 +27789,11 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.magnanimity ~= "13" and not table.contains(snd.setting_priority, "magnanimity 13") then
 		table.insert(snd.setting_priority, "magnanimity 13")     
 	end
-	if snd.firstaidcuretrack.mental_disruption ~= "13" and not table.contains(snd.setting_priority, "mental_disruption 13") then
-		table.insert(snd.setting_priority, "mental_disruption 13")     
+	if snd.firstaidcuretrack.delirium ~= "13" and not table.contains(snd.setting_priority, "delirium 13") then
+		table.insert(snd.setting_priority, "delirium 13")     
 	end
-	if snd.firstaidcuretrack.physical_disruption ~= "13" and not table.contains(snd.setting_priority, "physical_disruption 13") then
-		table.insert(snd.setting_priority, "physical_disruption 13")     
+	if snd.firstaidcuretrack.extravasation ~= "13" and not table.contains(snd.setting_priority, "extravasation 13") then
+		table.insert(snd.setting_priority, "extravasation 13")     
 	end
 	if snd.firstaidcuretrack.allergies ~= "13" and not table.contains(snd.setting_priority, "allergies 13") then
 		table.insert(snd.setting_priority, "allergies 13")     
@@ -27811,11 +27810,8 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.hallucinations ~= "14" and not table.contains(snd.setting_priority, "hallucinations 140") then
 		table.insert(snd.setting_priority, "hallucinations 14")     
 	end
-	if snd.firstaidcuretrack.commitment_fear ~= "15" and not table.contains(snd.setting_priority, "commitment_fear 15") then
-		table.insert(snd.setting_priority, "commitment_fear 15")
-	end
-	if snd.firstaidcuretrack.berserking ~= "15" and not table.contains(snd.setting_priority, "berserking 15") then
-		table.insert(snd.setting_priority, "berserking 15")     
+	if snd.firstaidcuretrack.mania ~= "15" and not table.contains(snd.setting_priority, "mania 15") then
+		table.insert(snd.setting_priority, "mania 15")     
 	end
 	if snd.firstaidcuretrack.masochism ~= "15" and not table.contains(snd.setting_priority, "masochism 15") then
 		table.insert(snd.setting_priority, "masochism 15")     
@@ -27823,11 +27819,11 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.agoraphobia ~= "15" and not table.contains(snd.setting_priority, "agoraphobia 15") then
 		table.insert(snd.setting_priority, "agoraphobia 15")     
 	end
-	if snd.firstaidcuretrack.claustrophobia ~= "16" and not table.contains(snd.setting_priority, "claustrophobia 16") then
-		table.insert(snd.setting_priority, "claustrophobia 16")     
+	if snd.firstaidcuretrack.claustrophobia ~= "15" and not table.contains(snd.setting_priority, "claustrophobia 15") then
+		table.insert(snd.setting_priority, "claustrophobia 15")     
 	end
-	if snd.firstaidcuretrack.self_pity ~= "16" and not table.contains(snd.setting_priority, "self-pity 16") then
-		table.insert(snd.setting_priority, "self-pity 16")     
+	if snd.firstaidcuretrack.self_pity ~= "16" and not table.contains(snd.setting_priority, "self_pity 16") then
+		table.insert(snd.setting_priority, "self_pity 16")     
 	end
 	if snd.firstaidcuretrack.stupidity ~= "16" and not table.contains(snd.setting_priority, "stupidity 16") then
 		table.insert(snd.setting_priority, "stupidity 16")     
@@ -27835,8 +27831,8 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.epilepsy ~= "16" and not table.contains(snd.setting_priority, "epilepsy 16") then
 		table.insert(snd.setting_priority, "epilepsy 16")     
 	end
-	if snd.firstaidcuretrack.faintness ~= "17" and not table.contains(snd.setting_priority, "faintness 17") then
-		table.insert(snd.setting_priority, "faintness 17")     
+	if snd.firstaidcuretrack.faintness ~= "16" and not table.contains(snd.setting_priority, "faintness 16") then
+		table.insert(snd.setting_priority, "faintness 16")     
 	end
 	if snd.firstaidcuretrack.shyness ~= "17" and not table.contains(snd.setting_priority, "shyness 17") then
 		table.insert(snd.setting_priority, "shyness 17")     
@@ -27847,20 +27843,17 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.dissonance ~= "17" and not table.contains(snd.setting_priority, "dissonance 17") then
 		table.insert(snd.setting_priority, "dissonance 17")     
 	end
-	if snd.firstaidcuretrack.hubris ~= "18" and not table.contains(snd.setting_priority, "hubris 18") then
-		table.insert(snd.setting_priority, "hubris 18")     
+	if snd.firstaidcuretrack.hubris ~= "17" and not table.contains(snd.setting_priority, "hubris 17") then
+		table.insert(snd.setting_priority, "hubris 17")     
 	end 
   if snd.firstaidcuretrack.narcolepsy ~= "18" and not table.contains(snd.setting_priority, "narcolepsy 18") then
     table.insert(snd.setting_priority, "narcolepsy 18")     
   end 
-	if snd.firstaidcuretrack.pacifism ~= "18" and not table.contains(snd.setting_priority, "pacifism 18") then
-		table.insert(snd.setting_priority, "pacifism 18")     
-	end
 	if snd.firstaidcuretrack.patterns ~= "18" and not table.contains(snd.setting_priority, "patterns 18") then
 		table.insert(snd.setting_priority, "patterns 18")     
 	end
-	if snd.firstaidcuretrack.recklessness ~= "19" and not table.contains(snd.setting_priority, "recklessness 19") then
-		table.insert(snd.setting_priority, "recklessness 19")     
+	if snd.firstaidcuretrack.recklessness ~= "18" and not table.contains(snd.setting_priority, "recklessness 18") then
+		table.insert(snd.setting_priority, "recklessness 18")     
 	end
 	if snd.firstaidcuretrack.dementia ~= "19" and not table.contains(snd.setting_priority, "dementia 19") then
 		table.insert(snd.setting_priority, "dementia 19")     
@@ -28355,8 +28348,8 @@ end</script>
 	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
 		table.insert(snd.setting_priority, "clumsiness 1")   
 	end	
-	if snd.firstaidcuretrack.mental_disruption ~= "2" and not table.contains(snd.setting_priority, "mental_disruption 2")	then
-		table.insert(snd.setting_priority, "mental_disruption 2")		 
+	if snd.firstaidcuretrack.delirium ~= "2" and not table.contains(snd.setting_priority, "delirium 2")	then
+		table.insert(snd.setting_priority, "delirium 2")		 
 	end	
 	if snd.firstaidcuretrack.impairment ~= "2" and not table.contains(snd.setting_priority, "impairment 2") then
 		table.insert(snd.setting_priority, "impairment 2")   
@@ -28382,8 +28375,8 @@ end</script>
 	if snd.firstaidcuretrack.blisters ~= "4" and not table.contains(snd.setting_priority, "blisters 4") then
 		table.insert(snd.setting_priority, "blisters 4")   
 	end	
-	if snd.firstaidcuretrack.exhausted ~= "4" and not table.contains(snd.setting_priority, "exhausted 4") then
-		table.insert(snd.setting_priority, "exhausted 4")   
+	if snd.firstaidcuretrack.exhaustion ~= "4" and not table.contains(snd.setting_priority, "exhaustion 4") then
+		table.insert(snd.setting_priority, "exhaustion 4")   
 	end	
 	if snd.firstaidcuretrack.hallucinations ~= "4" and not table.contains(snd.setting_priority, "hallucinations 4") then
 		table.insert(snd.setting_priority, "hallucinations 4")		 
@@ -28397,20 +28390,20 @@ end</script>
 	if snd.firstaidcuretrack.epilepsy ~= "5" and not table.contains(snd.setting_priority, "epilepsy 5") then
 		table.insert(snd.setting_priority, "epilepsy 5")		 
 	end	
-	if snd.firstaidcuretrack.merciful ~= "5" and not table.contains(snd.setting_priority, "merciful 5") then
-		table.insert(snd.setting_priority, "merciful 5")		 
+	if snd.firstaidcuretrack.mercy ~= "5" and not table.contains(snd.setting_priority, "mercy 5") then
+		table.insert(snd.setting_priority, "mercy 5")		 
 	end	
 	if snd.firstaidcuretrack.peace ~= "5" and not table.contains(snd.setting_priority, "peace 5") then
 		table.insert(snd.setting_priority, "peace 5")		 
 	end
-	if snd.firstaidcuretrack.lovers_effect ~= "6" and not table.contains(snd.setting_priority, "lovers_effect 6")	then
-		table.insert(snd.setting_priority, "lovers_effect 6")		 
+	if snd.firstaidcuretrack.infatuation ~= "6" and not table.contains(snd.setting_priority, "infatuation 6")	then
+		table.insert(snd.setting_priority, "infatuation 6")		 
 	end
 	if snd.firstaidcuretrack.masochism ~= "6" and not table.contains(snd.setting_priority, "masochism 6") then
 		table.insert(snd.setting_priority, "masochism 6")		 
 	end	
-	if snd.firstaidcuretrack.berserking ~= "6" and not table.contains(snd.setting_priority, "berserking 6") then
-		table.insert(snd.setting_priority, "berserking 6")		 
+	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
+		table.insert(snd.setting_priority, "mania 6")		 
 	end	
 	if snd.firstaidcuretrack.dizziness ~= "6" and not table.contains(snd.setting_priority, "dizziness 6") then
 		table.insert(snd.setting_priority, "dizziness 6")		 
@@ -28424,14 +28417,11 @@ end</script>
 	if snd.firstaidcuretrack.shyness ~= "7" and not table.contains(snd.setting_priority, "shyness 7") then
 		table.insert(snd.setting_priority, "shyness 7")		 
 	end	
-	if snd.firstaidcuretrack.physical_disruption ~= "7" and not table.contains(snd.setting_priority, "physical_disruption 7") then
-		table.insert(snd.setting_priority, "physical_disruption 7")   
+	if snd.firstaidcuretrack.extravasation ~= "7" and not table.contains(snd.setting_priority, "extravasation 7") then
+		table.insert(snd.setting_priority, "extravasation 7")   
 	end	
 	if snd.firstaidcuretrack.laxity ~= "8" and not table.contains(snd.setting_priority, "laxity 8")	then
 		table.insert(snd.setting_priority, "laxity 8")		 
-	end
-	if snd.firstaidcuretrack.pacifism ~= "8" and not table.contains(snd.setting_priority, "pacifism 8")	then
-		table.insert(snd.setting_priority, "pacifism 8")		 
 	end
 	if snd.firstaidcuretrack.hypochondria ~= "8" and not table.contains(snd.setting_priority, "hypochondria 8")	then
 		table.insert(snd.setting_priority, "hypochondria 8")		 
@@ -28448,8 +28438,8 @@ end</script>
 	if snd.firstaidcuretrack.vertigo ~= "9" and not table.contains(snd.setting_priority, "vertigo 9")	then
 		table.insert(snd.setting_priority, "vertigo 9")		 
 	end
-	if snd.firstaidcuretrack.egocentric ~= "9" and not table.contains(snd.setting_priority, "egocentric 9")	then
-		table.insert(snd.setting_priority, "egocentric 9")		 
+	if snd.firstaidcuretrack.egocentrism ~= "9" and not table.contains(snd.setting_priority, "egocentrism 9")	then
+		table.insert(snd.setting_priority, "egocentrism 9")		 
 	end	
 	if snd.firstaidcuretrack.sadness ~= "10" and not table.contains(snd.setting_priority, "sadness 10")	then
 		table.insert(snd.setting_priority, "sadness 10")		 
@@ -28581,14 +28571,14 @@ function snd.firstaidassAscendril()
 end
 
 function snd.firstaidassBard() 
-	if snd.firstaidcuretrack.perplexed ~= "1" and not table.contains(snd.setting_priority, "perplexed 1") then
-	table.insert(snd.setting_priority, "perplexed 1")		 
+	if snd.firstaidcuretrack.perplexity ~= "1" and not table.contains(snd.setting_priority, "perplexity 1") then
+	table.insert(snd.setting_priority, "perplexity 1")		 
 	end
 	if snd.firstaidcuretrack.shyness ~= "1" and not table.contains(snd.setting_priority, "shyness 1") then
 	table.insert(snd.setting_priority, "shyness 1")		 
 	end 
-	if snd.firstaidcuretrack.worrywart ~= "1" and not table.contains(snd.setting_priority, "worrywart 1") then
-	table.insert(snd.setting_priority, "worrywart 1")		 
+	if snd.firstaidcuretrack.hopelessness ~= "1" and not table.contains(snd.setting_priority, "hopelessness 1") then
+	table.insert(snd.setting_priority, "hopelessness 1")		 
 	end 
 	if snd.firstaidcuretrack.misery ~= "1" and not table.contains(snd.setting_priority, "misery 1") then
 	table.insert(snd.setting_priority, "misery 1")		 
@@ -28623,11 +28613,11 @@ function snd.firstaidassBard()
 	if snd.firstaidcuretrack.vomiting ~= "4" and not table.contains(snd.setting_priority, "vomiting 4") then
 	table.insert(snd.setting_priority, "vomiting 4")		 
 	end 
-	if snd.firstaidcuretrack.exhausted ~= "4" and not table.contains(snd.setting_priority, "exhausted 4") then
-	table.insert(snd.setting_priority, "exhausted 4")		 
+	if snd.firstaidcuretrack.exhaustion ~= "4" and not table.contains(snd.setting_priority, "exhaustion 4") then
+	table.insert(snd.setting_priority, "exhaustion 4")		 
 	end 
-	if snd.firstaidcuretrack.berserking ~= "4" and not table.contains(snd.setting_priority, "berserking 4") then
-	table.insert(snd.setting_priority, "berserking 4")		 
+	if snd.firstaidcuretrack.mania ~= "4" and not table.contains(snd.setting_priority, "mania 4") then
+	table.insert(snd.setting_priority, "mania 4")		 
 	end 
 	if snd.firstaidcuretrack.clumsiness ~= "5" and not table.contains(snd.setting_priority, "clumsiness 5") then
 	table.insert(snd.setting_priority, "clumsiness 5")		 
@@ -28659,8 +28649,8 @@ function snd.firstaidassBard()
 	if snd.firstaidcuretrack.hypersomnia ~= "7" and not table.contains(snd.setting_priority, "hypersomnia 7") then
 	table.insert(snd.setting_priority, "hypersomnia 7")		 
 	end 
-	if snd.firstaidcuretrack.merciful ~= "7" and not table.contains(snd.setting_priority, "merciful 7") then
-	table.insert(snd.setting_priority, "merciful 7")		 
+	if snd.firstaidcuretrack.mercy ~= "7" and not table.contains(snd.setting_priority, "mercy 7") then
+	table.insert(snd.setting_priority, "mercy 7")		 
 	end 
 	if snd.firstaidcuretrack.recklessness ~= "7" and not table.contains(snd.setting_priority, "recklessness 7") then
 	table.insert(snd.setting_priority, "recklessness 7")		 
@@ -28789,8 +28779,8 @@ function snd.firstaidassCarnifex()
 	if snd.firstaidcuretrack.blisters ~= "4" and not table.contains(snd.setting_priority, "blisters 4") then
 		table.insert(snd.setting_priority, "blisters 4")		 
 	end
-	if snd.firstaidcuretrack.berserking ~= "4" and not table.contains(snd.setting_priority, "berserking 4") then
-		table.insert(snd.setting_priority, "berserking 4")		 
+	if snd.firstaidcuretrack.mania ~= "4" and not table.contains(snd.setting_priority, "mania 4") then
+		table.insert(snd.setting_priority, "mania 4")		 
 	end
 	if snd.firstaidcuretrack.peace ~= "4" and not table.contains(snd.setting_priority, "peace 4") then
 		table.insert(snd.setting_priority, "peace 4")		 
@@ -28935,8 +28925,8 @@ function snd.firstaidassIndorani()
 	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
 		table.insert(snd.setting_priority, "stupidity 2")		 
 	end
-	if snd.firstaidcuretrack.perplexed ~= "2" and not table.contains(snd.setting_priority, "perplexed 2") then
-		table.insert(snd.setting_priority, "perplexed 2")		 
+	if snd.firstaidcuretrack.perplexity ~= "2" and not table.contains(snd.setting_priority, "perplexity 2") then
+		table.insert(snd.setting_priority, "perplexity 2")		 
 	end
 	if snd.firstaidcuretrack.weariness ~= "2" and not table.contains(snd.setting_priority, "weariness 2") then
 		table.insert(snd.setting_priority, "weariness 2")		 
@@ -28965,8 +28955,8 @@ function snd.firstaidassIndorani()
 	if snd.firstaidcuretrack.peace ~= "4" and not table.contains(snd.setting_priority, "peace 4") then
 		table.insert(snd.setting_priority, "peace 4")		 
 	end	
-	if snd.firstaidcuretrack.lovers_effect ~= "4" and not table.contains(snd.setting_priority, "lovers_effect 4") then
-		table.insert(snd.setting_priority, "lovers_effect 4")		 
+	if snd.firstaidcuretrack.infatuation ~= "4" and not table.contains(snd.setting_priority, "infatuation 4") then
+		table.insert(snd.setting_priority, "infatuation 4")		 
 	end	
 	if snd.firstaidcuretrack.paresis ~= "5" and not table.contains(snd.setting_priority, "paresis 5") then
 		table.insert(snd.setting_priority, "paresis 5")		 
@@ -28980,8 +28970,8 @@ function snd.firstaidassIndorani()
 	if snd.firstaidcuretrack.vomiting ~= "5" and not table.contains(snd.setting_priority, "vomiting 5") then
 		table.insert(snd.setting_priority, "vomiting 5")		 
 	end	
-	if snd.firstaidcuretrack.berserking ~= "6" and not table.contains(snd.setting_priority, "berserking 6") then
-		table.insert(snd.setting_priority, "berserking 6")		 
+	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
+		table.insert(snd.setting_priority, "mania 6")		 
 	end	
 	if snd.firstaidcuretrack.hypersomnia ~= "6" and not table.contains(snd.setting_priority, "hypersomnia 6") then
 		table.insert(snd.setting_priority, "hypersomnia 6")		 
@@ -29096,8 +29086,8 @@ function snd.firstaidassInfiltrator()
 	if snd.firstaidcuretrack.impatience ~= "1" and not table.contains(snd.setting_priority, "impatience 1") then
 		table.insert(snd.setting_priority, "impatience 1")		 
 	end
-	if snd.firstaidcuretrack.thin_blood ~= "1" and not table.contains(snd.setting_priority, "thin_blood 1") then
-		table.insert(snd.setting_priority, "thin_blood 1")		 
+	if snd.firstaidcuretrack.dyscrasia ~= "1" and not table.contains(snd.setting_priority, "dyscrasia 1") then
+		table.insert(snd.setting_priority, "dyscrasia 1")		 
 	end	
 	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
 		table.insert(snd.setting_priority, "clumsiness 1")		 
@@ -29150,17 +29140,14 @@ function snd.firstaidassInfiltrator()
 	if snd.firstaidcuretrack.epilepsy ~= "5" and not table.contains(snd.setting_priority, "epilepsy 5") then
 		table.insert(snd.setting_priority, "epilepsy 5")		 
 	end
-	if snd.firstaidcuretrack.berserking ~= "6" and not table.contains(snd.setting_priority, "berserking 6") then
-		table.insert(snd.setting_priority, "berserking 6")		 
+	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
+		table.insert(snd.setting_priority, "mania 6")		 
 	end
 	if snd.firstaidcuretrack.hatred ~= "6" and not table.contains(snd.setting_priority, "hatred 6") then
 		table.insert(snd.setting_priority, "hatred 6")		 
 	end
 	if snd.firstaidcuretrack.dizziness ~= "6" and not table.contains(snd.setting_priority, "dizziness 6") then
 		table.insert(snd.setting_priority, "dizziness 6")		 
-	end
-	if snd.firstaidcuretrack.pacifism ~= "6" and not table.contains(snd.setting_priority, "pacifism 6") then
-		table.insert(snd.setting_priority, "pacifism 6")		 
 	end
 	if snd.firstaidcuretrack.peace ~= "7" and not table.contains(snd.setting_priority, "peace 7") then
 		table.insert(snd.setting_priority, "peace 7")		 
@@ -29179,9 +29166,6 @@ function snd.firstaidassInfiltrator()
 	end
 	if snd.firstaidcuretrack.loneliness ~= "8" and not table.contains(snd.setting_priority, "loneliness 8") then
 		table.insert(snd.setting_priority, "loneliness 8")		 
-	end
-	if snd.firstaidcuretrack.generosity ~= "8" and not table.contains(snd.setting_priority, "generosity 8") then
-		table.insert(snd.setting_priority, "generosity 8")		 
 	end
 	if snd.firstaidcuretrack.addiction ~= "8" and not table.contains(snd.setting_priority, "addiction 8") then
 		table.insert(snd.setting_priority, "addiction 8")		 
@@ -29251,8 +29235,8 @@ function snd.firstaidassLuminary()
 	if snd.firstaidcuretrack.lethargy ~= "3" and not table.contains(snd.setting_priority, "lethargy 3") then
 		table.insert(snd.setting_priority, "lethargy 3")		 
 	end	
-	if snd.firstaidcuretrack.self_pity ~= "3" and not table.contains(snd.setting_priority, "self-pity 3") then
-		table.insert(snd.setting_priority, "self-pity 3")		 
+	if snd.firstaidcuretrack.self_pity ~= "3" and not table.contains(snd.setting_priority, "self_pity 3") then
+		table.insert(snd.setting_priority, "self_pity 3")		 
 	end	
 	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
 		table.insert(snd.setting_priority, "sensitivity 3")		 
@@ -29290,8 +29274,8 @@ function snd.firstaidassLuminary()
 	if snd.firstaidcuretrack.epilepsy ~= "6" and not table.contains(snd.setting_priority, "epilepsy 6") then
 		table.insert(snd.setting_priority, "epilepsy 6")		 
 	end		
-	if snd.firstaidcuretrack.berserking ~= "6" and not table.contains(snd.setting_priority, "berserking 6") then
-		table.insert(snd.setting_priority, "berserking 6")		 
+	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
+		table.insert(snd.setting_priority, "mania 6")		 
 	end		
 	if snd.firstaidcuretrack.justice ~= "7" and not table.contains(snd.setting_priority, "justice 7") then
 		table.insert(snd.setting_priority, "justice 7")		 
@@ -29397,9 +29381,6 @@ function snd.firstaidassMonk()
 	if snd.firstaidcuretrack.epilepsy ~= "1" and not table.contains(snd.setting_priority, "epilepsy 1") then
 		table.insert(snd.setting_priority, "epilepsy 1")		 
 	end		
-	if snd.firstaidcuretrack.pacifism ~= "2" and not table.contains(snd.setting_priority, "pacifism 2") then
-		table.insert(snd.setting_priority, "pacifism 2")		 
-	end		
 	if snd.firstaidcuretrack.recklessness ~= "2" and not table.contains(snd.setting_priority, "recklessness 2") then
 		table.insert(snd.setting_priority, "recklessness 2")		 
 	end		
@@ -29504,11 +29485,11 @@ function snd.firstaidassPraenomen()
 	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
 		table.insert(snd.setting_priority, "clumsiness 1")		 
 	end
-	if snd.firstaidcuretrack.blood_curse ~= "1" and not table.contains(snd.setting_priority, "blood_curse 1") then
-		table.insert(snd.setting_priority, "blood_curse 1")		 
+	if snd.firstaidcuretrack.psychosis ~= "1" and not table.contains(snd.setting_priority, "psychosis 1") then
+		table.insert(snd.setting_priority, "psychosis 1")		 
 	end
-	if snd.firstaidcuretrack.blood_poison ~= "1" and not table.contains(snd.setting_priority, "blood_poison 1") then
-		table.insert(snd.setting_priority, "blood_poison 1")		 
+	if snd.firstaidcuretrack.sepsis ~= "1" and not table.contains(snd.setting_priority, "sepsis 1") then
+		table.insert(snd.setting_priority, "sepsis 1")		 
 	end
 	if snd.firstaidcuretrack.confusion ~= "2" and not table.contains(snd.setting_priority, "confusion 2") then
 		table.insert(snd.setting_priority, "confusion 2")		 
@@ -29534,8 +29515,8 @@ function snd.firstaidassPraenomen()
 	if snd.firstaidcuretrack.sadness ~= "3" and not table.contains(snd.setting_priority, "sadness 3") then
 		table.insert(snd.setting_priority, "sadness 3")		 
 	end
-	if snd.firstaidcuretrack.lovers_effect ~= "4" and not table.contains(snd.setting_priority, "lovers_effect 4") then
-		table.insert(snd.setting_priority, "lovers_effect 4")		 
+	if snd.firstaidcuretrack.infatuation ~= "4" and not table.contains(snd.setting_priority, "infatuation 4") then
+		table.insert(snd.setting_priority, "infatuation 4")		 
 	end
 	if snd.firstaidcuretrack.peace ~= "4" and not table.contains(snd.setting_priority, "peace 4") then
 		table.insert(snd.setting_priority, "peace 4")		 
@@ -29543,11 +29524,8 @@ function snd.firstaidassPraenomen()
 	if snd.firstaidcuretrack.haemophilia ~= "4" and not table.contains(snd.setting_priority, "haemophilia 4") then
 		table.insert(snd.setting_priority, "haemophilia 4")		 
 	end
-	if snd.firstaidcuretrack.commitment_fear ~= "4" and not table.contains(snd.setting_priority, "commitment_fear 4") then
-		table.insert(snd.setting_priority, "commitment_fear 4")		 
-	end
-	if snd.firstaidcuretrack.berserking ~= "5" and not table.contains(snd.setting_priority, "berserking 5") then
-		table.insert(snd.setting_priority, "berserking 5")		 
+	if snd.firstaidcuretrack.mania ~= "5" and not table.contains(snd.setting_priority, "mania 5") then
+		table.insert(snd.setting_priority, "mania 5")		 
 	end
 	if snd.firstaidcuretrack.masochism ~= "5" and not table.contains(snd.setting_priority, "masochism 5") then
 		table.insert(snd.setting_priority, "masochism 5")		 
@@ -29555,8 +29533,8 @@ function snd.firstaidassPraenomen()
 	if snd.firstaidcuretrack.agoraphobia ~= "5" and not table.contains(snd.setting_priority, "agoraphobia 5") then
 		table.insert(snd.setting_priority, "agoraphobia 5")		 
 	end
-	if snd.firstaidcuretrack.self_pity ~= "5" and not table.contains(snd.setting_priority, "self-pity 5") then
-		table.insert(snd.setting_priority, "self-pity 5")		 
+	if snd.firstaidcuretrack.self_pity ~= "5" and not table.contains(snd.setting_priority, "self_pity 5") then
+		table.insert(snd.setting_priority, "self_pity 5")		 
 	end
 	if snd.firstaidcuretrack.stupidity ~= "6" and not table.contains(snd.setting_priority, "stupidity 6") then
 		table.insert(snd.setting_priority, "stupidity 6")		 
@@ -29751,8 +29729,8 @@ function snd.firstaidassSciomancer()
 	if snd.firstaidcuretrack.rot_wither ~= "4" and not table.contains(snd.setting_priority, "rot_wither 4") then
 		table.insert(snd.setting_priority, "rot_wither 4")		 
 	end
-	if snd.firstaidcuretrack.exhausted ~= "4" and not table.contains(snd.setting_priority, "exhausted 4") then
-		table.insert(snd.setting_priority, "exhausted 4")		 
+	if snd.firstaidcuretrack.exhaustion ~= "4" and not table.contains(snd.setting_priority, "exhaustion 4") then
+		table.insert(snd.setting_priority, "exhaustion 4")		 
 	end
 	if snd.firstaidcuretrack.hopelessness ~= "4" and not table.contains(snd.setting_priority, "hopelessness 4") then
 		table.insert(snd.setting_priority, "hopelessness 4")		 
@@ -29846,8 +29824,8 @@ function snd.firstaidassSentinel()
 	if snd.firstaidcuretrack.impatience ~= "1" and not table.contains(snd.setting_priority, "impatience 1") then
 		table.insert(snd.setting_priority, "impatience 1")		 
 	end 
-	if snd.firstaidcuretrack.heartflutter ~= "1" and not table.contains(snd.setting_priority, "heartflutter 1") then
-		table.insert(snd.setting_priority, "heartflutter 1")   
+	if snd.firstaidcuretrack.arrhythmia ~= "1" and not table.contains(snd.setting_priority, "arrhythmia 1") then
+		table.insert(snd.setting_priority, "arrhythmia 1")   
 	end
 	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
 		table.insert(snd.setting_priority, "clumsiness 1")		 
@@ -29894,8 +29872,8 @@ function snd.firstaidassSentinel()
 	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
 		table.insert(snd.setting_priority, "hallucinations 5")		 
 	end 
-	if snd.firstaidcuretrack.berserking ~= "5" and not table.contains(snd.setting_priority, "berserking 5") then
-		table.insert(snd.setting_priority, "berserking 5")		 
+	if snd.firstaidcuretrack.mania ~= "5" and not table.contains(snd.setting_priority, "mania 5") then
+		table.insert(snd.setting_priority, "mania 5")		 
 	end 
 	if snd.firstaidcuretrack.agoraphobia ~= "5" and not table.contains(snd.setting_priority, "agoraphobia 5") then
 		table.insert(snd.setting_priority, "agoraphobia 5")		 
@@ -30037,11 +30015,11 @@ function snd.firstaidassShaman()
 	if snd.firstaidcuretrack.stormtouched ~= "1" and not table.contains(snd.setting_priority, "stormtouched 1") then
 		table.insert(snd.setting_priority, "stormtouched 1")		 
 	end
-	if snd.firstaidcuretrack.infested ~= "1" and not table.contains(snd.setting_priority, "infested 1") then
-		table.insert(snd.setting_priority, "infested 1")		 
+	if snd.firstaidcuretrack.infestation ~= "1" and not table.contains(snd.setting_priority, "infestation 1") then
+		table.insert(snd.setting_priority, "infestation 1")		 
 	end
-	if snd.firstaidcuretrack.blighted ~= "1" and not table.contains(snd.setting_priority, "blighted 1") then
-		table.insert(snd.setting_priority, "blighted 1")		 
+	if snd.firstaidcuretrack.blight ~= "1" and not table.contains(snd.setting_priority, "blight 1") then
+		table.insert(snd.setting_priority, "blight 1")		 
 	end
 	if snd.firstaidcuretrack.sensitivity ~= "2" and not table.contains(snd.setting_priority, "sensitivity 2") then
 	table.insert(snd.setting_priority, "sensitivity 2")		 
@@ -30076,8 +30054,8 @@ function snd.firstaidassShaman()
 	if snd.firstaidcuretrack.vertigo ~= "4" and not table.contains(snd.setting_priority, "vertigo 4") then
 		table.insert(snd.setting_priority, "vertigo 4")		 
 	end
-	if snd.firstaidcuretrack.lovers_effect ~= "4" and not table.contains(snd.setting_priority, "lovers_effect 4") then
-		table.insert(snd.setting_priority, "lovers_effect 4")		 
+	if snd.firstaidcuretrack.infatuation ~= "4" and not table.contains(snd.setting_priority, "infatuation 4") then
+		table.insert(snd.setting_priority, "infatuation 4")		 
 	end
 	if snd.firstaidcuretrack.allergies ~= "5" and not table.contains(snd.setting_priority, "allergies 5") then
 		table.insert(snd.setting_priority, "allergies 5")		 
@@ -30144,8 +30122,8 @@ function snd.firstaidassShapeshifter()
 	if snd.firstaidcuretrack.hallucinations ~= "3" and not table.contains(snd.setting_priority, "hallucinations 3") then
 		table.insert(snd.setting_priority, "hallucinations 3")		 
 	end		
-	if snd.firstaidcuretrack.berserking ~= "3" and not table.contains(snd.setting_priority, "berserking 3") then
-		table.insert(snd.setting_priority, "berserking 3")		 
+	if snd.firstaidcuretrack.mania ~= "3" and not table.contains(snd.setting_priority, "mania 3") then
+		table.insert(snd.setting_priority, "mania 3")		 
 	end		
 	if snd.firstaidcuretrack.claustrophobia ~= "3" and not table.contains(snd.setting_priority, "claustrophobia 3") then
 		table.insert(snd.setting_priority, "claustrophobia 3")		 
@@ -30275,8 +30253,8 @@ function snd.firstaidassTemplar()
 	if snd.firstaidcuretrack.crippled_body ~= "1" and not table.contains(snd.setting_priority, "crippled_body 1") then
 		table.insert(snd.setting_priority, "crippled_body 1")		 
 	end	
-	if snd.firstaidcuretrack.mental_disruption ~= "1" and not table.contains(snd.setting_priority, "mental_disruption 1") then
-		table.insert(snd.setting_priority, "mental_disruption 1")   
+	if snd.firstaidcuretrack.delirium ~= "1" and not table.contains(snd.setting_priority, "delirium 1") then
+		table.insert(snd.setting_priority, "delirium 1")   
 	end
 	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
 		table.insert(snd.setting_priority, "stupidity 2")		 
@@ -30296,8 +30274,8 @@ function snd.firstaidassTemplar()
 	if snd.firstaidcuretrack.vomiting ~= "3" and not table.contains(snd.setting_priority, "vomiting 3") then
 		table.insert(snd.setting_priority, "vomiting 3")		 
 	end		
-	if snd.firstaidcuretrack.physical_disruption ~= "3" and not table.contains(snd.setting_priority, "physical_disruption 3") then
-		table.insert(snd.setting_priority, "physical_disruption 3")   
+	if snd.firstaidcuretrack.extravasation ~= "3" and not table.contains(snd.setting_priority, "extravasation 3") then
+		table.insert(snd.setting_priority, "extravasation 3")   
 	end
 	if snd.firstaidcuretrack.paresis ~= "3" and not table.contains(snd.setting_priority, "paresis 3") then
 		table.insert(snd.setting_priority, "paresis 3")		 
@@ -30434,8 +30412,8 @@ function snd.firstaidassTeradrim()
 	if snd.firstaidcuretrack.weariness ~= "1" and not table.contains(snd.setting_priority, "weariness 1") then
 		table.insert(snd.setting_priority, "weariness 1")		 
 	end		
-	if snd.firstaidcuretrack.heartflutter ~= "1" and not table.contains(snd.setting_priority, "heartflutter 1") then
-		table.insert(snd.setting_priority, "heartflutter 1")		 
+	if snd.firstaidcuretrack.arrhythmia ~= "1" and not table.contains(snd.setting_priority, "arrhythmia 1") then
+		table.insert(snd.setting_priority, "arrhythmia 1")		 
 	end		
 	if snd.firstaidcuretrack.sensitivity ~= "1" and not table.contains(snd.setting_priority, "sensitivity 1") then
 		table.insert(snd.setting_priority, "sensitivity 1")		 
@@ -30595,8 +30573,8 @@ function snd.firstaidassWayfarer()
 	if snd.firstaidcuretrack.sensitivity ~= "1" and not table.contains(snd.setting_priority, "sensitivity 1") then
 		table.insert(snd.setting_priority, "sensitivity 1")		 
 	end		
-	if snd.firstaidcuretrack.exhausted ~= "1" and not table.contains(snd.setting_priority, "exhausted 1") then
-		table.insert(snd.setting_priority, "exhausted 1")		 
+	if snd.firstaidcuretrack.exhaustion ~= "1" and not table.contains(snd.setting_priority, "exhaustion 1") then
+		table.insert(snd.setting_priority, "exhaustion 1")		 
 	end		
 	if snd.firstaidcuretrack.paresis ~= "2" and not table.contains(snd.setting_priority, "paresis 2") then
 		table.insert(snd.setting_priority, "paresis 2")		 
@@ -30720,8 +30698,8 @@ function snd.firstaidassZealot()
 	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
 		table.insert(snd.setting_priority, "paresis 1")		 
 	end		
-	if snd.firstaidcuretrack.merciful ~= "1" and not table.contains(snd.setting_priority, "merciful 1") then
-		table.insert(snd.setting_priority, "merciful 1")		 
+	if snd.firstaidcuretrack.mercy ~= "1" and not table.contains(snd.setting_priority, "mercy 1") then
+		table.insert(snd.setting_priority, "mercy 1")		 
 	end		
 	if snd.firstaidcuretrack.stupidity ~= "1" and not table.contains(snd.setting_priority, "stupidity 1") then
 		table.insert(snd.setting_priority, "stupidity 1")		 
@@ -30812,7 +30790,7 @@ function snd.firstaidassZealot()
 		table.insert(snd.setting_priority, "sore_wrist 10")		 
 	end	
 	if snd.firstaidcuretrack.sore_ankle ~= "10" and not table.contains(snd.setting_priority, "sore_ankle 10") then
-		table.insert(snd.setting_priority, "sore_ankle 130")		 
+		table.insert(snd.setting_priority, "sore_ankle 10")		 
 	end	
 	if snd.firstaidcuretrack.whiplash ~= "11" and not table.contains(snd.setting_priority, "whiplash 11") then
 		table.insert(snd.setting_priority, "whiplash 11")		 
@@ -31528,27 +31506,25 @@ end</script>
       "stupidity",
       "hearing",
       "weariness",
-      "baldness",
       "allergies",
-      "blood_poison",
-      "blood_curse",
+      "sepsis",
+      "psychosis",
       "pear",
       "recklessness",
-      "lovers_effect",
+      "infatuation",
       "peace",
-      "berserking",
+      "mania",
       "hypersomnia",
       "sensitivity",
       "justice",
-      "mental_disruption",
-      "pacifism",
-      "physical_disruption",
+      "delirium",
+      "extravasation",
       "hallucinations",
       "loneliness",
       "epilepsy",
       "vomiting",
       "shyness",
-      "heartflutter",
+      "arrhythmia",
       "dissonance",
       "dizziness",
       "resonance",
@@ -31556,22 +31532,19 @@ end</script>
       "paranoia",
       "dementia",
       "agoraphobia",
-      "generosity",
       "hatred",
       "superstition",
       "claustrophobia",
       "haemophilia",
-      "infested",
+      "infestation",
       "rend",
       "lethargy",
       "addiction",
       "self_pity",
-      "commitment_fear",
       "hubris",
-      "body_odor",
-      "thin_blood",
+      "dyscrasia",
       "vertigo",
-      "blighted",
+      "blight",
     }
     snd.goldenseallist = {}
   table.insert(snd.goldenseallist, "self_pity")
@@ -31582,7 +31555,7 @@ end</script>
   table.insert(snd.goldenseallist, "impatience")
   table.insert(snd.goldenseallist, "resonance")
   table.insert(snd.goldenseallist, "dissonance")
-  table.insert(snd.goldenseallist, "infested")
+  table.insert(snd.goldenseallist, "infestation")
   snd.lastaffs = {}
   snd.lycantype = "werewolf"
   snd.treeaffs =
@@ -31597,20 +31570,19 @@ end</script>
       "crippled_body",
       "impairment",
       "recklessness",
-      "lovers_effect",
+      "infatuation",
       "peace",
-      "berserking",
+      "mania",
       "sensitivity",
       "justice",
-      "mental_disruption",
-      "pacifism",
-      "physical_disruption",
+      "delirium",
+      "extravasation",
       "hallucinations",
       "loneliness",
       "epilepsy",
       "vomiting",
       "shyness",
-      "heartflutter",
+      "arrhythmia",
       "dissonance",
       "weariness",
       "clumsiness",
@@ -31620,24 +31592,20 @@ end</script>
       "paranoia",
       "dementia",
       "agoraphobia",
-      "blood_curse",
-      "generosity",
+      "psychosis",
       "hatred",
       "superstition",
       "hypersomnia",
       "claustrophobia",
-      "blood_poison",
+      "sepsis",
       "allergies",
       "haemophilia",
       "rend",
       "lethargy",
       "addiction",
       "self_pity",
-      "commitment_fear",
       "hubris",
-      "body_odor",
-      "baldness",
-      "thin_blood",
+      "dyscrasia",
       "vertigo",
       "firstaid_predict_arms",
       "firstaid_predict_legs",
@@ -31659,10 +31627,10 @@ end</script>
       "right_arm_bruised",
       "left_leg_bruised",
       "right_leg_bruised",
-      "blighted",
-      "infested",
+      "blight",
+      "infestation",
     }
-    snd.whisperlist = {"epilepsy", "impatience", "stupidity", "berserking", "anorexia", "lovers", "confusion", "masochism", "dementia", "recklessness",  "peace", "indifference", "vertigo"}
+    snd.whisperlist = {"epilepsy", "impatience", "stupidity", "mania", "anorexia", "infatuation", "confusion", "masochism", "dementia", "recklessness",  "peace", "indifference", "vertigo"}
   
   snd.herbaffs = {}
   table.insert(snd.herbaffs, "paralysis")
@@ -31680,20 +31648,19 @@ end</script>
   table.insert(snd.herbaffs, "impairment")
   table.insert(snd.herbaffs, "waterbreathing")
   table.insert(snd.herbaffs, "recklessness")
-  table.insert(snd.herbaffs, "lovers_effect")
+  table.insert(snd.herbaffs, "infatuation")
   table.insert(snd.herbaffs, "peace")
-  table.insert(snd.herbaffs, "berserking")
+  table.insert(snd.herbaffs, "mania")
   table.insert(snd.herbaffs, "sensitivity")
   table.insert(snd.herbaffs, "justice")
-  table.insert(snd.herbaffs, "mental_disruption")
-  table.insert(snd.herbaffs, "pacifism")
-  table.insert(snd.herbaffs, "physical_disruption")
+  table.insert(snd.herbaffs, "delirium")
+  table.insert(snd.herbaffs, "extravasation")
   table.insert(snd.herbaffs, "hallucinations")
   table.insert(snd.herbaffs, "loneliness")
   table.insert(snd.herbaffs, "epilepsy")
   table.insert(snd.herbaffs, "vomiting")
   table.insert(snd.herbaffs, "shyness")
-  table.insert(snd.herbaffs, "heartflutter")
+  table.insert(snd.herbaffs, "arrhythmia")
   table.insert(snd.herbaffs, "dissonance")
   table.insert(snd.herbaffs, "weariness")
   table.insert(snd.herbaffs, "clumsiness")
@@ -31703,29 +31670,24 @@ end</script>
   table.insert(snd.herbaffs, "paranoia")
   table.insert(snd.herbaffs, "dementia")
   table.insert(snd.herbaffs, "agoraphobia")
-  table.insert(snd.herbaffs, "blood_curse")
-  table.insert(snd.herbaffs, "generosity")
+  table.insert(snd.herbaffs, "psychosis")
   table.insert(snd.herbaffs, "hatred")
   table.insert(snd.herbaffs, "superstition")
   table.insert(snd.herbaffs, "hypersomnia")
   table.insert(snd.herbaffs, "claustrophobia")
-  table.insert(snd.herbaffs, "blood_poison")
+  table.insert(snd.herbaffs, "sepsis")
   table.insert(snd.herbaffs, "allergies")
   table.insert(snd.herbaffs, "haemophilia")
   table.insert(snd.herbaffs, "rend")
   table.insert(snd.herbaffs, "lethargy")
   table.insert(snd.herbaffs, "addiction")
   table.insert(snd.herbaffs, "self_pity")
-  table.insert(snd.herbaffs, "commitment_fear")
   table.insert(snd.herbaffs, "hubris")
-  table.insert(snd.herbaffs, "body_odor")
-  table.insert(snd.herbaffs, "baldness")
-  table.insert(snd.herbaffs, "thin_blood")
+  table.insert(snd.herbaffs, "dyscrasia")
   table.insert(snd.herbaffs, "vertigo")
   table.insert(snd.herbaffs, "sadness")
-  table.insert(snd.herbaffs, "goldenseal")
-  table.insert(snd.herbaffs, "blighted")
-  table.insert(snd.herbaffs, "infested")
+  table.insert(snd.herbaffs, "blight")
+  table.insert(snd.herbaffs, "infestation")
   
   snd.pipeaffs = {}
 	snd.pipeaffs = {"slickness", "hellsight", "deadening", "disfigurement", "withering", "migraine", "squelched", "aeon"}
@@ -31747,7 +31709,7 @@ end</script>
   table.insert(snd.writheaffs, "writhe_impaled")
   table.insert(snd.writheaffs, "writhe_web")
   table.insert(snd.writheaffs, "writhe_dartpinned")
-  snd.focusaffs = {"agoraphobia", "anorexia", "berserking", "claustrophobia", "confusion", "dementia", "dizziness", "egocentric", "epilepsy", "faintness", "generosity", "hallucinations", "hatred", "impatience", "indifference", "laxity", "loneliness", "lovers_effect", "masochism", "mental_disruption", "mirroring", "pacifism", "paranoia", "peace", "premonition", "recklessness", "stupidity", "vertigo", "weariness"}
+  snd.focusaffs = {"agoraphobia", "anorexia", "mania", "claustrophobia", "confusion", "dementia", "dizziness", "egocentrism", "epilepsy", "faintness", "hallucinations", "hatred", "impatience", "indifference", "laxity", "loneliness", "infatuation", "masochism", "delirium", "mirroring", "paranoia", "peace", "premonition", "recklessness", "stupidity", "vertigo", "weariness"}
 
   snd.writheaffflag = false
   snd.limbbrokencount = {}
@@ -31782,13 +31744,13 @@ end</script>
 		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 		    table.insert(snd.ordered_list, 1, "confusion")
       end
-    elseif (table.contains(snd.ordered_list, "crippled_body") or table.contains(snd.ordered_list, "crippled")) and snd.cureset == "templar" and snd.have_aff("mental_disruption") and not table.contains(snd.ordered_list, "paralysis") then
-		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "mental_disruption"))
-		  table.insert(snd.ordered_list, 1, "mental_disruption")
-    elseif (table.contains(snd.ordered_list, "crippled_body") or table.contains(snd.ordered_list, "crippled")) and snd.cureset == "templar" and snd.have_aff("physical_disruption") and not table.contains(snd.ordered_list, "paralysis") then
-		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "physical_disruption"))
-		  table.insert(snd.ordered_list, 1, "physical_disruption")
-    elseif (table.contains(snd.ordered_list, "crippled_body") or table.contains(snd.ordered_list, "crippled")) and snd.cureset == "templar" and table.contains(snd.ordered_list, "physical_disruption") and not table.contains(snd.ordered_list, "paralysis") and snd.have_aff("haemophilia") then
+    elseif (table.contains(snd.ordered_list, "crippled_body") or table.contains(snd.ordered_list, "crippled")) and snd.cureset == "templar" and snd.have_aff("delirium") and not table.contains(snd.ordered_list, "paralysis") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "delirium"))
+		  table.insert(snd.ordered_list, 1, "delirium")
+    elseif (table.contains(snd.ordered_list, "crippled_body") or table.contains(snd.ordered_list, "crippled")) and snd.cureset == "templar" and snd.have_aff("extravasation") and not table.contains(snd.ordered_list, "paralysis") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "extravasation"))
+		  table.insert(snd.ordered_list, 1, "extravasation")
+    elseif (table.contains(snd.ordered_list, "crippled_body") or table.contains(snd.ordered_list, "crippled")) and snd.cureset == "templar" and table.contains(snd.ordered_list, "extravasation") and not table.contains(snd.ordered_list, "paralysis") and snd.have_aff("haemophilia") then
 		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "haemophilia"))
 		  table.insert(snd.ordered_list, 1, "haemophilia")
     elseif (table.contains(snd.ordered_list, "paresis") or table.contains(snd.ordered_list, "paralysis")) and (snd.class ~= "Carnifex" or snd.class ~= "Warden") then
@@ -31862,12 +31824,12 @@ end</script>
     elseif snd.have_aff("stupidity") and snd.have_aff("shyness") and snd.cureset == "bard" then
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
 		  table.insert(snd.ordered_list, 1, "stupidity")
-    elseif snd.have_aff("misery") and (snd.have_aff("perplexed") or snd.have_aff("self_loathing")) and snd.cureset == "bard" then
+    elseif snd.have_aff("misery") and (snd.have_aff("perplexity") or snd.have_aff("self_loathing")) and snd.cureset == "bard" then
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "misery"))
 		  table.insert(snd.ordered_list, 1, "misery")
-    elseif snd.have_aff("perplexed") and snd.have_aff("self_loathing") and snd.cureset == "bard" then
-      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "perplexed"))
-		  table.insert(snd.ordered_list, 1, "perplexed")
+    elseif snd.have_aff("perplexity") and snd.have_aff("self_loathing") and snd.cureset == "bard" then
+      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "perplexity"))
+		  table.insert(snd.ordered_list, 1, "perplexity")
     elseif snd.my_last_cured == "clumsiness" then
       if snd.have_aff("slickness") and snd.class == "Carnifex" then
         table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
@@ -31908,7 +31870,7 @@ end
 								<name>Full howllist used for hidden</name>
 								<packageName></packageName>
 								<script>function snd.howlfulfunc()
-  snd.howlfulllist = {"anorexia", "berserking", "blurry_vision", "claustrophobia", "confusion", "dementia", "disrupted", "hallucinations", "hatred", "hypersomnia", "idiocy", "impairment", "lethargy", "muddled", "paresis", "peace", "plodding","recklessness", "ringing_ears", "sensitivity", "stupidity", "vomiting", "weariness"}
+  snd.howlfulllist = {"anorexia", "mania", "blurry_vision", "claustrophobia", "confusion", "dementia", "disrupted", "hallucinations", "hatred", "hypersomnia", "idiocy", "impairment", "lethargy", "muddled", "paresis", "peace", "plodding","recklessness", "ringing_ears", "sensitivity", "stupidity", "vomiting", "weariness"}
 end
 </script>
 								<eventHandlerList />
@@ -31936,9 +31898,9 @@ end
 	elseif snd.healingcall == "You feel a bit more alert and awake." then 
 		aff = "hypersomnia"
 	elseif snd.healingcall == "You are able to once again control your concentration." then 
-		aff = "blood_curse"
+		aff = "psychosis"
 	elseif snd.healingcall == "The venomous vines infecting you wither and die." then 
-		aff = "blighted"
+		aff = "blight"
 	elseif snd.healingcall == "Your ego has shriveled to that of the average mortal." then
 		aff = "hubris"
 	elseif snd.healingcall == "You are capable of offensive acts once more." then 
@@ -31950,9 +31912,9 @@ end
 	elseif snd.healingcall == "You have been spared from your accursed fate." then
 		aff = "accursed"
 	elseif snd.healingcall == "Your heart begins to beat strongly again, and your veins return to normal size." then
-		aff = "limp_veins"
+		aff = "hypotension"
 	elseif snd.healingcall == "You shake your head, wondering what you ever saw in" then
-		aff = "lovers_effect"
+		aff = "infatuation"
 	elseif snd.healingcall == "Your mind sharpens as the inner cogs begin to whirl." then
 		aff = "laxity"
 	elseif snd.healingcall == "You shake your head clear of superstitious fears." then 
@@ -31978,31 +31940,29 @@ end
 	elseif snd.healingcall == "Your glands cease their oily secretion." then
 		aff = "slickness"
 	elseif snd.healingcall == "Your heart seems to stop skipping beats." then
-		aff = "heartflutter"
+		aff = "arrhythmia"
 	elseif snd.healingcall == "Feeling the stabs of pain ebb away within your limbs, you sigh in relief as the sand rot is lifted." then
 		aff = "slough"
-	elseif snd.healingcall == "Your body odor clears itself up." then 
-		aff = "body_odor"
 	elseif snd.healingcall == "The lethargy evaporates, leaving you full of energy." then
 		aff = "lethargy"
 	elseif snd.healingcall == "No longer will you suffer from allergies." then 
 		aff = "allergies"
 	elseif snd.healingcall == "Your equilibrium returns to normal." then 
-		aff = "mental_disruption"
+		aff = "delirium"
 	elseif snd.healingcall == "Your balance returns to normal." then 
-		aff = "physical_disruption"
+		aff = "extravasation"
 	elseif snd.healingcall == "Your stomach becalms itself." then
 		aff = "vomiting"
 	elseif snd.healingcall == "Your body fills with energy again as you recover from your exhaustion." then
-		aff = "exhausted"
+		aff = "exhaustion"
 	elseif snd.healingcall == "You feel your blood thickening." then 
-		aff = "thin_blood"
+		aff = "dyscrasia"
 	elseif snd.healingcall == "You watch as your shredded flesh knits together." then 
 		aff = "rend"
 	elseif snd.healingcall == "Your blood regains its ability to clot." then 
 		aff = "haemophilia"
 	elseif snd.healingcall == "You decide that you aren't that bad after all." then 
-		aff = "self-pity"
+		aff = "self_pity"
 	elseif snd.healingcall == "You aren't such a complete idiot anymore." then
 		aff = "stupidity"
 	elseif snd.healingcall == "You are no longer dizzy." then		 
@@ -32020,9 +31980,7 @@ end
 	elseif snd.healingcall == "The strange resonance fades away." then 
 		aff = "dissonance"
 	elseif snd.healingcall == "One by the one, the parasites plaguing your body screech as they fall from your body." then
-		aff = "infested"
-	elseif snd.healingcall == "Your baldness is cured, thank the Gods!" then
-		aff = "baldness"
+		aff = "infestation"
 	elseif snd.healingcall == "Thank Varian, the Celestine! Your clumsiness has been cured." then		 
 		aff = "clumsiness"
 	elseif snd.healingcall == "My, you feel healthier than you have in years." then 
@@ -32038,19 +31996,17 @@ end
 	elseif snd.healingcall == "Your body feels a little more like its old self." then
 		aff = "impairment"
 	elseif snd.healingcall == "You are relieved to catch up with the pace of reality." then
-		aff = "blood_poison"
+		aff = "sepsis"
 	elseif snd.healingcall == "Your body feels free of its heaviness and plodding." then
 		aff = "plodding"
 	elseif snd.healingcall == "Your mind feels free of its idiocy." then 
 		aff = "idiocy"
-	elseif snd.healingcall == "You vow that you shall never be fearful of commitment again." then 
-		aff = "commitment_fear"
 	elseif snd.healingcall == "Your merciful bent leaves you." then
-		aff = "merciful"
+		aff = "mercy"
 	elseif snd.healingcall == "Prudence rules your psyche once again." then		 
 		aff = "recklessness"
 	elseif snd.healingcall == "Sometimes others are just as important as the self." then
-		aff = "egocentric"
+		aff = "egocentrism"
 	elseif snd.healingcall == "You no longer enjoy pain." then 
 		aff = "masochism"
 	elseif snd.healingcall == "You can handle the idea of open spaces again." then 
@@ -32058,7 +32014,7 @@ end
 	elseif snd.healingcall == "The awful loneliness leaves you." then 
 		aff = "loneliness"
 	elseif snd.healingcall == "Your insane rage calms." then 
-		aff = "berserking"
+		aff = "mania"
 	elseif snd.healingcall == "Your fear of heights subsides." then
 		aff = "vertigo"
 	elseif snd.healingcall == "Small spaces no longer frighten you." then
@@ -32195,8 +32151,8 @@ def_cloak_tattoo = "on",
 def_deathsight = "on",
 def_insomnia = "on",
 --def_arcane = "on",
---def_levitation = "on",
---def_speed = "on",
+def_levitation = "on",
+def_speed = "on",
 def_dodge_melee = "on",
 def_nightsight = "on",
 def_clarity = "on",
@@ -32698,7 +32654,7 @@ chaos = {
       end
       
   if snd.cureset == "sentinel" then
-    if not snd.checksomeSelfAffs({"slickness","paresis","heartflutter","destroyed_throat","anorexia","asthma"},3) then
+    if not snd.checksomeSelfAffs({"slickness","paresis","arrhythmia","destroyed_throat","anorexia","asthma"},3) then
       snd.toparry = "torso"
     elseif snd.have_aff("impatience") then
       snd.toparry = "head"
@@ -33032,7 +32988,6 @@ reset_cures = false
 snd.canprerestorenow = true
 snd.endgamedef = ""
 snd.endgamehealth =""
-snd.focusaffs = {"agoraphobia", "anorexia", "berserking", "claustrophobia", "confusion", "dementia", "dizziness", "egocentric", "epilepsy", "faintness", "generosity", "hallucinations", "hatred", "impatience", "indifference", "laxity", "loneliness", "lovers_effect", "masochism", "mental_disruption", "mirroring", "pacifism", "paranoia", "peace", "premonition", "recklessness", "stupidity", "vertigo", "weariness"}
 snd.hiddentype = "none"
 snd.last_healed = ""
 snd.howllist = {}
@@ -33359,15 +33314,15 @@ voyria = "voyria", --immunity
 squelched = "selarnia",
 disfigurement = "monkshood",
 
-thin_blood = "scytherus",
+dyscrasia = "scytherus",
 left_leg_crippled = "epseth",
 right_leg_crippled = "epseth",
 left_arm_crippled = "epteth",
 right_arm_crippled = "epteth",
 
 conviction = "conviction",
-mental_disruption = "disrupt",
-physical_disruption = "disrupt",
+delirium = "disrupt",
+extravasation = "disrupt",
 crippled = "cripple",
 crippled_body = "cripple",
 hemorrhage = "hemorrhage",
@@ -33453,14 +33408,14 @@ snd.hound_attacks = {
   ["Carnifex"] = {
     recklessness = "growl",
     dizziness = "growl",
-    berserking = "stare",
+    mania = "stare",
     impairment = "stare",
     weariness = "acidspit",
     crippled = "acidspit",
     epilepsy = "shock",
     hallucinations = "shock",
     blisters = "poisonclaw",
-    limp_veins = "poisonclaw",
+    hypotension = "poisonclaw",
     frozen = "tundralhowl",
     frigid = "tundralhowl",
     shivering = "tundralhowl",
@@ -33473,14 +33428,14 @@ snd.hound_attacks = {
   ["Warden"] = {
     recklessness = "chant",
     dizziness = "chant",
-    berserking = "incite",
+    mania = "incite",
     impairment = "incite",
     weariness = "harry",
     crippled = "harry",
     epilepsy = "shock",
     hallucinations = "shock",
     blisters = "poison",
-    limp_veins = "poison",
+    hypotension = "poison",
     frozen = "freeze",
     frigid = "freeze",
     shivering = "freeze",
@@ -33538,54 +33493,48 @@ opiate = {
 "crippled",
 "blisters",
 "slickness",
-"heartflutter",
+"arrhythmia",
 "slough",
 },
 
 steroid = {
 "hubris",
-"pacifism",
 "peace",
 "accursed",
 "agony",
-"limp_veins",
-"lovers_effect",
+"hypotension",
+"infatuation",
 "laxity",
 "superstition",
-"generosity",
 "justice",
 "magnanimity",
 },
 
 coagulation = {
-"body_odor",
 "lethargy",
 "allergies",
-"mental_disruption",
-"physical_disruption",
+"delirium",
+"extravasation",
 "vomiting",
-"exhausted",
-"thin_blood",
+"exhaustion",
+"dyscrasia",
 "rend",
 "haemophilia",
 },
 
 depressant = {
-"commitment_fear",
-"merciful",
+"mercy",
 "recklessness",
-"egocentric",
+"egocentrism",
 "masochism",
 "agoraphobia",
-"loneliness",
-"berserking",
+"mania",
 "vertigo",
 "claustrophobia",
 "nyctophobia",
 },
 
 decongestant = {
-"baldness",
 "clumsiness",
 "hypochondria",
 "weariness",
@@ -33593,7 +33542,7 @@ decongestant = {
 "sensitivity",
 "ringing_ears",
 "impairment",
-"blood_poison",
+"sepsis",
 },
 
 euphoriant = {
@@ -33605,7 +33554,7 @@ euphoriant = {
 "epilepsy",
 "impatience",
 "dissonance",
-"infested",
+"infestation",
 },
 
 antipsychotic = {
@@ -33617,18 +33566,18 @@ antipsychotic = {
 "hatred",
 "hypersomnia",
 "addiction",
-"blood_curse",
-"blighted",
+"psychosis",
+"blight",
 },
 
 eucrasia = {
-"worrywart",
 "misery",
 "hopelessness",
 "echoes",
 "hollow",
 "narcolepsy",
-"perplexed",
+"loneliness",
+"perplexity",
 "self_loathing"
 },
 
@@ -33636,6 +33585,10 @@ willow = {
 "aeon",
 "hellsight",
 "deadening"
+},
+
+reishi = {
+"besilence"
 },
 
 yarrow = {
@@ -33713,24 +33666,22 @@ mending = {
 
 focus = {
 "muddled",
-"egocentric",
+"egocentrism",
 "stupidity",
 "anorexia",
 "epilepsy",
 "mirroring",
-"mental_disruption",
+"delirium",
 "peace",
 "paranoia",
 "hallucinations",
 "dizziness",
 "indifference",
-"berserking",
-"pacifism",
-"lovers_effect",
+"mania",
+"infatuation",
 "laxity",
 "manablight",
 "hatred",
-"generosity",
 "claustrophobia",
 "vertigo",
 "faintness",
@@ -34023,7 +33974,7 @@ function snd.target_used(curative)
               snd.target_cured(snd.cures[curative][affliction])
               aff_found = true
             end
-          elseif snd.target_has[i] == "blighted" or snd.target_has[i] == "infested" then
+          elseif snd.target_has[i] == "blight" or snd.target_has[i] == "infestation" then
             if not snd.checkAff("dread") then
               snd.target_cured(snd.cures[curative][affliction])
               aff_found = true
@@ -34220,7 +34171,7 @@ function snd.onHit2(checks, conditional)
       if (aff == "stiffness" or snd.checkAff("stiffness")) and conditional == "Ravager PressurePoint" and snd.maybe_affs[2] == "muscle_spasms" then
         snd.target_got("muscle_spasms")
         table.insert(snd.last_affs, "muscle_spasms")
-        table.remove(snd.maybe_affs, 2) 
+        table.remove(snd.maybe_affs, 2)
       end
       
       -- Need a way to handle 2handed attacks (Sentinel, Templar DSW, Carnifex, etc)
@@ -34763,11 +34714,15 @@ end
 
 function snd.attack(attack)
   
-  local string = ""
+  local string = "stand"..snd.sep
   local fitnessstring = ""
+  
+  if (snd.balance.nimbleness and snd.not_aff("fallen") and hasSkill("Nimbleness")) then
+    string = string.."nimbleness"..snd.sep
+  end 
   if snd.can_fitness() and snd.need_fitness and snd.full_balance() and snd.have_aff("asthma") then
     if gmcp.Char.Vitals.pipe == "1" and (snd.have_aff("slickness") or snd.have_aff("slough")) then
-      fitnessstring = fitnessstring..snd.sep.."smoke yarrow"..snd.sep
+      fitnessstring = "smoke yarrow"..snd.sep
     end
     if gmcp.Char.Vitals.salve == "1" and snd.have_aff("anorexia") then
       fitnessstring = fitnessstring.."apply epidermal to torso"..snd.sep
@@ -34796,21 +34751,16 @@ function snd.attack(attack)
     if gmcp.Char.Vitals.balance == "1" then
       fitnessstring = fitnessstring.."recoup"..snd.sep
     end
-    string = "fitness"..fitnessstring
-  end
-  if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") then
-    string = "diag"..snd.sep..string..snd.sep
-  end
-  if snd.not_aff("stun") then
-    if ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout") and snd.not_aff("asleep")) then
-      string = snd.endgamehealth..snd.sep..string..snd.sep
+    string = string.."fitness"..fitnessstring
+  else
+    if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") then
+      string = string.."diag"..snd.sep
+    elseif snd.not_aff("stun") and ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and snd.endgameuse ~= "none" and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout") and snd.not_aff("asleep")) then
+      string = string..snd.endgamehealth..snd.sep
+    else
+      string = string..attack
     end
   end
-  if (snd.balance.nimbleness and snd.not_aff("fallen") and hasSkill("Nimbleness")) then
-    string = "nimbleness"..snd.sep..string..snd.sep
-  end 
-  
-  string = "stand" .. snd.sep .. string
   
   if snd.toggles.parrying and snd.toparry ~= "none" and snd.toparry ~= snd.parrying then
     if snd.class == "Zealot" and hasSkill("Fending") then
@@ -34837,8 +34787,6 @@ function snd.attack(attack)
       string ="outc " .. pipe ..snd.sep .."put " .. pipe .." in emptypipe"..snd.sep ..string
     end
   end
-  
-  string = string..attack
     
   snd.send("qeb " .. string)
   
@@ -35117,6 +35065,10 @@ end</script>
  
   --Earthcaller/Luminary
   snd.infiltrate = false
+  
+  --Bard
+  snd.awakened = false
+  snd.breakcage = false
  
   raiseEvent("sunder_enemy_limbs_updated")
   raiseEvent("sunder_my_limbs_updated")
@@ -35129,12 +35081,12 @@ function snd.target_locked()
   end
 
   if snd.checksomeAffs({"slickness", "burnt_skin"}, 1) and snd.checksomeAffs({"paresis", "asthma", "anorexia"}, 3) 
-    and snd.checksomeAffs({"stupidity", "impatience", "muddled", "egocentric"}, 1) then
+    and snd.checksomeAffs({"stupidity", "impatience", "muddled", "egocentrism"}, 1) then
     return true
   end
   
   if snd.checkAff("slough") and snd.checkAff("paresis") and 
-    ((snd.checkAff("anorexia", 1) and snd.checksomeAffs({"stupidity", "impatience", "muddled", "egocentric"}, 1)) or
+    ((snd.checkAff("anorexia", 1) and snd.checksomeAffs({"stupidity", "impatience", "muddled", "egocentrism"}, 1)) or
       snd.checkAff("destroyed_throat"))
      then
     return true
@@ -35142,7 +35094,7 @@ function snd.target_locked()
   
   if (snd.checksomeAffs({"paresis", "tree_seared", "faulted", "frozen"}, 1) or snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled"},2)) and --can't tree
       (snd.checksomeAffs({"asthma", "slickness"}, 2) or snd.checkAff("slough")) and --can't apply, and can't smoke if can't apply is through slickness.
-      ((snd.checkAff("anorexia") and snd.checksomeAffs({"stupidity", "impatience", "muddled", "egocentric"}, 1)) or
+      ((snd.checkAff("anorexia") and snd.checksomeAffs({"stupidity", "impatience", "muddled", "egocentrism"}, 1)) or
       snd.checkAff("destroyed_throat")) --can't eat, and if via anorexia, can't be focused off
       then
       return true
@@ -35193,7 +35145,7 @@ function snd.no_parry()
   "unconscious",
  }
  if snd.class == "Sentinel" or snd.class == "Executor" then
-  table.insert(noparryaffs, "heartflutter")
+  table.insert(noparryaffs, "arrhythmia")
  end
  if snd.cureset == "zealot" then
   table.insert(noparryaffs, "paresis")
@@ -35267,10 +35219,10 @@ function snd.venomEffect(venom)
 			aff = "crippled"
 		end
 	elseif venom == "disrupt" then
-		if snd.checkAff("physical_disruption") then
-			aff = "mental_disruption"
+		if snd.checkAff("extravasation") then
+			aff = "delirium"
 		else
-			aff = "physical_disruption"
+			aff = "extravasation"
 		end
 	else
 		for i in pairs(snd.effects) do
@@ -35297,9 +35249,7 @@ end
 function snd.affNameCheck(aff)
 
 local affs_to_change = {
-  ["heart flutter"] = "heartflutter",
-  ["self-pity"] = "self_pity",
-  ["lovers"] = "lovers_effect",
+  ["heart flutter"] = "arrhythmia",
   ["crippled left leg"] = "left_leg_crippled",
   ["crippled right leg"] = "right_leg_crippled",
   ["crippled left arm"] = "left_arm_crippled",
@@ -35575,8 +35525,8 @@ end</script>
     Masochism = function(target)
                  snd.target_got("masochism")
                 end,
-    Lovers = function(target)
-                 snd.target_got("lovers_effect")
+    Infatuation = function(target)
+                 snd.target_got("infatuation")
                 end,
     Epilepsy = function(target)
                  snd.target_got("epilepsy")
@@ -35590,8 +35540,8 @@ end</script>
     Dementia = function(target)
                  snd.target_got("dementia")
                 end,
-    Berserking = function(target)
-                 snd.target_got("berserking")
+    Mania = function(target)
+                 snd.target_got("mania")
                 end,
     Indifference = function(target)
                  snd.target_got("indifference")
@@ -35631,7 +35581,7 @@ end</script>
           end,
   
   Anathema = function(target)
-            snd.target_got("blood_curse")
+            snd.target_got("psychosis")
           end,
 
   Attend = function(target)
@@ -35651,7 +35601,7 @@ end</script>
         end,
           
   Bane = function(target)
-             snd.target_got("blood_poison")
+             snd.target_got("sepsis")
           end,
           
   Pariah = function(target)
@@ -35684,12 +35634,12 @@ end</script>
              
     Infiltrative = function(target, catalysed)
              if not catalysed then
-               snd.target_got("infested")
+               snd.target_got("infestation")
              end
            end,
     Pathogen = function(target, catalysed)
              if not catalysed then
-               snd.target_got("blighted")
+               snd.target_got("blight")
              end
            end,
     Electroshock = function(target, catalysed)
@@ -35802,7 +35752,7 @@ end</script>
              end,
 
     Circle = function(target)
-              local t = {"merciful", "masochism", "berserking", "recklessness"} -- initialize table with circle affs
+              local t = {"mercy", "masochism", "mania", "recklessness"} -- initialize table with circle affs
               for _, v in pairs(t) do -- iterate circle affs
                 if not snd.checkAff(v) then -- check if they have it
                   snd.target_got(v) -- if they don't have it, add it
@@ -35812,7 +35762,7 @@ end</script>
              end,
                       
     Triangle = function(target)
-              local t = {"laxity", "lovers_effect", "peace", "magnanimity"} 
+              local t = {"laxity", "infatuation", "peace", "magnanimity"} 
               for _, v in pairs(t) do
                 if not snd.checkAff(v) then
                   snd.target_got(v)
@@ -36140,9 +36090,9 @@ end</script>
              snd.target_got("self_loathing")
              end,
   
-  -- Seduce does nothing w/o happiness induce or scantily-clad, and the lovers_effect has a confirmation line for that. Not sure we need below.
+  -- Seduce does nothing w/o happiness induce or scantily-clad, and the infatuation has a confirmation line for that. Not sure we need below.
 --  Seduce = function(target)
---            snd.target_got("lovers_effect")
+--            snd.target_got("infatuation")
 --            end,
   
   Quip = function(target)
@@ -36161,7 +36111,7 @@ end</script>
   
   Crackshot = function(target)
           snd.target_got("dizziness")
-          snd.target_got("perplexed")
+          snd.target_got("perplexity")
           end,
   
   Hiltblow = function(target)    
@@ -36181,6 +36131,10 @@ end</script>
     Anelace = function(target, stab)
             if stab then
                enableTrigger("Anelace Stab Handling")
+               snd.anelace = snd.anelace - 1
+               if snd.anelace &lt; 0 then
+                  snd.anelace = 0
+               end
              end
             end,
              
@@ -36377,7 +36331,7 @@ end</script>
 
  Poisonclaw = function(target)
                 if snd.checkAff("blisters") then
-                  snd.target_got("limp_veins")
+                  snd.target_got("hypotension")
                 else
                   snd.target_got("blisters")
                 end
@@ -36391,10 +36345,10 @@ end</script>
             end
           end,
  Stare = function(target)
-            if snd.checkAff("berserking") then
+            if snd.checkAff("mania") then
               snd.target_got("impairment")
             else
-              snd.target_got("berserking")
+              snd.target_got("mania")
             end
           end,
 
@@ -36611,7 +36565,7 @@ end</script>
                    end
                   end,
     Vent = function(target)
-                snd.target_got("berserking")
+                snd.target_got("mania")
                 snd.target_got("hallucinations")
               end,
     Fault = function(target)
@@ -36648,7 +36602,7 @@ end</script>
               snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
             end,
    Desolate = function(target)
-                    table.insert(snd.maybe_affs, "heartflutter")
+                    table.insert(snd.maybe_affs, "arrhythmia")
                     snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
                   end,
    Ruse = function(target)
@@ -36737,7 +36691,7 @@ end</script>
                   ["darkhound"] = "claustrophobia",
                   ["brutaliser"] = "agoraphobia",
                   ["eviscerator"] = "loneliness",
-                ["terrifier"] = "berserking",
+                ["terrifier"] = "mania",
               }
                snd.target_got(accost_list[animal])
     end,
@@ -36824,7 +36778,7 @@ end</script>
                         snd.target_got("fallen")
                     end,             
         Lovers = function(target)
-                   snd.target_got("lovers_effect")  
+                   snd.target_got("infatuation")  
                  end,
 
         Aeon = function(target, speed)
@@ -36998,7 +36952,7 @@ end</script>
                    end
                   end,
     Heatwave = function(target)
-                snd.target_got("berserking")
+                snd.target_got("mania")
                 snd.target_got("hallucinations")
               end,
     Sear = function(target)
@@ -37239,7 +37193,7 @@ end</script>
                         snd.target_got("fallen")
                     end,             
         Heart = function(target)
-                   snd.target_got("lovers_effect")  
+                   snd.target_got("infatuation")  
                  end,
 
         Hourglass = function(target)
@@ -37355,8 +37309,8 @@ end</script>
     Masochism = function(target)
                  snd.target_got("masochism")
                 end,
-    Lovers = function(target)
-                 snd.target_got("lovers_effect")
+    Infatuation = function(target)
+                 snd.target_got("infatuation")
                 end,
     Epilepsy = function(target)
                  snd.target_got("epilepsy")
@@ -37370,8 +37324,8 @@ end</script>
     Dementia = function(target)
                  snd.target_got("dementia")
                 end,
-    Berserking = function(target)
-                 snd.target_got("berserking")
+    Mania = function(target)
+                 snd.target_got("mania")
                 end,
     Indifference = function(target)
                  snd.target_got("indifference")
@@ -37404,7 +37358,7 @@ end</script>
   ["Sanguis"] = {
   
   Curse = function(target)
-            snd.target_got("blood_curse")
+            snd.target_got("psychosis")
           end,
 
   Spew = function(target)
@@ -37427,7 +37381,7 @@ end</script>
         end,
           
   Poison = function(target)
-             snd.target_got("blood_poison")
+             snd.target_got("sepsis")
           end,
           
   Rune = function(target)            
@@ -37635,7 +37589,7 @@ end</script>
     Pheromones =
       function(target)
         snd.setPredatorVenom()
-        snd.target_got("lovers_effect")
+        snd.target_got("infatuation")
       end,
     Pindown =
       function(target, fail)
@@ -37784,9 +37738,6 @@ end</script>
   
   Lancing = function(target)
                 snd.target_got("heatspear")
-                if (snd.class == "Zealot" or snd.class == "Ravager") and snd.flamestack &gt; 0 then
-                  cecho("\n"..snd.target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
-                end
               end,
 
   --Torment = function(target)
@@ -37798,9 +37749,6 @@ end</script>
   Intensify = function(target)
             --snd.target_got("ablaze")
             snd.flamestack = snd.flamestack + 3
-            if (snd.class == "Zealot" or snd.class == "Ravager") and snd.flamestack &gt; 0 then
-              cecho("\n"..snd.target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
-            end
             end,
   Bedevil = function(target, direction)
               snd.pendulum(direction)
@@ -37817,7 +37765,7 @@ end</script>
                        snd.lev_gone = true
                      end,                    
         Boast = function(target)
-                    snd.target_got("merciful")
+                    snd.target_got("mercy")
                     snd.target_got("dementia")
                     snd.target_got("paranoia")
                   end,
@@ -38001,7 +37949,7 @@ end</script>
                     end,                   
       Falter = function(target, shadowprice)
                 	if snd.checkAff("dizziness") then snd.target_got("dementia") end
-                  if snd.checkAff("weariness") then snd.target_got("exhausted") end
+                  if snd.checkAff("weariness") then snd.target_got("crippled") end
                 end,
       Shadowbrand = function(target, conditional)
                   if conditional == "Shadowprice" or conditional == "end" then
@@ -38114,7 +38062,7 @@ end</script>
                     end,                   
       Anathemise = function(target, spiritpact)
                 	if snd.checkAff("dizziness") then snd.target_got("dementia") end
-                  if snd.checkAff("weariness") then snd.target_got("exhausted") end
+                  if snd.checkAff("weariness") then snd.target_got("crippled") end
                 end, 
                                  
       Vilipend = function(target, spiritpact)
@@ -38198,7 +38146,7 @@ end</script>
               snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
             end,
    Heartbreaker = function(target)
-                    table.insert(snd.maybe_affs, "heartflutter")
+                    table.insert(snd.maybe_affs, "arrhythmia")
                     snd.onHit2({"Dodge", "Parry", "Rebounding"}, "Sentinel")
                   end,
    Twirl = function(target)
@@ -38287,7 +38235,7 @@ end</script>
               	["coyote"] = "claustrophobia",
               	["raloth"] = "agoraphobia",
               	["crocodile"] = "loneliness",
-                ["cockatrice"] = "berserking",
+                ["cockatrice"] = "mania",
               }
 	           snd.target_got(daunt_list[animal])
     end,
@@ -38403,7 +38351,7 @@ end</script>
         snd.affTimers.start("muddled", 8.5)
       elseif vibe == "Disorientation" then
         if snd.checkAff("epilepsy") then
-          snd.target_got("berserking")
+          snd.target_got("mania")
         else
           snd.target_got("epilepsy")
         end
@@ -38501,12 +38449,12 @@ end</script>
              
     Infest = function(target, boosted)
              if not boosted then
-               snd.target_got("infested")
+               snd.target_got("infestation")
              end
            end,
     Spines = function(target, boosted)
              if not boosted then
-               snd.target_got("blighted")
+               snd.target_got("blight")
              end
            end,
     Overload = function(target, boosted)
@@ -38831,7 +38779,7 @@ end</script>
               ["ringing"] = "ringing_ears",
               ["blurring"] = "blurry_vision",
               ["debilitating"] = "weariness",
-              ["berserking"] = "berserking",
+              ["mania"] = "mania",
               ["angry"] = "hatred",
               ["disturbing"] = "disrupted",
               ["befuddling"] = "confusion",
@@ -39134,7 +39082,7 @@ end</script>
         
     Heartpunch = function(target)
                 if snd.reboundingTimer then killTimer(snd.reboundingTimer) end
-                snd.target_got("heartflutter")
+                snd.target_got("arrhythmia")
               end,
         
       Rip = function(target, limb)
@@ -39147,7 +39095,7 @@ end</script>
               end,
       Wrack = function(target)
                 snd.target_got("paresis")
-                snd.target_got("heartflutter")
+                snd.target_got("arrhythmia")
               end,
       Shout = function(target)
                 snd.target_got("blurry_vision")
@@ -39363,7 +39311,7 @@ end</script>
     
     Trammel = function(target)
                 if snd.reboundingTimer then killTimer(snd.reboundingTimer) end
-                snd.target_got("heartflutter")
+                snd.target_got("arrhythmia")
               end,
       Squeeze = function(target, limb)
                 if limb == "torso" then
@@ -39375,7 +39323,7 @@ end</script>
               end,
         Chime = function(target)
                 snd.target_got("paresis")
-                snd.target_got("heartflutter")
+                snd.target_got("arrhythmia")
               end,
       Concuss = function(target)
                 snd.target_got("blurry_vision")
@@ -39451,7 +39399,7 @@ end</script>
               end
             end,
     Disgust = function(target)
-              local t = {"merciful", "masochism", "berserking", "recklessness"} -- initialize table with circle affs
+              local t = {"mercy", "masochism", "mania", "recklessness"} -- initialize table with circle affs
               for _, v in pairs(t) do -- iterate circle affs
                 if not snd.checkAff(v) then -- check if they have it
                   snd.target_got(v) -- if they don't have it, add it
@@ -39461,7 +39409,7 @@ end</script>
              end,
                       
     Joy = function(target)
-              local t = {"laxity", "lovers_effect", "peace", "magnanimity"} 
+              local t = {"laxity", "infatuation", "peace", "magnanimity"} 
               for _, v in pairs(t) do
                 if not snd.checkAff(v) then
                   snd.target_got(v)
@@ -39749,15 +39697,15 @@ end</script>
             end
           end,
  Inciter = function(target)
-            if snd.checkAff("berserking") then
+            if snd.checkAff("mania") then
               snd.target_got("impairment")
             else
-              snd.target_got("berserking")
+              snd.target_got("mania")
             end
           end,  
  Toxicologist = function(target)
                 if snd.checkAff("blisters") then
-                  snd.target_got("limp_veins")
+                  snd.target_got("hypotension")
                 else
                   snd.target_got("blisters")
                 end
@@ -39897,13 +39845,13 @@ end</script>
     Halt = function(target, boosted)
                 snd.target_got("lethargy")
                 if boosted then
-                  snd.target_got("halted")
-                  halted_timer = tempTimer(3.0,[[snd.target_cured("halted")]])
+                  snd.target_got("immobility")
+                  halted_timer = tempTimer(5.0,[[snd.target_cured("immobility")]])
                 end
              end,
 
     Exhaust = function(target, boosted)
-                snd.target_got("exhausted")
+                snd.target_got("exhaustion")
              end,
              
     Expunge = function(target, boosted)
@@ -40057,11 +40005,8 @@ end</script>
                 snd.used.rebounding = true
               end,
   Quicken = function(target)
-            snd.target_got("ablaze")
+            --snd.target_got("ablaze")
             snd.flamestack = snd.flamestack + 3
-            if snd.class == "Zealot" then
-              cecho("\n"..snd.target.." Now has &lt;light_goldenrod&gt;"..snd.flamestack.."&lt;dodger_blue&gt; stacks of intensity")
-            end
             end,
   Pendulum = function(target, direction)
               snd.pendulum(direction)
@@ -40075,7 +40020,7 @@ end</script>
                      end,
                     
         Deprival = function(target)
-                    snd.target_got("merciful")
+                    snd.target_got("mercy")
                     snd.target_got("dementia")
                     snd.target_got("paranoia")
                   end,
@@ -40218,7 +40163,7 @@ function snd.calc.writhetime()
     end
   end
   local time = 2 + (.7 * physcount)
-  if snd.checkAff("physical_disruption") then
+  if snd.checkAff("extravasation") then
     time = time + 1
   end
   return time
@@ -40300,12 +40245,12 @@ end
 							<name>Archivist aff picking</name>
 							<packageName></packageName>
 							<script>snd.shape_affs = {
-		"merciful",
+		"mercy",
 		"masochism",
-		"berserking",
+		"mania",
 		"recklessness",
 		"laxity",
-		"lovers_effect",
+		"infatuation",
 		"peace",
 		"magnanimity",
 		"dizziness",
@@ -40315,12 +40260,12 @@ end
 }
 
 snd.shape_attacks = {
-		merciful = "circle",
+		mercy = "circle",
 		masochism = "circle",
-		berserking = "circle",
+		mania = "circle",
 		recklessness = "circle",
 		laxity = "triangle",
-		lovers_effect = "triangle",
+		infatuation = "triangle",
 		peace = "triangle",
 		magnanimity = "triangle",
 		dizziness = "square",
@@ -40339,7 +40284,7 @@ snd.shape_attacks = {
   {
     "impatience",
     "destroyed_throat",
-    "heartflutter",
+    "arrhythmia",
     "confusion",
     "lethargy",
     "fallen",
@@ -40348,7 +40293,7 @@ snd.shape_attacks = {
     "claustrophobia",
     "agoraphobia",
     "loneliness",
-    "berserking",
+    "mania",
     "frozen",
     "shivering",
     "ambush",
@@ -40375,7 +40320,7 @@ snd.dhuriv_attacks =
     reave = "reave",
     impatience = "gouge",
     destroyed_throat = "throatcrush",
-    heartflutter = "heartbreaker",
+    arrhythmia = "heartbreaker",
     confusion = "twirl",
     lethargy = "weaken left leg",
     fallen = "trip",
@@ -40385,7 +40330,7 @@ snd.dhuriv_attacks =
     claustrophobia = "daunt",
     agoraphobia = "daunt",
     loneliness = "daunt",
-    berserking = "daunt",
+    mania = "daunt",
     frozen = "icewyrm",
     frigid = "icewyrm",
     shivering = "icewyrm",
@@ -40396,7 +40341,7 @@ snd.daunt_animals =
     ["claustrophobia"] = "order coyote daunt ",
     ["agoraphobia"] = "order raloth daunt ",
     ["loneliness"] = "order crocodile daunt ",
-    ["berserking"] = "order cockatrice daunt ",
+    ["mania"] = "order cockatrice daunt ",
     ["frozen"] = "order icewyrm icebreath ",
     ["frigid"] = "order icewyrm icebreath ",
     ["shivering"] = "order icewyrm icebreath ",
@@ -40497,11 +40442,11 @@ snd.cardshapes =
         confusion = {card = "moon"},
         epilepsy = {card = "moon"},
         anorexia = {card = "moon"},
-        berserking = {card = "moon"},
+        mania = {card = "moon"},
         weariness = {card = "moon"},
         impatience = {card = "moon"},
         recklessness = {card = "moon"},
-        perplexed = {card = "sun"},
+        perplexity = {card = "sun"},
         asthma = {card = "sun"},
         clumsiness = {card = "sun"},
         vomiting = {card = "sun"},
@@ -40514,7 +40459,7 @@ snd.cardshapes =
         prone = {card = "hangedman"},
         writhe_ropes = {card = "hangedman"},
         justice = {card = "justice"},
-        lovers_effect = {card = "lovers"},
+        infatuation = {card = "lovers"},
         wheel = {card = "wheel"},
         slickness = {card = "adder"},
         haemophilia = {card = "adder"},
@@ -40529,6 +40474,10 @@ snd.cardshapes =
         deadening = {card = "adder"},
         disfigurement = {card = "adder"},
         squelched = {card = "adder"},
+        left_arm_crippled = { card = "adder" },
+        right_arm_crippled = { card = "adder" },
+        left_leg_crippled = { card = "adder" },
+        right_leg_crippled = { card = "adder" },
       },
     oneiromancer =
       {
@@ -40536,11 +40485,11 @@ snd.cardshapes =
         confusion = {card = "hypercube"},
         epilepsy = {card = "hypercube"},
         anorexia = {card = "hypercube"},
-        berserking = {card = "hypercube"},
+        mania = {card = "hypercube"},
         weariness = {card = "hypercube"},
         impatience = {card = "hypercube"},
         recklessness = {card = "hypercube"},
-        perplexed = {card = "sphere"},
+        perplexity = {card = "sphere"},
         asthma = {card = "sphere"},
         clumsiness = {card = "sphere"},
         vomiting = {card = "sphere"},
@@ -40553,7 +40502,7 @@ snd.cardshapes =
         prone = {card = "wreath"},
         writhe_ropes = {card = "wreath"},
         justice = {card = "knight"},
-        lovers_effect = {card = "heart"},
+        infatuation = {card = "heart"},
         wheel = {card = "cardinal"},
         slickness = {card = "diamond"},
         haemophilia = {card = "diamond"},
@@ -40569,6 +40518,10 @@ snd.cardshapes =
         deadening = {card = "diamond"},
         disfigurement = {card = "diamond"},
         squelched = {card = "diamond"},
+        left_arm_crippled = { card = "diamond" },
+        right_arm_crippled = { card = "diamond" },
+        left_leg_crippled = { card = "diamond" },
+        right_leg_crippled = { card = "diamond" },
       },
   }</script>
 							<eventHandlerList />
@@ -40576,7 +40529,8 @@ snd.cardshapes =
 						<Script isActive="yes" isFolder="no">
 							<name>Bard attack stuff</name>
 							<packageName></packageName>
-							<script>snd.globecount = 0
+							<script>snd.anelace = 0
+snd.globecount = 0
 snd.singing = false
 snd.playing = false
 snd.song = "none"
@@ -40593,8 +40547,9 @@ snd.boundary = false
 snd.awakened = false
 snd.emotion = "neutral"
 snd.midsong = false
-snd.anelance = 0
 snd.goblet = false
+snd.needlewait = false
+snd.breakcage = false
 
 snd.emotional_dmg = {
 sadness = 0,
@@ -40632,16 +40587,16 @@ snd.venom_affs =
 "disfigurement",
 "stuttering",
 "deadening",
-"thin_blood",
+"dyscrasia",
 }
 
 
 snd.performance_affs = {
-"perplexed",
+"perplexity",
 "dazed",
-"berserking",
+"mania",
 "hatred",
-"lovers_effect",
+"infatuation",
 "misery",
 "self_loathing",
 "fallen",
@@ -40651,12 +40606,12 @@ snd.performance_affs = {
 
 snd.performance_attacks = {
 		pierce = "pierce",
-    perplexed = "crackshot",
+    perplexity = "crackshot",
 		dazed = "sock",
 		dizziness = "crackshot",
-		berserking = "quip",
+		mania = "quip",
 		hatred = "quip",
-		lovers_effect = "seduce",
+		infatuation = "seduce",
 		fallen = "tackle",
 		self_loathing = "ridicule",
     magnanimity = "ridicule",
@@ -40696,7 +40651,7 @@ snd.weaving_attacks = {
 
 snd.globe_affs = {
 
-[1] = "perplexed",
+[1] = "perplexity",
 [2] = "confusion",
 [3] = "dizziness",
 
@@ -40708,7 +40663,7 @@ snd.runeband_affs = {
 [2] = "paranoia",
 [3] = "ringing_ears",
 [4] = "loneliness",
-[5] = "exhausted",
+[5] = "exhaustion",
 [6] = "laxity",
 [7] = "clumsiness",
 
@@ -40805,7 +40760,7 @@ snd.censure_affs = {
 "disfigurement",
 "stuttering",
 "deadening",
-"thin_blood",
+"dyscrasia",
 "left_leg_crippled",
 "right_leg_crippled",
 "left_arm_crippled",
@@ -40820,28 +40775,28 @@ snd.secondary_affs = {
 "stupidity",
 "agoraphobia",
 "masochism",
-"lovers",
+"infatuation",
 "contrition",
 "epilepsy",
 "anorexia",
 "amnesia",
 "peace",
 "dementia",
-"berserking",
+"mania",
 "indifference",
 "vertigo",
 "remorse",
 "recklessness",
 "sight",
 "hearing",
-"blood_poison",
+"sepsis",
 }
 
 snd.akkari_eq_affs = {
 	"disrupted",
 	--"sight",
 	"writhe_transfix",
-	"blood_curse",
+	"psychosis",
 --	"blood_rune",
 	"feast",
 }
@@ -40850,7 +40805,7 @@ snd.akkari_eq_attacks = {
 	disrupted = "disrupt",
 --	sight = "exhort",
 	writhe_transfix = "exhort",
-	blood_curse = "spirit anathema",
+	psychosis = "spirit anathema",
 	feast = "spirit exorcise",
 }
 
@@ -40883,11 +40838,11 @@ snd.akkari_bal_attacks = {
 
 function snd.akkari_host()
   if gmcp.Char.Status.spec == "Dosan" or gmcp.Char.Status.spec == "Phreneses" then
-    if table.contains(snd.primary_aff, "blood_curse") then
-        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_curse"))
+    if table.contains(snd.primary_aff, "psychosis") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "psychosis"))
     end
-    if table.contains(snd.primary_aff, "blood_poison") then
-        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_poison"))
+    if table.contains(snd.primary_aff, "sepsis") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "sepsis"))
     end 
     if table.contains(snd.primary_aff, "blood_rune") then
         table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_rune"))
@@ -40896,8 +40851,8 @@ function snd.akkari_host()
     if table.contains(snd.primary_aff, "feast") then
           table.remove(snd.primary_aff, table.index_of(table, "feast"))
     end  
-    if table.contains(snd.primary_aff, "blood_curse") then
-        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_curse"))
+    if table.contains(snd.primary_aff, "psychosis") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "psychosis"))
     end
     if table.contains(snd.primary_aff, "blood_rune") then
         table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_rune"))
@@ -40906,18 +40861,18 @@ function snd.akkari_host()
     if table.contains(snd.primary_aff, "feast") then
           table.remove(snd.primary_aff, table.index_of(table, "feast"))
     end  
-    if table.contains(snd.primary_aff, "blood_poison") then
-        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_poison"))
+    if table.contains(snd.primary_aff, "sepsis") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "sepsis"))
     end    
   else
     if table.contains(snd.primary_aff, "feast") then
           table.remove(snd.primary_aff, table.index_of(table, "feast"))
     end 
-    if table.contains(snd.primary_aff, "blood_poison") then
-        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_poison"))
+    if table.contains(snd.primary_aff, "sepsis") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "sepsis"))
     end 
-    if table.contains(snd.primary_aff, "blood_curse") then
-        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "blood_curse"))
+    if table.contains(snd.primary_aff, "psychosis") then
+        table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "psychosis"))
     end  
   end
 end
@@ -40954,9 +40909,9 @@ function snd.akkari_doctrine()
   end
 end
 
-function snd.akkari_lovers(tab)
-  if table.contains(tab,"lovers") and snd.checkAff("lovers_effect") then
-    table.remove(tab, table.index_of(tab, "lovers"))
+function snd.akkari_infatuation(tab)
+  if table.contains(tab,"infatuation") and snd.checkAff("infatuation") then
+    table.remove(tab, table.index_of(tab, "infatuation"))
   end
 end
 
@@ -40981,9 +40936,9 @@ end
 function snd.akkari_curse()
   if snd.checkAff("impatience") and snd.checksomeAffs({"sadness", "confusion",}, 2) 
   and (gmcp.Char.Status.spec == "Naarak" or gmcp.Char.Status.spec == "Rituos")
-  and not snd.checkAff("blood_curse") 
-  and not table.contains(snd.secondary_aff, "blood_curse") then
-    table.insert(snd.secondary_aff, 1, "blood_curse")
+  and not snd.checkAff("psychosis") 
+  and not table.contains(snd.secondary_aff, "psychosis") then
+    table.insert(snd.secondary_aff, 1, "psychosis")
   end
  end
 
@@ -40998,7 +40953,7 @@ end
 
 function snd.akkari_repent()
   if table.contains(snd.primary_aff, "sapped_dexterity") then
-    if not snd.checksomeAffs({"self_pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonace", "infested",}, 3) then
+    if not snd.checksomeAffs({"self_pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonace", "infestation",}, 3) then
     table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "sapped_dexterity"))
     end
   end  
@@ -41060,7 +41015,7 @@ end
 
 function snd.akkari_inquisition()
   local seizeMana = 10.98 + snd.aff_count_mental()*4
-  if snd.checkAff("blood_curse") then
+  if snd.checkAff("psychosis") then
     return (seizeMana+4)*1.15
   end
   return seizeMana
@@ -41161,12 +41116,12 @@ end</script>
 							<name>Voidseer aff picking</name>
 							<packageName></packageName>
 							<script>snd.foment_affs = {
-		"merciful",
+		"mercy",
 		"masochism",
-		"berserking",
-		"recklessness",
+		"mania",
+		"mania",
 		"laxity",
-		"lovers_effect",
+		"infatuation",
 		"peace",
 		"magnanimity",
 		"dizziness",
@@ -41176,12 +41131,12 @@ end</script>
 }
 
 snd.foment_attacks = {
-		merciful = "disgust",
+		mercy = "disgust",
 		masochism = "disgust",
-		berserking = "disgust",
+		mania = "disgust",
 		recklessness = "disgust",
 		laxity = "joy",
-		lovers_effect = "joy",
+		infatuation = "joy",
 		peace = "joy",
 		magnanimity = "joy",
 		dizziness = "fear",
@@ -41198,7 +41153,7 @@ snd.foment_attacks = {
   {
     "impatience",
     "destroyed_throat",
-    "heartflutter",
+    "arrhythmia",
     "confusion",
     "lethargy",
     "fallen",
@@ -41207,7 +41162,7 @@ snd.foment_attacks = {
     "claustrophobia",
     "agoraphobia",
     "loneliness",
-    "berserking",
+    "mania",
     "frozen",
     "shivering",
     "ambush",
@@ -41235,7 +41190,7 @@ snd.ringblade_attacks =
     reave = "shave",
     impatience = "muddle",
     destroyed_throat = "stifle",
-    heartflutter = "desolate",
+    arrhythmia = "desolate",
     confusion = "ruse",
     lethargy = "impair left leg",
     fallen = "gambol",
@@ -41245,7 +41200,7 @@ snd.ringblade_attacks =
     claustrophobia = "accost",
     agoraphobia = "accost",
     loneliness = "accost",
-    berserking = "accost",
+    mania = "accost",
     frozen = "rimestalker",
     frigid = "rimestalker",
     shivering = "rimestalker",
@@ -41257,7 +41212,7 @@ snd.accost_accomplices =
     ["claustrophobia"] = "order darkhound accost ",
     ["agoraphobia"] = "order brutaliser accost ",
     ["loneliness"] = "order eviscerator accost ",
-    ["berserking"] = "order terrifier accost ",
+    ["mania"] = "order terrifier accost ",
     ["frozen"] = "order rimestalker verglas ",
     ["frigid"] = "order rimestalker verglas ",
     ["shivering"] = "order rimestalker verglas ",
@@ -41368,7 +41323,7 @@ end</script>
 							<packageName></packageName>
 							<script>
 function snd.focuscovered(timeneeded)
-  if (snd.checkAff("stupidity") or snd.checkAff("impatience") or snd.checkAff("egocentric")) and ((snd.pillcheck(0.3) or snd.checkAff("shyness") or snd.checkAff("stupidity") or snd.checkAff("dizziness") or snd.checkAff("self_pity") or snd.checkAff("faintness") or snd.checkAff("epilepsy")) or snd.focuscheck(timeneeded)) then
+  if (snd.checkAff("stupidity") or snd.checkAff("impatience") or snd.checkAff("egocentrism")) and ((snd.pillcheck(0.3) or snd.checkAff("shyness") or snd.checkAff("stupidity") or snd.checkAff("dizziness") or snd.checkAff("self_pity") or snd.checkAff("faintness") or snd.checkAff("epilepsy")) or snd.focuscheck(timeneeded)) then
     return true
   else
     return false
@@ -41478,15 +41433,13 @@ function snd.asthmacovered()
     return true
   elseif snd.checkAff("hypochondria") and snd.pillcheck(0.3) then
     return true  
-  elseif snd.checkAff("baldness") and snd.pillcheck(0.3) then
-    return true
   else
     return false
   end
 end
 
 function snd.nyctophobiacovered()
-  if snd.checkAff("commitment_fear") or snd.checkAff("merciful") or snd.checkAff("recklessness") or snd.checkAff("egocentric") or snd.checkAff("masochism") or  snd.checkAff("agoraphobia") or snd.checkAff("loneliness") or snd.checkAff("berserking") or snd.checkAff("vertigo") or snd.checkAff("claustrophobia") or snd.checkAff("gloomaffone") or snd.checkAff("gloomafftwo") or snd.checkAff("gloomaffthree") or snd.checkAff("gloomafffour") or snd.checkAff("gloomafffive") then
+  if snd.checkAff("mercy") or snd.checkAff("recklessness") or snd.checkAff("egocentrism") or snd.checkAff("masochism") or  snd.checkAff("agoraphobia") or snd.checkAff("loneliness") or snd.checkAff("mania") or snd.checkAff("vertigo") or snd.checkAff("claustrophobia") or snd.checkAff("gloomaffone") or snd.checkAff("gloomafftwo") or snd.checkAff("gloomaffthree") or snd.checkAff("gloomafffour") or snd.checkAff("gloomafffive") then
     return true
   else
     return false
@@ -41767,7 +41720,7 @@ function snd.executorslasher2()
   elseif not snd.checkAff("impatience") and (snd.no_parry() or snd.praeattack == "ruse") then
     snd.praeattack2 = "muddle" 
     
-  elseif not snd.checkAff("heartflutter") and not snd.no_parry() then
+  elseif not snd.checkAff("arrhythmia") and not snd.no_parry() then
     snd.praeattack2 = "desolate"  
  
   elseif not (snd.checkAff("paresis") or snd.checkAff("paralysis")) and snd.scythevenom1 ~= "paresis" then
@@ -41903,7 +41856,7 @@ function snd.executorfastlock2()
   elseif not (snd.checkAff("paresis") or snd.checkAff("paralysis")) and snd.scythevenom1 ~= "paresis" then
     snd.scythevenomapp2 = "curare"
     
-  elseif not snd.checkAff("heartflutter") and not snd.no_parry() and snd.praeattack ~= "desolate" then
+  elseif not snd.checkAff("arrhythmia") and not snd.no_parry() and snd.praeattack ~= "desolate" then
     snd.praeattack2 = "desolate"  
  
    elseif not snd.checkAff("asthma") and snd.scythevenom1 ~= "asthma" then
@@ -41959,7 +41912,7 @@ end</script>
   elseif not snd.checkAff("claustrophobia") then
     snd.praeattack = "order darkhound accost"
     snd.executormentalslashermodetwo()
- -- elseif not snd.checkAff("berserking") then  no unless you want to sacrifice wardpeeler
+ -- elseif not snd.checkAff("mania") then  no unless you want to sacrifice wardpeeler
   
   else
     snd.executorslashergeneral()
@@ -42160,7 +42113,7 @@ end</script>
   elseif not snd.checkAff("clumsiness") and snd.scythevenom1 ~= "clumsiness" and not snd.checkAff("anorexia") then
     snd.scythevenomapp2 = "xentio"
 
-  elseif not snd.checkAff("heartflutter") and not snd.no_parry() and snd.praeattack ~= "desolate" then
+  elseif not snd.checkAff("arrhythmia") and not snd.no_parry() and snd.praeattack ~= "desolate" then
     snd.praeattack2 = "desolate"
 
   elseif not snd.checkAff("slickness") and snd.scythevenom1 ~= "slickness" then
@@ -42323,7 +42276,7 @@ end</script>
   -- max 5 energy
   -- Electroshock 3 vol 2.24s, 2.49s at 2 vol, 2.75s at 1 vol, 3.01s
   -- virulent catalysed 2.15s, otherwise 2.58s
-  local causaffs = {"paranoia", "infested", "blighted", "stormtouched"}
+  local causaffs = {"paranoia", "infestation", "blight", "stormtouched"}
   local causcount = 0
   for i = 1, tonumber(#causaffs) do
     local affliction = causaffs[i]
@@ -42415,8 +42368,8 @@ end</script>
     snd.queueattack = snd.queueattack.. "experiment reconfigure wailing" ..snd.separator.. "order loyals follow me" ..snd.separator
   end
 --decompose (if one is there)
---Paranoia, Infested, Blighted, and Stormtouched.
---creation of blighted forest?
+--Paranoia, infestation, blight, and Stormtouched.
+--creation of blight forest?
 --
   if tonumber(snd.mentalcount) &lt; 3 and not snd.alchemyprepare then
     snd.queueattack = snd.queueattack.. "alchemy prepare electroshock"  ..snd.separator
@@ -42561,8 +42514,8 @@ end</script>
     snd.queueattack = snd.queueattack.. "experiment reconfigure wailing" ..snd.separator.. "order loyals follow me" ..snd.separator
   end
 --decompose (if one is there)
---Paranoia, Infested, Blighted, and Stormtouched.
---creation of blighted forest?
+--Paranoia, infestation, blight, and Stormtouched.
+--creation of blight forest?
 --
   if snd.causalityused and not table.contains(snd.curtarget, "sensitivity") then
     if vol &gt; 0 then
@@ -42588,9 +42541,9 @@ end</script>
     snd.queueattack = snd.queueattack.. "alchemy malignant " ..snd.aim.. "" ..snd.separator
   elseif not table.contains(snd.curtarget, "confusion") and not table.contains(snd.curtarget, "impatience") and snd.alchemyprepare and vol &gt; 2 then
     snd.queueattack = snd.queueattack.. "alchemy neurotic " ..snd.aim.. "" ..snd.separator.. "alchemy educe " ..snd.aim.. "" ..snd.separator
-  elseif table.contains(snd.curtarget, "confusion") and not table.contains(snd.curtarget, "blighted") then
+  elseif table.contains(snd.curtarget, "confusion") and not table.contains(snd.curtarget, "blight") then
     snd.queueattack = snd.queueattack.. "alchemy pathogen " ..snd.aim.. "" ..snd.separator
-  elseif snd.euphoriantcurecover and not table.contains(snd.curtarget, "infested") then
+  elseif snd.euphoriantcurecover and not table.contains(snd.curtarget, "infestation") then
     snd.queueattack = snd.queueattack.. "alchemy infiltrative " ..snd.aim.. "" ..snd.separator
   elseif not (table.contains(snd.curtarget, "paralysis") or table.contains(snd.curtarget, "paresis")) and not table.contains(snd.curtarget, "stupidity") and (vol &gt; 2 or table.contains(snd.curtarget, "impatience")) and vol &gt; 1 then
     snd.queueattack = snd.queueattack.. "alchemy catalyse" ..snd.separator.. "alchemy electroshock " ..snd.aim.. "" ..snd.separator
@@ -42748,7 +42701,7 @@ end</script>
 	elseif tonumber(snd.percenthealth &lt; 40) and snd.checkAff("haemophilia") and snd.checkAff("nyctophobia") then 
 		if tonumber(snd.shadowpricecount) &gt; 0 and not snd.checkAff("dementia") then
 			snd.praeattack =  "shadowprice falter " ..snd.target..snd.sep
-		elseif tonumber(snd.shadowpricecount) &gt; 0 and not snd.checkAff("exhausted") then
+		elseif tonumber(snd.shadowpricecount) &gt; 0 and not snd.checkAff("exhaustion") then
 			snd.praeattack =  "shadowprice falter " ..snd.target..snd.sep
 		else
 			snd.praeattack =  "cast falter " ..snd.target..snd.sep
@@ -42758,9 +42711,9 @@ end</script>
 		snd.praeattack =  "cast fever " ..snd.target..snd.sep
 	elseif not snd.checkAff("clumsiness") or not snd.checkAff("paresis") then
 		snd.praeattack =  "cast ruin " ..snd.target..snd.sep
-	elseif not snd.checkAff("dementia") and not snd.checkAff("exhausted") and snd.checkAff("dizziness") and snd.checkAff("weariness") then
+	elseif not snd.checkAff("dementia") and not snd.checkAff("exhaustion") and snd.checkAff("dizziness") and snd.checkAff("weariness") then
 		snd.praeattack =  "cast falter " ..snd.target..snd.sep
-	elseif not snd.checkAff("dementia") and not snd.checkAff("exhausted") and snd.checkAff("dizziness") and not snd.checkAff("weariness") then
+	elseif not snd.checkAff("dementia") and not snd.checkAff("exhaustion") and snd.checkAff("dizziness") and not snd.checkAff("weariness") then
 		if tonumber(snd.shadowpricecount) &gt; 0 then
 			snd.praeattack =  "shadowprice falter " ..snd.target..snd.sep
 		else
@@ -42805,7 +42758,7 @@ end</script>
 		snd.praeattack =  "shadowprice haunt " ..snd.target..snd.sep
     
 	elseif snd.checkAff("haemophilia") and snd.checkAff("nyctophobia") then
-		if tonumber(snd.shadowpricecount) &gt; 0 and not (snd.checkAff("dementia") or snd.checkAff("exhausted")) then
+		if tonumber(snd.shadowpricecount) &gt; 0 and not (snd.checkAff("dementia") or snd.checkAff("exhaustion")) then
 			snd.praeattack =  "shadowprice falter " ..snd.target..snd.sep
 		else
 			snd.praeattack =  "cast falter " ..snd.target..snd.sep
@@ -43158,7 +43111,7 @@ end</script>
 		snd.my_impress = "Bloom"
 	elseif not snd.checkAff("hypochondria") then  -- hex diagnose
 		snd.my_impress = "Hex"
-	elseif not snd.checkAff("mental_disruption") then -- swirl falling over
+	elseif not snd.checkAff("delirium") then -- swirl falling over
 		snd.my_impress = "Swirl"
 	end
 	
@@ -43174,7 +43127,7 @@ end</script>
 	time = (snd.recoverytime - getEpoch()) 
   
 	local shapecount = 0
-	local shapetable = {"dizziness", "faintness", "epilepsy", "shyness", "merciful", "masochism", "berserking", "recklessness", "laxity", "lovers_effect", "peace", "magnanimity"}
+	local shapetable = {"dizziness", "faintness", "epilepsy", "shyness", "mercy", "masochism", "mania", "recklessness", "laxity", "infatuation", "peace", "magnanimity"}
 	for i = 1, tonumber(#shapetable) do
 		local affliction2 = shapetable[i]
 		if snd.checkAff(affliction2) then
@@ -43185,7 +43138,7 @@ end</script>
   
 	if not snd.checkAff("barrier") then  -- patterns and unravel stopped by lyre, patterns no longer goes through shield and aegis shield
 		if snd.used.shield then
-			if not snd.checkAff("mental_disruption") and not snd.growth and snd.checkAff("addiction") then
+			if not snd.checkAff("delirium") and not snd.growth and snd.checkAff("addiction") then
 				string = string.."geo impress swirl" ..snd.sep.. "incite fork " ..snd.target.. "" ..snd.sep
 			else
 				string = string.."geo impress arrow" ..snd.sep.. "incite fork " ..snd.target.. "" ..snd.sep
@@ -43215,7 +43168,7 @@ end</script>
   elseif mentcount &gt; 2 and physcount &lt; 3 and bioessence &gt; 0 and tonumber(ashcountone) &gt; 1 and not snd.checkAff("addiction") and snd.growth then 
 		if not snd.checkAff("hypochondria") and not snd.conjoin then  -- hex diagnose
 			string = "geo impress hex" ..snd.sep.. "bio flare " ..snd.target.. "" ..snd.sep   
-		elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+		elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
 			string = "geo impress swirl" ..snd.sep.. "bio flare " ..snd.target.. "" ..snd.sep 
 		else
 			string = "geo impress arrow" ..snd.sep.. "bio flare " ..snd.target.. "" ..snd.sep
@@ -43225,7 +43178,7 @@ end</script>
 			string = "geo impress hex" ..snd.sep.. "bio growth " ..snd.target..  "" ..snd.sep
 		elseif not snd.checkAff("vomiting") and snd.checkAff("matrix") then -- 5's bloom
 			string = "geo impress bloom" ..snd.sep.. "bio growth " ..snd.target..  "" ..snd.sep
-		elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+		elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
 			string = "geo impress swirl" ..snd.sep.. "bio growth " ..snd.target..  "" ..snd.sep
 		else
 			string = "bio growth " ..snd.target..  "" ..snd.sep
@@ -43237,9 +43190,9 @@ end</script>
 			string = "empower jhako" ..snd.sep.. "geo impress swirl" ..snd.sep.. "elicit madness " ..snd.target.. "" ..snd.sep
 		end   
   elseif not snd.checkAff("patterns") and (snd.checkAff("lemniscate") or snd.checkAff("matrix")) then
-		if not snd.checkAff("mental_disruption") and snd.growth and snd.checkAff("addiction") then
+		if not snd.checkAff("delirium") and snd.growth and snd.checkAff("addiction") then
 			string = "geo impress swirl" ..snd.sep.. "geo pattern " ..snd.target.. "" ..snd.sep
-		elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+		elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
 			string = "geo impress swirl" ..snd.sep.. "geo pattern " ..snd.target.. "" ..snd.sep
 		elseif not snd.checkAff("hypochondria") then
 			string = "geo impress hex" ..snd.sep.. "geo pattern " ..snd.target.. "" ..snd.sep
@@ -43253,13 +43206,13 @@ end</script>
 	elseif tonumber(shapecount) &lt; 1 and snd.checkAff("lemniscate") then
 		if not snd.checkAff("vomiting") and (tonumber(mentcount) == 4 or tonumber(mentcount) == 9) then -- 5's bloom
 			string = "geo impress bloom" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
-		elseif not snd.checkAff("mental_disruption") and snd.growth and snd.checkAff("addiction") then
+		elseif not snd.checkAff("delirium") and snd.growth and snd.checkAff("addiction") then
 			string = "geo impress swirl" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
 		elseif not snd.checkAff("hypochondria") and not snd.conjoin then  -- hex diagnose
 			string = "geo impress hex" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
 		elseif snd.my_impress == "Hex" and not (snd.checkAff("paresis") or snd.checkAff("paralysis")) then -- star paresis
 			string = "geo impress star" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
-		elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+		elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
 			string = "geo impress swirl" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
 		else -- else
 			string = "geo impress " ..snd.my_impress.. "" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
@@ -43276,9 +43229,9 @@ end</script>
 
   elseif snd.checkAff("dizziness") and snd.checkAff("faintness") and snd.checkAff("epilepsy") and snd.checkAff("shyness") and not snd.checkAff("sealing_square") then
 		string = "geo impress " ..snd.my_impress.. "" ..snd.sep.. "geo sealing square " ..snd.target.. "" ..snd.sep
-  elseif snd.checkAff("laxity") and snd.checkAff("lovers_effect") and snd.checkAff("peace") and snd.checkAff("magnanimity") and not snd.checkAff("sealing_triangle") then
+  elseif snd.checkAff("laxity") and snd.checkAff("infatuation") and snd.checkAff("peace") and snd.checkAff("magnanimity") and not snd.checkAff("sealing_triangle") then
 		string = "geo impress " ..snd.my_impress.. "" ..snd.sep.. "geo sealing triangle " ..snd.target.. "" ..snd.sep
-  elseif snd.checkAff("merciful") and snd.checkAff("masochism") and snd.checkAff("berserking") and snd.checkAff("recklessness") and not snd.checkAff("sealing_circle") then
+  elseif snd.checkAff("mercy") and snd.checkAff("masochism") and snd.checkAff("mania") and snd.checkAff("recklessness") and not snd.checkAff("sealing_circle") then
 		string = "geo impress " ..snd.my_impress.. "" ..snd.sep.. "geo sealing circle " ..snd.target.. "" ..snd.sep
   elseif (tonumber(mentcount) == 2 or tonumber(mentcount) == 7) and not snd.checkAff("vomiting") and snd.empowerready or snd.empowertype == "jhako" and snd.balance.madness then 
 		string = "empower jhako" ..snd.sep.. "geo impress bloom" ..snd.sep.. "elicit madness " ..snd.target.. "" ..snd.sep
@@ -43330,12 +43283,12 @@ end</script>
     snd.my_impress = "Bloom"
   elseif not snd.checkAff("hypochondria") then  -- hex diagnose
     snd.my_impress = "Hex"
-  elseif not snd.checkAff("mental_disruption") then -- swirl falling over
+  elseif not snd.checkAff("delirium") then -- swirl falling over
     snd.my_impress = "Swirl"
   end
   
   local shapecount = 0
-  local shapetable = {"dizziness", "faintness", "epilepsy", "shyness", "merciful", "masochism", "berserking", "recklessness", "laxity", "lovers_effect", "peace", "magnanimity"}
+  local shapetable = {"dizziness", "faintness", "epilepsy", "shyness", "mercy", "masochism", "mania", "recklessness", "laxity", "infatuation", "peace", "magnanimity"}
   for i = 1, tonumber(#shapetable) do
     local affliction = shapetable[i]
     if snd.checkAff(affliction) then
@@ -43359,9 +43312,9 @@ end</script>
     string = string.."empower jhako" ..snd.sep.. "geo impress bloom" ..snd.sep
     if not snd.checkAff("dizziness") or not snd.checkAff("faintness") or not snd.checkAff("epilepsy") or not snd.checkAff("shyness") then
       string = string.."incite square " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("laxity") or not snd.checkAff("lovers_effect") or not snd.checkAff("peace") or not snd.checkAff("magnanimity") then
+    elseif not snd.checkAff("laxity") or not snd.checkAff("infatuation") or not snd.checkAff("peace") or not snd.checkAff("magnanimity") then
       string = string.."incite triangle " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("merciful") or not snd.checkAff("masochism") or not snd.checkAff("berserking") or not snd.checkAff("recklessness") then
+    elseif not snd.checkAff("mercy") or not snd.checkAff("masochism") or not snd.checkAff("mania") or not snd.checkAff("recklessness") then
       string = string.."incite circle " ..snd.target.. "" ..snd.sep
     end
 		
@@ -43387,13 +43340,13 @@ end</script>
   elseif not (snd.checkAff("faintness") or snd.checkAff("epilepsy") or snd.checkAff("shyness")) then
     if not snd.checkAff("vomiting") and (mentcount == 4 or mentcount == 9) then -- 5's bloom
       string = string.."geo impress bloom" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("mental_disruption") and snd.checkAff("growth") and snd.checkAff("addiction") then
+    elseif not snd.checkAff("delirium") and snd.checkAff("growth") and snd.checkAff("addiction") then
       string = string.."geo impress swirl" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
     elseif not snd.checkAff("hypochondria") and not snd.conjoin then  -- hex diagnose
       string = string.."geo impress hex" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
     elseif snd.my_impress == "Hex" and not (snd.checkAff("paresis") or snd.checkAff("paralysis")) then -- star paresis
       string = string.."geo impress star" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+    elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
       string = string.."geo impress swirl" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
     else -- arrow holds them for a time
       string = string.."geo impress arrow" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
@@ -43407,13 +43360,13 @@ end</script>
   elseif not snd.checkAff("laxity") then
     if not snd.checkAff("vomiting") and (mentcount == 4 or mentcount == 9) then -- 5's bloom
       string = string.."geo impress bloom" ..snd.sep.. "incite triangle " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("mental_disruption") and snd.checkAff("growth") and snd.checkAff("addiction") then
+    elseif not snd.checkAff("delirium") and snd.checkAff("growth") and snd.checkAff("addiction") then
       string = string.."geo impress swirl" ..snd.sep.. "incite triangle " ..snd.target.. "" ..snd.sep
     elseif not snd.checkAff("hypochondria") and not snd.conjoin and not snd.conjoincd then  -- hex diagnose
       string = string.."geo impress hex" ..snd.sep.. "incite triangle " ..snd.target.. "" ..snd.sep
     elseif snd.my_impress == "Hex" and not (snd.checkAff("paresis") or snd.checkAff("paralysis")) then -- star paresis
       string = string.."geo impress star" ..snd.sep.. "incite triangle " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+    elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
       string = string.."geo impress swirl" ..snd.sep.. "incite triangle " ..snd.target.. "" ..snd.sep
     else -- arrow holds them for a time
       string = string.."geo impress arrow" ..snd.sep.. "incite triangle " ..snd.target.. "" ..snd.sep
@@ -43422,13 +43375,13 @@ end</script>
   elseif not (snd.checkAff("shyness") or snd.checkAff("epilepsy")) then
     if not snd.checkAff("vomiting") and (mentcount == 4 or mentcount == 9) then -- 5's bloom
       string = string.."geo impress bloom" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("mental_disruption") and snd.checkAff("growth") and snd.checkAff("addiction") then
+    elseif not snd.checkAff("delirium") and snd.checkAff("growth") and snd.checkAff("addiction") then
       string = string.."geo impress swirl" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
     elseif not snd.checkAff("hypochondria") and not snd.conjoin then  -- hex diagnose
       string = string.."geo impress hex" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
     elseif snd.my_impress == "Hex" and not (snd.checkAff("paresis") or snd.checkAff("paralysis")) then -- star paresis
       string = string.."geo impress star" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
-    elseif not snd.checkAff("mental_disruption") and snd.checkAff("hallucinations") then -- swirl falling over
+    elseif not snd.checkAff("delirium") and snd.checkAff("hallucinations") then -- swirl falling over
       string = string.."geo impress swirl" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
     else -- arrow holds them for a time
       string = string.."geo impress " ..impression.. "" ..snd.sep.. "incite square " ..snd.target.. "" ..snd.sep
@@ -43456,20 +43409,20 @@ end</script>
 									<packageName></packageName>
 									<script>snd.mentalaffs = {}
 snd.mentalaffs = {
-	"egocentric",
+	"egocentrism",
 	"stupidity",
 	"anorexia",
 	"epilepsy",
 	"mirroring",
-	"mental_disruption",
+	"delirium",
 	"peace",
 	"paranoia",
 	"hallucinations",
 	"dizziness",
 	"indifference",
-	"berserking",
+	"mania",
 	"pacifism",
-	"lovers_effect",
+	"infatuation",
 	"laxity",
 	"hatred",
 	"generosity",
@@ -43509,7 +43462,7 @@ snd.physicalaffs = {
 	"right_arm_crippled",
 	"left_leg_crippled",
 	"right_leg_crippled",
-	"physical_disruption",
+	"extravasation",
 	"haemophilia",
 	"asthma",
 	"impairment",
@@ -43518,8 +43471,8 @@ snd.physicalaffs = {
 	"sensitivity",
 	"ringing_ears",
 	"lethargy",
-	"blood_poison",
-	"blood_curse",
+	"sepsis",
+	"psychosis",
 	"crippled_throat",
 	"slough",
 	"disfigurement",
@@ -43531,13 +43484,13 @@ snd.physicalaffs = {
 	"shivering",
 	"frozen",
   "frigid",
-  "limp_veins",
+  "hypotension",
 	"rend",
-	"exhausted",
+	"exhaustion",
 	"allergies",
 	"addiction",
   "hypersomnia",
-  "heartflutter",
+  "arrhythmia",
   "whiplash",
   "backstrain",
   "sore_wrist",
@@ -43588,7 +43541,7 @@ end
     impression = "bloom"
   elseif not table.contains(snd.curtarget, "hypochondria") then  -- hex diagnose
     impression = "hex"
-  elseif not table.contains(snd.curtarget, "mental_disruption") then -- swirl falling over
+  elseif not table.contains(snd.curtarget, "delirium") then -- swirl falling over
     impression = "swirl"
   end
   
@@ -43657,7 +43610,7 @@ function snd.archivistafflictionmode()
     impression = "bloom"
   elseif not table.contains(snd.curtarget, "hypochondria") then  -- hex diagnose
     impression = "hex"
-  elseif not table.contains(snd.curtarget, "mental_disruption") then -- swirl falling over
+  elseif not table.contains(snd.curtarget, "delirium") then -- swirl falling over
     impression = "swirl"
   end
 
@@ -43707,7 +43660,7 @@ end</script>
     impression = "bloom"
   elseif not table.contains(snd.curtarget, "hypochondria") then  -- hex diagnose
     impression = "hex"
-  elseif not table.contains(snd.curtarget, "mental_disruption") then -- swirl falling over
+  elseif not table.contains(snd.curtarget, "delirium") then -- swirl falling over
     impression = "swirl"
   end
   
@@ -43741,13 +43694,13 @@ end</script>
     if not table.contains(snd.curtarget, "laxity") then
       if not table.contains(snd.curtarget, "vomiting") and (tonumber(snd.mentalcount) == 4 or tonumber(snd.mentalcount) == 9) then -- 5's bloom
         snd.queueattack = snd.queueattack.. "geo impress bloom" ..snd.separator.. "incite triangle " ..snd.aim.. "" ..snd.separator
-      elseif not table.contains(snd.curtarget, "mental_disruption") and table.contains(snd.curtarget, "growth") and table.contains(snd.curtarget, "addiction") then
+      elseif not table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "growth") and table.contains(snd.curtarget, "addiction") then
         snd.queueattack = snd.queueattack.. "geo impress swirl" ..snd.separator.. "incite triangle " ..snd.aim.. "" ..snd.separator
       elseif not table.contains(snd.curtarget, "hypochondria") and not table.contains(snd.defences, "conjoin") then  -- hex diagnose
         snd.queueattack = snd.queueattack.. "geo impress hex" ..snd.separator.. "incite triangle " ..snd.aim.. "" ..snd.separator
       elseif table.contains(snd.curtarget, "hex") and not (table.contains(snd.curtarget, "paresis") or table.contains(snd.curtarget, "paralysis")) then -- star paresis
         snd.queueattack = snd.queueattack.. "geo impress star" ..snd.separator.. "incite triangle " ..snd.aim.. "" ..snd.separator
-      elseif not table.contains(snd.curtarget, "mental_disruption") and table.contains(snd.curtarget, "hallucinations") then -- swirl falling over
+      elseif not table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "hallucinations") then -- swirl falling over
         snd.queueattack = snd.queueattack.. "geo impress swirl" ..snd.separator.. "incite triangle " ..snd.aim.. "" ..snd.separator
       else -- arrow holds them for a time
         snd.queueattack = snd.queueattack.. "geo impress arrow" ..snd.separator.. "incite triangle " ..snd.aim.. "" ..snd.separator
@@ -43755,13 +43708,13 @@ end</script>
     elseif not (table.contains(snd.curtarget, "faintness") or table.contains(snd.curtarget, "epilepsy") or table.contains(snd.curtarget, "shyness")) then
       if not table.contains(snd.curtarget, "vomiting") and (tonumber(snd.mentalcount) == 4 or tonumber(snd.mentalcount) == 9) then -- 5's bloom
         snd.queueattack = snd.queueattack.. "geo impress bloom" ..snd.separator.. "incite square " ..snd.aim.. "" ..snd.separator
-      elseif not table.contains(snd.curtarget, "mental_disruption") and table.contains(snd.curtarget, "growth") and table.contains(snd.curtarget, "addiction") then
+      elseif not table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "growth") and table.contains(snd.curtarget, "addiction") then
         snd.queueattack = snd.queueattack.. "geo impress swirl" ..snd.separator.. "incite square " ..snd.aim.. "" ..snd.separator
       elseif not table.contains(snd.curtarget, "hypochondria") and not table.contains(snd.defences, "conjoin") then  -- hex diagnose
         snd.queueattack = snd.queueattack.. "geo impress hex" ..snd.separator.. "incite square " ..snd.aim.. "" ..snd.separator
       elseif table.contains(snd.curtarget, "hex") and not (table.contains(snd.curtarget, "paresis") or table.contains(snd.curtarget, "paralysis")) then -- star paresis
         snd.queueattack = snd.queueattack.. "geo impress star" ..snd.separator.. "incite square " ..snd.aim.. "" ..snd.separator
-      elseif not table.contains(snd.curtarget, "mental_disruption") and table.contains(snd.curtarget, "hallucinations") then -- swirl falling over
+      elseif not table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "hallucinations") then -- swirl falling over
         snd.queueattack = snd.queueattack.. "geo impress swirl" ..snd.separator.. "incite square " ..snd.aim.. "" ..snd.separator
       else -- arrow holds them for a time
         snd.queueattack = snd.queueattack.. "geo impress arrow" ..snd.separator.. "incite square " ..snd.aim.. "" ..snd.separator
@@ -43786,7 +43739,7 @@ end</script>
   -- look at adding in anquish
   snd.Chirography()
   snd.blockingexitfunc()
-  if table.contains(snd.curtarget, "mortalterror") and table.contains(snd.curtarget, "mental_disruption") and table.contains(snd.curtarget, "physical_disruption") and table.contains(snd.curtarget, "crippled_body") and table.contains(snd.curtarget, "paralysis") and not table.contains(snd.curtarget, "shielded") and not table.contains(snd.curtarget, "reflection") then
+  if table.contains(snd.curtarget, "mortalterror") and table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "extravasation") and table.contains(snd.curtarget, "crippled_body") and table.contains(snd.curtarget, "paralysis") and not table.contains(snd.curtarget, "shielded") and not table.contains(snd.curtarget, "reflection") then
     snd.queueattack = snd.queueattack.. "chirography cull " ..snd.aim.. "" ..snd.separator 
   elseif not dolo.temp.enemies[snd.aim] and not toggleVars.teammode and not snd.maximumenemies and #snd.combatqueue &lt; 1 then
 		snd.queueattack = snd.queueattack.. "unally " ..snd.aim.. "" ..snd.separator 
@@ -43905,7 +43858,7 @@ end</script>
 	elseif not table.contains(snd.curtarget, "asthma") then
 		snd.scythevenom1 = "kalmia"
     
-	elseif not table.contains(snd.curtarget, "mental_disruption") then
+	elseif not table.contains(snd.curtarget, "delirium") then
 		snd.scythevenom1 = "dirne"
     
 	elseif not table.contains(snd.curtarget, "slickness") then
@@ -43923,7 +43876,7 @@ end</script>
 	elseif not table.contains(snd.curtarget, "crippled_body") and not table.contains(snd.curtarget, "crippled") and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom1 = "azu"  
     
-	elseif not table.contains(snd.curtarget, "physical_disruption") and table.contains(snd.curtarget, "mortalterror") then
+	elseif not table.contains(snd.curtarget, "extravasation") and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom1 = "dirne"
 
  	elseif not table.contains(snd.curtarget, "weariness") then
@@ -44015,7 +43968,7 @@ end</script>
 	elseif not table.contains(snd.curtarget, "slickness") and snd.scythevenom1 ~= "gecko" then
 		snd.scythevenom2 = "gecko"
     
-	elseif not table.contains(snd.curtarget, "mental_disruption") and snd.scythevenom1 ~= "dirne" then
+	elseif not table.contains(snd.curtarget, "delirium") and snd.scythevenom1 ~= "dirne" then
 		snd.scythevenom2 = "dirne"
     
 	elseif not table.contains(snd.curtarget, "stupidity") and snd.scythevenom1 ~= "aconite" then
@@ -44030,7 +43983,7 @@ end</script>
 	elseif not table.contains(snd.curtarget, "crippled_body") and not table.contains(snd.curtarget, "crippled") and snd.scythevenom1 ~= "azu" and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom2 = "azu"  
     
-	elseif not table.contains(snd.curtarget, "physical_disruption") and snd.scythevenom1 ~= "dirne" and table.contains(snd.curtarget, "mortalterror") then
+	elseif not table.contains(snd.curtarget, "extravasation") and snd.scythevenom1 ~= "dirne" and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom2 = "dirne"
 
  	elseif not table.contains(snd.curtarget, "left_leg_crippled") and not table.contains(snd.curtarget, "right_leg_crippled") then
@@ -44106,9 +44059,9 @@ function snd.bleedstack() -- could put rend in
 		snd.scythevenom1 = "hepafarin"
  	elseif not table.contains(snd.curtarget, "vomiting") then
 		snd.scythevenom1 = "euphorbia"
-	elseif not table.contains(snd.curtarget, "mental_disruption") then
+	elseif not table.contains(snd.curtarget, "delirium") then
 		snd.scythevenom1 = "dirne" 
-	elseif not table.contains(snd.curtarget, "physical_disruption") and table.contains(snd.curtarget, "mortalterror") then
+	elseif not table.contains(snd.curtarget, "extravasation") and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom1 = "dirne"
 	elseif not table.contains(snd.curtarget, "stupidity") then
 		snd.scythevenom1 = "aconite"
@@ -44130,7 +44083,7 @@ function snd.bleedstack2()
 		snd.scythevenom2 = "hepafarin"
  	elseif not table.contains(snd.curtarget, "vomiting") and snd.scythevenom1 ~= "euphorbia" then
 		snd.scythevenom2 = "euphorbia"
-	elseif not table.contains(snd.curtarget, "mental_disruption") and snd.scythevenom1 ~= "dirne" then
+	elseif not table.contains(snd.curtarget, "delirium") and snd.scythevenom1 ~= "dirne" then
 		snd.scythevenom2 = "dirne"
 	elseif not table.contains(snd.curtarget, "stupidity") and snd.scythevenom1 ~= "aconite" then
 		snd.scythevenom2 = "aconite"
@@ -44155,9 +44108,9 @@ end</script>
       mark = "bimre"    
     elseif not table.contains(snd.curtarget, "crippled_body") then
       mark = "azu"
-    elseif not table.contains(snd.curtarget, "mental_disruption") then
+    elseif not table.contains(snd.curtarget, "delirium") then
       mark = "dirne"
-    elseif not table.contains(snd.curtarget, "physical_disruption") then
+    elseif not table.contains(snd.curtarget, "extravasation") then
       mark = "dirne"    
     end
     if tonumber(gmcp.Char.Vitals.charge_left) &gt;= 140 and tonumber(gmcp.Char.Vitals.charge_right) &gt;= 140 then  -- attacks before
@@ -44172,7 +44125,7 @@ end</script>
   elseif toggleVarsClass.bleedstackmode then
     if not table.contains(snd.curtarget, "mortalterror") then
       mark = "bimre"    
-    elseif not table.contains(snd.curtarget, "mental_disruption") then
+    elseif not table.contains(snd.curtarget, "delirium") then
       mark = "dirne"   
     elseif not table.contains(snd.curtarget, "crippled_body") then
       mark = "azu"
@@ -44477,9 +44430,9 @@ end</script>
       mark = "bimre"    
     elseif not table.contains(snd.curtarget, "crippled_body") then
       mark = "azu"
-    elseif not table.contains(snd.curtarget, "mental_disruption") then
+    elseif not table.contains(snd.curtarget, "delirium") then
       mark = "dirne"
-    elseif not table.contains(snd.curtarget, "physical_disruption") then
+    elseif not table.contains(snd.curtarget, "extravasation") then
       mark = "dirne"    
     end
     if tonumber(gmcp.Char.Vitals.charge_left) &gt;= 80 and tonumber(gmcp.Char.Vitals.charge_right) &gt;= 80 then
@@ -45905,26 +45858,26 @@ end</script>
 		elseif snd.moonpass == "wheel" then
 			string = string.. "fling sun " ..snd.sunpass.. " and wheel at " ..snd.target..snd.sep
 		elseif snd.warriorpass ~= "none" then
-			if snd.sunpass ~= "none" and snd.sunpass ~= "lovers_effect"  then
+			if snd.sunpass ~= "none" and snd.sunpass ~= "infatuation"  then
 				string = string.. "fling sun " ..snd.sunpass.. " and " ..snd.warriorpass.. " at " ..snd.target..snd.sep		
 			elseif snd.moonpass ~= "none" then
 				string = string.. "fling " ..snd.warriorpass.. " and moon" ..snd.moonpass.. " at " ..snd.target..snd.sep    	  
 			end
 		elseif snd.sunpass ~= "none" and snd.moonpass == "asleep" then 
 			string = string.. "fling sun " ..snd.sunpass.. " and sandman at " ..snd.target..snd.sep
-		elseif snd.moonpass ~= "none" and snd.moonpass ~= "justice" and snd.moonpass ~= "lovers_effect" and snd.sunpass ~= "none"  and snd.sunpass ~= "justice" and snd.sunpass ~= "lovers_effect" then 
+		elseif snd.moonpass ~= "none" and snd.moonpass ~= "justice" and snd.moonpass ~= "infatuation" and snd.sunpass ~= "none"  and snd.sunpass ~= "justice" and snd.sunpass ~= "infatuation" then 
 			string = string.. "fling sun " ..snd.sunpass.. " and moon " ..snd.moonpass.. " at " ..snd.target..snd.sep
-		elseif snd.moonpass == "justice" and snd.sunpass ~= "none"  and snd.sunpass ~= "justice" and snd.sunpass ~= "lovers_effect" then 
+		elseif snd.moonpass == "justice" and snd.sunpass ~= "none"  and snd.sunpass ~= "justice" and snd.sunpass ~= "infatuation" then 
 			string = string.. "fling sun " ..snd.sunpass.. " and justice at " ..snd.target..snd.sep
-		elseif snd.moonpass == "justice" and snd.sunpass == "lovers_effect" then 
+		elseif snd.moonpass == "justice" and snd.sunpass == "infatuation" then 
 			string = string.. "fling lovers and justice at " ..snd.target..snd.sep
-		elseif snd.moonpass == "lovers_effect" and snd.sunpass == "justice" then 
+		elseif snd.moonpass == "infatuation" and snd.sunpass == "justice" then 
 			string = string.. "fling lovers and justice at " ..snd.target..snd.sep
-		elseif snd.moonpass == "lovers_effect" and snd.sunpass ~= "none"  and snd.sunpass ~= "justice" and snd.sunpass ~= "lovers_effect" then 
+		elseif snd.moonpass == "infatuation" and snd.sunpass ~= "none"  and snd.sunpass ~= "justice" and snd.sunpass ~= "infatuation" then 
 			string = string.. "fling sun " ..snd.sunpass.. " and lovers at " ..snd.target..snd.sep
-		elseif snd.sunpass == "justice" and snd.moonpass ~= "none" and snd.moonpass ~= "justice" and snd.moonpass ~= "lovers_effect" then 
+		elseif snd.sunpass == "justice" and snd.moonpass ~= "none" and snd.moonpass ~= "justice" and snd.moonpass ~= "infatuation" then 
 			string = string.. "fling moon " ..snd.moonpass.. " and justice at " ..snd.target..snd.sep
-		elseif snd.sunpass == "lovers_effect" and snd.moonpass ~= "none" and snd.moonpass ~= "justice" and snd.moonpass ~= "lovers_effect" then 
+		elseif snd.sunpass == "infatuation" and snd.moonpass ~= "none" and snd.moonpass ~= "justice" and snd.moonpass ~= "infatuation" then 
 			string = string.. "fling moon " ..snd.moonpass.. " and lovers at " ..snd.target..snd.sep
 		elseif snd.moonpass ~= "none" and snd.moonpass and snd.adderpass ~= "nothing" then
 			string = string.. "fling moon " ..snd.moonpass.. " and " ..snd.adderpass.. " at " ..snd.target..snd.sep			
@@ -46103,7 +46056,7 @@ end</script>
 										<packageName></packageName>
 										<script>function snd.adderfunc2()
 
-	if (table.contains(snd.curtarget, "asthma") or table.contains(snd.curtarget, "limp_veins")) and (table.contains(snd.curtarget, "anorexia")) and (table.contains(snd.curtarget, "slickness") or table.contains(snd.curtarget, "slough")) and table.contains(snd.curtarget, "impatience") and (table.contains(snd.curtarget, "paresis") or table.contains(snd.curtarget, "paralysis")) then
+	if (table.contains(snd.curtarget, "asthma") or table.contains(snd.curtarget, "hypotension")) and (table.contains(snd.curtarget, "anorexia")) and (table.contains(snd.curtarget, "slickness") or table.contains(snd.curtarget, "slough")) and table.contains(snd.curtarget, "impatience") and (table.contains(snd.curtarget, "paresis") or table.contains(snd.curtarget, "paralysis")) then
 		if not table.contains(snd.curtarget, "left_leg_broken") then
 			snd.adderpass = "adder epseth"
 		elseif not table.contains(snd.curtarget, "right_leg_broken") then
@@ -46304,8 +46257,8 @@ end</script>
   		snd.sunpass = "lethargy"
   	elseif not table.contains(snd.curtarget, "clumsiness") then
   		snd.sunpass = "clumsiness"
-  	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+  	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
   	elseif not table.contains(snd.curtarget, "superstition") then
   		snd.sunpass = "superstition"
         	elseif not table.contains(snd.curtarget, "sensitivity") then
@@ -46326,8 +46279,8 @@ end</script>
       snd.sunpass = "clumsiness"
     elseif not table.contains(snd.curtarget, "superstition") then
       snd.sunpass = "superstition"
-    elseif not table.contains(snd.curtarget, "perplexed") then
-      snd.sunpass = "perplexed"
+    elseif not table.contains(snd.curtarget, "perplexity") then
+      snd.sunpass = "perplexity"
     elseif not table.contains(snd.curtarget, "hypersomnia") then
       snd.sunpass = "hypersomnia"
     elseif not snd.adderonthem then
@@ -46348,8 +46301,8 @@ end</script>
   		snd.sunpass = "hypersomnia"
         	elseif not table.contains(snd.curtarget, "sensitivity") then
   		snd.sunpass = "sensitivity"
-  	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+  	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
 
   	else
   		snd.adderfunc()	
@@ -46365,8 +46318,8 @@ end</script>
   		snd.sunpass = "lethargy"
   	elseif not table.contains(snd.curtarget, "justice") then
   		snd.sunpass = "justice"
-	  	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+	  	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
         	elseif not table.contains(snd.curtarget, "sensitivity") then
   		snd.sunpass = "sensitivity"
   	elseif not table.contains(snd.curtarget, "vomiting") then
@@ -46384,8 +46337,8 @@ end</script>
   		snd.sunpass = "superstition"
         	elseif not table.contains(snd.curtarget, "justice") then
   		snd.sunpass = "justice"
-        	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+        	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
         	elseif not table.contains(snd.curtarget, "sensitivity") then
   		snd.sunpass = "sensitivity"
         	elseif not table.contains(snd.curtarget, "hypersomnia") then
@@ -46433,8 +46386,8 @@ elseif toggleVarsClass.deformclummode then
   		snd.sunpass = "asthma"
         	elseif not table.contains(snd.curtarget, "justice") then
   		snd.sunpass = "justice"
-        	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+        	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
   	elseif not table.contains(snd.curtarget, "vomiting") then
   		snd.sunpass = "vomiting"
   	elseif not table.contains(snd.curtarget, "hypersomnia") then
@@ -46450,8 +46403,8 @@ elseif toggleVarsClass.deformclummode then
   		snd.sunpass = "clumsiness"
   	elseif not table.contains(snd.curtarget, "asthma") then
   		snd.sunpass = "asthma"
-        	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+        	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
         	elseif not table.contains(snd.curtarget, "justice") then
   		snd.sunpass = "justice"
         	elseif not table.contains(snd.curtarget, "sensitivity") then
@@ -46473,8 +46426,8 @@ elseif toggleVarsClass.deformclummode then
   		snd.sunpass = "superstition"
         	elseif not table.contains(snd.curtarget, "justice") then
   		snd.sunpass = "justice"
-        	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.sunpass = "lovers_effect"
+        	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.sunpass = "infatuation"
   	elseif not table.contains(snd.curtarget, "lethargy") then
   		snd.sunpass = "lethargy"
   	elseif not table.contains(snd.curtarget, "vomiting") then
@@ -46549,8 +46502,8 @@ end</script>
   		snd.moonpass = "weariness"
   	elseif not table.contains(snd.curtarget, "justice") then
   		snd.moonpass = "justice"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
   	end
@@ -46573,8 +46526,8 @@ end</script>
   		snd.moonpass = "asleep"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
     else
       snd.aeonfunc()
   	end
@@ -46583,8 +46536,8 @@ end</script>
   		snd.moonpass = "impatience"
   	elseif not table.contains(snd.curtarget, "confusion") then
   		snd.moonpass = "confusion"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
   	elseif not table.contains(snd.curtarget, "epilepsy") then
@@ -46617,8 +46570,8 @@ end</script>
   		snd.moonpass = "confusion"  
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
     else
       snd.aeonfunc()
   	end
@@ -46639,8 +46592,8 @@ end</script>
   		snd.moonpass = "asleep"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
   	elseif not table.contains(snd.curtarget, "anorexia") then
   		snd.moonpass = "anorexia"
     else
@@ -46657,12 +46610,12 @@ end</script>
   		snd.moonpass = "weariness"
   	elseif not table.contains(snd.curtarget, "anorexia") then
   		snd.moonpass = "anorexia"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
-  	elseif not table.contains(snd.curtarget, "lovers_effect") then
-  		snd.moonpass = "lovers_effect"
+  	elseif not table.contains(snd.curtarget, "infatuation") then
+  		snd.moonpass = "infatuation"
   	elseif not table.contains(snd.curtarget, "stupidity") then
   		snd.moonpass = "stupidity"
     else
@@ -46683,8 +46636,8 @@ end</script>
   		snd.moonpass = "anorexia"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
     else
       snd.aeonfunc()
   	end
@@ -46703,8 +46656,8 @@ end</script>
   		snd.moonpass = "anorexia"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
     else
       snd.aeonfunc()
   	end
@@ -46719,8 +46672,8 @@ end</script>
   		snd.moonpass = "weariness"
   	elseif not table.contains(snd.curtarget, "anorexia") then
   		snd.moonpass = "anorexia"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
   	elseif not table.contains(snd.curtarget, "stupidity") then
@@ -46735,8 +46688,8 @@ end</script>
   		snd.moonpass = "weariness"
   	elseif not table.contains(snd.curtarget, "anorexia") then
   		snd.moonpass = "anorexia"
-    elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking"
+    elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania"
   	elseif not table.contains(snd.curtarget, "confusion") then
   		snd.moonpass = "confusion"  
   	elseif not table.contains(snd.curtarget, "recklessness") then
@@ -46757,8 +46710,8 @@ end</script>
   		snd.moonpass = "epilepsy" 
   	elseif not table.contains(snd.curtarget, "anorexia") then
   		snd.moonpass = "anorexia"
-  	elseif not table.contains(snd.curtarget, "berserking") then
-  		snd.moonpass = "berserking" 
+  	elseif not table.contains(snd.curtarget, "mania") then
+  		snd.moonpass = "mania" 
   	elseif not table.contains(snd.curtarget, "recklessness") then
   		snd.moonpass = "recklessness"
   	elseif not table.contains(snd.curtarget, "stupidity") then
@@ -46788,21 +46741,18 @@ snd.deformvenoms = {
 "allergies",                                
 "anorexia",                                                                          
 "asthma",                                                                  
-"backstrain",                     
-"baldness",                                                                  
-"berserking",                                         
-"blighted",                       
+"backstrain",                                                                
+"mania",                                         
+"blight",                       
 "blisters",                       
-"blood_curse",                    
-"blood_poison",                                                      
-"blurry_vision",                  
-"body_odor",                                            
+"psychosis",                    
+"sepsis",                                                      
+"blurry_vision",                                        
 "burnt_eyes",                     
 "burnt_skin",                     
 "claustrophobia",                 
 "clumsiness",                                       
 "collapsed_lung",                 
-"commitment_fear",               
 "confusion",                                                           
 "cracked_ribs",                   
 "crippled",                       
@@ -46819,9 +46769,9 @@ snd.deformvenoms = {
 "dissonance",                                         
 "dizziness",                     
 "effused_blood",                  
-"egocentric",                                                                             
+"egocentrism",                                                                             
 "epilepsy",                       
-"exhausted",                      
+"exhaustion",                      
 "faintness",  
 "frigid",                                                  
 "frozen",                                            
@@ -46836,7 +46786,7 @@ snd.deformvenoms = {
 "head_broken",                   
 "head_mangled",                   
 "head_ravaged",                   
-"heartflutter",                   
+"arrhythmia",                   
 "heatspear",                      
 "hellsight",
 "hollow",                      
@@ -46849,7 +46799,7 @@ snd.deformvenoms = {
 "impairment",                     
 "impatience",                     
 "indifference",                   
-"infested",                       
+"infestation",                       
 "justice",                        
 "laxity",
 "leeched_aura",                        
@@ -46873,14 +46823,14 @@ snd.deformvenoms = {
 "left_leg_ravaged",  
 "lethargy",                      
 "lightwound",                     
-"limp_veins",                     
+"hypotension",                     
 "loneliness",                     
-"lovers_effect",                 
+"infatuation",                 
 "magnanimity",                    
 "masochism",                      
 "mauled_face",
-"mental_disruption",                    
-"merciful",                       
+"delirium",                    
+"mercy",                       
 "migraine",                       
 "mirroring",
 "misery",                      
@@ -46893,8 +46843,8 @@ snd.deformvenoms = {
 "paresis",                        
 "patterns",                       
 "peace", 
-"perplexed",                         
-"physical_disruption",            
+"perplexity",                         
+"extravasation",            
 "plodding",                                             
 "recklessness",                   
 "rend",                          
@@ -46939,7 +46889,7 @@ snd.deformvenoms = {
 "stupidity",                     
 "stuttering",                    
 "superstition",                  
-"thin_blood",                   
+"dyscrasia",                   
 "torso_bruised",                 
 "torso_bruised_critical",        
 "torso_bruised_moderate",         
@@ -47419,7 +47369,7 @@ function snd.track_focus(target)
   if target:lower() == snd.target:lower() then
     snd.timers.focus.start = getEpoch()
     local limit = 5
-    if snd.checkAff("mental_disruption") then
+    if snd.checkAff("delirium") then
       limit = 10
     elseif snd.checkAff("mental_fatigue") then
       limit = 7
@@ -48087,7 +48037,7 @@ end
 							</Script>
 						</ScriptGroup>
 					</ScriptGroup>
-					<ScriptGroup isActive="no" isFolder="yes">
+					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Aetolia Hunt Tracking</name>
 						<packageName>Aetolia Hunt Tracking</packageName>
 						<script></script>
