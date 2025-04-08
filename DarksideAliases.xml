@@ -843,13 +843,21 @@ end</script>
 							<regex>^toggle reject$</regex>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
-							<name>Purge/Purify/Panacea</name>
+							<name>Active Class Curing</name>
 							<script>if snd.class == "Praenomen" or snd.class == "Akkari" then
 	snd.toggle("purify")
 elseif snd.class == "Carnifex" or snd.class == "Warden" then
 	snd.toggle("purge")
 elseif snd.class == "Shaman" or snd.class == "Alchemist" then
 	snd.toggle("panacea")
+elseif snd.class == "Luminary" or snd.class == "Earthcaller" then
+	snd.toggle("cleanse")
+elseif snd.class == "Sentinel" or snd.class == "Executor" then
+	snd.toggle("might")
+elseif snd.class == "Teradrim" or snd.class == "Tidesage" then
+	snd.toggle("absorb")
+elseif snd.class == "Zealot" or snd.class == "Ravager" then
+	snd.toggle("recover")
 else
   cecho("\nYou have no purging ability for your class that needs to be turned on.")
 end</script>
@@ -1090,9 +1098,7 @@ end</script>
 						<script>snd.reset_me()
 snd.defenses_loaded = false
 snd.crescentable = true
-snd.growbal = 0
-snd.infiltrate = false
-</script>
+snd.growbal = 0</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^rst$</regex>
@@ -14322,152 +14328,6 @@ end</script>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
-							<name>Old Tests</name>
-							<script></script>
-							<command></command>
-							<packageName></packageName>
-							<regex></regex>
-							<Alias isActive="yes" isFolder="no">
-								<name>TeraFractureLimbs</name>
-								<script>if snd.class == "Teradrim" then
-	snd.starting_attack()
-	
-	function snd.attack_function()
-				
-		if not snd.waiting.queue then
-			
-			local sandstorm = tonumber(gmcp.Char.Vitals.sandstorm)
-			local string = ""
-			local call = ""
-			
-			-- list what limbs to hit
-			local limbs = {"left leg", "right leg","left arm","head","torso", "right arm"}
-			local bruised = {"left leg", "right leg", "left arm", "right arm", "head", "torso"}
-			-- check if we can hammer now!
-			local hammer = "none"
-			local how_many_moderate = 0
-			for k,v in pairs(snd.limb_bruising) do
-				if v &gt;= 2 then
-					how_many_moderate = how_many_moderate + 1
-				end
-			end
-			if how_many_moderate &gt;= 3 and not snd.used.shield then -- if hammer is go
-				string = "earth hammer "..snd.target
-			else -- can't hammer, needs logic
-				left = "nothing"
-				if snd.proned() then -- focus legs hard on prone
-					if snd.parried_limb == "right leg" then
-						left = "left leg"
-					elseif snd.parried_limb == "left leg" then
-						left = "right leg"
-					else
-						left = "right leg"
-					end
-				elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.limb_dmg["right leg"] + 11.06 &gt;= 33.33) and snd.limb_dmg["left leg"] &lt; 33.33 and (snd.limb_dmg["left leg"] + 11.06 &gt;= 33.33) and not snd.used.shield and not snd.used.rebounding then
-					string = "earth furor "..snd.target.." left leg right leg"
-				else -- target not prone, legs not prepped
-					for limb in pairs(limbs) do
-					-- ignore last parried, last hit, and any limbs being resto'd
-					if limbs[limb] ~= snd.parried_limb and limbs[limb] ~= snd.last_hit_limb and snd.limb_bruising[limbs[limb]] &lt;= 1  and (limbs[limb] ~= snd.resto_limb or snd.limb_dmg[limbs[limb]] &gt;= 33.33) then
-						-- if it's a leg that's about to break
-						if (limbs[limb] == "left leg" or limbs[limb] == "right leg") and (snd.limb_dmg[limbs[limb]]+snd.limb_dmg_done &gt;= 33.3) then
-							-- don't do anything!
-							-- if it's not a leg about to break, go for it
-						elseif left == "nothing"then
-							left = limbs[limb]
-						end
-						-- if it's not a leg about to break, go for it
-					end
-				end
-			end	 -- end limb picking logic
-	 
-			-- on to attacking logic!
-			if snd.used.shield and snd.used.rebounding then
-				if left=="torso" then
-					string = "earth gutsmash "..snd.target..snd.sep
-				elseif left=="head" then
-					string = "earth facesmash "..snd.target..snd.sep
-				elseif not snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled", "left_leg_crippled", "right_leg_crippled"},1) then
-					string = "earth fracture "..snd.target.." "..left..snd.sep
-				else
-					string = "earth stoneblast "..snd.target..snd.sep
-				end
-			elseif snd.used.shield or snd.used.rebounding and sandstorm&gt;= 4 then
-				string = "sand slice "..snd.target.." storm"..snd.sep.."earth slam "..snd.target.." "..left
-			elseif snd.used.shield or snd.used.rebounding and sandstorm&lt; 4 then  -- not enough storm
-				string = "earth stoneblast "..snd.target
-			elseif sandstorm &gt;=5 then --2 mending breaks bruising logic with storm power
-				if snd.proned() and not snd.checksomeAffs("collapsed_lung") then
-					 string ="sand scourge "..snd.target.." storm"..snd.sep.."earth pulp "..snd.target
-				elseif left=="torso" then
-					 string = "sand scourge "..snd.target.." "..left.." storm"..snd.sep.."earth gutsmash "..snd.target			 
-				elseif left=="head" then
-					string = "sand scourge "..snd.target.." "..left.." storm"..snd.sep.."earth facesmash "..snd.target
-				elseif not snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled", "left_leg_crippled", "right_leg_crippled"},3) then
-					string = "sand scourge "..snd.target.." storm"..snd.sep.."earth fracture "..snd.target.." "..left
-				else
-					string = "sand scourge "..snd.target.." storm"..snd.sep.."earth slam "..snd.target.." "..left
-				end
-			elseif sandstorm &lt;5 then 
-				--if snd.proned() and not snd.checksomeAffs("collapsed_lung") then
-					--string = "earth pulp "..snd.target
-				if left=="torso" then			
-					string = "earth gutsmash "..snd.target
-				elseif left=="head" then		
-					string = "earth facesmash "..snd.target
-				elseif not snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled", "left_leg_crippled", "right_leg_crippled"},3) then
-					string = "earth fracture "..snd.target.." "..left
-				end		
-			else
-				string = "earth slam "..snd.target.." "..left
-			end
-      
-      -- If your golem isn't attacking, get it attacking.
-      if not snd.loyalsattacking then
-        string = "order loyals kill "..snd.target..snd.sep..string
-      end
-    
-      if snd.balance.earthenwill and hasSkill("Earthenwill") then
-        string = "prepare earthenwill"..snd.sep..string
-      end
-  
-      if snd.balance.momentum and hasSkill("Momentum") then
-        string = "earth momentum"..snd.sep..string
-      end
-      
-      if sandstorm &gt;=4 and snd.used.shield and snd.used.rebounding then
-				string = "sand slice "..snd.target.." storm"..snd.sep..string
-			end
-			
-			if snd.target_impaled then
-				string = "earth stonevice"
-			elseif snd.theytumbling then
-				string = "earth impale "..snd.target -- Are they tumbling? Let's impale them if they haven't been yet.
-			elseif not table.contains(gmcp.Room.Info.details, "sandy") then
-				string = "sand flood"
-			-- If you don't have sandstorm up, let's do it.
-			elseif sandstorm == 0 and hasSkill("Sandstorm") then
-				string = "sand storm"
-			end
-		
-		end
-	
-		if string ~= snd.last_attack and not snd.waiting.queue then
-			snd.last_attack = string
-			snd.attack(snd.last_attack)
-			snd.waiting.queue = true
-			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-		end
-	end
-end
-snd.attack_function()
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^fraclimbs$</regex>
-							</Alias>
-						</AliasGroup>
-						<AliasGroup isActive="yes" isFolder="yes">
 							<name>1v1</name>
 							<script></script>
 							<command></command>
@@ -14892,7 +14752,9 @@ if snd.class == "Teradrim" then
 						end
 						attack = "earth furor " ..snd.target.. " right leg left leg"..snd.sep
 					else
-						if snd.checksomeAffs({"left_leg_broken","right_leg_broken"},2) and not snd.checkAff("fallen") then
+						if (shockwaveLimbs &gt; 1 and not snd.checkAff("fallen")) or shockwaveLimbs &gt; 2 then
+							attack = "earth shockwave "..snd.target
+						elseif snd.checksomeAffs({"left_leg_broken","right_leg_broken"},1) and not snd.checkAff("fallen") then
 							attack = "earth overhand "..snd.target
 						elseif #furorBreakable &gt; 1 then
 							attack = "earth furor "..snd.target.." "..furorBreakable[1].." "..furorBreakable[2]
@@ -17588,7 +17450,7 @@ end
       end
       
       if not shield:find("deface") then
-        if not snd.infiltrate then		
+        if snd.balance.infiltrate then		
           string = "osso infiltrate "..snd.target..snd.sep
         elseif ((snd.checkAff("asthma") and snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1)) or snd.checkAff("asthma") or snd.checksomeAffs({"asthma", "accursed"}, 2) or (snd.checkAff("asthma") and snd.checksomeAffs({"hypochondria", "weariness", "clumsiness"}, 1)) or (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness"))) and not snd.checkAff("hellsight") then
           string = "dirge reckoning "..snd.target..snd.sep 
@@ -18192,7 +18054,7 @@ if not snd.waiting.queue then
         end
       end
 
-    if not snd.infiltrate or snd.infiltrate == "nil" then		
+    if snd.balance.infiltrate then		
        string = "osso infiltrate "..snd.target..snd.sep
 
     elseif snd.checksomeAffs({"agony", "accursed"}, 1) and not snd.checkAff("faulted") then
@@ -18433,7 +18295,7 @@ end
       end
       
       if not shield:find("deface") then
-        if not snd.infiltrate then		
+        if snd.balance.infiltrate then		
           string = "osso infiltrate "..snd.target..snd.sep
         elseif ((snd.checkAff("asthma") and snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1)) or snd.checkAff("asthma") or snd.checksomeAffs({"asthma", "accursed"}, 2) or (snd.checkAff("asthma") and snd.checksomeAffs({"hypochondria", "weariness", "clumsiness"}, 1)) or (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness"))) and not snd.checkAff("hellsight") then
           string = "dirge reckoning "..snd.target..snd.sep 
@@ -18597,9 +18459,9 @@ end
         table.insert(snd.giving_battle, 1, "anorexia")
       end
       
-      if not snd.infiltrate and snd.checkAff("slickness") and snd.checkAff("hellsight") and not snd.checkAff("anorexia") and not snd.balance.battle then
+      if snd.balance.infiltrate and snd.checkAff("slickness") and snd.checkAff("hellsight") and not snd.checkAff("anorexia") and not snd.balance.battle then
         table.insert(snd.giving_chasten, 1, "anorexia")
-      elseif snd.infiltrate and snd.checkAff("slickness") and snd.checkAff("hellsight") and not snd.checkAff("anorexia") and snd.timer_check("infiltrate", 2.5, "more than") then
+      elseif not snd.balance.infiltrate and snd.checkAff("slickness") and snd.checkAff("hellsight") and not snd.checkAff("anorexia") and snd.timer_check("infiltrate", 2.5, "more than") then
         table.insert(snd.giving_chasten, 1, "anorexia")
       elseif not snd.checksomeAffs({"agony", "accursed"}, 2) and snd.checkAff("hellsight") then
         table.insert(snd.giving_chasten, 1, "agony")
@@ -18685,7 +18547,7 @@ end
       end
       
       if not shield:find("deface") then
-        if not snd.infiltrate then		
+        if snd.balance.infiltrate then		
           string = "osso infiltrate "..snd.target..snd.sep
         elseif (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checkAff("asthma") and snd.checkAff("impatience")) or ((snd.checkAff("asthma") and snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1)) or snd.checkAff("asthma") or snd.checksomeAffs({"asthma", "accursed"}, 2) or (snd.checkAff("asthma") and snd.checksomeAffs({"hypochondria", "weariness", "clumsiness"}, 1)) or (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness"))) and not snd.checkAff("hellsight") then
           string = "dirge reckoning "..snd.target..snd.sep 
@@ -18891,7 +18753,7 @@ end
       end
       
       if not shield:find("deface") then
-        if not snd.infiltrate then		
+        if snd.balance.infiltrate then		
           string = "osso infiltrate "..snd.target..snd.sep
         elseif ((snd.timer_check("fitness", 10, "more than") and snd.checksomeAffs({"asthma", "weariness"}, 2)) or (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checkAff("asthma") and snd.checkAff("impatience")) or ((snd.checkAff("asthma") and snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1)) or snd.checkAff("asthma") or snd.checksomeAffs({"asthma", "accursed"}, 2) or (snd.checkAff("asthma") and snd.checksomeAffs({"hypochondria", "weariness", "clumsiness"}, 1)) or (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness")))) and not snd.checkAff("hellsight") then
           string = "dirge reckoning "..snd.target..snd.sep 
@@ -20756,9 +20618,7 @@ end</script>
 			end
 		else			
 			if not snd.zenith and snd.flamestack &lt; 9 then
-				if snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 3)) then 
-					string = "ego boost"..snd.sep
-				elseif not snd.zenith_coming then
+				if not snd.zenith_coming then
 					string = "invoke delirium"..snd.sep
 				else
 					if snd.flamestack &lt;= 9 then
@@ -21002,8 +20862,6 @@ end</script>
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and ((snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience"))) or (mymental_aff_count &gt;= 4)) then 
-			string = "ego boost"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming and snd.flamestack &lt; 10 then
 			string = "invoke delirium"..snd.sep
     elseif not snd.checkAff("ablaze") and snd.checkAff("torso_broken") and not snd.zenith then
@@ -21249,8 +21107,6 @@ end</script>
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "ego boost"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming then
 			string = "invoke delirium"..snd.sep
 		elseif snd.checkAff("ablaze") and snd.resto_limb ~= "none" and not snd.checkAff("heatspear") and not snd.zenith then
@@ -21519,9 +21375,7 @@ if snd.class == "Ravager" then
 				string = string.."invoke ravage"..snd.sep
 			end
 			if not snd.zenith and snd.flamestack &lt; 9 then
-				if snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 3)) then 
-					string = "ego boost"..snd.sep
-				elseif not snd.zenith_coming then
+				if not snd.zenith_coming then
 					string = "invoke delirium"..snd.sep
 				else
 					if snd.flamestack &lt;= 9 then
@@ -21874,8 +21728,6 @@ if not snd.waiting.queue then
     string = "touch hammer " .. snd.target
   elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "ego boost"..snd.sep
 		elseif ((snd.have_aff("asthma") and snd.have_aff("impatience")) or (snd.have_aff("asthma") and snd.have_aff("slickness")) or (snd.have_aff("impatience") and snd.have_aff("anorexia")) or (snd.have_aff("anorexia") and snd.have_aff("slickness"))) and snd.can_arms() and not snd.cureset ~= "indorani" and snd.not_aff("mania") then
 			string = "invoke denial"..snd.sep
 		elseif snd.zenith and snd.resto_limb ~="none" and (snd.limb_dmg["torso"]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg["torso"] &lt;= 33.33 and string.find(left, "torso") and snd.resto_limb ~= "left leg" and (snd.limb_dmg[left]+snd.limb_dmg_done &gt;= 33.3) and snd.limb_dmg[left] &lt;= 33.33 and string.find(left, "leg") then
@@ -22370,10 +22222,7 @@ function snd.attack_function()
       string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
     end
     
-    if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-      snd.praeattack = "grit"
-    
-    elseif snd.flying then
+    if snd.flying then
       snd.praeattack = "tentacle"
 		
     --elseif not snd.efficiency then
@@ -22412,9 +22261,7 @@ function snd.attack_function()
       snd.executorslashergeneral()
     end
     
-    if snd.praeattack == "grit" and snd.balance.might then
-      string = "grit"..snd.sep.."ringblade contravene "..snd.target..snd.sep
-    elseif snd.praeattack == "tentacle" then
+    if snd.praeattack == "tentacle" then
       string = string.. "touch tentacle " ..snd.target..snd.sep.."ringblade contravene "..snd.target..snd.sep
     elseif snd.praeattack == "efficiency" then
       string = "efficiency"..snd.sep.."ringblade contravene "..snd.target..snd.sep
@@ -22715,8 +22562,6 @@ function snd.attack_function()
 
 		if snd.nopets then
 				string = snd.sep.."call accomplices"..snd.sep 			
-			elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				string = "grit"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then
@@ -22887,10 +22732,7 @@ function snd.attack_function()
 			second_attack = "beguile"
 		end
 		
-    if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-      string = "grit"
-    
-    elseif snd.used.rebounding and snd.used.shield then
+    if snd.used.rebounding and snd.used.shield then
 			string = "ringblade twinraze "..snd.target
 			
 		elseif left == "destroyed_throat" then
@@ -23029,10 +22871,7 @@ function snd.attack_function()
 			second_attack = "beguile"
 		end
 		
-    if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-      string = "grit"
-    
-    elseif snd.used.rebounding and snd.used.shield then
+    if snd.used.rebounding and snd.used.shield then
 			string = "ringblade twinraze "..snd.target
 			
 		elseif left == "destroyed_throat" then
@@ -23246,9 +23085,7 @@ if snd.class == "Executor" then
 				
 			if snd.nopets then
 				string = snd.sep.."call accomplices"..snd.sep
-      --elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				--string = "grit"..snd.sep
-			elseif snd.flying then
+      elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then
 				string = string.."wipe ringblade"..snd.sep.."ringblade dance "..snd.target.." contrive curare inveigle xentio"..snd.sep
@@ -23422,8 +23259,6 @@ end</script>
 				
 			if snd.nopets then
 				string = snd.sep.."call accomplices"..snd.sep 			
-			elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				string = "grit"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
       elseif snd.instakilltarget == snd.target then
@@ -23556,10 +23391,7 @@ function snd.attack_function()
       string = string..snd.sep.."order loyals kill "..snd.target..snd.sep 
     end
 
-		if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-      snd.praeattack = "grit"
-    
-    elseif snd.flying then
+		if snd.flying then
       snd.praeattack = "tentacle"
 		
     elseif not snd.efficiency and snd.smokescreen then
@@ -23596,9 +23428,7 @@ function snd.attack_function()
       
     end
     
-    if snd.praeattack == "grit" and snd.balance.might then
-      string = "grit"..snd.sep.."ringblade contravene "..snd.target..snd.sep
-    elseif snd.praeattack == "tentacle" then
+    if snd.praeattack == "tentacle" then
       string = string.. "touch tentacle " ..snd.target..snd.sep.."ringblade contravene "..snd.target..snd.sep
     elseif snd.praeattack == "efficiency" then
       string = "efficiency"..snd.sep.."ringblade contravene "..snd.target..snd.sep
@@ -23766,8 +23596,6 @@ end</script>
 				
 			if snd.nopets then
 				string = snd.sep.."call accomplices"..snd.sep 			
-			--elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				--string = "grit"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then
@@ -24005,8 +23833,6 @@ end</script>
 				
 			if snd.nopets then
 				string = snd.sep.."call accomplices"..snd.sep 			
-			elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				string = "grit"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then
@@ -31627,8 +31453,6 @@ end</script>
 			  string = "respiration"..snd.sep
 		  elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			  string = "enact cauterize"..snd.sep
-		  elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			  string = "psi recover"..snd.sep
 		  elseif ((snd.have_aff("asthma") and snd.have_aff("impatience")) or (snd.have_aff("asthma") and snd.have_aff("slickness")) or (snd.have_aff("impatience") and snd.have_aff("anorexia")) or (snd.have_aff("anorexia") and snd.have_aff("slickness"))) and snd.can_arms() and not (snd.cureset ~= "indorani" or snd.cureset ~= "oneiromancer") and snd.not_aff("mania") then
 			  string = "enact rejection"..snd.sep
 		  elseif snd.theytumbling then
@@ -31835,8 +31659,6 @@ end</script>
 			end
 		elseif hp &lt;= 40 and (snd.checkAff("heatspear") or not snd.checkAff("torso_broken")) then
 			string = "respiration"..snd.sep
-		elseif tonumber(gmcp.Char.Vitals.psi) &gt;= 100 and snd.recover and ((snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience"))) or (mymental_aff_count &gt;= 4)) then 
-			string = "psi recover"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming and snd.flamestack &lt; 10 then
 			string = "enact zenith"..snd.sep
 		else
@@ -31846,8 +31668,6 @@ end</script>
 			if not snd.zenith and snd.flamestack &lt; 9 then
 				if tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 then
 					string = "enact cauterize"..snd.sep
-				elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 3)) then 
-					string = "psi recover"..snd.sep
 				elseif not snd.zenith_coming then
 					string = "enact zenith"..snd.sep
 				else
@@ -32123,8 +31943,6 @@ if snd.class == "Zealot" then
 			if not snd.zenith and snd.flamestack &lt; 9 then
 				if tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 then
 					string = "enact cauterize"..snd.sep
-				elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 3)) then 
-					string = "psi recover"..snd.sep
 				elseif not snd.zenith_coming then
 					string = "enact zenith"..snd.sep
 				else
@@ -32362,8 +32180,6 @@ end</script>
 			string = "respiration"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "enact cauterize"..snd.sep
-		elseif snd.recover and ((snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience"))) or (mymental_aff_count &gt;= 4)) then 
-			string = "psi recover"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming and snd.flamestack &lt; 10 then
 			string = "enact zenith"..snd.sep
 		elseif not snd.checkAff("ablaze") and snd.checkAff("torso_broken") and not snd.zenith then
@@ -32609,8 +32425,6 @@ end</script>
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "ego boost"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming then
 			string = "invoke delirium"..snd.sep
 		elseif snd.checkAff("ablaze") and snd.resto_limb ~= "none" and not snd.checkAff("heatspear") and not snd.zenith then
@@ -32849,8 +32663,6 @@ end</script>
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "ego boost"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming then
 			string = "invoke delirium"..snd.sep
 		elseif snd.checkAff("ablaze") and snd.resto_limb ~= "none" and not snd.checkAff("heatspear") and not snd.zenith then
@@ -33089,8 +32901,6 @@ end</script>
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "ego boost"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming then
 			string = "invoke delirium"..snd.sep
 		elseif snd.checkAff("ablaze") and snd.resto_limb ~= "none" and not snd.checkAff("heatspear") and not snd.zenith then
@@ -33331,8 +33141,6 @@ end</script>
 			string = "seethe"..snd.sep
 		elseif tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 and not snd.zenith then
 			string = "invoke prolong"..snd.sep
-		elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-			string = "ego boost"..snd.sep
 		elseif not snd.zenith and not snd.zenith_coming then
 			string = "invoke delirium"..snd.sep
 		elseif snd.checkAff("ablaze") and snd.resto_limb ~= "none" and not snd.checkAff("heatspear") and not snd.zenith then
@@ -33639,8 +33447,6 @@ end</script>
         --end
 				if tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 then
 					string = "invoke prolong"..snd.sep
-				elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-					string = "ego boost"..snd.sep
 				elseif not snd.zenith_coming then
 					string = "invoke delirium"..snd.sep
 				else
@@ -33942,8 +33748,6 @@ end</script>
         --end
 				if tonumber(gmcp.Char.Vitals.bleeding) &gt;= 350 then
 					string = "invoke prolong"..snd.sep
-				elseif snd.recover and (snd.have_aff("paresis") and (snd.have_aff("anorexia") or snd.have_aff("impatience")) or (mymental_aff_count &gt;= 2)) then 
-					string = "ego boost"..snd.sep
 				elseif not snd.zenith_coming then
 					string = "invoke delirium"..snd.sep
 				else
@@ -35398,8 +35202,6 @@ if snd.class == "Sentinel" then
 				
 			if snd.nopets then
 				string = snd.sep.."call animals"..snd.sep 			
-			elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				string = "might"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then
@@ -35589,8 +35391,6 @@ end</script>
 				
 			if snd.nopets then
 				string = snd.sep.."call animals"..snd.sep 			
-			elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				string = "might"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then
@@ -35822,8 +35622,6 @@ end</script>
 				
 			if snd.nopets then
 				string = snd.sep.."call animals"..snd.sep 			
-			elseif snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-				string = "might"..snd.sep
 			elseif snd.flying then
 				string = string.. "touch tentacle " ..snd.target..snd.sep
 			elseif snd.instakilltarget == snd.target then

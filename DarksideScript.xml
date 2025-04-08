@@ -317,6 +317,9 @@ shrug = false, -- have access to shrug
 purge = false, -- have access to Carnifex/Revenant purge
 purify = false, -- have access to Praenomen/Akkari purify
 panacea = false, -- have access to Shaman/Alchemist panacea
+cleanse = false, -- have access to Luminary/Earthcaller cleanse
+might = false, -- have access to Sentinel/Executor might
+recover = false, -- have access to Zealot/Ravager recover
 dome = false,
 auto_reject = false,
 fastwalk = false,
@@ -368,6 +371,7 @@ end
   purge = true,
   panacea = true,
   cleanse = true,
+  recover = true,
   fool = true,
   mend = true,
   expunge = true,
@@ -376,6 +380,7 @@ end
   momentum = true,
   absorb = true,
   earthenwill = true,
+  infiltrate = true,
   morph = true,
   ethereal = false,
   furor = true,
@@ -452,10 +457,14 @@ hound = false,
 purge = false,
 purify = false,
 panacea = false,
+cleanse = false,
 melting = false,
 restore = false,
 regenerate = false,
-kaistrike = true,
+kaistrike = false,
+might = false,
+absorb = false,
+recover = false,
 
 }
 snd.hidden_afflictions = snd.hidden_afflictions or 0
@@ -2012,6 +2021,7 @@ end</script>
   
   snd.hidden_afflictions = 0
   snd.parrying = "none"
+  snd.hiddentype = "none"
   snd.firstaidclassset = false
   snd.firstaidresetlistnone()
   snd.parrying = "none"
@@ -3023,7 +3033,11 @@ snd.priorities =
     "purge",
     "purify",
     "panacea",
+    "cleanse",
+    "absorb",
+    "might",
     "rage",
+    "recover",
     "reset_cures",
     "dome",
     "def_safeguard",
@@ -3798,7 +3812,7 @@ snd.method_priority = {
       else
         snd.need_fitness = false
       end 
-      if snd.can_shrug() and (snd.need_fitness and not snd.can_fitness()) then
+      if snd.can_shrug() then
         table.insert(snd.queue, "shrugging")
       end 
       if snd.need_dome then
@@ -3819,14 +3833,24 @@ snd.method_priority = {
       if ((hasSkill("Purify") and snd.class == "Praenomen") or (hasSkill("Succour") and snd.class == "Akkari")) and snd.purify_check() then
         table.insert(snd.queue, "purify")
       end
+      if ((hasSkill("Cleansing") and snd.class == "Luminary") or (snd.class == "Earthcaller" and hasSkill("Thermics"))) and snd.cleanse_check() then
+        table.insert(snd.queue, "cleanse")
+      end
+      if ((hasSkill("Might") and snd.class == "Sentinel") or (snd.class == "Executor" and hasSkill("Grit"))) and snd.might_check() then
+        table.insert(snd.queue, "might")
+      end
+      if ((hasSkill("Absorb") and snd.class == "Teradrim") or (snd.class == "Tidesage" and hasSkill("Yearn"))) and snd.absorb_check() then
+        table.insert(snd.queue, "absorb")
+      end
+      if ((hasSkill("Recover") and snd.class == "Zealot") or (snd.class == "Ravager" and hasSkill("Boost"))) and snd.recover_check() then
+        table.insert(snd.queue, "recover")
+      end
       if snd.rage_check() and snd.can_rage() then
         table.insert(snd.queue, "rage")
       end
       if snd.hidden_afflictions &gt;= 2 then
-        snd.hiddencheckfunc()
         table.insert(snd.queue, "diagnose")
       end
-
       if snd.have_aff("barbed_arrow") then
         table.insert(snd.queue, "barbed_arrow")
       end
@@ -3892,6 +3916,14 @@ if not snd.channeling then
 	 	snd.do_purify()
    elseif i == "panacea" then
     snd.do_panacea() 
+   elseif i == "cleanse" then
+    snd.do_cleanse() 
+   elseif i == "might" then
+    snd.do_might() 
+   elseif i == "absorb" then
+    snd.do_absorb() 
+   elseif i == "recover" then
+    snd.do_recover() 
    elseif i == "toilup" then
     snd.toil_function()
    elseif i == "metawake" then
@@ -5294,7 +5326,7 @@ def_ricochet =  {defense = "ricochet", type = "normal", effect = "Bounce attacks
 def_twinsoul = {defense = "twinsoul", type = "normal", effect = "Link your soul to your golem", balance = {balanceequilibriumtake = "golem twinsoul on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Twinsoul" },
 def_earth_resonance = {defense = "earth_resonance", type = "normal", effect = "Boosted health/mana regen", balance = {balanceequilibriumtake = "earth resonance"}, state = "down", needit = false, timer = createStopWatch(), skill = "Resonance" },
 def_stonebind = {defense = "stonebind", type = "normal", effect = "They can't take your weapon", balance = {balanceequilibriumtake = "earth stonebind"}, state = "down", needit = false, timer = createStopWatch(), skill = "Stonebind" },
-def_imbue_erosion         = { defense = "imbue_erosion", type = "normal", effect = "Erosion is useful on your weapon if you're sand sweltering", balance = { balanceequilibriumtake = "earth imbue erosion" }, state = "down", needit = false, timer = createStopWatch(), skill = "Erosion" },
+def_imbue_erosion = { defense = "imbue_erosion", type = "normal", effect = "Erosion is useful on your weapon if you're sand sweltering", balance = { balanceequilibriumtake = "earth imbue erosion" }, state = "down", needit = false, timer = createStopWatch(), skill = "Erosion" },
 def_imbue_stonefury = {defense = "imbue_stonefury", type = "normal", effect = "Stonefury is useful on your weapon for bashing", balance = {balanceequilibriumtake = "earth imbue stonefury"}, state = "down", needit = false, timer = createStopWatch(), skill = "Stonefury" },
 def_sand_swelter = {defense = "sand_swelter", type = "normal", effect = "Your sands hit people in the room", balance = {balanceequilibriumtake = "sand swelter on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Swelter" },
 def_projection  = {defense = "projection", type = "normal", effect = "Remotely control sand abilities", balance = {balanceequilibriumtake = "sand projection on"}, state = "down", needit = false, timer = createStopWatch(), skill = "Projection" },
@@ -24654,9 +24686,7 @@ function snd.executor_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 	
-  if snd.balance.might and (snd.have_aff("paralysis") or (snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")))) or snd.aff_tally() &gt; 6 then
-    battack = "grit"
-  elseif (hp &lt;= 30 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
+  if (hp &lt;= 30 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
     battack = "touch shield"
  	else
   	battack = "ringblade dance "..snd.bashing.target.." phlebotomise inveigle"
@@ -26810,102 +26840,6 @@ end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>purge / annul</name>
-							<packageName></packageName>
-							<script>purge_threshold = 3
-
-function snd.purge_check()
--- Attempt to purge if don't have paralysis and have at least 2 curable physical affs.
-  if snd.balance.purge and not snd.waiting.purge and snd.not_aff("paralysis") then
-    local purgable = {}
-    
-    for _, aff in pairs(snd.physical_affs) do
-      if snd.have_aff(aff) and aff ~= "paralysis" then
-        local i, _ = string.find(aff, "_crippled")
-        if i then
-          local s = string.sub(aff, 0, i - 1)
-          if snd.afflictions["aff_"..s.."_broken"].state == "healed" then
-            table.insert(purgable, aff)
-          end
-        else
-          table.insert(purgable, aff)
-        end
-      end
-    end
-    
-    if #purgable &gt;= purge_threshold then
-      return true
-    elseif (snd.have_aff("extravasation") and snd.cureset == "templar" ) and #purgable &gt;= 2 then
-      return true
-    else
-      return false
-    end
-  end
-end
-
-function snd.do_purge()
-  
-      if snd.class == "Carnifex" then
-        snd.send("soul purge")
-        echo("(soul purge)")
-      else
-        snd.send("ancest annul")
-        echo("(ancest annul)")
-      end
-      
-      snd.last_type = "purge"
-      snd.last_item = "purge"
-      snd.waiting.purge = true
-      tempTimer(snd.delay(), [[snd.waiting.purge = false]])
-end
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>shrugging</name>
-							<packageName></packageName>
-							<script>function snd.shrug_check()
-  if snd.full_balance() and snd.can_shrug() then
-    local shruggable = {}
-    
-    for _, aff in pairs(snd.venom_affs) do
-      if snd.have_aff(aff) then
-        local i, _ = string.find(aff, "_crippled")
-        if i then
-          local s = string.sub(aff, 0, i - 1)
-          if snd.afflictions["aff_"..s.."_broken"].state == "healed" then
-            table.insert(shruggable, aff)
-          end
-        else
-          table.insert(shruggable, aff)
-        end
-      end
-    end
-    
-    if #shruggable &gt; 0 then
-      return true
-    else
-      return false
-    end
-  end
-end
-
-
-function snd.do_shrug()
- if snd.full_balance() and snd.can_shrug() and snd.shrug_check() then
-  snd.send("shrug venom")
-  echo("(shrug venom)")
-  snd.last_type = "shrug"
-  snd.last_item = "shrug"
-  snd.waiting.balance = true
-  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
- end
-end
-
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
 							<name>dome</name>
 							<packageName></packageName>
 							<script>
@@ -26918,134 +26852,6 @@ function snd.do_dome()
   tempTimer(snd.delay(), [[snd.waiting.balance = false]])
  end
 end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>rage</name>
-							<packageName></packageName>
-							<script>
-function snd.do_rage()
- if snd.rage_check() and snd.can_rage() and snd.balance.rage then
-  snd.send("rage")
-  echo("(rage)")
-  snd.last_type = "rage"
-  snd.last_item = "rage"
-  snd.waiting.balance = true
-  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
- end
-end
-
-function snd.rage_check()
-
-  if not snd.balance.rage then return false end
-  
-  if not gmcp then return false end
-  if hp ~= nil then
-    if hp &lt;= 1 then return false end
-  end
-
-  local rage_affs = {
-    "aff_hubris",
-  "aff_peace",
-  "aff_agony",
-  "aff_accursed",
-  "aff_hypotension",
-  "aff_infatuation",
-  "aff_laxity",
-  "aff_superstition",
-  "aff_justice",
-  "aff_magnanimity",}
-  
-  for _, v in pairs(rage_affs) do
-    if snd.have_aff(v) then
-      return true
-    end
-  end
-  return false
-end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>purify / succour</name>
-							<packageName></packageName>
-							<script>purify_threshold = 2
-
-function snd.purify_check()
--- Attempt to purge if don't have paralysis and have at least 2 curable physical affs.
-  if snd.balance.purify and not snd.waiting.purify and snd.not_aff("paralysis") then
-    local purifiable = {}
-    
-    for _, aff in pairs(snd.physical_affs) do
-      if snd.have_aff(aff) and aff ~= "paralysis" then
-        local i, _ = string.find(aff, "_crippled")
-        if i then
-          local s = string.sub(aff, 0, i - 1)
-          if snd.afflictions["aff_"..s.."_broken"].state == "healed" then
-            table.insert(purifiable, aff)
-          end
-        else
-          table.insert(purifiable, aff)
-        end
-      end
-    end
-    
-    if #purifiable &gt;= purify_threshold then
-      return true
-    else
-      return false
-    end
-  end
-end
-
-function snd.do_purify()
-
-     if snd.class == "Praenomen" then
-        snd.send("purify blood")
-        echo("(purify)")
-      else
-        snd.send("succour")
-        echo("(succour)")
-      end
-      
-    snd.last_type = "purify"
-    snd.last_item = "purify"
-	snd.waiting.purify = true
-  tempTimer(snd.delay(), [[snd.waiting.purify = false]])
-end
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>panacea / subvert</name>
-							<packageName></packageName>
-							<script>function snd.panacea_check()
-if snd.balance.panacea and not snd.waiting.panacea and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
-    if snd.checksomeSelfAffs({"asthma","slickness","anorexia","impatience"},2) then
-      return true
-    end
-    if snd.have_aff("impatience") and snd.checksomeSelfAffs(snd.mental_affs, 3) then
-      return true
-    end
-  end
-  return false
-end
-
-function snd.do_panacea()
-  
-      if snd.class == "Shaman" then
-        snd.send("qeb nature panacea")
-        echo("(nature panacea)")
-      else
-        snd.send("qeb botany subvert")
-        echo("(botany subvert)")        
-      end
-      
-      snd.last_type = "panacea"
-      snd.last_item = "panacea"
-      snd.waiting.panacea = true
-      tempTimer(snd.delay(), [[snd.waiting.panacea = false]])
-end
-</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -30736,9 +30542,9 @@ end  </script>
 								<name>Hidden Check</name>
 								<packageName></packageName>
 								<script>function snd.hiddencheckfunc()
-  local checkstring = "concentrate"..snd.sep.."compose"..snd.sep.."recoup"..snd.sep.."stand"..snd.sep.."apply paste"..snd.sep.."queue pipe smoke"..snd.sep
 
-  if not snd.hidden_check then
+  if not snd.hidden_check and snd.hidden_afflictions &gt;= 1 then
+    local checkstring = "concentrate"..snd.sep.."compose"..snd.sep.."recoup"..snd.sep.."stand"..snd.sep.."apply paste"..snd.sep.."queue pipe smoke"..snd.sep
     if snd.queenhidden then
       if snd.not_aff("left_arm_crippled") and not table.contains(snd.firstaidpredict, "left_arm_crippled") then
         send("firstaid predict left_arm_crippled")
@@ -30876,6 +30682,10 @@ end  </script>
       end   
 	  end
     
+    if snd.hidden_afflictions &gt;= 2 and snd.not_aff("tree_seared") and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and gmcp.Char.Vitals.tree == "1" then
+      checkstring = checkstring.."touch tree"
+    end
+    
     snd.hidden_check = true
     send(checkstring)
     tempTimer(5, [[snd.hidden_check = false]])
@@ -30890,12 +30700,6 @@ function snd.check_indifference()
   if snd.self_prone() then return end  
   if not snd.cureset == "shapeshifter" then
     snd.affsec("indifference")
-  end
-end
-
-function snd.unknownafter()
-  if snd.hidden_afflictions &gt;= 2 and snd.not_aff("tree_seared") and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and gmcp.Char.Vitals.tree == "1" then
-    send("touch tree")
   end
 end</script>
 								<eventHandlerList />
@@ -30927,12 +30731,6 @@ end</script>
       snd.hidden_afflictions = snd.hidden_afflictions - 1
       cecho("&lt;red&gt;\nYour Hidden Aff Total: "..snd.hidden_afflictions)
     end
-   -- if snd.have_aff("firstaid_predict_arms") and not table.contains(snd.firstaidpredict, "firstaid_predict_arms") then
-    --  send("firstaid predict firstaid_predict_arms")
-   -- end
-   -- if snd.not_aff("firstaid_predict_legs") and not table.contains(snd.firstaidpredict, "firstaid_predict_legs") then 
-	 --   send("firstaid predict firstaid_predict_legs")
-    --end
   end
   
   if aff == "blackout" or aff == "recklessness" then
@@ -31637,6 +31435,365 @@ end</script>
 								</eventHandlerList>
 							</Script>
 						</ScriptGroup>
+						<ScriptGroup isActive="yes" isFolder="yes">
+							<name>Special Cures (Self)</name>
+							<packageName></packageName>
+							<script></script>
+							<eventHandlerList />
+							<Script isActive="yes" isFolder="no">
+								<name>rage</name>
+								<packageName></packageName>
+								<script>
+function snd.do_rage()
+ if snd.rage_check() and snd.can_rage() and snd.balance.rage then
+  snd.send("rage")
+  echo("(rage)")
+  snd.last_type = "rage"
+  snd.last_item = "rage"
+  snd.waiting.balance = true
+  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+ end
+end
+
+function snd.rage_check()
+
+  if not snd.balance.rage then return false end
+  
+  if not gmcp then return false end
+  if hp ~= nil then
+    if hp &lt;= 1 then return false end
+  end
+
+  local rage_affs = {
+    "aff_hubris",
+    "aff_peace",
+    "aff_agony",
+    "aff_accursed",
+    "aff_hypotension",
+    "aff_infatuation",
+    "aff_laxity",
+    "aff_superstition",
+    "aff_justice",
+    "aff_magnanimity",}
+  
+  for _, v in pairs(rage_affs) do
+    if snd.have_aff(v) then
+      return true
+    end
+  end
+  return false
+end</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>shrugging</name>
+								<packageName></packageName>
+								<script>function snd.shrug_check()
+  if snd.full_balance() and snd.can_shrug() then
+    if snd.have_aff("asthma") and not snd.balance.fitness then
+      return true
+    elseif snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("asthma") then
+      return true
+    elseif snd.checksomeSelfAffs({"asthma","hellsight"},2) then
+      return true
+    elseif snd.checksomeSelfAffs({"asthma","slickness","anorexia"},3) then
+      return true
+    elseif snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("asthma") and snd.have_aff("destroyed_throat") then
+      return true
+    elseif snd.checksomeSelfAffs({"asthma","confusion","paralysis"},3) then
+      return true
+    elseif snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"slickness","slough"},1) then
+      return true
+    elseif snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.checksomeSelfAffs({"asthma","anorexia"},2) then
+      return true
+    elseif snd.checksomeSelfAffs({"crippled","paralysis","anorexia"},3) then
+      return true
+    end
+  end
+end
+
+
+function snd.do_shrug()
+ if snd.full_balance() and snd.can_shrug() and snd.shrug_check() then
+  snd.send("shrug venom")
+  echo("(shrug venom)")
+  snd.last_type = "shrug"
+  snd.last_item = "shrug"
+  snd.waiting.balance = true
+  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+ end
+end
+
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>purge / annul</name>
+								<packageName></packageName>
+								<script>purge_threshold = 3
+
+function snd.purge_check()
+-- Attempt to purge if don't have paralysis and have at least 2 curable physical affs.
+  if snd.balance.purge and not snd.waiting.purge and snd.not_aff("paralysis") then
+    local purgable = {}
+    
+    for _, aff in pairs(snd.physical_affs) do
+      if snd.have_aff(aff) and aff ~= "paralysis" then
+        local i, _ = string.find(aff, "_crippled")
+        if i then
+          local s = string.sub(aff, 0, i - 1)
+          if snd.afflictions["aff_"..s.."_broken"].state == "healed" then
+            table.insert(purgable, aff)
+          end
+        else
+          table.insert(purgable, aff)
+        end
+      end
+    end
+    
+    if #purgable &gt;= purge_threshold then
+      return true
+    elseif (snd.have_aff("extravasation") and snd.cureset == "templar" ) and #purgable &gt;= 2 then
+      return true
+    else
+      return false
+    end
+  end
+end
+
+function snd.do_purge()
+  
+      if snd.class == "Carnifex" then
+        snd.send("soul purge")
+        echo("(soul purge)")
+      else
+        snd.send("ancest annul")
+        echo("(ancest annul)")
+      end
+      
+      snd.last_type = "purge"
+      snd.last_item = "purge"
+      snd.waiting.purge = true
+      tempTimer(snd.delay(), [[snd.waiting.purge = false]])
+end
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>purify / succour</name>
+								<packageName></packageName>
+								<script>function snd.purify_check()
+  if snd.balance.purify and not snd.waiting.purify then
+    if snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
+      return true
+    elseif snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"slickness","slough"},1) then
+      return true
+    elseif snd.have_aff("anorexia") and snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("asthma") then
+      return true
+    elseif snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("asthma") then
+      return true
+    elseif snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("asthma") and snd.have_aff("destroyed_throat") then
+      return true
+    elseif snd.checksomeSelfAffs({"asthma","confusion"},2) and snd.checksomeSelfAffs({"paralysis","paresis"},1) then
+      return true
+    elseif snd.checksomeSelfAffs({"crippled","anorexia"},2) and snd.checksomeSelfAffs({"paralysis","paresis"},1) then
+      return true
+    elseif snd.checksomeSelfAffs({"crippled","crippled_body"},2) then
+      return true
+    elseif snd.checksomeSelfAffs({"confusion","hallucinations","dementia"},3) then
+      return true
+    elseif snd.checksomeSelfAffs(snd.mental_affs, 7) and snd.cureset == "praenomen" then
+      return true
+    end
+  end
+end
+
+function snd.do_purify()
+
+     if snd.class == "Praenomen" then
+        snd.send("purify blood")
+        echo("(purify)")
+      else
+        snd.send("succour")
+        echo("(succour)")
+      end
+      
+    snd.last_type = "purify"
+    snd.last_item = "purify"
+	snd.waiting.purify = true
+  tempTimer(snd.delay(), [[snd.waiting.purify = false]])
+end
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>panacea / subvert</name>
+								<packageName></packageName>
+								<script>function snd.panacea_check()
+  if snd.balance.panacea and not snd.waiting.panacea and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
+    if snd.checksomeSelfAffs({"asthma","slickness","anorexia","impatience"},2) and not snd.balance.fitness then
+      return true
+    elseif snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
+      return true
+    elseif snd.have_aff("impatience") and snd.checksomeSelfAffs(snd.mental_affs, 3) then
+      return true
+    end
+  end
+  return false
+end
+
+function snd.do_panacea()
+  
+      if snd.class == "Shaman" then
+        snd.send("qeb nature panacea")
+        echo("(nature panacea)")
+      else
+        snd.send("qeb botany subvert")
+        echo("(botany subvert)")        
+      end
+      
+      snd.last_type = "panacea"
+      snd.last_item = "panacea"
+      snd.waiting.panacea = true
+      tempTimer(snd.delay(), [[snd.waiting.panacea = false]])
+end
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>cleanse / thermics</name>
+								<packageName></packageName>
+								<script>function snd.cleanse_check()
+if snd.balance.cleanse and not snd.waiting.cleanse and not snd.checksomeSelfAffs({"left_arm_crippled","right_arm_crippled"},2) then
+    if snd.checksomeSelfAffs({"asthma","slickness","anorexia","impatience"},2) then
+      return true
+    elseif (snd.have_aff("impatience") or snd.have_aff("anorexia")) and snd.checksomeSelfAffs(snd.mental_affs, 3) then
+      return true
+    elseif snd.checksomeSelfAffs(snd.physical_affs, 3) then
+      return true
+    end
+  end
+  return false
+end
+
+function snd.do_cleanse()
+  
+      if snd.class == "Luminary" then
+        snd.send("qeb evoke cleansing")
+        echo("(evoke cleansing)")
+      else
+        snd.send("qeb tectonic thermics")
+        echo("(tectonic thermics)")        
+      end
+      
+      snd.last_type = "cleanse"
+      snd.last_item = "cleanse"
+      snd.waiting.cleanse = true
+      tempTimer(snd.delay(), [[snd.waiting.cleanse = false]])
+end
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>might / grit</name>
+								<packageName></packageName>
+								<script>function snd.might_check()
+if snd.balance.might and not snd.waiting.might then
+  if (snd.checksomeSelfAffs({"paralysis","asthma"},1) and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1)) or snd.aff_tally() &gt; 6 then
+    return true
+  end
+end
+  return false
+end
+
+function snd.do_might()
+  
+      if snd.class == "Sentinel" then
+        snd.send("qeb might")
+        echo("(might)")
+      else
+        snd.send("qeb grit")
+        echo("(grit)")        
+      end
+      
+      snd.last_type = "might"
+      snd.last_item = "might"
+      snd.waiting.might = true
+      tempTimer(snd.delay(), [[snd.waiting.might = false]])
+end</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>absorb / yearn</name>
+								<packageName></packageName>
+								<script>function snd.absorb_check()
+if snd.balance.absorb and not snd.waiting.absorb and not snd.have_aff("fallen") and not snd.checksomeSelfAffs({"left_arm_crippled","right_arm_crippled"},2) and not snd.checksomeSelfAffs({"paresis","paralysis"},1) then
+    if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1) then
+      if snd.checksomeSelfAffs({"slickness","anorexia","slough"},2) then    
+        return true
+      elseif snd.checksomeSelfAffs({"slickness","slough"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"impatience","stupidity","egocentric"},1) then
+        return true
+      elseif snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
+        return true
+      end
+    end
+  end
+  return false
+end
+
+function snd.do_absorb()
+  
+      if snd.class == "Teradrim" then
+        snd.send("qeb earth absorb")
+        echo("(earth absorb)")
+      else
+        snd.send("qeb tide yearn")
+        echo("(tide yearn)")        
+      end
+      
+      snd.last_type = "absorb"
+      snd.last_item = "absorb"
+      snd.waiting.absorb = true
+      tempTimer(snd.delay(), [[snd.waiting.absorb = false]])
+end
+</script>
+								<eventHandlerList />
+							</Script>
+							<Script isActive="yes" isFolder="no">
+								<name>recover / boost</name>
+								<packageName></packageName>
+								<script>function snd.recover_check()
+if snd.balance.recover and not snd.waiting.recover and not snd.have_aff("fallen") then
+    if snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
+      return true
+    elseif snd.cureset == "sciomancer" and snd.checksomeSelfAffs({"weariness", "clumsiness", "vomiting", "dementia"},3) then
+      return true
+    elseif snd.checksomeSelfAffs({"slickness","slough"},1) and snd.have_aff("anorexia") and snd.have_aff("asthma") then
+      return true
+    end
+  end
+  return false
+end
+
+function snd.do_recover()
+  
+      if snd.class == "Zealot" then
+        snd.send("qeb psi recover")
+        echo("(psi recover)")
+      else
+        snd.send("qeb ego boost")
+        echo("(ego boost)")        
+      end
+      
+      snd.last_type = "recover"
+      snd.last_item = "recover"
+      snd.waiting.recover = true
+      tempTimer(snd.delay(), [[snd.waiting.recover = false]])
+end
+</script>
+								<eventHandlerList />
+							</Script>
+						</ScriptGroup>
 					</ScriptGroup>
 					<Script isActive="yes" isFolder="no">
 						<name>load defenses</name>
@@ -32011,9 +32168,10 @@ def_ricochet = "on",
 def_twinsoul = "on",
 def_earth_resonance = "on",
 def_stonebind = "on",
-def_imbue_stonefury = "once",
+--def_imbue_stonefury = "once",
+def_imbue_erosion = "once",
 def_footfeel = "on",
---def_sand_swelter = "once",
+def_sand_swelter = "once",
 def_cloak = "on",
 },
 
@@ -32788,9 +32946,7 @@ snd.sleight = "void"
 --Luminary/Earthcaller
 snd.battle_aff = "none"
 snd.chasten_aff = "none"
-snd.infiltrate = false
 snd.needswarm = true
-snd.thermicready = true
 
 --Predator
 snd.fleshbaneStacks = 0
@@ -34300,7 +34456,7 @@ function snd.attack(attack)
       fitnessstring = fitnessstring.."recoup"..snd.sep
     end
     string = string.."fitness"..snd.sep..fitnessstring
-  elseif snd.can_shrug() and (snd.need_fitness and not snd.can_fitness()) then
+  elseif snd.can_shrug() then
     if gmcp.Char.Vitals.pipe == "1" and (snd.have_aff("slickness") or snd.have_aff("slough")) then
       fitnessstring = "smoke yarrow"..snd.sep
     end
@@ -34345,8 +34501,6 @@ function snd.attack(attack)
 		  string = string.."remove ironcollar"
     elseif snd.not_aff("stun") and ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout") and snd.not_aff("asleep")) then
       string = string..snd.endgamehealth..snd.sep
-    --elseif snd.class == "Earthcaller" and snd.thermicready and (snd.have_aff("impatience") or snd.have_aff("hypochondria")) and gmcp.Char.Vitals.herb == "0" and gmcp.Char.Vitals.tree == "0" then
-      --string = string.."tectonic thermics"..snd.sep
     else
       string = string..attack
     end
@@ -34552,6 +34706,7 @@ end</script>
   snd.restotrack = 0
   snd.howllist = {}
   snd.snarlcount = 0
+  snd.hiddentype = "none"
  
   --Infiltrator
   snd.hypno = "none"
@@ -34654,7 +34809,6 @@ end</script>
   snd.unmasked = false
  
   --Earthcaller/Luminary
-  snd.infiltrate = false
   
   --Bard
   snd.awakened = false
@@ -39798,7 +39952,86 @@ end
 						<script></script>
 						<eventHandlerList />
 						<Script isActive="yes" isFolder="no">
-							<name>Archivist aff picking</name>
+							<name>Parry Prediction</name>
+							<packageName></packageName>
+							<script>function snd.parrypredictfunc()
+  local limbs = {"right arm", "left arm", "left leg", "right leg", "head", "torso"}
+ 
+  if (snd.last_struck_limb == "torso" or snd.resto_limb == "torso" or snd.limb_dmg["torso"] &gt;= 33.33) and snd.parried_limb ~= "torso" then
+    delitem(limbs, "torso")
+  end
+  if (snd.last_struck_limb == "head" or snd.resto_limb == "head" or snd.limb_dmg["head"] &gt;= 33.33) and snd.parried_limb ~= "head" then
+    delitem(limbs, "head")
+  end
+  if (snd.last_struck_limb == "right arm" or snd.resto_limb == "right arm" or snd.limb_dmg["right arm"] &gt;= 33.33) and snd.parried_limb ~= "right arm" then
+    delitem(limbs, "right arm")
+  end
+  if (snd.last_struck_limb == "left arm" or snd.resto_limb == "left arm" or snd.limb_dmg["left arm"] &gt;= 33.33) and snd.parried_limb ~= "left arm" then
+    delitem(limbs, "left arm")
+  end
+  if (snd.last_struck_limb == "right leg" or snd.resto_limb == "right leg" or snd.limb_dmg["right leg"] &gt;= 33.33) and snd.parried_limb ~= "right leg" then
+    delitem(limbs, "right leg")
+  end
+  if (snd.last_struck_limb == "left leg" or snd.resto_limb == "left leg" or snd.limb_dmg["left leg"] &gt;= 33.33) and snd.parried_limb ~= "left leg" then
+    delitem(limbs, "left leg")
+  end
+ 
+  local damagesort = {}
+  local damage = snd.limb_dmg
+ 
+  for num, limb in ipairs (limbs) do
+    if next(damagesort) == nil then
+        table.insert(damagesort, limb)
+    else
+        for num2, limb2 in ipairs (damagesort) do
+            if damage[limb] &gt; damage[limb2] then
+                table.insert(damagesort, num2, limb)
+                break
+            elseif damagesort[num2 + 1] == nil then
+                table.insert(damagesort, limb)
+                break
+            end
+        end
+    end
+  end
+ 
+  if damagesort[1] == "left leg" then snd.topenemydamagelimb = "left leg"
+  elseif damagesort[1] == "left arm" then snd.topenemydamagelimb = "left arm"
+  elseif damagesort[1] == "right arm" then snd.topenemydamagelimb = "right arm"
+  elseif damagesort[1] == "right leg" then snd.topenemydamagelimb = "right leg"
+  elseif damagesort[1] == "torso" then snd.topenemydamagelimb = "torso"
+  elseif damagesort[1] == "head" then snd.topenemydamagelimb = "head"
+  end
+ 
+  if damagesort[2] == "left leg" then snd.secenemydamagelimb = "left leg"
+  elseif damagesort[2] == "left arm" then snd.secenemydamagelimb = "left arm"
+  elseif damagesort[2] == "right arm" then snd.secenemydamagelimb = "right arm"
+  elseif damagesort[2] == "right leg" then snd.secenemydamagelimb = "right leg"
+  elseif damagesort[2] == "torso" then snd.secenemydamagelimb = "torso"
+  elseif damagesort[2] == "head" then snd.secenemydamagelimb = "head"
+  end
+ 
+  if damagesort[3] == "left leg" then snd.thienemydamagelimb = "left leg"
+  elseif damagesort[3] == "left arm" then snd.thienemydamagelimb = "left arm"
+  elseif damagesort[3] == "right arm" then snd.thienemydamagelimb = "right arm"
+  elseif damagesort[3] == "right leg" then snd.thienemydamagelimb = "right leg"
+  elseif damagesort[3] == "torso" then snd.thienemydamagelimb = "torso"
+  elseif damagesort[3] == "head" then snd.thienemydamagelimb = "head"
+  end
+ 
+  if damagesort[4] == "left leg" then snd.fouenemydamagelimb = "left leg"
+  elseif damagesort[4] == "left arm" then snd.fouenemydamagelimb = "left arm"
+  elseif damagesort[4] == "right arm" then snd.fouenemydamagelimb = "right arm"
+  elseif damagesort[4] == "right leg" then snd.fouenemydamagelimb = "right leg"
+  elseif damagesort[4] == "torso" then snd.fouenemydamagelimb = "torso"
+  elseif damagesort[4] == "head" then snd.fouenemydamagelimb = "head"
+  end
+
+end</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Archivist / Voidseer aff picking</name>
 							<packageName></packageName>
 							<script>snd.shape_affs = {
 		"mercy",
@@ -39830,11 +40063,41 @@ snd.shape_attacks = {
 		shyness = "square",
 }
 
+snd.foment_affs = {
+		"mercy",
+		"masochism",
+		"mania",
+		"mania",
+		"laxity",
+		"infatuation",
+		"peace",
+		"magnanimity",
+		"dizziness",
+		"faintness",
+		"epilepsy",
+		"shyness",
+}
+
+snd.foment_attacks = {
+		mercy = "disgust",
+		masochism = "disgust",
+		mania = "disgust",
+		recklessness = "disgust",
+		laxity = "joy",
+		infatuation = "joy",
+		peace = "joy",
+		magnanimity = "joy",
+		dizziness = "fear",
+		faintness = "fear",
+		epilepsy = "fear",
+		shyness = "fear",
+}
+
 </script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Sentinel Scripts and Tables</name>
+							<name>Sentinel / Executor Scripts and Tables</name>
 							<packageName></packageName>
 							<script>snd.dhuriv_affs =
   {
@@ -39983,11 +40246,162 @@ function Sentinel_Attack_Choice(giving, left, right)
   end
   return left, right
   ---- Return our attack choices back to the main alias.
-end</script>
+end
+
+snd.ringblade_affs =
+  {
+    "impatience",
+    "destroyed_throat",
+    "arrhythmia",
+    "confusion",
+    "lethargy",
+    "fallen",
+    "impairment",
+    "reave",
+    "claustrophobia",
+    "agoraphobia",
+    "loneliness",
+    "mania",
+    "frozen",
+    "shivering",
+    "ambush",
+    "epilepsy",
+    "laxity",
+  }
+snd.ringblade_first =
+  {
+    "shave",
+    "contrive",
+    "ruse",
+    "impair",
+    "gambol",
+    "perplex",
+    "phlebotomoise",
+    "stifle",
+    "accost",
+    "rimestalker",
+    "waylay",
+  }
+snd.ringblade_second = {"beguile", "desolate", "muddle", "inveigle", "brandish"}
+snd.ringblade_attacks =
+  {
+    shave = "shave",
+    reave = "shave",
+    impatience = "muddle",
+    destroyed_throat = "stifle",
+    arrhythmia = "desolate",
+    confusion = "ruse",
+    lethargy = "impair left leg",
+    fallen = "gambol",
+    epilepsy = "perplex",
+    laxity = "perplex",
+    impairment = "phlebotomise",
+    claustrophobia = "accost",
+    agoraphobia = "accost",
+    loneliness = "accost",
+    mania = "accost",
+    frozen = "rimestalker",
+    frigid = "rimestalker",
+    shivering = "rimestalker",
+    ambush = "waylay",
+    waylay = "waylay",
+  }
+snd.accost_accomplices =
+  {
+    ["claustrophobia"] = "order darkhound accost ",
+    ["agoraphobia"] = "order brutaliser accost ",
+    ["loneliness"] = "order eviscerator accost ",
+    ["mania"] = "order terrifier accost ",
+    ["frozen"] = "order rimestalker verglas ",
+    ["frigid"] = "order rimestalker verglas ",
+    ["shivering"] = "order rimestalker verglas ",
+  }
+
+  function Executor_Attack_Choice(giving, left, right)
+    -- requires to be sent a list of affs and 2 variables for
+    -- it to fill and send back with choices.
+    if snd.parried_limb == "left leg" then
+      snd.ringblade_attacks["lethargy"] = "impair right leg"
+    end
+  
+    local right_venom_only = false
+    -- used for when we choose a daunt aff
+    ----------An example of how you might change your aff list. If current offense mode is mental affs, we want to make sure
+    ----------they have impatience, so check if they have impatience and paresis. If no to both, add paresis to top of stack.
+    if not snd.checksomeAffs({"paresis", "impatience"}, 1) and snd.current_offense == "SentMental" then
+      table.insert(giving, 1, "paresis")
+    end
+    if snd.current_offense == "SentVLock" then
+      local missing = snd.missingAff("anorexia/asthma/slickness", "/")
+      if #missing == 0 and snd.no_parry() and snd.checksomeAffs({"weariness", "clumsiness", "hypochondria"}, 1) then
+        table.insert(giving, 1, "destroyed_throat")
+      end
+      if not snd.checkAff("destroyed_throat") and snd.checkAff("anorexia") then
+        table.insert(giving, 1, "impatience")
+        table.insert(giving, 1, "stupidity")
+      end
+    end
+    if snd.current_offense == "SentImpale" or snd.current_offense == "SentSalve" then
+      if snd.timer_check("restoration", .5) and snd.no_parry() then
+        table.insert(giving, 1, "destroyed_throat")
+      end
+    end
+    if snd.current_offense == "SentLumiSupport" then
+      if not snd.checkAff("destroyed_throat") and snd.checkAff("anorexia") then
+        table.insert(giving, 1, "impatience")
+        table.insert(giving, 1, "stupidity")
+      end
+    end
+    ----------Below here the function picks affs for you based on your aff list sent over and any changes made by checks above.
+    for i, v in pairs(giving) do
+      if not table.contains(snd.target_has, giving[i]) then -- and (snd.checkAff("destroyed_throat") and i ~= "anorexia")
+        if left == "none" then
+          if snd.used.shield or snd.used.rebounding then
+            left = "reave"
+          elseif table.contains(snd.ringblade_first, snd.ringblade_attacks[v]) then
+            left = v
+            if left == "destroyed_throat" then
+              right = nil
+            end
+            if (snd.ringblade_attacks[left] == "accost" or snd.ringblade_attacks[left] == "rimestalker") then
+              right_venom_only = true
+            end
+          elseif table.contains(snd.ringblade_second, snd.ringblade_attacks[v]) and right == "none" then
+            right = v
+          elseif table.contains(snd.effects, i) and not snd.checkAff(giving[i]) then
+            if left == "none" and right ~= giving[i] then
+              left = giving[i]
+            end
+          elseif
+            not snd.checkAff(giving[i]) and
+            not table.contains(snd.ringblade_second, snd.ringblade_attacks[v])
+          then
+            left = v
+          end
+        end
+        
+        if right == "none" then
+          if not right_venom_only and table.contains(snd.ringblade_first, snd.ringblade_attacks[v]) 
+          and table.contains(snd.effects, left) and left ~= "paresis" and v ~= "destroyed_throat" then
+            right = left
+            left = v
+          elseif not right_venom_only and table.contains(snd.ringblade_second, snd.ringblade_attacks[v]) then
+            right = v
+          elseif table.contains(snd.effects, v) and not snd.checkAff(giving[i]) then
+            if left ~= giving[i] then
+              right = giving[i]
+            end
+          end
+        end
+      end
+    end
+    return left, right
+    ---- Return our attack choices back to the main alias.
+  end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Indorani/Oneiromancer card table</name>
+							<name>Indorani / Oneiromancer card table</name>
 							<packageName></packageName>
 							<script> --Nested tables incase someone wants to add a devil y/n field to cards and change picking based on it, though so few use it that it may not come to fruition.
 snd.cardshapes =
@@ -40568,18 +40982,6 @@ end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Monk Stuff</name>
-							<packageName></packageName>
-							<script>function cantBeParried()
-  if (snd.checkAff("a broken right arm") and snd.checkAff("a broken left arm")) or snd.checkAff("numb_arms") or snd.checkAff("paresis") or snd.checkAff("paralysis") then
-		return true
-		else
-		return false
-	end 
-end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
 							<name>Predator</name>
 							<packageName></packageName>
 							<script>function snd.setPredatorVenom()
@@ -40595,7 +40997,7 @@ end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Teradrim/Tidesage stuff</name>
+							<name>Teradrim/Tidesage Damage Calculations</name>
 							<packageName></packageName>
 							<script>local mirrors = {
     ram = "gutsmash",
@@ -40643,195 +41045,6 @@ function snd.calcTeradrimLimbDamage(skill, you, limb)
   end
   return round(damage,2)
 end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Voidseer aff picking</name>
-							<packageName></packageName>
-							<script>snd.foment_affs = {
-		"mercy",
-		"masochism",
-		"mania",
-		"mania",
-		"laxity",
-		"infatuation",
-		"peace",
-		"magnanimity",
-		"dizziness",
-		"faintness",
-		"epilepsy",
-		"shyness",
-}
-
-snd.foment_attacks = {
-		mercy = "disgust",
-		masochism = "disgust",
-		mania = "disgust",
-		recklessness = "disgust",
-		laxity = "joy",
-		infatuation = "joy",
-		peace = "joy",
-		magnanimity = "joy",
-		dizziness = "fear",
-		faintness = "fear",
-		epilepsy = "fear",
-		shyness = "fear",
-}</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Executor Scripts and Tables</name>
-							<packageName></packageName>
-							<script>snd.ringblade_affs =
-  {
-    "impatience",
-    "destroyed_throat",
-    "arrhythmia",
-    "confusion",
-    "lethargy",
-    "fallen",
-    "impairment",
-    "reave",
-    "claustrophobia",
-    "agoraphobia",
-    "loneliness",
-    "mania",
-    "frozen",
-    "shivering",
-    "ambush",
-    "epilepsy",
-    "laxity",
-  }
-snd.ringblade_first =
-  {
-    "shave",
-    "contrive",
-    "ruse",
-    "impair",
-    "gambol",
-    "perplex",
-    "phlebotomoise",
-    "stifle",
-    "accost",
-    "rimestalker",
-    "waylay",
-  }
-snd.ringblade_second = {"beguile", "desolate", "muddle", "inveigle", "brandish"}
-snd.ringblade_attacks =
-  {
-    shave = "shave",
-    reave = "shave",
-    impatience = "muddle",
-    destroyed_throat = "stifle",
-    arrhythmia = "desolate",
-    confusion = "ruse",
-    lethargy = "impair left leg",
-    fallen = "gambol",
-    epilepsy = "perplex",
-    laxity = "perplex",
-    impairment = "phlebotomise",
-    claustrophobia = "accost",
-    agoraphobia = "accost",
-    loneliness = "accost",
-    mania = "accost",
-    frozen = "rimestalker",
-    frigid = "rimestalker",
-    shivering = "rimestalker",
-    ambush = "waylay",
-    waylay = "waylay",
-  }
-snd.accost_accomplices =
-  {
-    ["claustrophobia"] = "order darkhound accost ",
-    ["agoraphobia"] = "order brutaliser accost ",
-    ["loneliness"] = "order eviscerator accost ",
-    ["mania"] = "order terrifier accost ",
-    ["frozen"] = "order rimestalker verglas ",
-    ["frigid"] = "order rimestalker verglas ",
-    ["shivering"] = "order rimestalker verglas ",
-  }
-
-  function Executor_Attack_Choice(giving, left, right)
-    -- requires to be sent a list of affs and 2 variables for
-    -- it to fill and send back with choices.
-    if snd.parried_limb == "left leg" then
-      snd.ringblade_attacks["lethargy"] = "impair right leg"
-    end
-  
-    local right_venom_only = false
-    -- used for when we choose a daunt aff
-    ----------An example of how you might change your aff list. If current offense mode is mental affs, we want to make sure
-    ----------they have impatience, so check if they have impatience and paresis. If no to both, add paresis to top of stack.
-    if not snd.checksomeAffs({"paresis", "impatience"}, 1) and snd.current_offense == "SentMental" then
-      table.insert(giving, 1, "paresis")
-    end
-    if snd.current_offense == "SentVLock" then
-      local missing = snd.missingAff("anorexia/asthma/slickness", "/")
-      if #missing == 0 and snd.no_parry() and snd.checksomeAffs({"weariness", "clumsiness", "hypochondria"}, 1) then
-        table.insert(giving, 1, "destroyed_throat")
-      end
-      if not snd.checkAff("destroyed_throat") and snd.checkAff("anorexia") then
-        table.insert(giving, 1, "impatience")
-        table.insert(giving, 1, "stupidity")
-      end
-    end
-    if snd.current_offense == "SentImpale" or snd.current_offense == "SentSalve" then
-      if snd.timer_check("restoration", .5) and snd.no_parry() then
-        table.insert(giving, 1, "destroyed_throat")
-      end
-    end
-    if snd.current_offense == "SentLumiSupport" then
-      if not snd.checkAff("destroyed_throat") and snd.checkAff("anorexia") then
-        table.insert(giving, 1, "impatience")
-        table.insert(giving, 1, "stupidity")
-      end
-    end
-    ----------Below here the function picks affs for you based on your aff list sent over and any changes made by checks above.
-    for i, v in pairs(giving) do
-      if not table.contains(snd.target_has, giving[i]) then -- and (snd.checkAff("destroyed_throat") and i ~= "anorexia")
-        if left == "none" then
-          if snd.used.shield or snd.used.rebounding then
-            left = "reave"
-          elseif table.contains(snd.ringblade_first, snd.ringblade_attacks[v]) then
-            left = v
-            if left == "destroyed_throat" then
-              right = nil
-            end
-            if (snd.ringblade_attacks[left] == "accost" or snd.ringblade_attacks[left] == "rimestalker") then
-              right_venom_only = true
-            end
-          elseif table.contains(snd.ringblade_second, snd.ringblade_attacks[v]) and right == "none" then
-            right = v
-          elseif table.contains(snd.effects, i) and not snd.checkAff(giving[i]) then
-            if left == "none" and right ~= giving[i] then
-              left = giving[i]
-            end
-          elseif
-            not snd.checkAff(giving[i]) and
-            not table.contains(snd.ringblade_second, snd.ringblade_attacks[v])
-          then
-            left = v
-          end
-        end
-        
-        if right == "none" then
-          if not right_venom_only and table.contains(snd.ringblade_first, snd.ringblade_attacks[v]) 
-          and table.contains(snd.effects, left) and left ~= "paresis" and v ~= "destroyed_throat" then
-            right = left
-            left = v
-          elseif not right_venom_only and table.contains(snd.ringblade_second, snd.ringblade_attacks[v]) then
-            right = v
-          elseif table.contains(snd.effects, v) and not snd.checkAff(giving[i]) then
-            if left ~= giving[i] then
-              right = giving[i]
-            end
-          end
-        end
-      end
-    end
-    return left, right
-    ---- Return our attack choices back to the main alias.
-  end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -41114,7 +41327,7 @@ end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Zealot ravager</name>
+							<name>Zealot / Ravager Chain Map</name>
 							<packageName></packageName>
 							<script>snd.zealotChainMap = {
   sore_ankle = "anklepin",
@@ -48320,85 +48533,6 @@ end</script>
 								</Script>
 							</Script>
 						</ScriptGroup>
-						<Script isActive="yes" isFolder="no">
-							<name>Auto limb systems</name>
-							<packageName></packageName>
-							<script>function snd.parrypredictfunc()
-  local limbs = {"right arm", "left arm", "left leg", "right leg", "head", "torso"}
- 
-  if (snd.last_struck_limb == "torso" or snd.resto_limb == "torso" or snd.limb_dmg["torso"] &gt;= 33.33) and snd.parried_limb ~= "torso" then
-    delitem(limbs, "torso")
-  end
-  if (snd.last_struck_limb == "head" or snd.resto_limb == "head" or snd.limb_dmg["head"] &gt;= 33.33) and snd.parried_limb ~= "head" then
-    delitem(limbs, "head")
-  end
-  if (snd.last_struck_limb == "right arm" or snd.resto_limb == "right arm" or snd.limb_dmg["right arm"] &gt;= 33.33) and snd.parried_limb ~= "right arm" then
-    delitem(limbs, "right arm")
-  end
-  if (snd.last_struck_limb == "left arm" or snd.resto_limb == "left arm" or snd.limb_dmg["left arm"] &gt;= 33.33) and snd.parried_limb ~= "left arm" then
-    delitem(limbs, "left arm")
-  end
-  if (snd.last_struck_limb == "right leg" or snd.resto_limb == "right leg" or snd.limb_dmg["right leg"] &gt;= 33.33) and snd.parried_limb ~= "right leg" then
-    delitem(limbs, "right leg")
-  end
-  if (snd.last_struck_limb == "left leg" or snd.resto_limb == "left leg" or snd.limb_dmg["left leg"] &gt;= 33.33) and snd.parried_limb ~= "left leg" then
-    delitem(limbs, "left leg")
-  end
- 
-  local damagesort = {}
-  local damage = snd.limb_dmg
- 
-  for num, limb in ipairs (limbs) do
-    if next(damagesort) == nil then
-        table.insert(damagesort, limb)
-    else
-        for num2, limb2 in ipairs (damagesort) do
-            if damage[limb] &gt; damage[limb2] then
-                table.insert(damagesort, num2, limb)
-                break
-            elseif damagesort[num2 + 1] == nil then
-                table.insert(damagesort, limb)
-                break
-            end
-        end
-    end
-  end
- 
-  if damagesort[1] == "left leg" then snd.topenemydamagelimb = "left leg"
-  elseif damagesort[1] == "left arm" then snd.topenemydamagelimb = "left arm"
-  elseif damagesort[1] == "right arm" then snd.topenemydamagelimb = "right arm"
-  elseif damagesort[1] == "right leg" then snd.topenemydamagelimb = "right leg"
-  elseif damagesort[1] == "torso" then snd.topenemydamagelimb = "torso"
-  elseif damagesort[1] == "head" then snd.topenemydamagelimb = "head"
-  end
- 
-  if damagesort[2] == "left leg" then snd.secenemydamagelimb = "left leg"
-  elseif damagesort[2] == "left arm" then snd.secenemydamagelimb = "left arm"
-  elseif damagesort[2] == "right arm" then snd.secenemydamagelimb = "right arm"
-  elseif damagesort[2] == "right leg" then snd.secenemydamagelimb = "right leg"
-  elseif damagesort[2] == "torso" then snd.secenemydamagelimb = "torso"
-  elseif damagesort[2] == "head" then snd.secenemydamagelimb = "head"
-  end
- 
-  if damagesort[3] == "left leg" then snd.thienemydamagelimb = "left leg"
-  elseif damagesort[3] == "left arm" then snd.thienemydamagelimb = "left arm"
-  elseif damagesort[3] == "right arm" then snd.thienemydamagelimb = "right arm"
-  elseif damagesort[3] == "right leg" then snd.thienemydamagelimb = "right leg"
-  elseif damagesort[3] == "torso" then snd.thienemydamagelimb = "torso"
-  elseif damagesort[3] == "head" then snd.thienemydamagelimb = "head"
-  end
- 
-  if damagesort[4] == "left leg" then snd.fouenemydamagelimb = "left leg"
-  elseif damagesort[4] == "left arm" then snd.fouenemydamagelimb = "left arm"
-  elseif damagesort[4] == "right arm" then snd.fouenemydamagelimb = "right arm"
-  elseif damagesort[4] == "right leg" then snd.fouenemydamagelimb = "right leg"
-  elseif damagesort[4] == "torso" then snd.fouenemydamagelimb = "torso"
-  elseif damagesort[4] == "head" then snd.fouenemydamagelimb = "head"
-  end
-
-end</script>
-							<eventHandlerList />
-						</Script>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Target calling</name>
@@ -48543,7 +48677,7 @@ end</script>
 						</Script>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>Special Cures</name>
+						<name>Special Cures (Enemy)</name>
 						<packageName></packageName>
 						<script></script>
 						<eventHandlerList />
@@ -48712,7 +48846,7 @@ end
 function snd.track_rebounding(target)
   if target:lower() == snd.target:lower() then
     snd.timers.rebounding.start = getEpoch()
-    local limit = 6.5
+    local limit = 6.4
     snd.timers.rebounding.limit = limit
   end
 end
