@@ -362,6 +362,7 @@ end
 							<name>vitals</name>
 							<packageName></packageName>
 							<script>snd.balance = snd.balance or {
+  barrier = true,
   fitness = true,
   shrug = true,
   battle = true,
@@ -414,16 +415,16 @@ end
   soulcage = true,
   wand = true,
   fury = true,
-  restore = true,
   arouse = true, --predator arouse
   ferocity = true, --predator ferocity
   orel = true, --predator orel fly/land
   spider = true, --predator spider web
   feint = true, --predator's feint
   bladesurge = true,
-  exploit = true, --executor exploit
-  barrier = true,
-  smash = true, --luminary smash
+  exploit = true,    --executor exploit
+  regenerate = true, --survival regenerate
+  smash = true,      --luminary smash
+  restore = true,    --restore/vein for asc/bb
   foresight = true,
   centrum = true,
   ejawave = true,
@@ -431,6 +432,7 @@ end
   equinox = true,
   eventide = true,
   rattle = true, -- teradrim/tidesage rattle/reprisal
+  grapple = true, --teradrim/tidesage grapple/clutch
 }
 
 snd.waiting = snd.waiting or {
@@ -1655,7 +1657,6 @@ end
 function snd.not_aff(affliction)
   if not string.find(affliction, "aff_") then
     affliction = "aff_" .. affliction
-    --echo("\n"..affliction)
   end
   if snd.afflictions[affliction].state == "healed" then
     return true
@@ -1963,38 +1964,6 @@ function snd.swapDir(direction)
       down = "up",
     }
   return directions[direction]
-end</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>no target</name>
-							<packageName></packageName>
-							<script>function snd.no_target()
-  --deleteLine()
-  --snd.message("Need new targets!")
-  if snd.offense_loaded then
-    snd.target_gone = true
-    snd.get_new_target()
-  end
-  if snd.bashing_loaded then
-    snd.untarget()
-    snd.waiting.balance = false
-    snd.waiting.equilibrium = false
-    snd.bashing.target_priority = 10000
-  end
-end
-
-function snd.untarget()
-  snd.bashing.engaged = false
-  snd.bashing.targeted = false
-  snd.last_attack = "none"
-  if snd.bashing.stopping then
-    snd.message("Bashing OFF!")
-    if snd.toggles.bashing then
-      snd.toggle("bashing")
-    end
-    snd.bashing.stopping = false
-  end
 end</script>
 							<eventHandlerList />
 						</Script>
@@ -2569,45 +2538,6 @@ registerAnonymousEventHandler("sunder_login", "snd.mapTweaks")</script>
   ["Tsol'aa"] = { "Meditator", "Foraging", "Lucidity" },
   Xorani = { "Cold Blooded", "Scales", "Fire Breathing" },
 }</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Target listening</name>
-							<packageName></packageName>
-							<script>function snd.targetListening()
-  local event = gmcp.Comm.Channel.Text
-  
-  if event.channel~="web" then return end
-  if not snd.toggles.listening then return end
-  if not table.contains(snd.callers, event.talker) then return end
-  
-  local rawtext = ansi2string(event.text)
-  rawtext = rawtext:gsub(string.char(27) .. [[.-]] .. string.char(4), "")
-
-  matchText = rawtext:lower()
-  if
-    matchText:find("target:") and
-    not matchText:find("list") and
-    not matchText:find("calling") and
-    not matchText:find("priority") and
-    not matchText:find("removed") and
-    not matchText:find("next")
-  then
-    local pattern = [["[ta\.]*?target: [\.\w]*?(\w+)\."]]
-    local check = rex.match(matchText, pattern)
-    if check and check:lower() ~= snd.target:lower() then
-      --if sndNDB.players[gmcp.Char.Status.name].city == sndNDB.players[check:title()].city then
-        --snd.message("Not targeting "..check.." because of safelistening! They're in your city.")
-        --snd.affsec("dementia")
-        --snd.setTarget(snd.target)
-      --else
-        expandAlias("t " .. check)
-      --end
-    end
-  end
-end
-
-registerAnonymousEventHandler("gmcp.Comm.Channel.Text", "snd.targetListening")</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -3997,10 +3927,7 @@ end</script>
 							<Script isActive="yes" isFolder="no">
 								<name>affliction table</name>
 								<packageName></packageName>
-								<script>
-snd.afflictions = {
-aff_bleeding = {state = "healed", cures = {clot = "send"}, assess = false, timer = createStopWatch()},
-
+								<script>snd.afflictions = {
    aff_oblivion        = { state = "healed", effect = "Death unless you interrupt the bard", cures = {}, assess = false, timer = createStopWatch() },
    aff_blindness       = { state = "healed", effect = "negates accuracy for 1s every 8s", cures = { salve = "press epidermal to head" }, assess = false, timer = createStopWatch() },
    aff_deafness        = { state = "healed", effect = "Grants attackers 15% accuracy bonus", cures = { salve = "press epidermal to head" }, assess = false, timer = createStopWatch() },
@@ -4143,13 +4070,12 @@ aff_frostbrand = {state = "healed", effect = "continually freezes over time", cu
 aff_frostwreath = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_frozen = {state = "healed", effect = "", cures = {salve = "caloric to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_frozen_feet = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_generosity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_generosity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_glasslimb = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_gloom = {state = "healed", effect = "", cures = {salve = "epidermal to head"}, assess = false, timer = createStopWatch()},
 aff_gnawing = {state = "healed", effect = "lowers constitution by 2", cures = {salve = "epidermal to torso"}, assess = false, timer = createStopWatch()},
 aff_haemophilia = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hallucinations = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
-aff_halted = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hatred = {state = "healed", effect = "", cures = {herb = "ash", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_head_crippled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_head_bruised = {state = "healed", effect = "", cures = {salve = "mending to head"}, assess = false, timer = createStopWatch()},
@@ -4169,12 +4095,12 @@ aff_hypertension = {state = "healed", effect = "", cures = {}, assess = false, t
 aff_hypochondria = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hypothermia = {state = "healed", effect = "", cures = {salve = "epidermal to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_idiocy = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_impeded = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
-aff_impairment = {state = "healed", effect = "longer stuns, no racials", cures = {herb = "decongestant"}, assess = false, timer = createStopWatch()},
 aff_ice_encased = {state = "healed", effect = "longer salve bal, extra blunt dmg", cures = {}, assess = false, timer = createStopWatch()},
 aff_illgrasp = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_imbued = {state = "healed", effect = "auto gravity from scio spells", cures = {}, assess = false, timer = createStopWatch()},
+aff_impairment = {state = "healed", effect = "longer stuns, no racials", cures = {herb = "decongestant"}, assess = false, timer = createStopWatch()},
 aff_impatience = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_impeded = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
 aff_indifference = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_infernal_seal = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infernal_shroud = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -4253,13 +4179,13 @@ aff_plodding = {state = "healed", effect = "", cures = {moss = "send", tree = "s
 aff_extravasation = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_polymorph = {state = "healed", effect = "divine only? unsure", cures = {}, assess = false, timer = createStopWatch()},
 aff_poison_weakness = {state = "healed", effect = "more dmg from poison source", cures = {}, assess = false, timer = createStopWatch()},
-aff_pre_restore_head = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
-aff_pre_restore_left_arm = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
-aff_pre_restore_left_leg = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
-aff_pre_restore_right_arm = {state = "healed", effect = "", cures = {salve = "restoration to right arm"}, assess = false, timer = createStopWatch()},
-aff_pre_restore_right_leg = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
-aff_pre_restore_torso = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
-aff_firstaid_predict_arms = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_pre_restore_head           = { state = "healed", effect = "", cures = { salve = "restoration to head" }, assess = false, timer = createStopWatch() },
+  aff_pre_restore_left_arm       = { state = "healed", effect = "", cures = { salve = "restoration to arms" }, assess = false, timer = createStopWatch() },
+  aff_pre_restore_left_leg       = { state = "healed", effect = "", cures = { salve = "restoration to legs" }, assess = false, timer = createStopWatch() },
+  aff_pre_restore_right_arm      = { state = "healed", effect = "", cures = { salve = "restoration to right arm" }, assess = false, timer = createStopWatch() },
+  aff_pre_restore_right_leg      = { state = "healed", effect = "", cures = { salve = "restoration to right leg" }, assess = false, timer = createStopWatch() },
+  aff_pre_restore_torso          = { state = "healed", effect = "", cures = { salve = "restoration to torso" }, assess = false, timer = createStopWatch() },
+  aff_firstaid_predict_arms = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_firstaid_predict_legs = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_premonition = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_pressured = {state = "healed", effect = "?", cures = {}, assess = false, timer = createStopWatch()},
@@ -4519,7 +4445,7 @@ aff_phosphenes = {state = "healed", effect = "Head trauma knocks eq", cures = {s
 								<script>
 function snd.aff_check()
  for i in pairs(snd.afflictions) do
-  if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "broken") or string.find(i, "mangled") or string.find(i, "pre_restore") or i == "aff_concussion" then
+  if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "broken") or string.find(i, "mangled") or i == "aff_concussion" then 
    if getStopWatchTime(snd.afflictions[i].timer) &gt; 7 and snd.afflictions[i].state == "waiting" then
     snd.aff_timeout(i)
    end
@@ -4556,11 +4482,7 @@ function snd.aff_gain(affliction)
   end
  end
  snd.message("You: &lt;red&gt;GOT&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
- if snd.not_aff(affliction) then
-  snd.aff_have(affliction)
- end
- raiseEvent("sunder_my_affs_updated")
- raiseEvent("sunder_my_limbs_updated")
+ snd.aff_have(affliction)
  if affliction == "amnesia" then
   for i = 1,5 do
    snd.send("stand")
@@ -4617,45 +4539,46 @@ function snd.aff_have(affliction)
 	 end
 	end
  end
- if not string.find(affliction, "aff_") then
-  affliction = "aff_"..affliction
- end
- if snd.afflictions[affliction].state == "healed" then
-  snd.afflictions[affliction].state = "afflicted"
-  raiseEvent("sunder_my_affs_updated")
-  raiseEvent("sunder_my_limbs_updated")
- end
+  if not string.find(affliction, "aff_") then
+    affliction = "aff_" .. affliction
+  end
+  if snd.afflictions[affliction].state == "healed" then
+    snd.afflictions[affliction].state = "afflicted"
+    snd.player_has[affliction] = true
+    raiseEvent("sunder_my_affs_updated")
+    raiseEvent("sunder_my_limbs_updated")
+  end
 end
 
 function snd.aff_diag(affliction)
  if not string.find(affliction, "aff_") then
-  affliction = "aff_"..affliction
- end
- snd.aff_have(affliction)
- if snd.toggles.gags then 
-  deleteLine()
- end
- if snd.afflictions[affliction].cures.herb ~= nil then
-  if string.find(snd.afflictions[affliction].cures.herb, "eat") then
-   snd.aff_color = "&lt;red&gt;"
-  elseif string.find(snd.afflictions[affliction].cures.herb, "smoke") then
-   snd.aff_color = "&lt;blue&gt;"
+    affliction = "aff_" .. affliction
   end
- elseif snd.afflictions[affliction].cures.salve ~= nil then
-   snd.aff_color = "&lt;green&gt;"
- end
- snd.aff_color = "&lt;yellow&gt;"
- cecho(snd.aff_color.."\n"..affliction)
- if not string.find(affliction, "aff_") then
-  affliction = "aff_"..affliction
- end
- echo(" "..snd.afflictions[affliction].effect)
- raiseEvent("sunder_my_affs_updated")
- raiseEvent("sunder_my_limbs_updated")
+  snd.aff_have(affliction)
+  if snd.toggles.gags then
+    deleteLine()
+  end
+  if snd.afflictions[affliction].cures.herb ~= nil then
+    if string.find(snd.afflictions[affliction].cures.herb, "eat") then
+      snd.aff_color = "&lt;red&gt;"
+    elseif string.find(snd.afflictions[affliction].cures.herb, "smoke") then
+      snd.aff_color = "&lt;blue&gt;"
+    end
+  elseif snd.afflictions[affliction].cures.salve ~= nil then
+    snd.aff_color = "&lt;green&gt;"
+  end
+  snd.aff_color = "&lt;yellow&gt;"
+  cecho(snd.aff_color .. "\n" .. affliction)
+  if not string.find(affliction, "aff_") then
+    affliction = "aff_" .. affliction
+  end
+  echo(" " .. snd.afflictions[affliction].effect)
+  raiseEvent("sunder_my_affs_updated")
+  raiseEvent("sunder_my_limbs_updated")
 end
 
 function snd.aff_cure(affliction)
-  snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; "..affliction..".", "affliction")
+  snd.message("You: &lt;green&gt;HEAL&lt;DeepSkyBlue&gt; " .. affliction .. ".", "affliction")
   snd.aff_remove(affliction)
   if affliction == "asthma" then
     snd.need_fitness = false
@@ -4663,15 +4586,17 @@ function snd.aff_cure(affliction)
 end
 
 function snd.aff_remove(affliction)
- if not string.find(affliction, "aff_") then
-  affliction = "aff_"..affliction
- end
- if snd.afflictions[affliction].cures.writhe ~= nil then
---  snd.status.writhing = false
- end
- snd.afflictions[affliction].state = "healed"
- raiseEvent("sunder_my_affs_updated")
- raiseEvent("sunder_my_limbs_updated")
+  if not string.find(affliction, "aff_") then
+    affliction = "aff_" .. affliction
+  end
+  if snd.afflictions[affliction].state ~= "healed" then
+    snd.afflictions[affliction].state = "healed"
+    snd.player_has[affliction] = nil
+    if not snd.defer_ui_update then
+      raiseEvent("sunder_my_affs_updated")
+      raiseEvent("sunder_my_limbs_updated")
+    end
+  end
 end
 
 function snd.aff_count_mental()
@@ -27152,6 +27077,7 @@ local damageset = 11
 local limbs = {"right arm", "left arm", "left leg", "right leg", "head", "torso"}
 local damagesort = {}
 local damage = snd.my_limb_damage
+local clearaffs = {}
 
 for num, limb in ipairs (limbs) do
     if next(damagesort) == nil then
@@ -27169,36 +27095,59 @@ for num, limb in ipairs (limbs) do
     end
 end
 
-  snd.topdamageprelimb = "none"
-
 	if (snd.count(snd.people_hitting_me)) &lt; 3 then
 		damageset = 1
 	elseif snd.cureset ==  "indorani" then
 		damageset = 15		
 	end
-
-	if damagesort[1] == "right arm" and snd.my_limb_damage["right arm"] &gt; damageset then 
+  
+  snd.topdamageprelimb = "none"
+  
+  if damagesort[1] == "right arm" and snd.my_limb_damage["right arm"] &gt; damageset then 
 		snd.topdamageprelimb = "pre_restore_right_arm"
-	elseif damagesort[1] == "left arm" and snd.my_limb_damage["left arm"] &gt; damageset then 
+  else
+    if snd.have_aff("pre_restore_right_arm") then
+      snd.aff_remove("pre_restore_right_arm")
+    end
+  end  
+	if damagesort[1] == "left arm" and snd.my_limb_damage["left arm"] &gt; damageset then 
 		snd.topdamageprelimb = "pre_restore_left_arm"
-	elseif damagesort[1] == "left leg" and snd.my_limb_damage["left leg"] &gt; damageset then 
+  else
+    if snd.have_aff("pre_restore_left_arm") then
+      snd.aff_remove("pre_restore_left_arm")
+    end
+  end 
+	if damagesort[1] == "left leg" and snd.my_limb_damage["left leg"] &gt; damageset then 
 		snd.topdamageprelimb = "pre_restore_left_leg"
-	elseif damagesort[1] == "right leg" and snd.my_limb_damage["right leg"] &gt; damageset then 
+  else
+    if snd.have_aff("pre_restore_left_leg") then
+      snd.aff_remove("pre_restore_left_leg")
+    end
+  end 
+	if damagesort[1] == "right leg" and snd.my_limb_damage["right leg"] &gt; damageset then 
 		snd.topdamageprelimb = "pre_restore_right_leg"
-	elseif damagesort[1] == "torso" and snd.my_limb_damage["torso"] &gt; damageset then 
+  else
+    if snd.have_aff("pre_restore_right_leg") then
+      snd.aff_remove("pre_restore_right_leg")
+    end
+  end 
+	if damagesort[1] == "torso" and snd.my_limb_damage["torso"] &gt; damageset then 
 		snd.topdamageprelimb = "pre_restore_torso" 
-	elseif damagesort[1] == "head" and snd.my_limb_damage["head"] &gt; damageset then 
+  else
+    if snd.have_aff("pre_restore_torso") then
+      snd.aff_remove("pre_restore_torso")
+    end
+  end 
+	if damagesort[1] == "head" and snd.my_limb_damage["head"] &gt; damageset then 
 		snd.topdamageprelimb = "pre_restore_head"
-
-	end
-	snd.aff_remove("pre_restore_torso")
-	snd.aff_remove("pre_restore_right_leg")
-	snd.aff_remove("pre_restore_left_leg")
-	snd.aff_remove("pre_restore_right_arm")
-	snd.aff_remove("pre_restore_left_arm")
-	snd.aff_remove("pre_restore_head")
-	if snd.topdamageprelimb ~= "none" then
-		snd.aff_gain(snd.topdamageprelimb) 
+  else
+    if snd.have_aff("pre_restore_head") then
+      snd.aff_remove("pre_restore_head")
+    end
+  end 
+  
+	if snd.topdamageprelimb ~= "none" and snd.not_aff(snd.topdamageprelimb) then
+		snd.aff_gain(snd.topdamageprelimb)
 	end
 
 end</script>
@@ -30544,7 +30493,10 @@ end  </script>
 								<script>function snd.hiddencheckfunc()
 
   if not snd.hidden_check and snd.hidden_afflictions &gt;= 1 then
-    local checkstring = "concentrate"..snd.sep.."compose"..snd.sep.."recoup"..snd.sep.."stand"..snd.sep.."apply paste"..snd.sep.."queue pipe smoke"..snd.sep
+    local checkstring = ""
+    if snd.hidden_afflictions &gt;= 2 then
+      checkstring = "concentrate"..snd.sep.."compose"..snd.sep.."recoup"..snd.sep.."stand"..snd.sep.."apply paste"..snd.sep.."queue pipe smoke"..snd.sep
+    end
     if snd.queenhidden then
       if snd.not_aff("left_arm_crippled") and not table.contains(snd.firstaidpredict, "left_arm_crippled") then
         send("firstaid predict left_arm_crippled")
@@ -30755,13 +30707,8 @@ end</script>
 	 end
   end
 end
-</script>
-								<eventHandlerList />
-							</Script>
-							<Script isActive="yes" isFolder="no">
-								<name>AFF Function</name>
-								<packageName></packageName>
-								<script>function snd.aff(aff)
+
+function snd.aff(aff)
 	
 	if snd.have_aff(aff) then return false end
 	snd.lastaffs = {}
@@ -31412,8 +31359,12 @@ end
   elseif snd.healingcall == "You are no longer deadened." then
     aff = "deadening"    
   elseif snd.healingcall == "Your eyes stop watering." then
-    aff = "watery_eyes" 
-	end
+    aff = "watery_eyes"     
+  elseif snd.healingcall == "Your tongue will finally obey your commands properly." then
+    aff = "stuttering"
+  elseif snd.healingcall == "You feel your blood renew with fortifying fluids." then
+    aff = "dyscrasia"
+  end
   	
 	if snd.hidden_afflictions &gt; 0 and aff ~= "" and snd.not_aff(aff) then
 		snd.hidden_afflictions = snd.hidden_afflictions - 1
@@ -32368,20 +32319,21 @@ chaos = {
 						<packageName></packageName>
 						<script>function snd.parry()
   local highest = 0
+  local toparry = ""
   local limb = ""
   if not hasSkill("Parrying") then
     parrying = false
   else
     parrying = true
   end
-    for limb in pairs(snd.my_limb_damage) do
-      if string.find(limb, " ") then
-        x = string.gsub(limb, " ", "_")
-        aff = "pre_restore_"..x
-      else
-        aff = "pre_restore_"..limb
+    
+    for limb, dmg in pairs(snd.my_limb_damage) do
+      if dmg &gt; highest then
+        highest = dmg
+        toparry = limb
       end
-      
+    end
+  
   if snd.cureset == "sentinel" then
     if not snd.checksomeSelfAffs({"slickness","paresis","arrhythmia","destroyed_throat","anorexia","asthma"},3) then
       snd.toparry = "torso"
@@ -32397,8 +32349,8 @@ chaos = {
       snd.toparry = "left arm"
     elseif snd.my_limb_damage["head"] &gt; 22 then
       snd.toparry = "head"
-    elseif snd.my_limb_damage[limb] &gt; 22 then
-      snd.toparry = limb
+    elseif snd.my_limb_damage[toparry] &gt; 22 then
+      snd.toparry = toparry
     else
       snd.toparry = "head"
     end
@@ -32411,8 +32363,8 @@ chaos = {
       snd.toparry = "right arm"
     elseif snd.my_limb_damage["left arm"] &gt; 22 then
       snd.toparry = "left arm"
-    elseif snd.my_limb_damage[limb] &gt; 22 then
-      snd.toparry = limb
+    elseif snd.my_limb_damage[toparry] &gt; 22 then
+      snd.toparry = toparry
     else
       snd.toparry = "head"
     end
@@ -32445,8 +32397,8 @@ chaos = {
     elseif not snd.checksomeSelfAffs({"right_leg_crippled","left_arm_crippled"},2) and snd.have_aff("left_leg_crippled") then
       snd.toparry = "right leg"
     else
-      if snd.my_limb_damage[limb] &gt;= 16 then
-        snd.toparry = limb
+      if snd.my_limb_damage[toparry] &gt;= 16 then
+        snd.toparry = toparry
       else
         snd.toparry = "torso"
       end
@@ -32516,8 +32468,8 @@ chaos = {
       snd.toparry = "right arm"
     elseif snd.my_limb_damage["left arm"] &gt; 12 and snd.restorationlimbfail ~= "left arm" then
       snd.toparry = "left arm"
-    elseif snd.my_limb_damage[limb] &gt; 22 then
-      snd.toparry = limb
+    elseif snd.my_limb_damage[toparry] &gt; 22 then
+      snd.toparry = toparry
     else
       snd.toparry = "left leg"
     end
@@ -32552,8 +32504,8 @@ chaos = {
       snd.toparry = "left arm"
     elseif snd.my_limb_damage["right arm"] &gt; 15 then
       snd.toparry = "right arm"
-    elseif snd.my_limb_damage[limb] &gt; 22 then
-      snd.toparry = limb
+    elseif snd.my_limb_damage[toparry] &gt; 22 then
+      snd.toparry = toparry
     else
       snd.toparry = "left leg"
     end
@@ -32570,8 +32522,8 @@ chaos = {
       snd.toparry = "left leg"
     elseif snd.my_limb_damage["right leg"] &gt; 15 then
       snd.toparry = "right leg"
-    elseif snd.my_limb_damage[limb] &gt; 22 then
-      snd.toparry = limb
+    elseif snd.my_limb_damage[toparry] &gt; 22 then
+      snd.toparry = toparry
     else
       snd.toparry = "head"
     end
@@ -32586,21 +32538,17 @@ chaos = {
       snd.toparry = "left arm"
     elseif snd.my_limb_damage["right arm"] &gt; 21 then
       snd.toparry = "right arm"
-    elseif snd.my_limb_damage[limb] &gt; 25 then
-      snd.toparry = limb
+    elseif snd.my_limb_damage[toparry] &gt; 25 then
+      snd.toparry = toparry
     else
       snd.toparry = "torso"
     end
   else
-      if snd.my_limb_damage[limb] &gt; highest and snd.my_limb_damage[limb] &lt; 33.33 then
-        highest = snd.my_limb_damage[limb]
-        snd.toparry = limb
+    for limb, dmg in pairs(snd.my_limb_damage) do
+      if dmg &gt; highest then
+        highest = dmg
+        toparry = limb
       end
-      if snd.my_limb_damage[limb] &gt; 25 then
-        snd.aff_have(aff)
-      else
-        snd.aff_remove(aff)
-  		end
     end
   end
 
@@ -32809,7 +32757,7 @@ snd.efficiencycount = 0
 snd.smokescreen = true
 
 --Archivist/Voidseer
-snd.my_token = "423796"
+snd.my_token = "442817"
 snd.empowerready = false
 snd.geoinvert = false
 snd.geotrace = false
@@ -32997,6 +32945,7 @@ snd.use_hourglass_on_prismatic = false
 snd.giving = {}
 snd.hound_queue = {}
 snd.target_has = {}
+snd.player_has = {}
 snd.rebounded = false
 snd.target_impaled = false -- do we specifically have our target imapled
 
@@ -33469,37 +33418,14 @@ zealot = {"Zeal", "Purification", "Psionics", "Brutality", "Ravaging", "Egotism"
 					<Script isActive="yes" isFolder="no">
 						<name>tracking functions</name>
 						<packageName></packageName>
-						<script>snd.shadow_targets = {}
-snd.spirit_targets = {}
-snd.are_we_checking_ql = false
-
-function snd.get_new_target()
-  if snd.toggles.calling then
-    local new_target = "nil"
-    if #snd.players_here ~= 0 and (not table.contains(snd.players_here, snd.target:title()) or snd.targeting.skip) then
-    	for _, tar in ipairs(snd.targeting.list) do
-    		if table.contains(snd.players_here, tar) and snd.target:title() ~= tar then
-          new_target = tar
-          snd.target_gone = false
-    			snd.setTarget(tar)
-    			break
-        end
-    	end
-      end
-  end
-   if snd.targeting.skip then snd.targeting.skip = false end
-end
-
-function snd.took_limb_dmg(limb, amount, restoration)
-
+						<script>function snd.took_limb_dmg(limb, amount, restoration)
   if limb and amount then
-  
     if snd.checkAff("armor_tattoo") and amount &gt; 0 then
-      amount = amount/2
+      amount = amount / 2
       snd.last_limb_dmg = amount
     end
     if restoration then --resto apply
-      snd.limb_dmg[limb] = snd.limb_dmg[limb] + math.min(0, amount+2*snd.fleshbaneStacks)
+      snd.limb_dmg[limb] = snd.limb_dmg[limb] + math.min(-0.01, amount + 2 * snd.fleshbaneStacks)
       if snd.fleshbaneTimer then killTimer(snd.fleshbaneTimer) end
       snd.fleshbaneStacks = 0
     else
@@ -33508,47 +33434,47 @@ function snd.took_limb_dmg(limb, amount, restoration)
     if snd.limb_dmg[limb] &lt; 0 then
       snd.limb_dmg[limb] = 0
     end
-    
+
     if snd.limb_dmg[limb] &gt; 99.99 then
       snd.limb_dmg[limb] = 99.99
     end
-    
-    if amount &gt; 0 then 
+
+    if amount &gt; 0 then
       cecho("&lt;green&gt; " .. limb .. ": " .. snd.limb_dmg[limb])
     else
-      cecho("&lt;yellow&gt; " .. limb .. ": " .. snd.limb_dmg[limb])
+      cecho("&lt;red&gt; " .. limb .. ": " .. snd.limb_dmg[limb])
     end
 
     if restoration and (amount == -30 or amount == -40) then
-      --snd.resto_limb = "none"
+      snd.resto_limb = "none"
       if snd.limb_dmg[limb] &lt; 33.33 then
         if snd.limb_status[limb] == "mangled" then
           snd.limb_status[limb] = "broken"
-          snd.target_cured(limb:gsub(" ","_").."_mangled")
+          snd.target_cured(limb:gsub(" ", "_") .. "_mangled")
         else
-          snd.target_cured(limb:gsub(" ","_").."_broken")
+          snd.target_cured(limb:gsub(" ", "_") .. "_broken")
           snd.limb_status[limb] = "healed"
         end
       elseif snd.limb_dmg[limb] &lt; 66.66 then
-        snd.target_cured(limb:gsub(" ","_").."_mangled")
+        snd.target_cured(limb:gsub(" ", "_") .. "_mangled")
         snd.limb_status[limb] = "broken"
       end
     elseif snd.skill_being_used == "Rekindle" or snd.skill_being_used == "Reconstruct" then
       if snd.limb_dmg[limb] &lt; 33.33 then
-        snd.target_cured(limb:gsub(" ","_").."_broken")
+        snd.target_cured(limb:gsub(" ", "_") .. "_broken")
         snd.limb_status[limb] = "healed"
       elseif snd.limb_dmg[limb] &lt; 66.66 then
-        snd.target_cured(limb:gsub(" ","_").."_mangled")
+        snd.target_cured(limb:gsub(" ", "_") .. "_mangled")
         snd.limb_status[limb] = "broken"
       end
     end
     local totaldmg = 0
-  	snd.limb_dmg.total = 0
+    snd.limb_dmg.total = 0
     for k, v in pairs(snd.limb_dmg) do
-  		if v ~= "total" then
-  	    totaldmg = totaldmg + v
-    	end
-  	end
+      if v ~= "total" then
+        totaldmg = totaldmg + v
+      end
+    end
     snd.limb_dmg.total = totaldmg
     raiseEvent("sunder_enemy_limbs_updated")
   end
@@ -33569,25 +33495,32 @@ function snd.target_got(affliction)
   end
   if affliction == "a_crippled_arm" and snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled"},2) then
     return
-  end
-  
+  end  
   
   if snd.defended then
     return
   end
   
- if affliction == "cold" then
-    if not snd.checkAff("shivering") then affliction = "shivering"
-    elseif not snd.checkAff("frigid") then affliction = "frigid"
-    elseif not snd.checkAff("frozen") then affliction = "frozen"
-    elseif not snd.checkAff("ice_encased") and snd.checkAff("frostbrand") then affliction = "ice_encased"
-    else return
+  if affliction == "cold" then
+    if not snd.checkAff("shivering") then
+      affliction = "shivering"
+    elseif not snd.checkAff("frigid") then
+      affliction = "frigid"
+    elseif not snd.checkAff("frozen") then
+      affliction = "frozen"
+    else
+      return
     end
   end
+  
   if affliction == "sleep" then
-    if snd.checkAff("asleep") and not snd.checkAff("no_instawake") then affliction = "no_instawake"
-    elseif not snd.checkAff("no_insomnia") then affliction = "no_insomnia"
-    else return end
+    if snd.checkAff("asleep") and not snd.checkAff("no_instawake") then
+      affliction = "no_instawake"
+    elseif not snd.checkAff("no_insomnia") then
+      affliction = "no_insomnia"
+    else
+      return
+    end
   end
   
   if affliction == "a_crippled_leg" and snd.checkAff("a_crippled_leg") then
@@ -33621,6 +33554,9 @@ function snd.target_got(affliction)
   if affliction == "crippled_body" then
     snd.target_cured("crippled")
   end
+  if affliction  == "aeon" then
+    snd.aeon_got()
+  end
   
   table.insert(snd.target_has, affliction)
   table.insert(snd.recent_affs, affliction)
@@ -33650,24 +33586,25 @@ function snd.target_cured(affliction)
   if affliction == "blurry_vision" then
     snd.target_cured("watery_eyes")
   end
-  --if affliction == "anorexia" then
-  --  snd.target_cured("voyria")
-  --end
   if affliction == "shivering" then
     snd.target_cured("frozen")
   end
   if affliction == "accursed" then
     snd.target_cured("agony")
   end
-  
+
   if affliction == "cold" then
-    if snd.checkAff("ice_encased") then snd.target_cured("ice_encased")
-    elseif snd.checkAff("frozen") then snd.target_cured("frozen")
-    elseif snd.checkAff("frigid") then snd.target_cured("frigid")
-    elseif snd.checkAff("shivering") then snd.target_cured("shivering")
-    --elseif snd.checkAff("no_caloric") then snd.target_cured("no_caloric")
+    if snd.checkAff("ice_encased") then
+      snd.target_cured("ice_encased")
+    elseif snd.checkAff("frozen") then
+      snd.target_cured("frozen")
+    elseif snd.checkAff("frigid") then
+      snd.target_cured("frigid")
+    elseif snd.checkAff("shivering") then
+      snd.target_cured("shivering")
+      --elseif snd.checkAff("no_caloric") then snd.target_cured("no_caloric")
     end
-  end 
+  end
   snd.affTimers.kill(aff)
   
 	if snd.checkAff("a_crippled_arm") and (affliction == "right_arm_crippled" or affliction == "left_arm_crippled") and not snd.checkAff(affliction) then
@@ -34790,6 +34727,7 @@ end</script>
   snd.their_mutagen = false
   snd.my_mutagen = false
   snd.crescentable = true
+  snd.hexcount = 0
   if snd.geotrace then
     snd.empowerready = true
 	 snd.empowertype = "nil"
@@ -34966,7 +34904,6 @@ end
 function snd.affNameCheck(aff)
 
 local affs_to_change = {
-  ["heart flutter"] = "arrhythmia",
   ["crippled left leg"] = "left_leg_crippled",
   ["crippled right leg"] = "right_leg_crippled",
   ["crippled left arm"] = "left_arm_crippled",
@@ -35512,7 +35449,7 @@ end</script>
             end,
     Sealing = function(target, shape)
                 snd.target_got("sealing_"..shape)
-                snd.affTimers.start(shape.."_sealed", 31)
+                snd.affTimers.start("sealing_"..shape, 30)
               end,
     Fork = function(target)
              snd.used.shield = false
@@ -36530,6 +36467,8 @@ end</script>
   ["Domination"] = {
     Slime = function(target)
               snd.balance.envelop = false
+              snd.target_got("blob")
+              snd.affTimers.start("blob", 10)
             end, 
     Chimera = function(target, head)
       if head == "Gas" then
@@ -36950,6 +36889,8 @@ end</script>
   ["Contracts"] = {
     Blob = function(target)
               snd.balance.envelop = false
+              snd.target_got("blob")
+              snd.affTimers.start("blob", 10)
             end,
     Quetzal = function(target, attack)
       if attack == "Croon" then
@@ -38684,6 +38625,7 @@ end</script>
     Shockwave = function(target)
                   snd.target_got("fallen")
                   enableTrigger("Shockwave limb breaks")
+                  enableTrigger("Shockwave Prompt Turnoff")
                 end,
     Furor = function(target, where)
              	snd.last_hit_limb = where
@@ -38812,8 +38754,11 @@ end</script>
                 snd.target_got("blurry_vision")
               end,
       Grapple = function(target)
-                snd.target_got("writhe_grappled")
-              end,
+        snd.target_got("writhe_grappled")
+        snd.balance.grapple = false
+        if golemgrapple_timer then killTimer("golemgrapple_timer") end
+        golemgrapple_timer = tempTimer(15, [[snd.balance.grapple = true]])
+      end,
       Shatter = function(target)
                 snd.used.shield = false
               end,
@@ -38918,6 +38863,7 @@ end</script>
     Capsize = function(target)
                   snd.target_got("fallen")
                   enableTrigger("Shockwave limb breaks")
+                  enableTrigger("Shockwave Prompt Turnoff")
                 end,
     Pitch = function(target, where)
              	snd.last_hit_limb = where
@@ -39041,6 +38987,9 @@ end</script>
               end,
       Clutch = function(target)
                 snd.target_got("writhe_grappled")
+                snd.balance.grapple = false
+                if golemgrapple_timer then killTimer("golemgrapple_timer") end
+                golemgrapple_timer = tempTimer(15, [[snd.balance.grapple = true]])
               end,
       Nullify = function(target)
                 snd.used.shield = false
@@ -40471,199 +40420,6 @@ for aff, source in pairs(snd.effects) do
   end
 end
 </script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
-							<name>Bard attack stuff</name>
-							<packageName></packageName>
-							<script>snd.anelace = 0
-snd.globecount = 0
-snd.singing = false
-snd.playing = false
-snd.song = "none"
-snd.song_instrument = "none"
-snd.halfbeat = false
-snd.target_induced = "neutral"
-snd.audience = "none"
-snd.needle = "none"
-snd.rhythm = false
-snd.impetus = false
-snd.runebandcount = 1
-snd.bandclockwise = true
-snd.boundary = false
-snd.awakened = false
-snd.emotion = "neutral"
-snd.midsong = false
-snd.goblet = false
-snd.needlewait = false
-snd.breakcage = false
-
-snd.emotional_dmg = {
-sadness = 0,
-happiness = 0,
-surprise = 0,
-anger = 0,
-stress = 0,
-fear = 0,
-disgust = 0,
-}
-
-snd.venom_affs =
-
-{
-"sight",
-"deafness",
-"asthma",
-"paresis",
-"clumsiness",
-"sensitivity",
-"vomiting",
-"allergies", 
-"colocasia",
-"haemophilia",
-"peace",
-"stupidity",
-"weariness",
-"recklessness",
-"dizziness",
-"shyness",
-"anorexia",
-"slickness",
-"voyria",
-"squelched",
-"disfigurement",
-"stuttering",
-"deadening",
-"dyscrasia",
-}
-
-
-snd.performance_affs = {
-"perplexity",
-"dazed",
-"mania",
-"hatred",
-"infatuation",
-"misery",
-"self_loathing",
-"fallen",
-"magnanimity",
-}
-
-
-snd.performance_attacks = {
-		pierce = "pierce",
-    perplexity = "crackshot",
-		dazed = "sock",
-		dizziness = "crackshot",
-		mania = "quip",
-		hatred = "quip",
-		infatuation = "seduce",
-		fallen = "tackle",
-		self_loathing = "ridicule",
-    magnanimity = "ridicule",
-		misery = "hiltblow",  
-    harry = "harry",
-}
-
-
-snd.weaving_affs = {
-"narcolepsy",
-"hollow",
-"besilence",
-"deadening",
-"migraine",
-"squelched",
-"ringing_ears",
-"globes",
-"runeband",
-"bladestorm",
-"ironcollar",
-}
-
-snd.weaving_attacks = {
-		narcolepsy = "anelace",
-    hollow = "anelace",
-		besilence = "headstitch",
-		deadening = "headstitch",
-    ironcollar = "ironcollar",
-    bladestorm = "bladestorm",
-    globes = "globes",
-    runeband = "runeband",
-    migraine = "mindbreak",
-    squelched = "mindbreak",
-    ringing_ears = "soundblast",
-    
-}
-
-snd.globe_affs = {
-
-[1] = "perplexity",
-[2] = "confusion",
-[3] = "dizziness",
-
-}
-
-snd.runeband_affs = {
-
-[1] = "stupidity",
-[2] = "paranoia",
-[3] = "ringing_ears",
-[4] = "loneliness",
-[5] = "exhaustion",
-[6] = "laxity",
-[7] = "clumsiness",
-
-}
-
-function snd.bard_echoes()
-
-      if snd.halfbeat then
-        prompt = cecho("\n&lt;green&gt;♫ half ♫")
-      else
-        prompt = cecho("\n&lt;red&gt;♫ none ♫")
-      end      
-      if snd.checkAff("awakened") then
-        prompt = prompt..cecho("&lt;magenta&gt; (🤩)")
-      end
-      if snd.checkAff("sadness") then
-        prompt = prompt..cecho("&lt;magenta&gt; (😟)")
-      end
-      if snd.checkAff("happiness") then
-        prompt = prompt..cecho("&lt;magenta&gt; (😀)")
-      end
-      if snd.checkAff("surprise") then
-        prompt = prompt..cecho("&lt;magenta&gt; (😲)")
-      end
-      if snd.checkAff("anger") then
-        prompt = prompt..cecho("&lt;magenta&gt; (😠)")
-      end
-      if snd.checkAff("stress") then
-        prompt = prompt..cecho("&lt;magenta&gt; (😩)")
-      end
-      if snd.checkAff("fear") then
-        prompt = prompt..cecho("&lt;magenta&gt; (😨)")
-      end
-      if snd.checkAff("disgust") then
-        prompt = prompt..cecho("&lt;magenta&gt; (🤢)")    
-      end      
-      if snd.checkAff("ironcollar") then
-        prompt = prompt..cecho("🐕‍🦺")
-      end
-      if snd.runeband then
-        prompt = prompt..cecho("💫")
-      end
-      if snd.globecount == 3 then
-        prompt = prompt..cecho("&lt;gold&gt; ⊚⊚⊚")
-      end
-      if snd.globecount == 2 then
-        prompt = prompt..cecho("&lt;gold&gt; ⊚⊚")
-      end
-      if snd.globecount == 1 then
-        prompt = prompt..cecho("&lt;gold&gt; ⊚")
-      end   
-
-end</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
@@ -45537,7 +45293,7 @@ end</script>
 				cecho("\n&lt;yellow&gt;YOU HAVE NO HAMMER TATTOO")
 			end	
 		elseif snd.startedtumbling and snd.soulmasterready and snd.deform then   
-			string = string.. "flick bonedagger at " ..snd.aim.. " prefarar##order " ..snd.target.."stop"
+			string = string.. "flick bonedagger at " ..snd.aim.. " prefarar"..snd.sep.."order " ..snd.target.."stop"
 		elseif snd.startedtumbling and snd.soulmasterready then
 			snd.Indoranilock()
 			string = string.. "order " ..snd.target.."stop" 
@@ -48535,148 +48291,6 @@ end</script>
 						</ScriptGroup>
 					</ScriptGroup>
 					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>Target calling</name>
-						<packageName></packageName>
-						<script>
-snd.targeting = {
-	auto = false,
-	list = {},
-  burst = false,
-  skip = false
-}
-
-snd.e = {
-	echo	= function (str, lnb, lna)
-		if lnb then echo("\n") end
-		cecho(string.format("%s", "&lt;aquamarine&gt;Target Update: &lt;grey&gt;") .. str:title())
-		if lna then echo("\n") end
-	end,
-
-	warn	= function (str, lnb, lna)
-		if lnb then echo("\n") end
-		cecho(string.format("%s", "&lt;orange_red&gt;Warning:&lt;navajo_white&gt; ") .. str:title())
-		if lna then echo("\n") end
-	end,
-	}</script>
-						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Functions for calling</name>
-							<packageName></packageName>
-							<script>function snd.removeTarget(tar)
-
-	local who = tar:title()
-
-	for k, v in pairs(snd.targeting.list) do
-		if v == who then
-			table.remove(snd.targeting.list, k)
-			snd.e.echo("Removed " .. who .. " from targeting list!", true, true)
-			break
-		end
-	end
-
-end
-
-
-function snd.addTargetList(str)
-
-	local targets = string.split(str, ", ")
-	
-	for _, v in ipairs(targets) do
-		if table.contains(snd.targeting.list, v) then
-		else
-			v = v:title()
-			table.insert(snd.targeting.list, v)
-		end
-	end
-
-	snd.displayTargetList()
-
-end
-
-
-function snd.addSingleTarget(tar, pos)
-
-	if not pos then pos = 1 end
-	
-	tar = tar:title()
-	
-	if table.contains(snd.targeting.list, tar) then --! just tidying so we don't end up with the same name in a bunch of places
-		for k, v in pairs(snd.targeting.list) do
-			if v == tar then
-				table.remove(snd.targeting.list, k)
-				break
-			end
-		end
-	end
-	table.insert(snd.targeting.list, pos, tar)
-
-	snd.displayTargetList()
-
-end
-
-
-function snd.displayTargetList()
-
-	local string = ""
-	
-	if #snd.targeting.list == 0 then
-		string = "Targeting list is empty!"
-	else
-		for k,v in ipairs(snd.targeting.list) do
-			if k &lt; #snd.targeting.list then
-				string = string .. v .. ", "
-			elseif #snd.targeting.list == 1 then
-				string = string .. v .. "."
-			else
-				string = string .. v .. "."
-			end
-		end
-	end
-
-	snd.e.echo(string, true, true)
-
-end
-
-
-function snd.callTargetList()
-
-	if not snd.toggles.calling then return end 
-                                          
-	local string = "Target list: "
-	
-	if #snd.targeting.list == 0 then
-		string = "Out of targets!"
-	else
-		for k,v in ipairs(snd.targeting.list) do
-			if k &lt; #snd.targeting.list then
-				string = string .. v .. ", "
-			elseif #snd.targeting.list == 1 then
-				string = string .. v .. "."
-			else
-				string = string .. v .. "."
-			end
-		end
-	end
-	
-	send("wt " .. string)
-
-end
-
-
-function snd.clearTargetList()
-
-	snd.targeting.list = {}
-	snd.e.echo("Target list cleared!", true, true)
-	
-	if snd.toggles.calling and snd.toggles.calling then 
-		send("wt Target list cleared.")
-	end
-
-end</script>
-							<eventHandlerList />
-						</Script>
-					</ScriptGroup>
-					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Special Cures (Enemy)</name>
 						<packageName></packageName>
 						<script></script>
@@ -48821,10 +48435,29 @@ end</script>
 						<Script isActive="yes" isFolder="no">
 							<name>method specific timer functions</name>
 							<packageName></packageName>
-							<script>function snd.track_pill(target)
+							<script>function snd.aeon_got()
+  snd.aeonTime = getEpoch()
+end
+
+function snd.aeon_cured()
+  if not snd.aeonTime then return end
+  for _, timer in pairs({"focus","tree","fitness"}) do
+    local tinfo = snd.timers[timer]
+    if tinfo.start and snd.aeonTime &lt; tinfo.start then
+      local aeonTime = getEpoch()-math.max(tinfo.start, snd.aeonTime)
+      tinfo.limit = tinfo.limit+aeonTime
+    end
+  end
+  snd.aeonTime = nil
+end
+
+function snd.track_pill(target)
   if target:lower() == snd.target:lower() then
     snd.timers.pill.start = getEpoch()
     local limit = 1.9
+    if snd.checkAff("aeon") then
+      limit = limit+1
+    end
     snd.timers.pill.limit = limit
   end
 end
@@ -48863,6 +48496,12 @@ function snd.track_restoration(target)
     local limit = 4.15
     if snd.checkAff("rot_body") then
       limit = limit+4.3
+    end
+    if snd.checkAff("aeon") then
+      limit = limit+1
+    end
+    if snd.checkAff("blob") then
+      limit = limit+.3
     end
     snd.timers.restoration.limit = limit
   end
@@ -48918,6 +48557,10 @@ local times = {
 function snd.track_elixir(target, elixir)
   if target:lower() == snd.target:lower() and times[elixir] then
     snd.timers.elixir.start = getEpoch()
+    local limit = times[elixir]
+    if snd.checkAff("aeon") then
+      limit = limit+1
+    end
     snd.timers.elixir.limit = times[elixir]
   end
 end
@@ -48928,6 +48571,12 @@ function snd.track_poultice(target, poultice)
     local limit = times[poultice]
     if snd.checkAff("rot_body")then
       limit = limit+4.3
+    end
+    if snd.checkAff("aeon") then
+      limit = limit+1
+    end
+    if snd.checkAff("blob") then
+      limit = limit+.3
     end
     snd.timers.poultice.limit = limit
   end
@@ -48957,6 +48606,269 @@ function snd.track_infiltrate(target)
   if target:lower() == snd.target:lower() then
     snd.timers.infiltrate.start = getEpoch()
     snd.timers.infiltrate.limit = 4.5
+  end
+end</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Targetting</name>
+						<packageName></packageName>
+						<script></script>
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>set target</name>
+							<packageName></packageName>
+							<script>
+function snd.setTarget(target)
+  snd.target = string.title(target:lower())
+  if snd.toggles.calling then
+    snd.send("wt Target: " .. snd.target)
+  end
+  echo("Target: " .. snd.target)
+  send(" ")
+  if snd.target_trigger_id then killTrigger(snd.target_trigger_id) end
+  snd.target_trigger_id = tempTrigger(snd.target,
+    [[selectString("]] .. snd.target .. [[", 1) fg("DarkOrchid") resetFormat()]])
+  if snd.target_trigger_idlow then killTrigger(snd.target_trigger_idlow) end
+  snd.target_trigger_idlow = tempTrigger(string.lower(snd.target),
+    [[selectString("]] .. string.lower(snd.target) .. [[", 1) fg("DarkOrchid") resetFormat()]])
+  if snd.offense_loaded then
+    snd.reset_target()
+    snd.target_gone = false
+  end
+  raiseEvent("sunder_enemy_affs_updated")
+  raiseEvent("sunder_enemy_limbs_updated")
+end
+
+
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Target list functions</name>
+							<packageName></packageName>
+							<script>snd.targeting = {
+  auto = false,
+  list = {},
+  burst = false,
+  skip = false
+}
+
+snd.e = {
+  echo = function(str, lnb, lna)
+    if lnb then echo("\n") end
+    cecho(string.format("%s", "&lt;aquamarine&gt;Target Update: &lt;grey&gt;") .. str:title())
+    if lna then echo("\n") end
+  end,
+
+  warn = function(str, lnb, lna)
+    if lnb then echo("\n") end
+    cecho(string.format("%s", "&lt;orange_red&gt;Warning:&lt;navajo_white&gt; ") .. str:title())
+    if lna then echo("\n") end
+  end,
+}
+
+
+
+
+function snd.removeTarget(tar)
+
+	local who = tar:title()
+
+	for k, v in pairs(snd.targeting.list) do
+		if v == who then
+			table.remove(snd.targeting.list, k)
+			snd.e.echo("Removed " .. who .. " from targeting list!", true, true)
+			break
+		end
+	end
+
+end
+
+
+function snd.addTargetList(str)
+
+	local targets = string.split(str, ", ")
+	
+	for _, v in ipairs(targets) do
+		if table.contains(snd.targeting.list, v) then
+		else
+			v = v:title()
+			table.insert(snd.targeting.list, v)
+		end
+	end
+
+	snd.displayTargetList()
+
+end
+
+
+function snd.addSingleTarget(tar, pos)
+
+	if not pos then pos = 1 end
+	
+	tar = tar:title()
+	
+	if table.contains(snd.targeting.list, tar) then --! just tidying so we don't end up with the same name in a bunch of places
+		for k, v in pairs(snd.targeting.list) do
+			if v == tar then
+				table.remove(snd.targeting.list, k)
+				break
+			end
+		end
+	end
+	table.insert(snd.targeting.list, pos, tar)
+
+	snd.displayTargetList()
+
+end
+
+
+function snd.displayTargetList()
+
+	local string = ""
+	
+	if #snd.targeting.list == 0 then
+		string = "Targeting list is empty!"
+	else
+		for k,v in ipairs(snd.targeting.list) do
+			if k &lt; #snd.targeting.list then
+				string = string .. v .. ", "
+			elseif #snd.targeting.list == 1 then
+				string = string .. v .. "."
+			else
+				string = string .. v .. "."
+			end
+		end
+	end
+
+	snd.e.echo(string, true, true)
+
+end
+
+
+function snd.callTargetList()
+
+	if not snd.toggles.calling then return end 
+                                          
+	local string = "Target list: "
+	
+	if #snd.targeting.list == 0 then
+		string = "Out of targets!"
+	else
+		for k,v in ipairs(snd.targeting.list) do
+			if k &lt; #snd.targeting.list then
+				string = string .. v .. ", "
+			elseif #snd.targeting.list == 1 then
+				string = string .. v .. "."
+			else
+				string = string .. v .. "."
+			end
+		end
+	end
+	
+	send("wt " .. string)
+
+end
+
+
+function snd.clearTargetList()
+
+	snd.targeting.list = {}
+	snd.e.echo("Target list cleared!", true, true)
+	
+	if snd.toggles.calling then 
+		send("wt Target list cleared.")
+	end
+
+end
+
+function snd.get_new_target()
+  if snd.toggles.calling then
+    local new_target = "nil"
+    if #snd.players_here ~= 0 and (not table.contains(snd.players_here, snd.target:title()) or snd.targeting.skip) then
+      for _, tar in ipairs(snd.targeting.list) do
+        if table.contains(snd.players_here, tar) and snd.target:title() ~= tar then
+          new_target = tar
+          snd.target_gone = false
+          snd.setTarget(tar)
+          break
+        end
+      end
+    end
+  end
+  if snd.targeting.skip then snd.targeting.skip = false end
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Target listening</name>
+							<packageName></packageName>
+							<script>function snd.targetListening()
+  local event = gmcp.Comm.Channel.Text
+
+  if event.channel ~= "web" then return end
+  if not snd.toggles.listening then return end
+  if not table.contains(snd.callers, event.talker) then return end
+
+  local rawtext = ansi2string(event.text)
+  rawtext = rawtext:gsub(string.char(27) .. [[.-]] .. string.char(4), "")
+
+  matchText = rawtext:lower()
+  if
+      matchText:find("target:") and
+      not matchText:find("list") and
+      not matchText:find("calling") and
+      not matchText:find("priority") and
+      not matchText:find("removed") and
+      not matchText:find("next")
+  then
+    local pattern = [["[ta\.]*?target: [\.\w]*?(\w+)\."]]
+    local check = rex.match(matchText, pattern)
+    if check and check:lower() ~= snd.target:lower() then
+      if (sndNDB.players[gmcp.Char.Status.name].city == sndNDB.players[check].city) then
+        snd.message("Not targeting " .. check .. " because of safelistening! They're in your city.")
+      else
+        snd.setTarget(check)
+      end
+    end
+  end
+end
+
+snd.registerEvent("SunderTargetListen", "gmcp.Comm.Channel.Text", snd.targetListening)</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>No target</name>
+							<packageName></packageName>
+							<script>
+function snd.no_target()
+  --deleteLine()
+  --snd.message("Need new targets!")
+  if snd.offense_loaded then
+    snd.target_gone = true
+    snd.get_new_target()
+  end
+  if snd.bashing_loaded then
+    snd.untarget()
+    snd.waiting.balance = false
+    snd.waiting.equilibrium = false
+    snd.bashing.target_priority = 10000
+  end
+end
+
+function snd.untarget()
+  snd.bashing.engaged = false
+  snd.bashing.targeted = false
+  snd.last_attack = "none"
+  if snd.bashing.stopping then
+    snd.message("Bashing OFF!")
+    if snd.toggles.bashing then
+      snd.toggle("bashing")
+    end
+    snd.bashing.stopping = false
   end
 end</script>
 							<eventHandlerList />
