@@ -133,6 +133,15 @@ end</script>
 		snd.endgamedef = "safeguard"
 		snd.endgamehealth = "pulse"
 	end
+  
+  if gmcp.Char.Vitals.equilibrium == "1" then
+    if snd.have_aff("disrupted") then snd.aff_remove("disrupted") end
+  end
+  
+  if gmcp.Char.Vitals.balance == "1" then
+    if snd.have_aff("stun") then snd.aff_remove("stun") end
+    if snd.have_aff("unconsciousness") then snd.aff_remove("unconsciousness") end
+  end
 
 	if (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("asthma"))
 		or snd.checksomeSelfAffs({"asthma","hellsight"},2)
@@ -206,12 +215,40 @@ end</script>
 		elseif not snd.disablefocus and not snd.focusing then
 			send("firstaid use focus on", false)
 		end
+    if snd.not_aff("gloom") and not snd.focusing and not snd.disablefocus then
+      send("firstaid use focus on")
+    else
+      if snd.cureset == "runecarver" and snd.have_aff("gloom") then
+        send("firstaid use focus off")
+      end
+    end
+    if snd.cureset == "shaman" then
+      if snd.have_aff("paralysis") and snd.stormtouching then
+        send("firstaid stormtouched off")	
+      elseif not snd.stormtouching then
+		    send("firstaid stormtouched on")
+      end
+    elseif snd.stormtouching then
+      send("firstaid stormtouched off")
+    end
     
 		if snd.have_aff("nyctophobia") and gmcp.Char.Vitals.herb == "1" then
 			send("firstaid priority nyctophobia 3", false)
 			snd.firstaidchangecure = true
-		end
-
+		end 
+    if #snd.elevatedaff &gt; 0 then
+      cecho("\n&lt;blue&gt;Current elevated affs: "..table.concat(snd.elevatedaff, ", "))
+    end
+    if #snd.ordered_list &gt; 0 then
+      cecho("\n&lt;blue&gt;Affs needing elevating: "..table.concat(snd.ordered_list, ", "))
+    end 
+    if #snd.firstaidtobepredicted &gt; 0 then
+      cecho("\n&lt;blue&gt;Affs needing predicting: "..table.concat(snd.firstaidtobepredicted, ", "))
+    end
+    if #snd.firstaidpredict &gt; 0 then
+      cecho("\n&lt;blue&gt;Affs predicted: "..table.concat(snd.firstaidpredict, ", "))
+    end
+    
 		if snd.class == "Monk" then
 			snd.stance = gmcp.Char.Vitals.stance
 		end
@@ -241,6 +278,15 @@ end</script>
 			snd.percentmana = (tonumber(gmcp.Char.Vitals.mp) / tonumber(gmcp.Char.Vitals.maxmp) * 100)
 			snd.percentmana = roundDown(snd.percentmana,0)
 		end
+    
+    if not table.contains(snd.firstaidpredict, "recklessness") and not table.contains(snd.firstaidtobepredicted, "recklessness") and snd.hidden_afflictions &gt;= 3 then
+      if snd.cureset ~= "none" then
+        if gmcp.Char.Vitals.hp == gmcp.Char.Vitals.maxhp and gmcp.Char.Vitals.mp == gmcp.Char.Vitals.maxmp and snd.not_aff("recklessness") then
+          table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, "recklessness"))
+          table.insert(snd.firstaidtobepredicted, "recklessness")	
+        end
+      end
+    end  
   
 		if snd.not_aff("blackout") then
 			if gmcp.Char.Vitals.prone == "1" and snd.not_entangled() and snd.not_aff("paralysis") then
@@ -271,7 +317,7 @@ end</script>
 			end
 		end
   
-		if snd.have_aff("asleep") and not snd.waking and snd.not_aff("stun") and snd.not_aff("unconscious") then 
+		if snd.have_aff("asleep") and not snd.waking and snd.not_aff("stun") and snd.not_aff("unconsciousness") then 
 			send("wake")
 			snd.waking = true
 			if waketimer_timer then 
@@ -279,7 +325,7 @@ end</script>
 		end
 		waketimer_timer = tempTimer(3.0,[[if snd.have_aff("asleep") then snd.waking = false end]])
   
-		if snd.not_aff("stun") and snd.not_aff("unconscious") and snd.not_aff("asleep") then
+		if snd.not_aff("stun") and snd.not_aff("unconsciousness") and snd.not_aff("asleep") then
 			if snd.have_aff("fallen") and snd.restand and gmcp.Char.Vitals.equilibrium == "1" then
 				if snd.not_aff("paralysis") and (snd.not_aff("right_leg_broken") or snd.not_aff("left_leg_broken")) and snd.not_aff("right_leg_crippled") and snd.not_aff("left_leg_crippled") and snd.not_aff("frozen") then 
 					if snd.class == "Monk" and not snd.kipup then 
