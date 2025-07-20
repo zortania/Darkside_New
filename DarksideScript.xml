@@ -68,7 +68,7 @@ function snd.stap()
     mmp.stop()
   end
   if snd.toggles.attacking == true then snd.toggle("attacking") end
-  snd.send("order loyals stop")
+  snd.send("order loyals passive")
   snd.send("queue clear")
   snd.send("path stop")
   if snd.bashing_loaded then
@@ -95,6 +95,7 @@ function snd.stap()
   if snd.defenses.def_seismicity.state == "deffed" then
      snd.send("TECTONIC SEISMICITY end"..snd.sep)
   end
+  send("config enemylist off")
   raiseEvent("sunder_update_toggles")
 end
 
@@ -238,7 +239,7 @@ end</script>
   enableTimer("Stay online")
     snd.toggles.goggles = true
     snd.toggles.goggle_level = 20
-    snd.toggles.gauntlet_level = 10
+    snd.toggles.gauntlet_level = 20
     snd.toggles.mount = "431957"
     snd.toggles.targetrune = true
                  
@@ -1369,6 +1370,7 @@ recover = false,
   eventide = true,
   rattle = true, -- teradrim/tidesage rattle/reprisal
   grapple = true, --teradrim/tidesage grapple/clutch
+  dome = true,
 }</script>
 					<eventHandlerList />
 				</Script>
@@ -2064,10 +2066,7 @@ snd.registerEvent("SunderGMCPRoomInfo", "gmcp.Room.Info", gmcp_room)
   hp = (100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)) or 100
   mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
-  if
-      snd.toggles.attacking and snd.offense_loaded and snd.check_dome() and snd.toggles.dome
-      and (snd.count(snd.people_hitting_me) &gt;= 3 or snd.aff_tally() &gt;= 5 or hp &lt; 50)
-  then
+  if snd.toggles.attacking and snd.offense_loaded and snd.check_dome() and snd.toggles.dome and (#snd.people_hitting_me &gt;= 3 or snd.aff_tally() &gt;= 5 or hp &lt; 50) then
     snd.need_dome = true
   else
     snd.need_dome = false
@@ -3971,7 +3970,6 @@ function snd.do_fitness()
     if gmcp.Char.Vitals.balance == "1" then
       fitnessstring = fitnessstring.."recoup"..snd.sep
     end
-    echo("\nWe know we need to fitness")
     snd.send("fitness"..snd.sep..fitnessstring)
     snd.last_type = "fitness"
     snd.last_item = "fitness"
@@ -4180,7 +4178,9 @@ end
   if snd.balance.panacea and not snd.waiting.panacea and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
     if snd.need_fitness and not snd.can_fitness() then
       return true
-    elseif snd.have_aff("impatience") and snd.checksomeSelfAffs(snd.mental_affs, 3) then
+    elseif snd.have_aff("impatience") and snd.checksomeSelfAffs(snd.mental_affs, 2) then
+      return true
+    elseif snd.checksomeSelfAffs(snd.physical_affs, 3) then
       return true
     end
   end
@@ -5147,15 +5147,7 @@ end</script>
 							<packageName></packageName>
 							<script>function snd.firstaidassist()
 
-	if (snd.count(snd.people_hitting_me)) &gt; 3 then
-		if snd.firstaidcureset ~= "none" then
-			send("firstaid cureset switch none")
-		end
-	elseif (snd.count(snd.people_hitting_me)) == 0 then
-		if snd.firstaidcureset ~= "none" then
-			send("firstaid cureset switch none")
-		end
-  elseif (snd.count(snd.people_hitting_me)) &lt; 3 then
+	if #snd.people_hitting_me &lt; 3 and not #snd.people_hitting_me == 0 then
     if snd.cureset == "archivist" then
 		  snd.firstaidassArchivist()
     elseif snd.cureset == "ascendril" then
@@ -6344,23 +6336,23 @@ function snd.firstaidassMonk()
 end
 
 function snd.firstaidassPraenomen()
-	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
-		table.insert(snd.setting_priority, "asthma 1")		 
-	end
+	--if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
+	--	table.insert(snd.setting_priority, "asthma 1")		 
+	--end
 	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
 		table.insert(snd.setting_priority, "clumsiness 1")		 
 	end
- 	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
-		table.insert(snd.setting_priority, "paresis 1")		 
+ 	--if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
+	--	table.insert(snd.setting_priority, "paresis 1")		 
+	--end
+	if snd.firstaidcuretrack.epilepsy ~= "1" and not table.contains(snd.setting_priority, "epilepsy 1") then
+		table.insert(snd.setting_priority, "epilepsy 1")		 
+	end
+	if snd.firstaidcuretrack.confusion ~= "1" and not table.contains(snd.setting_priority, "confusion 1") then
+		table.insert(snd.setting_priority, "confusion 1")		 
 	end
 	if snd.firstaidcuretrack.impatience ~= "2" and not table.contains(snd.setting_priority, "impatience 2") then
 		table.insert(snd.setting_priority, "impatience 2")		 
-	end
-	if snd.firstaidcuretrack.epilepsy ~= "2" and not table.contains(snd.setting_priority, "epilepsy 2") then
-		table.insert(snd.setting_priority, "epilepsy 2")		 
-	end
-	if snd.firstaidcuretrack.confusion ~= "2" and not table.contains(snd.setting_priority, "confusion 2") then
-		table.insert(snd.setting_priority, "confusion 2")		 
 	end
 	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
 		table.insert(snd.setting_priority, "stupidity 2")		 
@@ -7728,26 +7720,26 @@ end</script>
   if snd.not_aff("recklessness") then
 		if tonumber(snd.percentmana) &lt; 60 then
 			if snd.cureset == "praenomen" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and snd.firstaidclotlevel ~= "45" then 
-				snd.send("firstaid clot above 45")
+				send("firstaid clot above 45")
 			elseif snd.cureset == "luminary" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 60 and snd.firstaidclotlevel ~= "60" then 
-				snd.send("firstaid clot above 60")
+				send("firstaid clot above 60")
 			elseif snd.cureset == "sentinel" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 60 and snd.firstaidclotlevel ~= "40" then 
-				snd.send("firstaid clot above 40")
+				send("firstaid clot above 40")
 			else
         if snd.toggles.bashing and snd.firstaidclotlevel ~= "40" then
-    		  snd.send("firstaid clot above 40")
+    		  send("firstaid clot above 40")
 				elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 200 and snd.firstaidclotlevel ~= "30" then
-					snd.send("firstaid clot above 30")
+					send("firstaid clot above 30")
 				elseif tonumber(gmcp.Char.Vitals.bleeding) &gt; 70 and tonumber(gmcp.Char.Vitals.bleeding) &lt; 200 and snd.firstaidclotlevel ~= "20" then 
-					snd.send("firstaid clot above 20")
+					send("firstaid clot above 20")
 				end 
 			end
 		elseif tonumber(snd.percentmana) &gt; 59 and snd.firstaidclotlevel ~= "60" then
-			snd.send("firstaid clot above 60")
+			send("firstaid clot above 60")
 		end    
  	elseif snd.have_aff("recklessness") or snd.have_aff("blackout") then 
 		if snd.toggles.bashing and tonumber(snd.percentmana) &gt; 20 then
-			snd.send("clot 50")
+			send("clot 50")
 			snd.percentmana = snd.percentmana - ((200/tonumber(snd.percentmana))*100)
     elseif snd.cureset == "praenomen" and tonumber(gmcp.Char.Vitals.bleeding) &gt; 100 and tonumber(snd.percentmana) &gt; 45 then 
 			send("clot 80")
@@ -7954,14 +7946,16 @@ end  </script>
     tempTimer(5, [[snd.hidden_check = false]])
     
     if table.contains(snd.firstaidpredict, snd.firstaidtobepredicted[1]) then
-      if #snd.firstaidtobepredicted &gt;= 1 then
-        echo("\n"..snd.firstaidtobepredicted[1].." is already in the predict list and is being removed")
-        send("firstaid predict "..snd.firstaidtobepredicted[2], false)
-        echo("\n"..snd.firstaidtobepredicted[2].." is being predicted instead")
+      if snd.firstaidpredict[1] ~= snd.firstaidtobepredicted[1] then
+        echo("\n"..snd.firstaidtobepredicted[1].." is already predicted and being removed, but isn't first in line")
+        if #snd.firstaidtobepredicted &gt;= 2 then
+          send("firstaid predict "..snd.firstaidtobepredicted[2], false)
+          echo("\n"..snd.firstaidtobepredicted[2].." is being added to the list now")
+        end
         table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.firstaidtobepredicted[1]))
       end
     else 
-      if snd.firstaidpredict[1] ~= snd.firstaidtobepredicted[1] and #snd.firstaidtobepredicted &gt;= 1 then
+      if snd.firstaidpredict[1] ~= snd.firstaidtobepredicted[1] then
         echo("\n"..snd.firstaidtobepredicted[1].." being predicted")
         send("firstaid predict "..snd.firstaidtobepredicted[1], false)
       end
@@ -8065,7 +8059,7 @@ end
 if snd.have_aff("spinal_rip") or snd.have_aff("paralysis") then return false end
  
 if snd.restore_check() and snd.can_restore() and snd.balance.restore and snd.full_balance() then
-  send("restore")
+  snd.send("restore")
   snd.last_type = "restore"
   snd.last_item = "restore"
   snd.waiting.balance = true
@@ -8109,13 +8103,13 @@ function snd.can_restore()
 						<script>function snd.do_regenerate()
  
 if snd.regenerate_check() and snd.can_regenerate() and snd.balance.regenerate and snd.full_balance() then
-  send("regenerate")
+  snd.send("regenerate")
   snd.last_type = "regenerate"
   snd.last_item = "regenerate"
   snd.waiting.balance = true
   tempTimer(snd.delay(), [[snd.waiting.balance = false]])
   end
-  end 
+end 
  
 function snd.regenerate_check()
  
@@ -8152,8 +8146,11 @@ function snd.can_regenerate()
 						<name>Aff elevate function</name>
 						<packageName></packageName>
 						<script>function snd.elevatecheck()
-	if not snd.have_aff("disrupted") and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
-		if snd.have_aff("asthma") then
+	if snd.have_aff("paralysis") then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
+		table.insert(snd.ordered_list, 1, "paralsyis")
+	elseif not snd.have_aff("disrupted") and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+		if snd.have_aff("asthma") and not snd.can_fitness() then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
 			table.insert(snd.ordered_list, 1, "asthma")	
 		end
@@ -8161,10 +8158,7 @@ function snd.can_regenerate()
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 		table.insert(snd.ordered_list, 1, "confusion")
 	elseif snd.have_aff("confusion") and snd.have_aff("impatience") and (snd.have_aff("stupidity") or snd.have_aff("dizziness") or snd.have_aff("shyness") or snd.have_aff("epilepsy")) and not snd.cureset == "infiltrator" and not snd.cureset == "indorani" and not snd.cureset == "shapeshifter" and not snd.cureset == "templar" then
-		if (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
-			table.insert(snd.ordered_list, 2, "confusion")	
-		elseif snd.have_aff("asthma") then
+		if snd.have_aff("asthma") and not snd.can_fitness() then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 			table.insert(snd.ordered_list, 2, "confusion")
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
@@ -8172,14 +8166,6 @@ function snd.can_regenerate()
 		else
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 			table.insert(snd.ordered_list, 1, "confusion")
-		end
-	elseif (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
-		if snd.have_aff("paresis") then 
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis"))
-			table.insert(snd.ordered_list, 1, "paresis")
-		elseif snd.have_aff("paralsyis") then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
-			table.insert(snd.ordered_list, 1, "paralsyis")
 		end
 	elseif (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
@@ -8330,30 +8316,36 @@ function snd.can_regenerate()
 			table.insert(snd.ordered_list, 1, "loneliness")
 		end
 	elseif snd.cureset == "templar" then
-    if (snd.have_aff("crippled_body") or snd.have_aff("crippled")) and not snd.have_aff("paralysis") then
+    if (snd.have_aff("crippled_body") or snd.have_aff("crippled")) then --and not snd.have_aff("paralysis") 
       if snd.have_aff("delirium") then
 		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "delirium"))
 		    table.insert(snd.ordered_list, 1, "delirium")
       elseif snd.have_aff("extravasation") then
 		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "extravasation"))
 		    table.insert(snd.ordered_list, 1, "extravasation")
-      elseif snd.have_aff("extravasation")  and snd.have_aff("haemophilia") then
+      elseif snd.have_aff("extravasation") and snd.have_aff("haemophilia") then
 		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "haemophilia"))
 		    table.insert(snd.ordered_list, 1, "haemophilia")
       end
     end
-  elseif snd.cureset == "praenomen" or snd.cureset == "carnifex" then
-    local physcount = 0 
-    for aff in pairs(snd.physical_affs) do
-        if table.contains(snd.have_aff, snd.physical_affs[aff]) then
-          physcount = physcount + 1
-          if physcount &gt;= 2 then
-            table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
-            table.insert(snd.ordered_list, 1, aff)
-          end
+  elseif snd.cureset == "carnifex" then
+    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
+      for _, aff in pairs(snd.physical_affs) do
+        if snd.have_aff(aff) then
+           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+           table.insert(snd.ordered_list, 1, aff)
         end
+      end
     end
-    if physcount &lt; 1 then
+  elseif snd.cureset == "praenomen" then
+    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
+      for _, aff in pairs(snd.physical_affs) do
+        if snd.have_aff(aff) then
+           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+           table.insert(snd.ordered_list, 1, aff)
+        end
+      end
+    else
       if snd.have_aff("hubris") then
         table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hubris"))
         table.insert(snd.ordered_list, 1, "hubris")
@@ -8366,32 +8358,44 @@ function snd.can_regenerate()
 		  elseif snd.have_aff("mercy") then
         table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "mercy"))
         table.insert(snd.ordered_list, 1, "mercy")
+		  elseif snd.have_aff("stupidity") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
+        table.insert(snd.ordered_list, 1, "stupidity")
+		  elseif snd.have_aff("epilepsy") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "epilepsy"))
+        table.insert(snd.ordered_list, 1, "epilepsy")
+      elseif snd.checksomeSelfAffs(snd.mental_affs, 3) then
+        for _, aff in pairs(snd.mental_affs) do
+          if snd.have_aff(aff) then
+            table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+            table.insert(snd.ordered_list, 1, aff)
+          end
+        end
       end
     end
 	end
   
   if table.contains(snd.elevatedaff, snd.ordered_list[1]) then
     if snd.elevatedaff[1] ~= snd.ordered_list[1] then
-      echo("\n"..snd.elevatedaff[1].." is being unelevated with higher priority item")
       send("firstaid unelevate "..snd.elevatedaff[1], false)
-      echo("\n"..snd.ordered_list[1].." is being elevated as higher priority")
+      echo("\n"..snd.elevatedaff[1].." is being unelevated with higher priority item")
       send("firstaid elevate "..snd.ordered_list[1], false)
+      echo("\n"..snd.ordered_list[1].." is being elevated as higher priority")
     else
       echo("\n"..snd.ordered_list[1].." is already elevated")
-      delitem(snd.ordered_list, snd.ordered_list[1], false)
+      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, snd.ordered_list[1]))
     end
   else 
-    if snd.elevatedaff[1] ~= snd.ordered_list[1] then
+    if snd.elevatedaff[1] ~= snd.ordered_list[1] and #snd.ordered_list &gt;= 1 and snd.have_aff(snd.ordered_list[1]) then
       if snd.ordered_list[1] == "gloom" then
 				send("firstaid priority defence courage 26", false)
 				snd.firstaidchangecure = true
 			end
-      echo("\n"..snd.ordered_list[1].." being elevated")
 			send("firstaid elevate "..snd.ordered_list[1], false)
+      echo("\n"..snd.ordered_list[1].." being elevated")
     end
-  end    
-end
-</script>
+  end  
+end</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
@@ -12609,46 +12613,6 @@ function snd.aff_count_focus()
     end
   end
   return count
-end
-
-function snd.aff_count_mental()
-  local aff_count = 0
-  for aff in pairs(snd.mental_affs) do
-    if table.contains(snd.target_has, snd.mental_affs[aff]) then
-      aff_count = aff_count + 1
-    end
-  end
-  return aff_count
-end
-
-function snd.aff_count_physical()
-  local aff_count = 0
-  for aff in pairs(snd.physical_affs) do
-    if table.contains(snd.target_has, snd.physical_affs[aff]) then
-      aff_count = aff_count + 1
-    end
-  end
-  return aff_count
-end
-
-function snd.aff_count_all()
-  local aff_count = 0
-  for aff in pairs(snd.all_affs) do
-    if table.contains(snd.target_has, snd.all_affs[aff]) then
-      aff_count = aff_count + 1
-    end
-  end
-  return aff_count
-end
-
-function snd.real_aff_count_all()
-  local aff_count = 0
-  for aff in pairs(snd.real_all_affs) do
-    if table.contains(snd.target_has, snd.real_all_affs[aff]) then
-      aff_count = aff_count + 1
-    end
-  end
-  return aff_count
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -15016,6 +14980,12 @@ snd.cures = {
     },
     
     salve = {
+    "pre_restore_left_leg",
+    "pre_restore_right_leg",
+	  "pre_restore_left_arm",
+    "pre_restore_right_arm",
+    "pre_restore_torso",
+    "pre_restore_head",
     "ablaze", 
     "anorexia", 
     "backstrain", 
@@ -15254,36 +15224,36 @@ cirisosis = "cirisosis",
 }
 
 snd.venoms = {
-    "sumac",
-    "xentio",
-    "oleander",
-    "eurypteria",
-    "kalmia",
-    "digitalis",
-    "darkshade",
-    "curare",
-    "epteth",
-    "prefarar",
-    "monkshood",
-    "euphorbia",
-    "colocasia",
-    "oculus",
-    "hepafarin",
-    "camus",
-    "vernalius",
-    "epseth",
-    "larkspur",
-    "slike",
-    "voyria",
-    "delphinium",
-    "vardrax",
-    "loki",
-    "aconite",
-    "selarnia",
-    "gecko",
-    "scytherus",
-    "ouabain",
-  }
+  "sumac",
+  "xentio",
+  "oleander",
+  "eurypteria",
+  "kalmia",
+  "digitalis",
+  "darkshade",
+  "curare",
+  "epteth",
+  "prefarar",
+  "monkshood",
+  "euphorbia",
+  "colocasia",
+  "oculus",
+  "hepafarin",
+  "camus",
+  "vernalius",
+  "epseth",
+  "larkspur",
+  "slike",
+  "voyria",
+  "delphinium",
+  "vardrax",
+  "loki",
+  "aconite",
+  "selarnia",
+  "gecko",
+  "scytherus",
+  "ouabain",
+}
 
 --- Converts venom names to their afflictions.
 -- This does automatic conversion for stuff like epxeth and oculus when their conditions are met. Ex. oculus = blurry_vision when target has 'sight'
@@ -15883,7 +15853,7 @@ snd.venom_affs =
   "asthma",
   "paresis",
   "clumsiness",
-  "sensitivity",
+  "ringing_ears",
   "vomiting",
   "allergies",
   "haemophilia",
@@ -16008,12 +15978,10 @@ snd.secondary_aff = {}
 
 
 snd.censure_affs = {
-  "sight",
-  "hearing",
+  "ringing_ears",
   "asthma",
   "paresis",
   "clumsiness",
-  "sensitivity",
   "vomiting",
   "allergies",
   "colocasia",
@@ -16058,14 +16026,12 @@ snd.secondary_affs = {
   "vertigo",
   "remorse",
   "recklessness",
-  "sight",
-  "hearing",
+  "ringing_ears",
   "sepsis",
 }
 
 snd.akkari_eq_affs = {
   "disrupted",
-  --"sight",
   "writhe_transfix",
   "psychosis",
   --	"blood_rune",
@@ -16150,15 +16116,15 @@ end
 
 function snd.akkari_attend()
   if (gmcp.Char.Status.spec == "Dosan" or gmcp.Char.Status.spec == "Phreneses") and snd.can_attend == true then
-    if table.contains(snd.primary_aff, "sight") then
-      table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "sight"))
+    if table.contains(snd.primary_aff, "no_courage") then
+      table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "no_courage"))
     end
   else
-    if table.contains(snd.secondary_aff, "hearing") then
-      table.remove(snd.secondary_aff, table.index_of(snd.secondary_aff, "hearing"))
+    if table.contains(snd.secondary_aff, "ringing_ears") then
+      table.remove(snd.secondary_aff, table.index_of(snd.secondary_aff, "ringing_ears"))
     end
-    if table.contains(snd.secondary_aff, "sight") then
-      table.remove(snd.secondary_aff, table.index_of(snd.secondary_aff, "sight"))
+    if table.contains(snd.secondary_aff, "no_courage") then
+      table.remove(snd.secondary_aff, table.index_of(snd.secondary_aff, "no_courage"))
     end
   end
 end
@@ -16470,7 +16436,7 @@ snd.ravagerChainMap = {
 						<script>
 snd.spirituality_attacks = {
   paresis = "shield strike",
-  sight = "shield brilliance",
+  no_courage = "shield brilliance",
   misery = "shield facesmash",
   weariness = "shield punch",
   asthma = "lambaste",
@@ -16481,7 +16447,7 @@ snd.spirituality_attacks = {
 
 snd.subjugation_attacks = {
   paresis = "shield strike",
-  sight = "shield horrify",
+  no_courage = "shield horrify",
   misery = "shield facesmash",
   weariness = "shield punch",
   asthma = "beset",
@@ -17868,12 +17834,12 @@ end</script>
 		else
 			snd.praeattack = "cast scourge " ..snd.target.. "" ..snd.sep
 		end     
-   elseif snd.current_offense == "ScioTransfix" and not snd.checkAff("writhe_transfix") and not snd.checkAff("sight") and snd.aff_tally() &gt; 6 then
+   elseif snd.current_offense == "ScioTransfix" and not snd.checkAff("writhe_transfix") and not snd.checkAff("no_courage") and snd.aff_tally() &gt; 6 then
 		  snd.transfixmodescio()    
     elseif snd.used.shield then
   		snd.praeattack = "cast hew " ..snd.target.. "" ..snd.sep
   		
-  	elseif snd.current_offense == "ScioTransfix" and not snd.current_offense == "ScioAff" and not snd.checkAff("writhe_transfix") and not snd.checkAff("sight") then
+  	elseif snd.current_offense == "ScioTransfix" and not snd.current_offense == "ScioAff" and not snd.checkAff("writhe_transfix") and not snd.checkAff("no_courage") then
   		snd.transfixmodescio()
   
   	elseif snd.current_offense == "ScioShade" then
@@ -17928,7 +17894,7 @@ end</script>
 		else
 			snd.praeattack =  "cast rot " ..snd.target..snd.sep
 		end
-	elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") then
+	elseif not snd.checkAff("no_courage") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") then
 		snd.praeattack =  "cast voidgaze " ..snd.target..snd.sep
 	elseif snd.checkAff("nyctophobia") and snd.checkAff("dizziness") and snd.checkAff("confusion") and snd.checkAff("dementia") and not snd.checkAff("faintness") then
 		snd.praeattack =  "cast scourge " ..snd.target..snd.sep
@@ -17988,7 +17954,7 @@ end</script>
 		snd.praeattack =  "gravity impede " ..snd.target..snd.sep
 	end	
 	
-	if snd.checkAff("sight") and not snd.checkAff("voidgaze") then
+	if snd.checkAff("no_courage") and not snd.checkAff("voidgaze") then
 		snd.praeattack =  "cast voidgaze " ..snd.target..snd.sep
  
 	elseif tonumber(snd.shadowpricecount) &gt; 0 and not snd.checkAff("voidgaze") then 
@@ -18042,7 +18008,7 @@ end</script>
 		snd.shadowpricecount = snd.shadowpricecount - 1 -- only need to do it here
 		snd.praeattack =  "shadowprice gloom " ..snd.target..snd.sep
 	end
-	if snd.checkAff("sight") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") and snd.shadowpricecount &gt; 0 then
+	if snd.checkAff("no_courage") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") and snd.shadowpricecount &gt; 0 then
 		snd.praeattack =  "shadowprice voidgaze " ..snd.target..snd.sep 
 	elseif not snd.checkAff("vomiting") and snd.checkAff("weariness") and snd.checkAff("clumsiness") and snd.checkAff("dementia") then
 		if snd.shadowpricecount &gt; 0 then
@@ -18119,9 +18085,9 @@ end</script>
     snd.shadowpricecount = snd.shadowpricecount - 1 -- only need to do it here
 		snd.praeattack = "shadowprice gloom " ..snd.target..snd.sep
 	end
-	if snd.checkAff("sight") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") and snd.shadowpricecount &gt; 0 then
+	if snd.checkAff("no_courage") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") and snd.shadowpricecount &gt; 0 then
 		snd.praeattack = "shadowprice voidgaze " ..snd.target..snd.sep 
-  elseif not snd.checkAff("sight") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") then
+  elseif not snd.checkAff("no_courage") and not snd.checkAff("voidgaze") and not snd.checkAff("voidtrapped") then
 		snd.praeattack = "cast voidgaze " ..snd.target..snd.sep 
   elseif not snd.checkAff("vomiting") and snd.checkAff("weariness") and snd.checkAff("clumsiness") and snd.checkAff("dementia") then
     if snd.shadowpricecount &gt; 0 then
@@ -18293,7 +18259,7 @@ end</script>
 								<name>Transfix - Sciomancer</name>
 								<packageName></packageName>
 								<script>function snd.transfixmodescio()
-  if not snd.checkAff("sight") and not snd.checkAff("writhe_transfix") then
+  if not snd.checkAff("no_courage") and not snd.checkAff("writhe_transfix") then
     snd.praeattack = "cast transfix " ..snd.target..snd.sep
   end
 end</script>
@@ -30954,7 +30920,7 @@ end
 function snd.track_rebounding(target)
   if target:lower() == snd.target:lower() then
     snd.timers.rebounding.start = getEpoch()
-    local limit = 6.3
+    local limit = 5.85
     snd.timers.rebounding.limit = limit
   end
 end
@@ -36066,7 +36032,8 @@ snd.vermin = 0</script>
 {area = "the forgotten depths of Mount Helba", level = "99", targets = {"a towering fungal abomination", "a withered fungal abomination"}},
 {area = "the Bakal Chasm", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
 {area = "a basilisk lair", level = "100+", targets = {"a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
-{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
+--{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
+{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
 {area = "the Welto Trench", level = "good luck", targets = {"Match:a %a+ shark", "a storm-wing harpy", "Match:a %a+ torvok", "Match:a %a+ serpent", "Match:a %a+ crab", "Match:a %a+ jellyfish", "a torvok ambusher", "a blacktip shark", "a black hunter shark", "a spotted bull shark", "a scarred hunter shark", "a brown hunter shark", "a scarred welto shark", "a striped hunter shark", "a great white welto shark", "a brown bull shark", "a bronze tiger shark", "a black bull shark", "a spotted tiger shark", "a bronze tiger shark", "a grey hunter shark", "a bronze welto shark", "a brown tiger shark", "a storm-wing harpy", "a spotted welto shark", "a striped welto shark", "a striped tiger shark", "a striped bull shark", "a spotted hunter shark", "a black tiger shark", "a great white bull shark", "a menacing torvok", "a brown welto shark", "a great white tiger shark", "a menacing torvok", "a great white hunter shark", "a great white welto shark", "a bronze bull shark", "a grey tiger shark", "a bronze hunter shark", "a spotted hunter shark", "a scarred tiger shark", "a black welto shark", "a grey bull shark", "a striped welto shark", "a grey welto shark", "a black welto shark", "a scarred bull shark", "a blacktip shark", "a box jellyfish", "a giant manta ray", "a deep water serpent", "a stone crab"}},
 {area = "Eftehl Island", level = "100+", targets = {"a vibrantly pink flamingo", "a large sea turtle", "a steel-grey barracuda", "a sleek hammerhead shark", "a ghost of a castle servant", "a ghost of a castle guard", "a lumbering ogre ghost", "a ghost of a castle kitchen worker"}, items = {},},{area = "Tak-re", level = "99+", targets = {"a vicious, mutated shark", "a vicious, mutated shark", "a hundred-strings jellyfish", "a horrifically deformed woodpecker", "a warped squirrel", "a mutated deer", }, items = {},},
 {area = "Kkirrrr'shi Hive", level = "99+", targets = {"a feral Hokkali soldier", "a twisted Hokkali hunter", "a rabid Hokkali drone", "a hideous Hokkali Queensguard", "a freshly spawned Hokkali ambusher",}, items = {},},
@@ -47333,10 +47300,9 @@ v49442 = 	"pthcity"
   v49115 = "49114",
   v49116 = "49115",
   v49117 = "49116",
-  v49118 = "pthcity",
   v49119 = "49120",
   v49120 = "49121",
-  v49121 = "49118",
+  v49121 = "pthcity",
   v49122 = "49117",
   v49123 = "49124",
   v49124 = "49125",
@@ -48843,7 +48809,7 @@ function snd.teradrim_bash()
 	
   if hp &lt;=40 and snd.shield_check then
     battack = "touch shield"
-  elseif snd.balance.momentum and hasSkill("Momentum") and endur&gt;=45 then
+  elseif snd.balance.momentum and endur&gt;=45 then
     battack = "earth momentum "..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
   else
 		battack = "earth batter "..snd.bashing.target..snd.sep.."golem recover"
