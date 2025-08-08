@@ -95,7 +95,9 @@ function snd.stap()
   if snd.defenses.def_seismicity.state == "deffed" then
      snd.send("TECTONIC SEISMICITY end"..snd.sep)
   end
-  send("config enemylist off")
+  if snd.enemylist and snd.class ~= "Alchemist" then
+    send("config enemylist off")
+  end
   raiseEvent("sunder_update_toggles")
 end
 
@@ -454,6 +456,7 @@ gags = true,
 alerts = false,
 laesan = true, --try to use laesan while predator bashing. If false, will go for Ein-fasit instead.
 survive = false,
+automount = false,
 }</script>
 						<eventHandlerList />
 					</Script>
@@ -1011,6 +1014,8 @@ function snd.reset_me()
   snd.their_tree = false
   snd.elevatedaff = {}
   snd.ordered_list = {}
+  snd.alchemyprepare = false
+  snd.alchemystored = ""
   
   if snd.have_aff("pre_restore_left_leg") then snd.aff_remove("pre_restore_left_leg") end
 	if snd.have_aff("pre_restore_right_leg") then snd.aff_remove("pre_restore_right_leg") end
@@ -2039,8 +2044,10 @@ snd.registerEvent("SunderGMCPRoomAddPlayer", "gmcp.Room.AddPlayer", gmcp_people_
     snd.toggle("generics")
   elseif gmcp.Room.Info.area == "Qor Qogol" and snd.toggles.generics then
     snd.toggle("generics")
+  elseif gmcp.Room.Info.area == "the abandoned remnants of Xaanhal" and snd.toggles.generics then
+    snd.toggle("generics")
   elseif not snd.toggles.generics then
-    if gmcp.Room.Info.area ~= "The Forgotten Mausoleum" and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" then
+    if gmcp.Room.Info.area ~= "the abandoned remnants of Xaanhal" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" then
       snd.toggle("generics")
     end
   end  
@@ -2066,8 +2073,12 @@ snd.registerEvent("SunderGMCPRoomInfo", "gmcp.Room.Info", gmcp_room)
   hp = (100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)) or 100
   mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
-  if snd.toggles.attacking and snd.offense_loaded and snd.check_dome() and snd.toggles.dome and (#snd.people_hitting_me &gt;= 3 or snd.aff_tally() &gt;= 5 or hp &lt; 50) then
-    snd.need_dome = true
+  if snd.check_dome() and snd.toggles.dome and #snd.people_hitting_me &gt;= 2 and not snd.toggles.bashing then -- or snd.aff_tally() &gt;= 5 or hp &lt; 50)
+    if snd.aff_tally() &gt;= 5 or hp &lt; 50 then
+      snd.need_dome = true
+    else
+      snd.need_dome = false
+    end
   else
     snd.need_dome = false
   end
@@ -2337,8 +2348,14 @@ function snd.do_queue()
       
       snd.queue.activecures = true 
       
-      if snd.need_dome and snd.balance.dome then
-        snd.queue.dome = true
+      if snd.need_dome then
+        if snd.balance.dome then
+          snd.do_dome()
+        elseif snd.balance.barrier and snd.barriering then
+					snd.send("qeb strum lyre")
+					snd.barriering = false
+					tempTimer(2,[[snd.barriering = true]])
+        end
       end
           
       if snd.need_fitness then
@@ -2374,8 +2391,10 @@ function snd.do_queue()
       if snd.toggles.bashing and snd.bashing_loaded then
         snd.queue.bashing = true
       end
-      if snd.toggles.attacking and snd.offense_loaded and snd.defenses.def_manipulation_dome.state ~= "deffed" then
-        snd.queue.attack = true
+      if snd.toggles.attacking and snd.offense_loaded then
+        if snd.defenses.def_manipulation_dome.state ~= "deffed" or snd.defenses.def_barrier.state ~= "deffed" then
+          snd.queue.attack = true
+        end
       end
     end
   end
@@ -2636,8 +2655,8 @@ snd.coreActionMap = snd.coreActionMap or {
   moving = function() snd.get_moving() end,
   regenerate = function() snd.do_regenerate() end,
   restoration = function() snd.do_restoration() end,
-  dome = function() snd.do_dome() end,
-  activecures = function() snd.activeCures.run() end,
+  --dome = function() snd.do_dome() end,
+  --activecures = function() snd.activeCures.run() end,
   bashing = function() snd.bashing_function() end,
   attack = function() snd.attack_function() end,
   reset_cures = function() snd.reset_cures() end,
@@ -3265,7 +3284,7 @@ end
     command = table.concat(command, snd.sep)
   end
   snd.send(command)
-   echo("("..command..")")
+  echo("("..command..")")
 end
 
 function snd.do_special(current)
@@ -4274,14 +4293,13 @@ end</script>
 						<packageName></packageName>
 						<script>function snd.absorb_check()
 if snd.balance.absorb and not snd.waiting.absorb and not snd.have_aff("fallen") and not snd.checksomeSelfAffs({"left_arm_crippled","right_arm_crippled"},2) and not snd.checksomeSelfAffs({"paresis","paralysis"},1) then
-    if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1) then
-      if snd.checksomeSelfAffs({"slickness","anorexia","slough"},2) then    
-        return true
-      elseif snd.checksomeSelfAffs({"slickness","slough"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"impatience","stupidity","egocentric"},1) then
-        return true
-      elseif snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
-        return true
-      end
+    if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1) and snd.checksomeSelfAffs({"slickness","anorexia","slough"},2) then
+      return true
+    elseif snd.need_fitness and not snd.can_fitness() then
+      return true
+    elseif snd.have_aff("impatience") and snd.checksomeSelfAffs(snd.mental_affs, 2) then
+      return true
+    elseif snd.checksomeSelfAffs(snd.physical_affs, 3) then
     end
   end
   return false
@@ -6336,28 +6354,25 @@ function snd.firstaidassMonk()
 end
 
 function snd.firstaidassPraenomen()
-	--if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
-	--	table.insert(snd.setting_priority, "asthma 1")		 
-	--end
-	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
-		table.insert(snd.setting_priority, "clumsiness 1")		 
+	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
+		table.insert(snd.setting_priority, "asthma 1")		 
 	end
- 	--if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
-	--	table.insert(snd.setting_priority, "paresis 1")		 
-	--end
 	if snd.firstaidcuretrack.epilepsy ~= "1" and not table.contains(snd.setting_priority, "epilepsy 1") then
 		table.insert(snd.setting_priority, "epilepsy 1")		 
 	end
 	if snd.firstaidcuretrack.confusion ~= "1" and not table.contains(snd.setting_priority, "confusion 1") then
 		table.insert(snd.setting_priority, "confusion 1")		 
 	end
-	if snd.firstaidcuretrack.impatience ~= "2" and not table.contains(snd.setting_priority, "impatience 2") then
-		table.insert(snd.setting_priority, "impatience 2")		 
-	end
 	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
 		table.insert(snd.setting_priority, "stupidity 2")		 
 	end
-	if snd.firstaidcuretrack.weariness ~= "3" and not table.contains(snd.setting_priority, "weariness 3") then
+	if snd.firstaidcuretrack.impatience ~= "2" and not table.contains(snd.setting_priority, "impatience 2") then
+		table.insert(snd.setting_priority, "impatience 2")		 
+	end
+	if snd.firstaidcuretrack.clumsiness ~= "2" and not table.contains(snd.setting_priority, "clumsiness 2") then
+		table.insert(snd.setting_priority, "clumsiness 2")		 
+	end
+ 	if snd.firstaidcuretrack.weariness ~= "3" and not table.contains(snd.setting_priority, "weariness 3") then
 		table.insert(snd.setting_priority, "weariness 3")		 
 	end
 	if snd.firstaidcuretrack.paranoia ~= "3" and not table.contains(snd.setting_priority, "paranoia 3") then
@@ -8233,17 +8248,17 @@ function snd.can_regenerate()
 	elseif snd.have_aff("perplexity") and snd.have_aff("self_loathing") and snd.cureset == "bard" then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "perplexity"))
 		table.insert(snd.ordered_list, 1, "perplexity")
-	elseif snd.my_last_cured == "clumsiness" then
-		if snd.have_aff("slickness") and snd.class == "Carnifex" then
+	elseif snd.my_last_cured == "clumsiness" and snd.have_aff("slickness") and snd.class == "Carnifex" then
+		--if snd.have_aff("slickness") and snd.class == "Carnifex" then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
 			table.insert(snd.ordered_list, 1, "slickness")
-		elseif snd.have_aff("paresis") then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis"))
-			table.insert(snd.ordered_list, 1, "paresis")
-		elseif snd.have_aff("paralysis") then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
-			table.insert(snd.ordered_list, 1, "paralysis")
-		end
+		--elseif snd.have_aff("paresis") then
+		--	table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis"))
+			--table.insert(snd.ordered_list, 1, "paresis")
+		--elseif snd.have_aff("paralysis") then
+			--table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
+			--table.insert(snd.ordered_list, 1, "paralysis")
+		--end
 	elseif snd.have_aff("besilence") and snd.cureset == "bard" then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "besilence"))
 		table.insert(snd.ordered_list, 1, "besilence")
@@ -11628,13 +11643,12 @@ def_interposition = "on",
 def_obfuscation = "on",
 def_cognisance = "once",
 def_resuscitation = "on",
---def_conduit_crutch = "on",
+def_conduit_crutch = "on",
 def_lifevision = "on",
 def_discipline_fieldstudies = "on",
 def_discipline_biology = "on",
 def_discipline_research = "on",
 def_blightbringer = "on",
---def_cloak = "on",
 
 },
 
@@ -11879,7 +11893,6 @@ def_thickhide = "on",
 def_cornering = "once",
 def_hardening = "on",
 def_salivating = "on",
---def_cloak = "on",
 
 },
 
@@ -11905,7 +11918,6 @@ def_stonebind = "on",
 def_imbue_erosion = "once",
 def_footfeel = "on",
 def_sand_swelter = "once",
---def_cloak = "on",
 },
 
 tidesage = {
@@ -12464,16 +12476,16 @@ function snd.aff_gain(affliction)
       snd.def_take("speed")
       return
     end
-  elseif affliction == "paresis" then
-    if snd.paraTimer then killTimer(snd.paraTimer) end
-      if not snd.class == "Carnifex" then
-        snd.paraTimer = tempTimer(2, [[if snd.have_aff("paresis") and not table.contains(snd.elevatedaff, "paresis") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
-      else
-        snd.paraTimer = tempTimer(2.7, [[if snd.have_aff("paresis") and not table.contains(snd.elevatedaff, "paresis") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
-      end
-  elseif affliction == "allergies" then
-    if snd.allergyTimer then killTimer(snd.allergyTimer) end
-	  snd.allergyTimer = tempTimer(18, [[if snd.have_aff("allergies") and not table.contains(snd.elevatedaff, "allergies") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
+  --elseif affliction == "paresis" then
+    --if snd.paraTimer then killTimer(snd.paraTimer) end
+     -- if not snd.class == "Carnifex" then
+     --   snd.paraTimer = tempTimer(2, [[if snd.have_aff("paresis") and not table.contains(snd.elevatedaff, "paresis") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
+      --else
+      --  snd.paraTimer = tempTimer(2.7, [[if snd.have_aff("paresis") and not table.contains(snd.elevatedaff, "paresis") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
+      --end
+  --elseif affliction == "allergies" then
+    --if snd.allergyTimer then killTimer(snd.allergyTimer) end
+	  --snd.allergyTimer = tempTimer(18, [[if snd.have_aff("allergies") and not table.contains(snd.elevatedaff, "allergies") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies")) table.insert(snd.ordered_list, 1, "allergies") end]])
   end
   snd.message("You: &lt;red&gt;GOT&lt;DeepSkyBlue&gt; " .. affliction .. ".", "affliction")
   snd.aff_have(affliction)
@@ -14509,10 +14521,7 @@ snd.fetishattuned = false
 snd.loyalsattacking = false
 snd.my_dread = false
 snd.their_dread = false
-snd.fetish1 = ""
-snd.fetish2 = ""
-snd.fetish3 = ""
-snd.fetish4 = ""
+snd.fetish_list = {}
 snd.alchemyprepare = false
 snd.alchemystored = ""
 snd.currentsactive = false
@@ -24576,77 +24585,6 @@ function snd.checksomeSelfAffs(afflictions, number)
   end
 end
 
-local pendulum_table =
-{
-  ["left arm"] = { ["clockwise"] = "right arm", ["anti-clockwise"] = "left leg" },
-  ["right arm"] = { ["clockwise"] = "right leg", ["anti-clockwise"] = "left arm" },
-  ["right leg"] = { ["clockwise"] = "left leg", ["anti-clockwise"] = "right arm" },
-  ["left leg"] = { ["clockwise"] = "left arm", ["anti-clockwise"] = "right leg" },
-}
-local limb_affs = {
-  "_crippled",
-  "_broken",
-  "_mangled",
-  "_dislocated",
-  "_amputated",
-}
-function snd.pendulum(direction)
-  local new_affs = {}
-  local old_affs = {}
-  local new_damage = {}
-  local new_status = {}
-  local new_bruising = {}
-  for _, limb in pairs({ "left arm", "right arm", "left leg", "right leg" }) do
-    local newLimb = pendulum_table[limb][direction]
-    local limbName = limb:gsub(" ", "_")
-    local newLimbName = newLimb:gsub(" ", "_")
-    for _, aff in pairs(limb_affs) do
-      if snd.checkAff(limb .. aff) then
-        new_affs[newLimb .. aff] = true
-        old_affs[limb .. aff] = true
-      end
-    end
-    new_damage[newLimb] = snd.limb_dmg[limb]
-    new_status[newLimb] = snd.limb_status[limb]
-    new_bruising[newLimb] = snd.limb_bruising[limb]
-  end
-  for aff, _ in pairs(old_affs) do
-    if not new_affs[aff] then
-      snd.target_cured(aff)
-    end
-  end
-  for aff, _ in pairs(new_affs) do
-    if not old_affs[aff] then
-      snd.target_got(aff)
-    end
-  end
-  for limb, dmg in pairs(new_damage) do
-    if dmg ~= snd.limb_dmg[limb] then
-      snd.took_limb_dmg(limb, dmg - snd.limb_dmg[limb])
-    end
-  end
-  for limb, status in pairs(new_status) do
-    snd.limb_status[limb] = status
-  end
-  for limb, bruising in pairs(new_bruising) do
-    snd.limb_bruising[limb] = bruising
-  end
-  if snd.checkAff("sore_wrist") and not snd.checkAff("sore_ankle") then
-    snd.target_cured("sore_wrist")
-    snd.target_got("sore_ankle")
-  elseif not snd.checkAff("sore_wrist") and snd.checkAff("sore_ankle") then
-    snd.target_cured("sore_ankle")
-    snd.target_got("sore_wrist")
-  end
-  if snd.checkAff("feeble_legs") and not snd.checkAff("feeble_arms") then
-    snd.target_cured("feeble_legs")
-    snd.target_got("feeble_arms")
-  elseif snd.checkAff("feeble_arms") and not snd.checkAff("feeble_legs") then
-    snd.target_cured("feeble_arms")
-    snd.target_got("feeble_legs")
-  end
-end
-
 function snd.took_bruise(limb)
   if snd.limb_bruising[limb] &lt; 3 then
     snd.limb_bruising[limb] = snd.limb_bruising[limb] + 1
@@ -25216,6 +25154,90 @@ function snd.teardown()
 end</script>
 						<eventHandlerList />
 					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Pendulum</name>
+						<packageName></packageName>
+						<script>local pendulum_table =
+{
+  ["left arm"] = { ["clockwise"] = "right arm", ["anti-clockwise"] = "left leg" },
+  ["right arm"] = { ["clockwise"] = "right leg", ["anti-clockwise"] = "left arm" },
+  ["right leg"] = { ["clockwise"] = "left leg", ["anti-clockwise"] = "right arm" },
+  ["left leg"] = { ["clockwise"] = "left arm", ["anti-clockwise"] = "right leg" },
+}
+local limb_affs = {
+  "_crippled",
+  "_broken",
+  "_mangled",
+  "_dislocated",
+  "_amputated",
+}
+
+function snd.self_pendulum(direction)
+local new_damage = table.deepcopy(snd.my_limb_damage)
+  for _, limb in pairs({ "left arm", "right arm", "left leg", "right leg" }) do
+    new_damage[pendulum_table[limb][direction]] = snd.my_limb_damage[limb]
+  end
+  snd.my_limb_damage = new_damage
+end
+
+function snd.pendulum(direction)
+  local new_affs = {}
+  local old_affs = {}
+  local new_damage = {}
+  local new_status = {}
+  local new_bruising = {}
+  for _, limb in pairs({ "left arm", "right arm", "left leg", "right leg" }) do
+    local newLimb = pendulum_table[limb][direction]
+    local limbName = limb:gsub(" ", "_")
+    local newLimbName = newLimb:gsub(" ", "_")
+    for _, aff in pairs(limb_affs) do
+      if snd.checkAff(limb .. aff) then
+        new_affs[newLimb .. aff] = true
+        old_affs[limb .. aff] = true
+      end
+    end
+    new_damage[newLimb] = snd.limb_dmg[limb]
+    new_status[newLimb] = snd.limb_status[limb]
+    new_bruising[newLimb] = snd.limb_bruising[limb]
+  end
+  for aff, _ in pairs(old_affs) do
+    if not new_affs[aff] then
+      snd.target_cured(aff)
+    end
+  end
+  for aff, _ in pairs(new_affs) do
+    if not old_affs[aff] then
+      snd.target_got(aff)
+    end
+  end
+  for limb, dmg in pairs(new_damage) do
+    if dmg ~= snd.limb_dmg[limb] then
+      snd.took_limb_dmg(limb, dmg - snd.limb_dmg[limb])
+    end
+  end
+  for limb, status in pairs(new_status) do
+    snd.limb_status[limb] = status
+  end
+  for limb, bruising in pairs(new_bruising) do
+    snd.limb_bruising[limb] = bruising
+  end
+  if snd.checkAff("sore_wrist") and not snd.checkAff("sore_ankle") then
+    snd.target_cured("sore_wrist")
+    snd.target_got("sore_ankle")
+  elseif not snd.checkAff("sore_wrist") and snd.checkAff("sore_ankle") then
+    snd.target_cured("sore_ankle")
+    snd.target_got("sore_wrist")
+  end
+  if snd.checkAff("feeble_legs") and not snd.checkAff("feeble_arms") then
+    snd.target_cured("feeble_legs")
+    snd.target_got("feeble_arms")
+  elseif snd.checkAff("feeble_arms") and not snd.checkAff("feeble_legs") then
+    snd.target_cured("feeble_arms")
+    snd.target_got("feeble_legs")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
 					<ScriptGroup isActive="yes" isFolder="yes">
 						<name>Salve</name>
 						<packageName></packageName>
@@ -25574,21 +25596,21 @@ function snd.attack(attack, new)
 
   local str = ""
   
-  if snd.enemylist then
-    send("config enemylist on")
+  if not snd.enemylist and snd.class ~= "Alchemist" then
+    str = "config enemylist on"
   end
   
   if snd.needActive then
-    str = snd.activeCommand
+    str = str..snd.sep..snd.activeCommand
   else
-    str = attack
+    str = str..snd.sep..attack
   end
   
   str = "stand"..snd.sep..str
   local fitnessstring = ""
   
   if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset == "melee" then
-    str = str.."nimbleness"..snd.sep
+    str = "nimbleness"..snd.sep..str..snd.sep
   end 
   if snd.can_fitness() and snd.need_fitness and snd.have_aff("asthma") then
     if gmcp.Char.Vitals.pipe == "1" and (snd.have_aff("slickness") or snd.have_aff("slough")) then
@@ -25618,7 +25640,7 @@ function snd.attack(attack, new)
     if gmcp.Char.Vitals.balance == "1" then
       fitnessstring = fitnessstring.."recoup"..snd.sep
     end
-    str = str.."fitness"..snd.sep..fitnessstring
+    str = "fitness"..snd.sep..fitnessstring..snd.sep..str..snd.sep
   elseif snd.can_shrug() and snd.shrug_check() then
     if gmcp.Char.Vitals.pipe == "1" and (snd.have_aff("slickness") or snd.have_aff("slough")) then
       fitnessstring = "smoke yarrow"..snd.sep
@@ -25644,7 +25666,7 @@ function snd.attack(attack, new)
     if gmcp.Char.Vitals.balance == "1" then
       fitnessstring = fitnessstring.."recoup"..snd.sep
     end
-    str = str.."shrug venom"..snd.sep..fitnessstring
+    str = "shrug venom"..snd.sep..fitnessstring..snd.sep..str..snd.sep
   else  
     if gmcp.Char.Vitals.elixir == "1" and snd.have_aff("voyria") then
       fitnessstring = fitnessstring.."drink voyria"..snd.sep
@@ -25655,17 +25677,17 @@ function snd.attack(attack, new)
     if gmcp.Char.Vitals.focus == "1" and snd.can_focus() and snd.aff_count_focus() &gt; 0 then
       fitnessstring = fitnessstring.."focus"..snd.sep
     end
-    str = str..snd.sep..fitnessstring
+    str = snd.sep..fitnessstring..snd.sep..str..snd.sep
     if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") then
-      str = str.."diag"..snd.sep
+      str = "diag"..snd.sep..str..snd.sep
     elseif snd.cureset == "bard" and snd.bashing.target == "heartcage" then
-      str = str.."kill heartcage"
+      str = "kill heartcage"..snd.sep..str..snd.sep
 	  elseif snd.cureset == "bard" and snd.bashing.target == "ironcollar" then
-		  str = str.."remove ironcollar"
+		  str = "remove ironcollar"..snd.sep..str..snd.sep
     elseif snd.not_aff("stun") and ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout") and snd.not_aff("asleep")) then
-      str = str..snd.endgamehealth..snd.sep
+      str = snd.endgamehealth..snd.sep..str..snd.sep
     elseif hp &lt;= 20 and snd.balance.crystal then
-      str = str.."touch crystal"..snd.sep..str..snd.sep
+      str = "touch crystal"..snd.sep..str..snd.sep
     else
       str = str
     end
@@ -26709,16 +26731,25 @@ end</script>
     Headstitch = function(target)
                snd.target_got("deadening")
                snd.target_got("besilence")
+               if snd.checkAff("globes") then
+                  snd.target_got(snd.globe_affs[snd.globecount])
+                  snd.globecount = snd.globecount - 1
+                  if snd.globecount == 0 then
+                    snd.target_cured("globes")
+                  end
+                end
              end,
 
                   
     Barbs = function(target)
                   snd.target_got("manabarbs")
-                  snd.target_got(snd.globe_affs[snd.globecount])
-                  snd.globecount = snd.globecount-1
-                  if snd.globecount == 0 then
-                    snd.target_cured("globes")
+                  if snd.checkAff("globes") then
+                    snd.target_got(snd.globe_affs[snd.globecount])
+                    snd.globecount = snd.globecount - 1
+                    if snd.globecount == 0 then
+                      snd.target_cured("globes")
                     end
+                  end
                   end,           
                   
     Runeband = function(target)
@@ -35856,7 +35887,12 @@ function snd.aa()
   if not snd.toggles.bashing then snd.toggle("bashing") end
   snd.room_clear = true
   snd.defenses.def_vigor.needit = true
-  snd.send("leading on")
+  if not snd.leadingon then
+    snd.send("leading on")
+  end
+  if snd.needfollow then
+    send("qeb follow "..snd.group[1])
+  end
 end
 </script>
 						<eventHandlerList />
@@ -35901,6 +35937,7 @@ snd.vermin = 0</script>
 					<packageName></packageName>
 					<script>snd.areas = {
 
+{area = "the abandoned remnants of Xaanhal", level = "really high", targets = {"a firewrought behemoth", "an arcane anomaly", "a stoic bedrock colossus", "a churning tidal spectre", "an electrified sparkwraith",}},
 {area = "Bloodloch", level = "globes only", targets = {"a massive elemental"}},
 {area = "Duiran", level = "globes only", targets = {"a massive elemental"}},
 {area = "the city of Enorian", level = "globes only", targets = {"a massive elemental"}},
@@ -35980,7 +36017,7 @@ snd.vermin = 0</script>
 {area = "a memory of Relovec Mansion", level = "85-95", targets = {"an enraged memory of a female servant", "an enraged memory of a male servant", "an enraged memory of a female villager", "an enraged memory of a male villager"}},
 {area = "Tiyen Esityi", level = "95+", targets = {"an ashamed, Nazetu female","a brawny, Nazetu female", "Commander Marakhi", "Tirahl the Necromancer", "Lieutenant Gharvoi", "a ball of chitinous legs", "insubstantial whispers", "Quartermaster Kuius", "Lieutenant Chiakhi", "a crazed Nazetu cutter", "a mutated Nazetu intercessor", "a Nazetu cook", "a Nazetu provost", "a deformed Nazetu priest", "a Nazetu corrupter", "a Nazetu necromancer", "a supply officer", "a Nazetu captain", "a Nazetu crossbowman", "a Nazetu halberdier", "a bound shade", "a canerous stallion", "a tangible malevolence", "a victimised intruder"}},
 {area = "the Nal'jin Depths", level = "95+", targets = {"an enormous spinelash fish", "a sinewy Nal'jin eel", "a shadow ray", "a serpentine jawsnapper"}},
-{area = "the Forgotten Dome", level = "95+", targets = {"a gibbering kelki reaver", "a deformed kelki ravener", "a mutated kelki ravager", "a vile kelki prowler"}},
+{area = "the Forgotten Dome", level = "95+", targets = {"a gibbering Kelki reaver", "a deformed Kelki ravener", "a mutated Kelki ravager", "a vile Kelki prowler"}},
 {area = "Luzith's Lair", level = "95+", targets = {"a mass of deadly trap spiders", "a deadly trap spider", "a monstrous arachnid", "a vicious little spider", "a large, crystalline spider", "a flying spider", "a sentinel spider", "a slender, female arachnoid"}},
 {area = "the Bastion of Illdon", level = "95+", targets = {"a rabid plant", "a rabid hound", "a nightmare shadow", "a shadowy, mindless demon", "a mutated experiment"}},
 {area = "Spiral of the Corrupt", level = "95+", targets = {"an ethereal, scarred jellyfish", "a rot-infested swordfish", "a five-tentacled octopus of jade", "a taint-infested shark", "a miasma-wreathed electric eel"}},
@@ -35989,7 +36026,7 @@ snd.vermin = 0</script>
 {area = "Dovan Hollow", level = "95+", targets = {"a gaunt Aslinn slaver", "a scarred Aslinn slaver", "a sinewy Aslinn slaver", "a haughty Caentoi slaver", "a hulking Ursal brute", "a grim Aslinn slaver"}},
 {area = "the Feral Caves", level = "95+", targets = {"a small green blob", "a slimy green blob", "a massive green blob", "a gigantic green blob"}},
 {area = "The Forgotten Mausoleum", level = "95+", targets = {"a reanimated Dwarf woman", "a rotting Dwarf archer", "a decomposing Dwarf", "a robed reanimated Dwarf"}},
-{area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a blue crab", "a box jellyfish", "a large capybara", "a small ocelot", "a spotted leopard", "a howler monkey", "a striped tiger", "a water buffalo", "an enormous elephant", "a vicious copperhead snake", "an oversized tortoise", "a diseased raccoon", "a dark green alligator", "a white-tailed deer", "a lithe cougar", "a black bear", "a black and white badger","a great white stag", "a spotted jaguar","a long-billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a ragged coyote", "a Troll guard", "a Troll cook","a white goose", "a Nazetu officer", "a silverback gorilla","a venomous bushmaster","a thick boa constrictor", "a brown-furred bat", "an ebon crow"}},
+{area = "Tcanna Island", level = "95+", targets = {"a massive elemental", "a brown and tan python", "a blue crab", "a box jellyfish", "a large capybara", "a small ocelot", "a spotted leopard", "a howler monkey", "a striped tiger", "a water buffalo", "an enormous elephant", "a vicious copperhead snake", "an oversized tortoise", "a diseased raccoon", "a dark green alligator", "a white-tailed deer", "a lithe cougar", "a black bear", "a black and white badger", "a great white stag", "a spotted jaguar", "a long-billed toucan", "a scarlet macaw", "a bald eagle", "a gray wolf", "a ragged coyote", "a Horkvali butcher", "a Troll guard", "a Troll cook", "a white goose", "a Nazetu officer", "a silverback gorilla", "a venomous bushmaster", "a thick boa constrictor", "a brown-furred bat", "an ebon crow", "an Atavian slave", "a pathetic slave", "a Horkvali butcher", "a tailless Rajamala"}},
 {area = "Trapped within a mirror", level = "Quest", targets = {"a fragment of living glass"}},
 {area = "the Teshen Undercroft", level = "80-99", targets  = {"a Teshen raider", "a Teshen scout", "a Teshen reaver", "a Teshen worker", "a gargantuan Teshen drone"}},
 {area = "Perilaus", level = "50+", targets = { "a school of spinebacks", "a striped sea krait", "a school of shadowy minnows", "a water viper", "a grey spider" }},
@@ -36032,8 +36069,8 @@ snd.vermin = 0</script>
 {area = "the forgotten depths of Mount Helba", level = "99", targets = {"a towering fungal abomination", "a withered fungal abomination"}},
 {area = "the Bakal Chasm", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
 {area = "a basilisk lair", level = "100+", targets = {"a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
---{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
-{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
+{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
+--{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
 {area = "the Welto Trench", level = "good luck", targets = {"Match:a %a+ shark", "a storm-wing harpy", "Match:a %a+ torvok", "Match:a %a+ serpent", "Match:a %a+ crab", "Match:a %a+ jellyfish", "a torvok ambusher", "a blacktip shark", "a black hunter shark", "a spotted bull shark", "a scarred hunter shark", "a brown hunter shark", "a scarred welto shark", "a striped hunter shark", "a great white welto shark", "a brown bull shark", "a bronze tiger shark", "a black bull shark", "a spotted tiger shark", "a bronze tiger shark", "a grey hunter shark", "a bronze welto shark", "a brown tiger shark", "a storm-wing harpy", "a spotted welto shark", "a striped welto shark", "a striped tiger shark", "a striped bull shark", "a spotted hunter shark", "a black tiger shark", "a great white bull shark", "a menacing torvok", "a brown welto shark", "a great white tiger shark", "a menacing torvok", "a great white hunter shark", "a great white welto shark", "a bronze bull shark", "a grey tiger shark", "a bronze hunter shark", "a spotted hunter shark", "a scarred tiger shark", "a black welto shark", "a grey bull shark", "a striped welto shark", "a grey welto shark", "a black welto shark", "a scarred bull shark", "a blacktip shark", "a box jellyfish", "a giant manta ray", "a deep water serpent", "a stone crab"}},
 {area = "Eftehl Island", level = "100+", targets = {"a vibrantly pink flamingo", "a large sea turtle", "a steel-grey barracuda", "a sleek hammerhead shark", "a ghost of a castle servant", "a ghost of a castle guard", "a lumbering ogre ghost", "a ghost of a castle kitchen worker"}, items = {},},{area = "Tak-re", level = "99+", targets = {"a vicious, mutated shark", "a vicious, mutated shark", "a hundred-strings jellyfish", "a horrifically deformed woodpecker", "a warped squirrel", "a mutated deer", }, items = {},},
 {area = "Kkirrrr'shi Hive", level = "99+", targets = {"a feral Hokkali soldier", "a twisted Hokkali hunter", "a rabid Hokkali drone", "a hideous Hokkali Queensguard", "a freshly spawned Hokkali ambusher",}, items = {},},
@@ -43455,8 +43492,7 @@ v25421 = "pthcity"
     v74377 = "74378",
     v74378 = "74380",
     v74380 = "74381",
-    v74381 = "73286",
-    v73286 = "73287",
+    v74381 = "73287",
     v73287 = "73322",
     v73322 = "74382",
     v74382 = "74671",
@@ -43532,7 +43568,8 @@ v74346 = "74356",
 v74356 = "74345",
 v74345 = "74527",
 v74527 = "74528",
-    v74528 = "pthcity"
+    v74528 = "73286",
+    v73286 = "pthcity"
   },
   ["the Maul"] = {
     v50236 = "50237",
@@ -48340,8 +48377,18 @@ function snd.bashing_function()
         battack = "touch crystal"..snd.sep..battack..snd.sep
       end
       
+      if gmcp.Char.Vitals.pipe == "1" and snd.have_aff("disfigurement") then
+        battack = "smoke yarrow"..snd.sep..battack..snd.sep
+      end
+      
+      if snd.setpassive then
+        battack = "order loyals passive"..snd.sep..battack..snd.sep
+      end
+      
       if battack == "" and not snd.defenses.def_reflection.state == "deffed" then -- if the basher couldn't change battack to something from your class, it will give an error
         echo("\nTried to bash, no class ability set.")
+      elseif snd.needfollow then
+        battack = battack..snd.sep.."follow "..snd.group[1]
       elseif battack ~= snd.last_attack then -- if your battack isn't the same as your last attempted attack, and you aren't trying to capture ylem
         snd.last_attack = battack -- ATTACK and not snd.ylem_check
         if battack ~= "none" then -- if for some reason it's none as your attack, stand
@@ -48401,19 +48448,25 @@ function snd.alchemist_bash()
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
   wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
   
+  if #snd.fetish_list &lt;= 0 then
+    battack = "weaponprobe conduit"..snd.sep
+  end
+  
+  if #snd.fetish_list &gt; 0 and not table.contains(snd.fetish_list, "anesthetic") then
+    battack = "compound augment galvanic invigorant anesthetic exhilarant"..snd.sep
+  end
+  
   if snd.familiar and snd.balance.morph then
     if snd.shamanpet == "tumefactive" then
-      battack = "order experiment passive"..snd.sep.."experiment reconfigure toxic"..snd.sep.."order experiment follow me"..snd.sep
+      battack = battack.."order experiment passive"..snd.sep.."experiment reconfigure toxic"..snd.sep.."order experiment follow me"..snd.sep
     elseif snd.shamanpet == "toxic" then
-      battack = "order experiment passive"..snd.sep.."experiment reconfigure tumefactive"..snd.sep.."order experiment follow me"..snd.sep
+      battack = battack.."order experiment passive"..snd.sep.."experiment reconfigure tumefactive"..snd.sep.."order experiment follow me"..snd.sep
     else
-      battack = "order experiment passive"..snd.sep.."experiment reconfigure tumefactive"..snd.sep.."order experiment follow me"..snd.sep
+      battack = battack.."order experiment passive"..snd.sep.."experiment reconfigure tumefactive"..snd.sep.."order experiment follow me"..snd.sep
     end
   else
-    if gmcp.Char.Vitals.elevation ~= "flying" then
-      battack = "experiment recall"..snd.sep.."order experiment passive"..snd.sep.."order experiment follow me"..snd.sep
-    else
-      battack = ""
+    if gmcp.Char.Vitals.elevation ~= "flying" and not snd.familiar then
+      battack = battack.."experiment recall"..snd.sep.."order experiment passive"..snd.sep.."order experiment follow me"..snd.sep
     end
   end
   
@@ -48766,7 +48819,9 @@ function snd.shaman_bash()
       battack = "order spirit passive"..snd.sep.."familiar morph bear"
     end
   else
-    battack = "familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"
+    if not snd.familiar then
+      battack = "familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"
+    end
   end
 
   if hp &lt;=40 and snd.shield_check then
@@ -48809,6 +48864,8 @@ function snd.teradrim_bash()
 	
   if hp &lt;=40 and snd.shield_check then
     battack = "touch shield"
+  elseif snd.runemarkMinor ~= "blue" or snd.runemarkMajor ~= "blue" then
+		battack = "earth inscribe blue upon blue"
   elseif snd.balance.momentum and endur&gt;=45 then
     battack = "earth momentum "..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
   else
