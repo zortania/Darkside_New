@@ -2332,7 +2332,7 @@ function snd.do_queue()
         snd.firstaid_go = true
       end
       if snd.bashing_loaded then
-        if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 and gmcp.Room.Info.name ~= "Hidden Cavern" then
+        if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
           snd.queue.loot = true
         end
         if snd.moving_to ~= "none" then
@@ -2381,16 +2381,19 @@ function snd.do_queue()
       end
       
       if snd.toilup and not snd.toilon then
-        snd.queue.toilup = true
+        snd.toil_function()
       elseif not snd.toilup and snd.toilon then
-        snd.queue.toilup = false
+        snd.toil_function()
       end
+      
       if snd.metawakeon then
         snd.queue.metawake = true
       end
+      
       if snd.toggles.bashing and snd.bashing_loaded then
         snd.queue.bashing = true
       end
+      
       if snd.toggles.attacking and snd.offense_loaded then
         if snd.defenses.def_manipulation_dome.state ~= "deffed" or snd.defenses.def_barrier.state ~= "deffed" then
           snd.queue.attack = true
@@ -8661,6 +8664,30 @@ end</script>
 							<string>sysDisconnectionEvent</string>
 						</eventHandlerList>
 					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Reset Cures</name>
+						<packageName></packageName>
+						<script>function snd.reset_cures()
+  if #snd.setting_priority &gt; 0 then
+    snd.firstaid_go = true
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Metawake On Function</name>
+						<packageName></packageName>
+						<script>function snd.metawake_function()
+
+  if snd.defenses.def_metawake.state ~= "deffed" and snd.metawakeon then
+    snd.send("qeb metawake on")
+  else
+    snd.send("qeb metawake off")
+  end
+
+end</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
@@ -9049,7 +9076,8 @@ v10812 = "34760",
 v34760 = "72513",
 v72513 = "1000",
 v1000 = "1774",
-v1774 = "3106",
+v1774 = "18576",
+v18576 = "3106",
 v3106 = "11634",
 v11634 = "11988",
 v11988 = "11994",
@@ -10982,7 +11010,7 @@ end</script>
   ["You are blurring the edges of your form."] = "blurring",
   ["You are surrounded in a mantle of pure shadow."] = "shadow_mantle",
   ["You are focusing on precise spellcasting."] = "rigor",
-  ["You have the shadow_engulf defence."] = "shadow_engulf",
+  ["Your mobility has become one with the darkness."] = "shadow_engulf",
   ["You are prepared to discharge energy."] = "discharge",
   ["You are wreathed in an aura of toxicity."] = "nexus",
   ["Your fiery soul has reached its zenith of power."] = "zenith",
@@ -15105,7 +15133,7 @@ indorani = {"Necromancy", "Tarot", "Domination", "Oneiromancy", "Hyalincuru", "C
 infiltrator = {"Assassination", "Subterfuge", "Hypnosis"},
 luminary = {"Spirituality", "Devotion", "Illumination", "Subjugation", "Apocalyptia", "Tectonics"},
 monk = {"Tekura", "Kaido", "Telepathy"},
-praenomen = {"Corpus", "Mentis", "Sanguis", "Ascendance", "Dictum", "Discipline"},
+praenomen = {"Corpus", "Mentis", "Sanguis", "Ascendance", "Dictum", "Discipline", "Extirpation", "Caprice", "Glamours"},
 predator = {"Knifeplay", "Predation", "Beastmastery"},
 sciomancer = {"Sciomancy", "Sorcery", "Gravitation", "Malediction", "Runecarving", "Sporulation"},
 shaman = {"Primality", "Shamanism", "Naturalism", "Alchemy", "Experimentation", "Botany"},
@@ -25593,7 +25621,8 @@ function snd.attack_function()
 end
 
 function snd.attack(attack, new)
-
+  
+  local strr = ""
   local str = ""
   
   if not snd.enemylist and snd.class ~= "Alchemist" then
@@ -25696,6 +25725,18 @@ function snd.attack(attack, new)
   for pipe, isEmpty in pairs(snd.emptypipes) do
     if isEmpty then
       str ="outc " .. pipe ..snd.sep .."put " .. pipe .." in emptypipe"..snd.sep ..str
+    end
+  end
+  
+  if new then
+    if str ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = str
+      echo("This is an echo")
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		else
+      echo("This is an echo")
+      return
     end
   end
   
@@ -29366,6 +29407,157 @@ end</script>
       if howl_conversion[conditional] == nil then return end
 
       snd.target_got(howl_conversion[conditional])
+    end,
+  },
+  
+
+  --Sylvan
+  ["Extirpation"] = {
+
+    Snarl = function(target)
+      snd.target_got("slickness")
+      snd.used.paste = false
+    end,
+    Thrash = function(target, sunder)
+      if sunder then
+        snd.used.shield = false
+      end
+    end,
+    Reknit = function(target, limb)
+      snd.took_limb_dmg(limb, -6)
+    end,
+    Reap = function(target, lightly)
+      enableTrigger("Weapon Hit Confirmation")
+    end,
+
+    Wound = function(target, miss)
+      if not miss then
+        table.insert(snd.maybe_affs,1,"rend")
+        snd.onHit2({ "Dodge" })
+      end
+    end,
+
+  },
+
+  ["Caprice"] = {
+    Imprecate = function(target)
+      for _, aff in pairs(snd.maybe_affs) do
+        if not table.contains(snd.venoms, snd.maybe_affs[1]) then
+          snd.target_got(aff)
+        end
+      end
+    end,
+    Bewitch = function(target, courage)
+      if not courage then
+        snd.target_got("writhe_transfix")
+      end
+    end,
+    Confusion = function(target)
+      snd.target_got("confusion")
+    end,
+    Impatience = function(target)
+      snd.target_got("impatience")
+    end,
+    Paranoia = function(target)
+      snd.target_got("paranoia")
+    end,
+    Stupidity = function(target)
+      snd.target_got("stupidity")
+    end,
+    Agoraphobia = function(target)
+      snd.target_got("agoraphobia")
+    end,
+    Masochism = function(target)
+      snd.target_got("masochism")
+    end,
+    Infatuation = function(target)
+      snd.target_got("infatuation")
+    end,
+    Loneliness = function(target)
+      snd.target_got("loneliness")
+    end,
+    Epilepsy = function(target)
+      snd.target_got("epilepsy")
+    end,
+    Psychosis = function(target)
+      snd.target_got("psychosis")
+    end,
+    Anorexia = function(target)
+      snd.target_got("anorexia")
+    end,
+    Peace = function(target)
+      snd.target_got("peace")
+    end,
+    Dementia = function(target)
+      snd.target_got("dementia")
+    end,
+    Mania = function(target)
+      snd.target_got("mania")
+    end,
+    Indifference = function(target)
+      snd.target_got("indifference")
+    end,
+    Vertigo = function(target)
+      snd.target_got("vertigo")
+    end,
+    Recklessness = function(target)
+      snd.target_got("recklessness")
+    end,
+	Loneliness = function(target)
+	  snd.target_got("loneliness")
+	end,
+    Trickery = function(target)
+      snd.target_got("trickery")
+    end,
+    Hoodwink = function(target)
+      snd.target_got("hoodwink")
+    end,
+    Disrupt = function(target, failure)
+      if not failure then
+        snd.target_got("disrupted")
+      end
+    end,
+  },
+
+  ["Sanguis"] = {
+    Winnow = function(target)
+      snd.target_got("ringing_ears")
+      if snd.checkAff("hubris") then
+        snd.target_got("blisters")
+      end
+      if snd.checkAff("self_pity") then
+        snd.target_got("impairment")
+      end
+      if snd.checkAff("sadness") then
+        snd.target_got("vomiting")
+      end
+      if snd.checksomeAffs({"sadness","self_pity","hubris"},3) then
+        snd.target_got("no_courage")
+      end
+    end,
+
+    Savage = function(target, fail)
+      if not fail then
+        snd.target_got("feast")
+        snd.affTimers.start("feast", 19.5)
+      else
+        snd.target_cured("feast")
+      end
+    end,
+
+    Disfavour = function(target)
+      snd.target_got("sepsis")
+    end,
+
+    Nightbrand = function(target)
+      snd.target_got("blood_rune")
+      snd.runeused = true
+    end,
+    Weeping = function(target)
+      snd.target_got("effused_blood")
+    end,
+	
+    Spellbind = function(target)
     end,
   },
   
@@ -47926,7 +48118,7 @@ function snd.load_targets(area)
    for h in ipairs(snd.possible_targets) do
     echo("\n "..snd.possible_targets[h])
    end
-   if areas[i].items and gmcp.Room.Info.name ~= "Hidden Cavern" then
+   if areas[i].items then
     snd.possible_items = areas[i].items
     cecho("\n&lt;green&gt;Gathering Items:")
     for k in ipairs(snd.possible_items) do
@@ -47946,7 +48138,7 @@ end</script>
 					<packageName></packageName>
 					<script>
 function snd.do_loot()
- if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 and gmcp.Room.Info.name ~= "Hidden Cavern" then
+ if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
   if snd.can_cast() and not snd.waiting.loot then
    snd.loot_it()
   end
@@ -47954,7 +48146,7 @@ function snd.do_loot()
 end
 
 function snd.loot_it()
- for h in ipairs(snd.gathering) do --and gmcp.Room.Info.name ~= "Hidden Cavern" 
+ for h in ipairs(snd.gathering) do
     if not snd.toggles.attacking then --and snd.toggles.fasthunt
       snd.send("get "..snd.gathering[h])
     end
@@ -48754,22 +48946,16 @@ function snd.sciomancer_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   shadowprice = tonumber(gmcp.Char.Vitals.shadowprice)
   
-  if tonumber(snd.repay) == 0 and hp &gt;= 55 and shadowprice &gt; 0 and snd.not_aff("recklessness") then
+  if tonumber(snd.repay) == 0 and hp &gt; 55 and shadowprice &gt; 0 and snd.not_aff("recklessness") then
     battack = "cast repay"..snd.sep
 	end  
     
-  if hp &lt;=40 and snd.shield_check then
-    if snd.reflection_charge &gt; 0 and snd.defenses.def_reflection.state ~= "deffed" then
-      battack = battack.."cast reflection"
-    else
-      battack = battack.."touch shield"
-    end 
-  elseif snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
+  if hp &lt;= 60 and snd.reflection_charge &gt; 0 and snd.defenses.def_reflection.state ~= "deffed" then
+    battack = battack.."cast reflection"  
+  elseif (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
+    battack = battack.."touch shield"
+  elseif snd.defenses.def_reflection.state == "deffed" or not snd.shield_check then
   -- let the reflection do its job
-  elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
-    battack = battack.."cast reflection"
-	elseif snd.toggles.newbie then
-  	  battack = battack..snd.sep.."cast ruin "..snd.bashing.target
   else
     if hasSkill("Shadowprice") and tonumber(gmcp.Char.Vitals.shadowprice) &lt; 4  then
       battack = battack.."shadowprice gloom " ..snd.bashing.target..snd.sep.."cast fever "..snd.bashing.target
@@ -50025,33 +50211,9 @@ end
 					<script>function snd.toil_function()
 
   if snd.toilup and not snd.toilon and #snd.group &gt; 0 then
-    snd.send("qeb runecarve toil on")
+    snd.send("qeb cast spectre on")
   elseif not snd.toilup and snd.toilon and #snd.group &gt; 0 then
-    snd.send("qeb runecarve toil off")
-  end
-
-end</script>
-					<eventHandlerList />
-				</Script>
-				<Script isActive="yes" isFolder="no">
-					<name>Toiling Up Function</name>
-					<packageName></packageName>
-					<script>function snd.reset_cures()
-  if #snd.setting_priority &gt; 0 then
-    snd.firstaid_go = true
-  end
-end</script>
-					<eventHandlerList />
-				</Script>
-				<Script isActive="yes" isFolder="no">
-					<name>Metawake On Function</name>
-					<packageName></packageName>
-					<script>function snd.metawake_function()
-
-  if snd.defenses.def_metawake.state ~= "deffed" and snd.metawakeon then
-    snd.send("qeb metawake on")
-  else
-    snd.send("qeb metawake off")
+    snd.send("qeb cast spectre off")
   end
 
 end</script>
