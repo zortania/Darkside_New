@@ -95,8 +95,11 @@ function snd.stap()
   if snd.defenses.def_seismicity.state == "deffed" then
      snd.send("TECTONIC SEISMICITY end"..snd.sep)
   end
-  if snd.enemylist and snd.class ~= "Alchemist" then
+  if snd.enemylist and snd.class == "Sciomancer" then
     send("config enemylist off")
+  end
+  if snd.graft then
+    snd.send("osso cease graft")
   end
   raiseEvent("sunder_update_toggles")
 end
@@ -457,6 +460,7 @@ alerts = false,
 laesan = true, --try to use laesan while predator bashing. If false, will go for Ein-fasit instead.
 survive = false,
 automount = false,
+domeswap = true,
 }</script>
 						<eventHandlerList />
 					</Script>
@@ -600,6 +604,7 @@ function snd.recklessCheck()
       and snd.afflictions.aff_recklessness.state == "healed"
       and snd.afflictions.aff_blackout.state == "healed"
   then
+    table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, "recklessness"))
     table.insert(snd.firstaidtobepredicted, "recklessness")
   end
 end
@@ -1657,100 +1662,6 @@ function snd.registerCityMarks()
 end</script>
 					<eventHandlerList />
 				</Script>
-				<Script isActive="yes" isFolder="no">
-					<name>class_catch</name>
-					<packageName></packageName>
-					<script>function class_catch()
-
-  if snd.class == "Luminary" then
-    snd.defenses.def_constitution = snd.alternative_class_defenses.Luminary_constitution
-    snd.defenses.def_insulation = snd.alternative_class_defenses.Luminary_insulation
-  end
-  
-  if snd.class == "Earthcaller" then
-    snd.defenses.def_constitution = snd.alternative_class_defenses.Earthcaller_constitution
-    snd.defenses.def_insulation = snd.alternative_class_defenses.Earthcaller_insulation
-  end
-  
-  if snd.class == "Monk" then
-    snd.defenses.def_constitution = snd.alternative_class_defenses.Monk_constitution
-  end
-  
-  if snd.class == "Infiltrator" then
-    snd.defenses.def_shroud = snd.alternative_class_defenses.Infiltrator_shroud
-  end
-  
-  if snd.class == "Carnifex" then
-    snd.defenses.def_shroud = snd.alternative_class_defenses.Carnifex_shroud
-  end
-  
-  if snd.class == "Warden" then
-    snd.defenses.def_shroud = snd.alternative_class_defenses.Warden_shroud
-    snd.defenses.def_fearless = snd.alternative_class_defenses.Warden_fearless
-  end
-  
-   if snd.class == "Indorani" then
-    snd.defenses.def_shroud = snd.alternative_class_defenses.Indorani_shroud
-  end
-  
-   if snd.class == "Oneiromancer" then
-    snd.defenses.def_shroud = snd.alternative_class_defenses.Oneiromancer_shroud
-  end
-
-   if snd.class == "Revenant" then
-    snd.defenses.def_maingauche = snd.alternative_class_defenses.Revenant_maingauche
-  end
-  
-   if snd.class == "Ascendril" then
-    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Ascendril_empowered_moon
-    snd.defenses.def_empowered_boar = snd.alternative_class_defenses.Ascendril_empowered_boar
-  end
-  
-   if snd.class == "Bloodborn" then
-    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Bloodborn_empowered_moon
-    snd.defenses.def_empowered_boar = snd.alternative_class_defenses.Bloodborn_empowered_boar
-  end
-  
-   if snd.class == "Sciomancer" then
-    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Sciomancer_empowered_moon
-  end
-  
-   if snd.class == "Runecarver" then
-    snd.defenses.def_empowered_moon = snd.alternative_class_defenses.Runecarver_empowered_moon
-  end
-
-  if snd.class == "Akkari" then
-    snd.defenses.def_stalking = snd.alternative_class_defenses.Akkari_stalking
-    snd.defenses.def_hiding = snd.alternative_class_defenses.Akkari_hiding
-  end
-  
-  if snd.class == "Praenomen" then
-    snd.defenses.def_stalking = snd.alternative_class_defenses.Praenomen_stalking
-    snd.defenses.def_hiding = snd.alternative_class_defenses.Praenomen_hiding
-  end
-  if snd.class == "Shapeshifter" then
-    snd.defenses.def_celerity = snd.alternative_class_defenses.Shapeshifter_celerity
-  else
-    snd.defenses.def_celerity = snd.alternative_class_defenses.Vampire_celerity
-  end
-  if hasSkill("Insomnia") then
-    snd.defenses.def_insomnia = snd.alternative_class_defenses.Skill_insomnia
-  end
-  
-  if snd.assumed_class ~= nil then return end
-	local stats = gmcp.Char.Vitals.charstats
-	for i,v in ipairs(stats) do
- 		stat = string.split(v, ": ")
- 		if stat[1] == "Class" then
-   			snd.class = stat[2]
-  		end
-	end
-  
-end</script>
-					<eventHandlerList>
-						<string>gmcp.Char.Vitals</string>
-					</eventHandlerList>
-				</Script>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>GMCP Handling</name>
@@ -2036,18 +1947,18 @@ snd.registerEvent("SunderGMCPRoomAddPlayer", "gmcp.Room.AddPlayer", gmcp_people_
     end
   end
   
-  if gmcp.Room.Info.area == "Tcanna Island" and snd.toggles.generics then
+  --if gmcp.Room.Info.area == "Tcanna Island" and snd.toggles.generics then
+  --  snd.toggle("generics")
+  if gmcp.Room.Info.area == "The Forgotten Mausoleum" and snd.toggles.generics then
     snd.toggle("generics")
-  elseif gmcp.Room.Info.area == "The Forgotten Mausoleum" and snd.toggles.generics then
-    snd.toggle("generics")
-  elseif gmcp.Room.Info.area == "Dun Fortress" and snd.toggles.generics then
-    snd.toggle("generics")
-  elseif gmcp.Room.Info.area == "Qor Qogol" and snd.toggles.generics then
-    snd.toggle("generics")
+  --elseif gmcp.Room.Info.area == "Dun Fortress" and snd.toggles.generics then
+  --  snd.toggle("generics")
+  --elseif gmcp.Room.Info.area == "Qor Qogol" and snd.toggles.generics then
+  --  snd.toggle("generics")
   elseif gmcp.Room.Info.area == "the abandoned remnants of Xaanhal" and snd.toggles.generics then
     snd.toggle("generics")
   elseif not snd.toggles.generics then
-    if gmcp.Room.Info.area ~= "the abandoned remnants of Xaanhal" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" then
+    if gmcp.Room.Info.area ~= "the abandoned remnants of Xaanhal" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
       snd.toggle("generics")
     end
   end  
@@ -2074,7 +1985,7 @@ snd.registerEvent("SunderGMCPRoomInfo", "gmcp.Room.Info", gmcp_room)
   mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
   if snd.check_dome() and snd.toggles.dome and #snd.people_hitting_me &gt;= 2 and not snd.toggles.bashing then -- or snd.aff_tally() &gt;= 5 or hp &lt; 50)
-    if snd.aff_tally() &gt;= 5 or hp &lt; 50 then
+    if snd.aff_tally() &gt;= 5 or hp &lt; 70 then
       snd.need_dome = true
     else
       snd.need_dome = false
@@ -4550,16 +4461,16 @@ if snd.cureset == "none" then
   end
   
   -- herbs 
-	if snd.firstaidcuretrack.paranoia ~= "1" and not table.contains(snd.setting_priority, "paranoia 1") then
-		table.insert(snd.setting_priority, "paranoia 1")     
-	end
-  if snd.firstaidcuretrack.paralysis ~= "1" and not table.contains(snd.setting_priority, "paralysis 1") then
+	if snd.firstaidcuretrack.paralysis ~= "1" and not table.contains(snd.setting_priority, "paralysis 1") then
     table.insert(snd.setting_priority, "paralysis 1")     
   end
   if snd.firstaidcuretrack.crippled_body ~= "1" and not table.contains(snd.setting_priority, "crippled_body 1") then
     table.insert(snd.setting_priority, "crippled_body 1")     
   end
-	if snd.firstaidcuretrack.exhaustion ~= "2" and not table.contains(snd.setting_priority, "exhaustion 2") then
+	if snd.firstaidcuretrack.paranoia ~= "2" and not table.contains(snd.setting_priority, "paranoia 2") then
+		table.insert(snd.setting_priority, "paranoia 2")     
+	end
+  if snd.firstaidcuretrack.exhaustion ~= "2" and not table.contains(snd.setting_priority, "exhaustion 2") then
 	  table.insert(snd.setting_priority, "exhaustion 2")     
 	end
 	if snd.firstaidcuretrack.loneliness ~= "2" and not table.contains(snd.setting_priority, "loneliness 2") then
@@ -5226,9 +5137,6 @@ end</script>
 	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
 		table.insert(snd.setting_priority, "clumsiness 1")   
 	end	
-	if snd.firstaidcuretrack.delirium ~= "2" and not table.contains(snd.setting_priority, "delirium 2")	then
-		table.insert(snd.setting_priority, "delirium 2")		 
-	end	
 	if snd.firstaidcuretrack.impairment ~= "2" and not table.contains(snd.setting_priority, "impairment 2") then
 		table.insert(snd.setting_priority, "impairment 2")   
 	end		
@@ -5238,11 +5146,11 @@ end</script>
 	if snd.firstaidcuretrack.lethargy ~= "2" and not table.contains(snd.setting_priority, "lethargy 2") then
 		table.insert(snd.setting_priority, "lethargy 2")
 	end	
+	if snd.firstaidcuretrack.vomiting ~= "2" and not table.contains(snd.setting_priority, "vomiting 2") then
+		table.insert(snd.setting_priority, "vomiting 2")   
+	end	
 	if snd.firstaidcuretrack.haemophilia ~= "3" and not table.contains(snd.setting_priority, "haemophilia 3") then
 		table.insert(snd.setting_priority, "haemophilia 3")   
-	end	
-	if snd.firstaidcuretrack.vomiting ~= "3" and not table.contains(snd.setting_priority, "vomiting 3") then
-		table.insert(snd.setting_priority, "vomiting 3")   
 	end	
 	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
 		table.insert(snd.setting_priority, "sensitivity 3")   
@@ -5250,30 +5158,36 @@ end</script>
 	if snd.firstaidcuretrack.addiction ~= "3" and not table.contains(snd.setting_priority, "addiction 3")	then
 		table.insert(snd.setting_priority, "addiction 3")		 
 	end		
-	if snd.firstaidcuretrack.blisters ~= "4" and not table.contains(snd.setting_priority, "blisters 4") then
-		table.insert(snd.setting_priority, "blisters 4")   
+	if snd.firstaidcuretrack.blisters ~= "3" and not table.contains(snd.setting_priority, "blisters 3") then
+		table.insert(snd.setting_priority, "blisters 3")   
+	end	
+	if snd.firstaidcuretrack.patterns ~= "4" and not table.contains(snd.setting_priority, "patterns 4")	then
+		table.insert(snd.setting_priority, "patterns 4")		 
 	end	
 	if snd.firstaidcuretrack.exhaustion ~= "4" and not table.contains(snd.setting_priority, "exhaustion 4") then
 		table.insert(snd.setting_priority, "exhaustion 4")   
 	end	
-	if snd.firstaidcuretrack.hallucinations ~= "4" and not table.contains(snd.setting_priority, "hallucinations 4") then
-		table.insert(snd.setting_priority, "hallucinations 4")		 
-	end	
 	if snd.firstaidcuretrack.paresis ~= "4" and not table.contains(snd.setting_priority, "paresis 4") then
 		table.insert(snd.setting_priority, "paresis 4")   
 	end		
-	if snd.firstaidcuretrack.patterns ~= "5" and not table.contains(snd.setting_priority, "patterns 5")	then
-		table.insert(snd.setting_priority, "patterns 5")		 
+	if snd.firstaidcuretrack.epilepsy ~= "4" and not table.contains(snd.setting_priority, "epilepsy 4") then
+		table.insert(snd.setting_priority, "epilepsy 4")		 
 	end	
-	if snd.firstaidcuretrack.epilepsy ~= "5" and not table.contains(snd.setting_priority, "epilepsy 5") then
-		table.insert(snd.setting_priority, "epilepsy 5")		 
+	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
+		table.insert(snd.setting_priority, "hallucinations 5")		 
 	end	
-	if snd.firstaidcuretrack.mercy ~= "5" and not table.contains(snd.setting_priority, "mercy 5") then
-		table.insert(snd.setting_priority, "mercy 5")		 
-	end	
+	if snd.firstaidcuretrack.laxity ~= "5" and not table.contains(snd.setting_priority, "laxity 5")	then
+		table.insert(snd.setting_priority, "laxity 5")		 
+	end
 	if snd.firstaidcuretrack.peace ~= "5" and not table.contains(snd.setting_priority, "peace 5") then
 		table.insert(snd.setting_priority, "peace 5")		 
-	end
+	end  
+	if snd.firstaidcuretrack.paranoia ~= "5" and not table.contains(snd.setting_priority, "paranoia 5")	then
+		table.insert(snd.setting_priority, "paranoia 5")		 
+	end	
+	if snd.firstaidcuretrack.mercy ~= "6" and not table.contains(snd.setting_priority, "mercy 6") then
+		table.insert(snd.setting_priority, "mercy 6")		 
+	end	
 	if snd.firstaidcuretrack.infatuation ~= "6" and not table.contains(snd.setting_priority, "infatuation 6")	then
 		table.insert(snd.setting_priority, "infatuation 6")		 
 	end
@@ -5283,8 +5197,8 @@ end</script>
 	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
 		table.insert(snd.setting_priority, "mania 6")		 
 	end	
-	if snd.firstaidcuretrack.dizziness ~= "6" and not table.contains(snd.setting_priority, "dizziness 6") then
-		table.insert(snd.setting_priority, "dizziness 6")		 
+	if snd.firstaidcuretrack.dizziness ~= "7" and not table.contains(snd.setting_priority, "dizziness 7") then
+		table.insert(snd.setting_priority, "dizziness 7")		 
 	end
 	if snd.firstaidcuretrack.magnanimity ~= "7" and not table.contains(snd.setting_priority, "magnanimity 7") then
 		table.insert(snd.setting_priority, "magnanimity 7")		 
@@ -5295,20 +5209,17 @@ end</script>
 	if snd.firstaidcuretrack.extravasation ~= "7" and not table.contains(snd.setting_priority, "extravasation 7") then
 		table.insert(snd.setting_priority, "extravasation 7")   
 	end	
-	if snd.firstaidcuretrack.laxity ~= "8" and not table.contains(snd.setting_priority, "laxity 8")	then
-		table.insert(snd.setting_priority, "laxity 8")		 
-	end
 	if snd.firstaidcuretrack.hypochondria ~= "8" and not table.contains(snd.setting_priority, "hypochondria 8")	then
 		table.insert(snd.setting_priority, "hypochondria 8")		 
 	end	
 	if snd.firstaidcuretrack.weariness ~= "8" and not table.contains(snd.setting_priority, "weariness 8")	then
 		table.insert(snd.setting_priority, "weariness 8")		 
 	end
-	if snd.firstaidcuretrack.stupidity ~= "9" and not table.contains(snd.setting_priority, "stupidity 9")	then
-		table.insert(snd.setting_priority, "stupidity 9")		 
+	if snd.firstaidcuretrack.stupidity ~= "8" and not table.contains(snd.setting_priority, "stupidity 8")	then
+		table.insert(snd.setting_priority, "stupidity 8")		 
 	end	
-	if snd.firstaidcuretrack.hatred ~= "9" and not table.contains(snd.setting_priority, "hatred 9")	then
-		table.insert(snd.setting_priority, "hatred 9")		 
+	if snd.firstaidcuretrack.hatred ~= "8" and not table.contains(snd.setting_priority, "hatred 8")	then
+		table.insert(snd.setting_priority, "hatred 8")		 
 	end
 	if snd.firstaidcuretrack.vertigo ~= "9" and not table.contains(snd.setting_priority, "vertigo 9")	then
 		table.insert(snd.setting_priority, "vertigo 9")		 
@@ -5316,14 +5227,11 @@ end</script>
 	if snd.firstaidcuretrack.egocentrism ~= "9" and not table.contains(snd.setting_priority, "egocentrism 9")	then
 		table.insert(snd.setting_priority, "egocentrism 9")		 
 	end	
-	if snd.firstaidcuretrack.sadness ~= "10" and not table.contains(snd.setting_priority, "sadness 10")	then
-		table.insert(snd.setting_priority, "sadness 10")		 
+	if snd.firstaidcuretrack.sadness ~= "9" and not table.contains(snd.setting_priority, "sadness 9")	then
+		table.insert(snd.setting_priority, "sadness 9")		 
 	end	
-	if snd.firstaidcuretrack.paranoia ~= "10" and not table.contains(snd.setting_priority, "paranoia 10")	then
-		table.insert(snd.setting_priority, "paranoia 10")		 
-	end	
-	if snd.firstaidcuretrack.dementia ~= "10" and not table.contains(snd.setting_priority, "dementia 10")	then
-		table.insert(snd.setting_priority, "dementia 10")		 
+	if snd.firstaidcuretrack.dementia ~= "9" and not table.contains(snd.setting_priority, "dementia 9")	then
+		table.insert(snd.setting_priority, "dementia 9")		 
 	end	
  
 	if snd.firstaidcuretrack.deafness ~= "6" and not table.contains(snd.setting_priority, "deafness 6") then
@@ -5403,6 +5311,9 @@ function snd.firstaidassAscendril()
 	if snd.firstaidcuretrack.ablaze ~= "2" and not table.contains(snd.setting_priority, "ablaze 2") then
 		table.insert(snd.setting_priority, "ablaze 2")		 
 	end
+	if snd.firstaidcuretrack.torso_broken ~= "3" and not table.contains(snd.setting_priority, "torso_broken 3") then
+		table.insert(snd.setting_priority, "torso_broken 3")		 
+	end
 	if snd.firstaidcuretrack.left_leg_broken ~= "3" and not table.contains(snd.setting_priority, "left_leg_broken 3") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
 		table.insert(snd.setting_priority, "left_leg_broken 3")
 	end
@@ -5410,7 +5321,7 @@ function snd.firstaidassAscendril()
 		table.insert(snd.setting_priority, "right_leg_broken 3")
 	end 
 	if snd.firstaidcuretrack.frigid ~= "3" and not table.contains(snd.setting_priority, "frigid 3") then
-		table.insert(snd.setting_priority, "frigid 3")		 
+		table.insert(snd.setting_priority, "frigid 4")		 
 	end	
 	if snd.firstaidcuretrack.left_leg_mangled ~= "4" and not table.contains(snd.setting_priority, "left_leg_mangled 4") then
 		table.insert(snd.setting_priority, "left_leg_mangled 4")   
@@ -7120,29 +7031,29 @@ function snd.firstaidassSiderealist()
 end
 
 function snd.firstaidassTemplar()
+	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
+		table.insert(snd.setting_priority, "paresis 1")		 
+	end
 	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
 		table.insert(snd.setting_priority, "asthma 1")		 
 	end	
-	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
-		table.insert(snd.setting_priority, "clumsiness 1")		 
+	if snd.firstaidcuretrack.clumsiness ~= "2" and not table.contains(snd.setting_priority, "clumsiness 2") then
+		table.insert(snd.setting_priority, "clumsiness 2")		 
 	end	
-	if snd.firstaidcuretrack.crippled_body ~= "1" and not table.contains(snd.setting_priority, "crippled_body 1") then
-		table.insert(snd.setting_priority, "crippled_body 1")		 
-	end	
-	if snd.firstaidcuretrack.delirium ~= "1" and not table.contains(snd.setting_priority, "delirium 1") then
-		table.insert(snd.setting_priority, "delirium 1")   
+	if snd.firstaidcuretrack.delirium ~= "2" and not table.contains(snd.setting_priority, "delirium 2") then
+		table.insert(snd.setting_priority, "delirium 2")   
 	end
 	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
 		table.insert(snd.setting_priority, "stupidity 2")		 
 	end		
-	if snd.firstaidcuretrack.sensitivity ~= "2" and not table.contains(snd.setting_priority, "sensitivity 2") then
-		table.insert(snd.setting_priority, "sensitivity 2")		 
-	end
 	if snd.firstaidcuretrack.allergies ~= "2" and not table.contains(snd.setting_priority, "allergies 2") then
 		table.insert(snd.setting_priority, "allergies 2")		 
 	end
 	if snd.firstaidcuretrack.crippled ~= "2" and not table.contains(snd.setting_priority, "crippled 2") then
 		table.insert(snd.setting_priority, "crippled 2")		 
+	end
+	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
+		table.insert(snd.setting_priority, "sensitivity 3")		 
 	end
 	if snd.firstaidcuretrack.haemophilia ~= "3" and not table.contains(snd.setting_priority, "haemophilia 3") then
 		table.insert(snd.setting_priority, "haemophilia 3")		 
@@ -7152,9 +7063,6 @@ function snd.firstaidassTemplar()
 	end		
 	if snd.firstaidcuretrack.extravasation ~= "3" and not table.contains(snd.setting_priority, "extravasation 3") then
 		table.insert(snd.setting_priority, "extravasation 3")   
-	end
-	if snd.firstaidcuretrack.paresis ~= "3" and not table.contains(snd.setting_priority, "paresis 3") then
-		table.insert(snd.setting_priority, "paresis 3")		 
 	end
 	if snd.firstaidcuretrack.confusion ~= "4" and not table.contains(snd.setting_priority, "confusion 4") then
 		table.insert(snd.setting_priority, "confusion 4")		 
@@ -8194,7 +8102,7 @@ function snd.can_regenerate()
 	elseif snd.have_aff("allergies") and not snd.have_aff("asthma") and not snd.have_aff("paralysis") and not (snd.have_aff("clumsiness") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies"))
 		table.insert(snd.ordered_list, 1, "allergies")
-	elseif snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") then
+	elseif snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "faintness"))
 		table.insert(snd.ordered_list, 1, "faintness")
 	elseif snd.have_aff("weariness") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) and (snd.have_aff("clumsiness") or snd.have_aff("hypochondria")) then
@@ -8252,16 +8160,8 @@ function snd.can_regenerate()
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "perplexity"))
 		table.insert(snd.ordered_list, 1, "perplexity")
 	elseif snd.my_last_cured == "clumsiness" and snd.have_aff("slickness") and snd.class == "Carnifex" then
-		--if snd.have_aff("slickness") and snd.class == "Carnifex" then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
 			table.insert(snd.ordered_list, 1, "slickness")
-		--elseif snd.have_aff("paresis") then
-		--	table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis"))
-			--table.insert(snd.ordered_list, 1, "paresis")
-		--elseif snd.have_aff("paralysis") then
-			--table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
-			--table.insert(snd.ordered_list, 1, "paralysis")
-		--end
 	elseif snd.have_aff("besilence") and snd.cureset == "bard" then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "besilence"))
 		table.insert(snd.ordered_list, 1, "besilence")
@@ -8391,17 +8291,35 @@ function snd.can_regenerate()
         end
       end
     end
+  elseif snd.cureset == "archivist" then
+    if snd.checksomeSelfAffs(snd.physical_affs, 1) then
+      for _, aff in pairs(snd.physical_affs) do
+        if snd.have_aff(aff) then
+           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+           table.insert(snd.ordered_list, 1, aff)
+        end
+      end
+    elseif snd.have_aff("patterns") and snd.have_aff("lemniscate") and snd.checksomeSelfAffs(snd.physical_affs, 0) then
+      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "patterns"))
+      table.insert(snd.ordered_list, 1, "patterns")
+    end
 	end
   
   if table.contains(snd.elevatedaff, snd.ordered_list[1]) then
     if snd.elevatedaff[1] ~= snd.ordered_list[1] then
-      send("firstaid unelevate "..snd.elevatedaff[1], false)
+      send("firstaid unelevate "..snd.elevatedaff[1])
       echo("\n"..snd.elevatedaff[1].." is being unelevated with higher priority item")
-      send("firstaid elevate "..snd.ordered_list[1], false)
+      send("firstaid elevate "..snd.ordered_list[1])
       echo("\n"..snd.ordered_list[1].." is being elevated as higher priority")
     else
       echo("\n"..snd.ordered_list[1].." is already elevated")
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, snd.ordered_list[1]))
+      if table.contains(snd.firstaidpredict, snd.ordered_list[1]) then
+        table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, snd.ordered_list[1]))
+      end
+      if table.contains(snd.firstaidtobepredicted, snd.ordered_list[1]) then
+        table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.ordered_list[1]))
+      end
     end
   else 
     if snd.elevatedaff[1] ~= snd.ordered_list[1] and #snd.ordered_list &gt;= 1 and snd.have_aff(snd.ordered_list[1]) then
@@ -8409,8 +8327,14 @@ function snd.can_regenerate()
 				send("firstaid priority defence courage 26", false)
 				snd.firstaidchangecure = true
 			end
-			send("firstaid elevate "..snd.ordered_list[1], false)
+			send("firstaid elevate "..snd.ordered_list[1])
       echo("\n"..snd.ordered_list[1].." being elevated")
+      if table.contains(snd.firstaidpredict, snd.ordered_list[1]) then
+        table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, snd.ordered_list[1]))
+      end
+      if table.contains(snd.firstaidtobepredicted, snd.ordered_list[1]) then
+        table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.ordered_list[1]))
+      end
     end
   end  
 end</script>
@@ -9193,6 +9117,44 @@ v15344 = "city"
     name = "Makeshift hut near the dock",
     num = 71508
   },
+  
+  {
+    area = "within synaethetic throes",
+    environment = "Ancient forest",
+    exits = {
+      e = 1231,
+      ne = 42826,
+      s = 80760,
+      sw = 57583
+    },
+    name = "Within synaesthetic fury",
+    num = 83252
+  },
+  {
+    area = "Light's Purchase",
+    environment = "Temple",
+    exits = {
+      e = 1231,
+      ne = 74265,
+      se = 74152,
+      sw = 74784
+    },
+    name = "Immured by holy light",
+    num = 73940
+  },
+  {
+    area = "Earthen Font",
+    environment = "Graveyard",
+    exits = {
+      e = 59772,
+      n = 17033,
+      s = 21043,
+      se = 1231,
+      sw = 57770
+    },
+    name = "The Earthen Font",
+    num = 35572
+  }
 }
 
 
@@ -9650,11 +9612,11 @@ registerAnonymousEventHandler("sunder_login", "snd.mapTweaks")
 					<packageName></packageName>
 					<script>function snd.movement(dir, modifier)
   if snd.movement_override then snd.movement_override(dir, modifier) return end
-  if (snd.toggles.monomode == "on" or (snd.toggles.monomode =="calling" and snd.toggles.calling)) and not snd.toggles.fasthunt and snd.class~="Ravager" and snd.class~="Zealot" then
-    snd.send("qeb get monolith"..snd.sep..dir..snd.sep.."drop monolith")
-  else
+  --if (snd.toggles.monomode == "on" or (snd.toggles.monomode =="calling" and snd.toggles.calling)) and not snd.toggles.fasthunt and snd.class~="Ravager" and snd.class~="Zealot" then
+    --snd.send("qeb get monolith"..snd.sep..dir..snd.sep.."drop monolith")
+  --else
     snd.send("qeb "..dir)
-  end
+  --end
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -10853,7 +10815,7 @@ end</script>
   ["You are completely fearless."] = "fearless",
   ["Your soulstone is split to support your weapon, body, and armour."] = "soul_fracture",
   ["Your soul has been fortified."] = "soul_fortify",
-  ["You have the safeguard of an Idreth."] = "safeguard",
+  ["You are surrounded by a safeguard charm."] = "safeguard",
   ["You have the miasma of an Azudim."] = "safeguard",
   ["You have the warmth of a Yeleni."] = "safeguard",
   ["You are prepared to counterattack against physical aggression."] = "maingauche",
@@ -11713,12 +11675,11 @@ def_bracing = "once",
 def_hardening = "once",
 },
 
-bloodborn = {
-def_victimise = "once",
-def_empowered_moon = "on",
-def_panoply = "on",
-def_forestall = "on",
-},
+  bloodborn = {
+    def_panoply = "on",
+    def_empowered_boar = "once",
+    def_forestall = "on",
+  },
 
 carnifex = {
 def_fearless = "on",
@@ -12392,7 +12353,7 @@ end
 		elseif snd.cureset == "ascendril" then
 			if snd.have_aff("blisters") or snd.have_aff("impairment") then
 				snd.toparry = "head"
-			elseif snd.rimespear then
+			elseif snd.rimespeared &gt; 1 then
 				snd.toparry = "torso"
 			elseif snd.my_limb_damage["left arm"] &gt; 12 then
 				snd.toparry = "left arm"
@@ -12429,11 +12390,11 @@ end
 	end
 
 	if snd.toparry ~= "none" and snd.toparry ~= snd.parrying and snd.full_balance() and not snd.waiting.parry then
-		if snd.class == "Zealot" and hasSkill("Fending") then
+		if snd.class == "Zealot" then
 			snd.send("fend "..snd.toparry)
-		elseif snd.class == "Monk" and hasSkill("Guarding") then
+		elseif snd.class == "Monk" then
 			snd.send("guard "..snd.toparry)
-		elseif snd.class == "Ravager" and hasSkill("Oppose") then
+		elseif snd.class == "Ravager" then
 			snd.send("oppose "..snd.toparry)
 		elseif hasSkill("Parrying") then
 			snd.send("parry "..snd.toparry)
@@ -12504,16 +12465,6 @@ function snd.aff_gain(affliction)
       snd.def_take("speed")
       return
     end
-  --elseif affliction == "paresis" then
-    --if snd.paraTimer then killTimer(snd.paraTimer) end
-     -- if not snd.class == "Carnifex" then
-     --   snd.paraTimer = tempTimer(2, [[if snd.have_aff("paresis") and not table.contains(snd.elevatedaff, "paresis") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
-      --else
-      --  snd.paraTimer = tempTimer(2.7, [[if snd.have_aff("paresis") and not table.contains(snd.elevatedaff, "paresis") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paresis")) table.insert(snd.ordered_list, 1, "paresis") end]])
-      --end
-  --elseif affliction == "allergies" then
-    --if snd.allergyTimer then killTimer(snd.allergyTimer) end
-	  --snd.allergyTimer = tempTimer(18, [[if snd.have_aff("allergies") and not table.contains(snd.elevatedaff, "allergies") then table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies")) table.insert(snd.ordered_list, 1, "allergies") end]])
   end
   snd.message("You: &lt;red&gt;GOT&lt;DeepSkyBlue&gt; " .. affliction .. ".", "affliction")
   snd.aff_have(affliction)
@@ -12524,48 +12475,48 @@ end
 -- @param affliction string of aff
 function snd.aff_have(affliction)
   if snd.cureset == "archivist" then
-    if table.contains(snd.circle_affs, affliction) then
-      hit_aff = false
-      for aff in pairs(snd.circle_affs) do
-        if not hit_aff then
-          if snd.circle_affs[aff] == affliction then
-            hit_aff = true
-          else
-            table.insert(snd.firstaidtobepredicted, snd.circle_affs[aff])
-          end
-        end
-      end
+    if affliction == "masochism" then
+      snd.afflictions["aff_mercy"].state = "afflicted"
+    elseif affliction == "mania" then
+      snd.afflictions["aff_masochism"].state = "afflicted"
+      snd.afflictions["aff_mercy"].state = "afflicted"
+    elseif affliction == "recklessness" then
+      snd.afflictions["aff_mania"].state = "afflicted"
+      snd.afflictions["aff_masochism"].state = "afflicted"
+      snd.afflictions["aff_mercy"].state = "afflicted"
     end
-    if table.contains(snd.square_affs, affliction) then
-      hit_aff = false
-      for aff in pairs(snd.square_affs) do
-        if not hit_aff then
-          if snd.square_affs[aff] == affliction then
-            hit_aff = true
-          else
-            table.insert(snd.firstaidtobepredicted, snd.square_affs[aff])
-          end
-        end
-      end
+    if affliction == "infatuation" then
+      snd.afflictions["aff_laxity"].state = "afflicted"
+    elseif affliction == "peace" then
+      snd.afflictions["aff_infatuation"].state = "afflicted"
+      snd.afflictions["aff_laxity"].state = "afflicted"
+    elseif affliction == "magnanimity" then
+      snd.afflictions["aff_peace"].state = "afflicted"
+      snd.afflictions["aff_infatuation"].state = "afflicted"
+      snd.afflictions["aff_laxity"].state = "afflicted"
     end
-    if table.contains(snd.triangle_affs, affliction) then
-      hit_aff = false
-      for aff in pairs(snd.triangle_affs) do
-        if not hit_aff then
-          if snd.triangle_affs[aff] == affliction then
-            hit_aff = true
-          else
-            table.insert(snd.firstaidtobepredicted, snd.triangle_affs[aff])
-          end
-        end
-      end
-    end
+    if affliction == "faintness" then
+      snd.afflictions["aff_dizziness"].state = "afflicted"
+    elseif affliction == "epilepsy" then
+      snd.afflictions["aff_faintness"].state = "afflicted"
+      snd.afflictions["aff_dizziness"].state = "afflicted"
+    elseif affliction == "shyness" then
+      snd.afflictions["aff_epilepsy"].state = "afflicted"
+      snd.afflictions["aff_faintness"].state = "afflicted"
+      snd.afflictions["aff_dizziness"].state = "afflicted"
+    end 
   end
   if not string.find(affliction, "aff_") then
     affliction = "aff_" .. affliction
   end
   if snd.afflictions[affliction].state == "healed" then
     snd.afflictions[affliction].state = "afflicted"
+    if table.contains(snd.firstaidpredict, affliction) then
+      table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, affliction))
+    end
+    if table.contains(snd.firstaidtobepredicted, affliction) then
+      table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, affliction))
+    end
     snd.player_has[affliction] = true
     raiseEvent("sunder_my_affs_updated")
     raiseEvent("sunder_my_limbs_updated")
@@ -14652,6 +14603,7 @@ snd.sleight = "void"
 snd.battle_aff = "none"
 snd.chasten_aff = "none"
 snd.needswarm = true
+snd.graft = false
 
 --Predator
 snd.fleshbaneStacks = 0
@@ -14890,6 +14842,7 @@ snd.cures = {
     "shivering",
     --"no_caloric"
   },
+  
   mending = {
     "destroyed_throat",
     "crippled_throat",
@@ -15016,7 +14969,7 @@ snd.cures = {
       "infestation",
     },
     
-    salve = {
+  salve = {
     "pre_restore_left_leg",
     "pre_restore_right_leg",
 	  "pre_restore_left_arm",
@@ -15842,7 +15795,7 @@ snd.cardshapes =
 
 for aff, source in pairs(snd.effects) do
   -- ignore venoms covered by other cards
-  if not snd.cardshapes.indorani[aff] or not snd.cardshapes.oneiromancer[aff] and table.contains(snd.venoms, source) then
+  if not snd.cardshapes.indorani[aff] and table.contains(snd.venoms, source) then
   -- only do effects given by venoms
       if snd.class == "Indorani" then
         snd.cardshapes.indorani[aff] = { card = "adder" }
@@ -24009,6 +23962,28 @@ end</script>
 							</Script>
 						</Script>
 					</ScriptGroup>
+					<Script isActive="yes" isFolder="no">
+						<name>Monk Scripts</name>
+						<packageName></packageName>
+						<script>snd.banish_list = {}
+snd.banished_list = {}
+
+--Check if they're not main target, not already banished, not shielded/domed, and not on CD, then banish them
+
+function banishselect()
+  banishtarget = false
+  for i, v in ipairs(snd.targeting.list) do
+    if snd.target ~= v and not snd.target_gone and not table.contains(snd.banished_list, v) then
+      if table.contains(snd.players_here, v) then
+        banishtarget = v
+        echo("\nNext to banish: "..banishtarget)
+      end
+      break
+    end
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Targetting</name>
@@ -24026,6 +24001,7 @@ function snd.setTarget(target)
   end
   echo("Target: " .. snd.target)
   send(" ")
+  --send("curt "..snd.target)
   if snd.target_trigger_id then killTrigger(snd.target_trigger_id) end
   snd.target_trigger_id = tempTrigger(snd.target,
     [[selectString("]] .. snd.target .. [[", 1) fg("DarkOrchid") resetFormat()]])
@@ -24535,6 +24511,14 @@ function snd.target_used(curative)
             --nothing happens
           elseif snd.cures[curative][affliction] == "hellsight" and snd.checkAff("accursed") then
             --nothing happens
+          elseif curative == "depressant" and table.contains(snd.circle_affs, i) and snd.checksomeAffs({"sealing_circle", "etched_disgust"}, 1) then 
+            --nothing
+          elseif curative == "steroid" and table.contains(snd.triangle_affs, i) and snd.checksomeAffs({"sealing_triangle", "etched_joy"}, 1) then 
+            --nothing
+          elseif curative == "euphoriant" and table.contains(snd.square_affs, i) and snd.checksomeAffs({"sealing_square", "etched_fear"}, 1) then 
+            --nothing
+          elseif snd.checkAff("mindfog") and table.contains(snd.mental_affs, snd.target_has[i]) then
+            cecho("&lt;yellow&gt; cure blocked by mindfog")
           else
             snd.target_cured(snd.cures[curative][affliction])
             aff_found = true
@@ -24970,6 +24954,8 @@ function snd.reset_target()
   snd.transmutation = true
   snd.locking = false
   snd.backbroken = 0
+  snd.banish_list = {}
+  snd.banished_list = {}
   
   --Indorani/Oneiromancer
   snd.target_has_aura = true
@@ -25155,6 +25141,7 @@ function snd.no_parry()
   "writhe_dartpinned",
   "writhe_ice",
   "unconsciousness",
+  "stun",
  }
  if snd.class == "Sentinel" or snd.class == "Executor" then
   table.insert(noparryaffs, "arrhythmia")
@@ -25637,6 +25624,7 @@ function snd.attack(attack, new)
   
   str = "stand"..snd.sep..str
   local fitnessstring = ""
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   
   if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset == "melee" then
     str = "nimbleness"..snd.sep..str..snd.sep
@@ -25715,7 +25703,7 @@ function snd.attack(attack, new)
 		  str = "remove ironcollar"..snd.sep..str..snd.sep
     elseif snd.not_aff("stun") and ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout") and snd.not_aff("asleep")) then
       str = snd.endgamehealth..snd.sep..str..snd.sep
-    elseif hp &lt;= 20 and snd.balance.crystal then
+    elseif hp &lt;= 30 and snd.balance.crystal then
       str = "touch crystal"..snd.sep..str..snd.sep
     else
       str = str
@@ -25847,6 +25835,9 @@ end</script>
     end
     if snd.resolve &gt;= "90" and gmcp.Room.Info.area == "the Endless Battlefield" then
       table.insert(snd.alerts, "\n&lt;red&gt;      YOU SHOULD STOP BASHING HERE")
+    end
+    if snd.resolve &gt;= "95" and gmcp.Room.Info.area == "the Endless Battlefield" then
+      --snd.send("wt I'm at "..snd.resolve)
     end
     if #snd.alerts &gt;= 1 then
       border = "\n&lt;red&gt;*************************************"
@@ -26107,6 +26098,8 @@ end</script>
     Exhort = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
     end,
     Confusion = function(target)
@@ -26515,6 +26508,9 @@ end</script>
     Fireburst = function(target)
       if not target then return end
       snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
     end,
     
     Ashenfeet = function(target)
@@ -26573,6 +26569,8 @@ end</script>
     Transfix = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
       snd.balance.sorcery_transfix = false
     end,
@@ -26605,6 +26603,9 @@ end</script>
     Retch = function(target)
       if not target then return end
       snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
     end,
     Twist = function(target)
       snd.target_got("ashen_feet")
@@ -26658,6 +26659,8 @@ end</script>
     Enthrall = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
     end,
 
@@ -27017,6 +27020,9 @@ end</script>
                 end,
   Firebreath = function(target)
                  snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
                end,
   --Ululate = function(target)
       --      if table.contains(snd.players_here, snd.target) and snd.hitting ~= snd.target then
@@ -27112,6 +27118,9 @@ end</script>
   
   Dust = function(target)
            snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
            snd.target_got("salve_seared")
            snd.affTimers.start("salve_seared", 15)
          end,
@@ -27187,6 +27196,8 @@ end</script>
     Transfixion = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
     end,
     Vent = function(target)
@@ -27199,6 +27210,9 @@ end</script>
            end,
     Spew = function(target)
              snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
              enableTrigger("Fervour Spew")
            end,
     Aftershock = function(target)
@@ -27475,6 +27489,9 @@ end</script>
   
   Sear = function(target)
            snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
            snd.target_got("salve_seared")
            snd.affTimers.start("salve_seared", 15)
          end,
@@ -27550,6 +27567,8 @@ end</script>
     Transfixion = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
     end,
     Heatwave = function(target)
@@ -27562,6 +27581,9 @@ end</script>
            end,
     Fire = function(target)
              snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
              enableTrigger("Illumination Fire")
            end,
     Shadow = function(target)
@@ -27893,6 +27915,8 @@ end</script>
     Mesmerize = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
     end,
     Confusion = function(target)
@@ -28354,14 +28378,10 @@ end</script>
                 snd.target_got("heatspear")
               end,
 
-  --Torment = function(target)
-    --         snd.target_got("ablaze")
-    --       end,
   Denial = function(target)
                 snd.used.rebounding = true
               end,
   Intensify = function(target)
-            --snd.target_got("ablaze")
             snd.flamestack = snd.flamestack + 3
             end,
   Bedevil = function(target, direction)
@@ -28580,6 +28600,8 @@ end</script>
     Transfix = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
       snd.balance.sorcery_transfix = false
     end,   
@@ -28694,6 +28716,8 @@ end</script>
     Bewitch = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
       snd.balance.sorcery_transfix = false
     end, 
@@ -28928,53 +28952,58 @@ end</script>
   },
   ["Crystalism"] = {
   Tones =
-    function(target, vibe)
-      if vibe == "Dissipate" then
-        if snd.checkAff("confusion") then
-          snd.vital_change("mana", -14)
-        else
-          snd.vital_change("mana", -7)
-        end
-      elseif vibe == "Palpitation" then
-        if snd.checkAff("paralysis") then
-          snd.vital_change("health", -6)
-        else
-          snd.vital_change("health", -4)
-        end
-      elseif vibe == "Tremors" then
-        snd.target_got("fallen")
-      elseif vibe == "Creeps" then
-        if snd.checkAff("loneliness") then
-          snd.target_got("masochism")
-        else
-          snd.target_got("loneliness")
-        end
-      elseif vibe == "Oscillate" then
-        snd.affTimers.start("muddled", 8.5)
-      elseif vibe == "Disorientation" then
-        if snd.checkAff("epilepsy") then
-          snd.target_got("mania")
-        else
-          snd.target_got("epilepsy")
-        end
+    function(target, vibe, conditional)
+          if vibe == "Dissipate" then
+            if snd.checkAff("confusion") then
+              snd.vital_change("mana", -14)
+            else
+              snd.vital_change("mana", -7)
+            end
+          elseif vibe == "Palpitation" then
+            if snd.checkAff("paralysis") then
+              snd.vital_change("health", -6)
+            else
+              snd.vital_change("health", -4)
+            end
+          elseif vibe == "Tremors" then
+            snd.target_got("fallen")
+          elseif vibe == "Creeps" then
+            if snd.checkAff("loneliness") then
+              snd.target_got("masochism")
+            else
+              snd.target_got("loneliness")
+            end
+          elseif vibe == "Oscillate" then
+            snd.target_got("muddled")
+            snd.affTimers.start("muddled", 8.5)
+          elseif vibe == "Disorientation" then
+            if snd.checkAff("epilepsy") then
+              snd.target_got("mania")
+            else
+              snd.target_got("epilepsy")
+            end
           elseif vibe == "Stridulation" then
             if snd.checkAff("no_courage") then
               snd.target_got("ringing_ears")
             else
               snd.target_got("no_courage")
             end
-      elseif vibe == "Gravity" then
-        snd.lev_gone = true
-      elseif vibe == "Crystalforest" then
-        snd.used.shield = false
-      elseif vibe == "Dissension" then
-        snd.target_got("dissonance")
-      elseif vibe == "Lullaby" then
-        snd.target_got("sleep")
-      elseif vibe == "Plague" then
-        --add in a flag here to detect plague tone secondary line, for anti illusion purposes?
-      end
-    end
+          elseif vibe == "Gravity" then
+            snd.lev_gone = true
+          elseif vibe == "Crystalforest" then
+            snd.used.shield = false
+          elseif vibe == "Dissension" then
+            snd.target_got("dissonance")
+          elseif vibe == "Lullaby" then
+            if conditional == "hypersomnia" then
+              snd.target_got("hypersomnia")
+            else
+              snd.target_got("sleep")
+            end
+          elseif vibe == "Plague" then
+            --add in a flag here to detect plague tone secondary line, for anti illusion purposes?
+          end
+        end
   },
   ["Ostension"] = {
     Averroes = function(target, bolt, limb)
@@ -29436,6 +29465,10 @@ end</script>
         snd.onHit2({ "Dodge" })
       end
     end,
+    
+    Petrify = function(target)
+      snd.target_got("cold")
+    end,
 
   },
 
@@ -29450,6 +29483,8 @@ end</script>
     Bewitch = function(target, courage)
       if not courage then
         snd.target_got("writhe_transfix")
+      else
+        snd.target_cured("no_courage")
       end
     end,
     Confusion = function(target)
@@ -29584,7 +29619,11 @@ end</script>
                   enableTrigger("Infiltrator Hit Confirmation")
                  end,
                  
-    Bite = function(target, venom)
+    Fangs = function(target, venom)
+            if venom == "failure" then
+              snd.used.paste = true
+              return
+            end
             snd.used.paste = false
             if venom ~= "camus" then
              snd.target_got(snd.venomEffect(venom))
@@ -30452,6 +30491,9 @@ end</script>
                 end,
   Firekeeper = function(target)
                  snd.target_got("ablaze")
+  if snd.checkAff("ablaze") then
+    snd.flamestack = snd.flamestack + 1
+  end
                end,    
  Harrier = function(target)
               if snd.checkAff("weariness") then
@@ -30765,14 +30807,10 @@ end</script>
                 snd.target_got("heatspear")
               end,
 
-  Scorch = function(target)
-             snd.target_got("ablaze")
-           end,
   Rejection = function(target)
                 snd.used.rebounding = true
               end,
   Quicken = function(target)
-            --snd.target_got("ablaze")
             snd.flamestack = snd.flamestack + 3
             end,
   Pendulum = function(target, direction)
@@ -30944,6 +30982,7 @@ function snd.calc.crescentcutMultiplier()
   if snd.checkAff("left_leg_crippled") then multi = multi + .1 end
   if snd.checkAff("right_leg_crippled") then multi = multi + .1 end
   if snd.checkAff("fallen") then multi = multi + .25 end
+  if snd.checkAff("shock") then multi = multi + .4 end
   --writhe affs
   for _, aff in pairs(snd.entangleaffs) do
     if snd.checkAff(aff) then
@@ -48565,6 +48604,10 @@ function snd.bashing_function()
     
 			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep end -- if you have a level 2 gauntlet, auto-absorb, .."absorb ylem"
       
+      hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+      wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
+      bp = tonumber(gmcp.Char.Vitals.blood)
+      
       if hp &lt;= 30 and snd.balance.crystal then
         battack = "touch crystal"..snd.sep..battack..snd.sep
       end
@@ -48606,32 +48649,6 @@ function snd.chaos_lord_bash()
   else
     battack = "astral evert "..snd.bashing.target
  	end
-end
-
-function snd.akkari_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  bp = tonumber(gmcp.Char.Vitals.blood)
-  battack = ""
-  
-	if hp &lt;=40 and snd.shield_check then
-    if snd.punisher then -- if they will kill you for having a shield, don't do it
-    else
-      battack = "touch shield" -- otherwise, shield
-    end
-  elseif hp &lt;= 45 and bp &gt;= 30 and snd.balance.mend and hasSkill("Vivify") then
-    battack = "vivify"
-  elseif bp &gt;= 50 and hp &lt;= 30 and hasSkill("Unbroken") then
-    if snd.balance.unbroken and snd.defenses.def_unbroken.state == "down" then
-      battack = "spirit unbroken"..snd.sep.."denounce "..snd.bashing.target
-    else
-      battack = "denounce "..snd.bashing.target
-    end
-  elseif bp &lt;= 25 then
-    battack = "deliver corpse"
-  else
-    battack = "denounce "..snd.bashing.target
-  end
 end
 
 function snd.alchemist_bash()
@@ -48714,6 +48731,25 @@ function snd.bard_bash()
   end
 end
 
+function snd.bloodborn_bash()
+  hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
+  wp = 100 * (gmcp.Char.Vitals.wp / gmcp.Char.Vitals.maxwp)
+
+  if hp &lt;= 60 and snd.reflection_charge &gt; 0 and snd.defenses.def_reflection.state ~= "deffed" then
+    battack = battack.."unleash geminate"  
+  elseif (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
+    battack = battack.."touch shield"
+  elseif snd.defenses.def_reflection.state == "deffed" and #snd.group &lt; 1 then
+  -- let the reflection do its job
+  elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
+    battack = "unleash geminate"
+  elseif hasSkill("Flense") then
+    battack = "humour flense " .. snd.bashing.target
+  else
+    battack = "unleash victimise " .. snd.bashing.target
+  end
+end
+
 function snd.carnifex_bash()
 
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
@@ -48735,12 +48771,21 @@ function snd.earthcaller_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 	
-  if (hp &lt;= 40 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
-      battack = "touch shield"
-	elseif snd.toggles.lightning then
-  	battack = "tectonic ashfall "..snd.bashing.target
- 	else
-  	battack = "quash "..snd.bashing.target
+  if (hp &lt;= 40 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then
+    if snd.shield_check then
+      battack = "touch shield"..snd.sep
+    else
+      battack = "osso ossification"..snd.sep.."OSSO SPLINTER"..snd.sep
+    end
+  elseif snd.needswarm then
+    battack = "osso draw"..snd.sep
+	else
+    battack = "quash "..snd.bashing.target
+    if not snd.graft then      
+      battack = battack..snd.sep.."OSSO GRAFT"..snd.sep
+    else
+      battack = battack..snd.sep.."OSSO SPLINTER"..snd.sep
+    end
  	end
 end
  
@@ -48763,7 +48808,7 @@ function snd.indorani_bash()
 	elseif hp &lt;= 55 and hasSkill("Priestess") then
     battack = "fling priestess at me"
   else
-    battack = "decay "..snd.bashing.target
+    battack = "flick bonedagger at "..snd.bashing.target
   end
 end
 
@@ -48814,36 +48859,12 @@ function snd.monk_bash()
   end
   
   if (hp &lt;= 30 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 500) and snd.shield_check then
-      battack = battack..snd.sep.."touch shield"
-	elseif snd.toggles.cobra and hasSkill("Cobra") then
-  	if snd.stance ~= "cobra" then
-      battack = battack.."cbs"
-    else
-      battack = battack.."combo "..snd.bashing.target.." spk spk"
-    end
-  elseif snd.stance ~= "scorpion" then
-    battack = battack.."combo "..snd.bashing.target.." scs ucp ucp"
+      battack = battack.."touch shield"..snd.sep
+	--elseif snd.stance ~= "scorpion" then
+  --  battack = battack.."combo "..snd.bashing.target.." scs ucp ucp"..snd.sep
   else 
-    battack = battack.."combo "..snd.bashing.target.." spk ucp ucp"
+    battack = battack.."combo "..snd.bashing.target.." spk ucp ucp"..snd.sep
 	end
-end
-
-function snd.oneiromancer_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-
-  if hp &lt;=40 and snd.shield_check then
-    battack = "touch shield"
-  elseif hp &lt;= 55 and hasSkill("Flower") then
-    battack = "unfurl flower at me"
-  elseif snd.toggles.newbie then
-    battack = "starlight "..snd.bashing.target
-  else
-    if snd.wielded.left.name == "athame" or snd.wielded.right.name == "athame" then
-       battack = "impel athame at "..snd.bashing.target
-    else
-       battack = "starlight "..snd.bashing.target
-    end
-  end
 end
 
 function snd.praenomen_bash()
@@ -48912,36 +48933,6 @@ function snd.revenant_bash()
   end
 end
 
-function snd.runecarver_bash()
-	hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  
-	if tonumber(snd.repay) &lt; 1 and hp &gt; 55 and tonumber(gmcp.Char.Vitals.spiritpact) &gt; 0 and not snd.have_aff("recklessness") then
-	 battack = battack.."hex obeisance"..snd.sep
-	end -- let's try to get pacts back up to 2 times without getting too hurt
-    
-	if (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 60) and snd.shield_check then --snd.have_aff("blackout") or 
-		if snd.punisher then
-			if snd.reflection_charge &gt; 0 and snd.defenses.def_reflection.state ~= "deffed" then
-				battack = battack.."runecarve branch"
-			end
-		else
-			battack = battack.."touch shield"
-		end 
-	elseif snd.defenses.def_reflection.state == "deffed" and hp &lt;= 60 then
-		-- let the reflection do its job
-	elseif hp &lt;= 60 and snd.reflection_charge &gt; 0 then
-		battack = battack.."runecarve branch"
-	elseif snd.toggles.newbie then
-		battack = battack..snd.sep.."hex enervate "..snd.bashing.target
-	else
-		if tonumber(gmcp.Char.Vitals.spiritpact) &lt; 2 and hasSkill("Spiritpact") then
-			battack = battack.."spiritpact despair " ..snd.bashing.target..snd.sep.."hex malady "..snd.bashing.target
-		else
-			battack = battack.."hex malady " ..snd.bashing.target
-		end
-	end
-end
-
 function snd.sciomancer_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   shadowprice = tonumber(gmcp.Char.Vitals.shadowprice)
@@ -48954,7 +48945,7 @@ function snd.sciomancer_bash()
     battack = battack.."cast reflection"  
   elseif (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) and snd.shield_check then
     battack = battack.."touch shield"
-  elseif hp &lt;= 60 and snd.defenses.def_reflection.state == "deffed" then
+  elseif snd.defenses.def_reflection.state == "deffed" and #snd.group &lt; 1 then
   -- let the reflection do its job
   else
     if hasSkill("Shadowprice") and tonumber(gmcp.Char.Vitals.shadowprice) &lt; 4  then
@@ -48963,21 +48954,6 @@ function snd.sciomancer_bash()
       battack = battack.."cast fever " ..snd.bashing.target
     end
   end
-end
- 
-function snd.sentinel_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	
-  if hp &lt;=40 and snd.shield_check then
-    if snd.punisher then
-    else
-      battack = "touch shield"
-    end
-  elseif snd.toggles.newbie then
-  	battack = "dhuriv combo "..snd.bashing.target.." slash stab"
- 	else
-  	battack = "dhuriv combo "..snd.bashing.target.." crosscut thrust"
- 	end
 end
 
 function snd.shapeshifter_bash()
@@ -48988,59 +48964,6 @@ function snd.shapeshifter_bash()
 	else
     battack = "combo "..snd.bashing.target.." slash slash"
 	end
-end
-
-function snd.shaman_bash()
-
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp) 
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  
-  if snd.familiar and snd.balance.morph and hasSkill("Morph") then
-    if snd.shamanpet == "bear" then
-      battack = "order spirit passive"..snd.sep.."familiar morph spider"
-    elseif snd.shamanpet == "spider" then
-      battack = "order spirit passive"..snd.sep.."familiar morph bear"
-    else
-      battack = "order spirit passive"..snd.sep.."familiar morph bear"
-    end
-  else
-    if not snd.familiar then
-      battack = "familiar recall"..snd.sep.."order spirit passive"..snd.sep.."order spirit follow me"
-    end
-  end
-
-  if hp &lt;=40 and snd.shield_check then
-    battack = "touch shield"
-	else
-    if tonumber(gmcp.Char.Vitals.energy) &gt; 3 then
-      battack = battack..snd.sep.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
-    else
-      battack = battack..snd.sep.."commune lightning "..snd.bashing.target
-    end 
-	end
-end
-
-function snd.templar_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
-  endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
-
-	if hp &lt;=40 and snd.shield_check then
-    battack = "touch shield"
-  elseif snd.toggles.newbie then
-		battack = "strikebash "..snd.bashing.target
-  elseif (snd.wielded.left.name:find("warhammer") or snd.wielded.left.name:find("bastard") or snd.wielded.left.name:find("glaive")) and hasSkill("Doubleswing") then
-    battack = "dsw "..snd.bashing.target
-  else
-  	battack = "dsk "..snd.bashing.target
-	end
-	if (hp &gt;= 61 and wp &gt;= 50 and hasSkill("Sacrifice") and endur&gt;=45) and not snd.toggles.newbie then 
-    battack = battack.. " sacrifice sacrifice"
-  elseif not snd.toggles.newbie and hasSkill("Cleanse") then
-    battack = "cleanse left"..snd.sep.."cleanse right"..snd.sep..battack
-  end
 end
 
 function snd.teradrim_bash()
@@ -49059,42 +48982,6 @@ function snd.teradrim_bash()
 	end
 end
 
-function snd.voidseer_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  bioessence = tonumber(gmcp.Char.Vitals.insight) or 0
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-  
-    if hp &lt;= 70 and not snd.knit and bioessence &gt; 0 and hasSkill("Alleviate") then
-        battack = "void alleviate"
-    elseif hp &lt;= 60 and bioessence &gt; 1 and not snd.balance.ethereal and hasSkill("Disjoint") then
-        battack = "void disjoint"
-    elseif hp &lt;=40 and snd.shield_check then
-      battack = "touch shield"
-    else
-      if bioessence &gt; 1 and hasSkill("Aplomb") then
-        battack = "foment sadness "..snd.bashing.target..snd.sep.."void aplomb"
-      else
-        battack = "foment sadness " ..snd.bashing.target
-      end
-    end
-end
-
-function snd.warden_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-	
-  if (hp &lt;= 60 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000) and snd.shield_check then
-    battack = "touch shield"
-  elseif hp &lt;= 50 and snd.soul &gt;= 60 then
-    battack = "ancest suffuse health"
-	else
-    if gmcp.Char.Vitals.wield_left:find("greatspear") then
-      battack = "warden lacerate "..snd.bashing.target
-    else
-      battack = "warden maul "..snd.bashing.target
-	 end
-  end
-end
-
 function snd.wayfarer_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   
@@ -49109,34 +48996,6 @@ function snd.wayfarer_bash()
   else
     battack = "axe chop "..snd.bashing.target
   end
-end
-
-function snd.zealot_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-
-  if (hp &lt;= 55 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then  
-    if not snd.shield_check and mp &gt;= 20 then
-      if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 and snd.cauterize then
-        battack = "enact cauterize me"..snd.sep
-        snd.cauterize = false
-        tempTimer(2,[[snd.cauterize = true]])
-      else
-        if hp &lt;= 55 then
-          battack = "respiration"
-        elseif mp &lt;= 50 then
-          battack = "meditate"
-        end
-      end
-    else
-      battack = "touch shield"
-    end
-  elseif not snd.can_arms() or snd.swagger &gt; 3 then
-    battack = "sunkick "..snd.bashing.target
-	else
-		battack = "flow "..snd.bashing.target.." pummel pummel"
-	end
-
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -50223,6 +50082,138 @@ end</script>
 					<name>Bashing toggles</name>
 					<packageName></packageName>
 					<script></script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Bashing display time</name>
+					<packageName></packageName>
+					<script>function snd.experiencelist()
+ _L = {}
+  if not gmcp.Room or not gmcp.Char.Vitals or not gmcp.Char.Vitals.maxxp or not gmcp.Char.Vitals.xp then return end
+ level = gmcp.Char.Status.level:match("(%d+)%s%(%d+%%%)")
+
+  expcal = gmcp.Char.Vitals.xp
+ 
+  _L["total100"] = 50.01 + 55 + 100.5 + 146.55 + 153.20 + 200.52 + 244.66 + 269.57 + 300 + 330 + 400 + 420 + 450 + 470 + 480 + 490 + 500 + 550 + 600 + 700 + 700 + 750 + 800 + 850 + 900 + 950 + 1000 + 1050 + 1100 + 1150 + 1200 + 1250 + 125 + 1300 + 1350 + 1400 + 1450 + 1500 + 1550 + 1550 + 1600 + 1600 + 1650 + 1650 + 1700 + 2340 + 2033.95 + 4409.87 + 4850.86 + 5335.94 + 5869.54 + 6456.49 + 7102.14 + 7812.36 + 8593.59 + 9452.95 + 10398.25 + 11438.07 + 12581.88 + 13840.07 + 15224.08 + 16746.49 + 18421.13 + 20263.25 + 22289.57 + 24518.53 + 26970.38 + 29660 + 32634.17 + 35897.58 + 39487.34 + 43436.08 + 47779.69 + 74995.75 + 100000 + 130000 + 170000 + 200000 + 300000 + 350000 + 400000 + 450000 + 500000 + 550000 + 600000 + 650000 + 700000 + 750000 + 800000 + 850000 + 900000 + 950000 + 1000000 + 1050000 + 1100000 + 1150000 + 1200000 + 1250000 + 3300000 + 3465000 + 3638250 + 3820162 + 4011170 + 4211728 + 4422314 + 4643429 + 4875600 + 5119380 + 5375349 + 5644116 + 5926321 + 6222637 + 6533768 + 6860456 + 7203478 + 7563651 + 7941833 + 8338924 + 8755870 + 9193663 + 9653346 + 10136013 + 10642813 + 11174953 + 11733700 + 12320385 + 12936404 + 13583224 + 14262385 + 14975504 + 15724279 + 16510492 + 17336016 + 18202816 + 19112956 + 20068603 + 21072033 + 22125634 + 23231915 + 24393510 + 25613185 + 26893844 + 28238536 + 29650462 + 31132985 + 32689634 + 34324115 + 36040320 + 37842336
+ 
+  _L["exp150"] = 39734452
+  _L["exp151"] = 41721174
+  _L["exp152"] = 43807232
+  _L["exp153"] = 45997593
+  _L["exp154"] = 48297472
+  _L["exp155"] = 50712345
+  _L["exp156"] = 53247962
+  _L["exp157"] = 55910360
+  _L["exp158"] = 58705878
+  _L["exp159"] = 61641171
+  _L["exp160"] = 64723229
+  _L["exp161"] = 67959390
+  _L["exp162"] = 71357359
+  _L["exp163"] = 74925226
+  _L["exp164"] = 78671487
+  _L["exp165"] = 82605061
+  _L["exp166"] = 86735314
+  _L["exp167"] = 91072079
+  _L["exp168"] = 95625682
+  _L["exp169"] = 100406966
+  _L["exp170"] = 105427314
+  _L["exp171"] = 110698679
+  _L["exp172"] = 116233612
+  _L["exp173"] = 122045292
+  _L["exp174"] = 128147556
+  _L["exp175"] = 134554933
+  _L["exp176"] = 141282679
+  _L["exp177"] = 148346812
+  _L["exp178"] = 155764152
+  _L["exp179"] = 163552359
+  _L["exp180"] = 171729976
+  _L["exp181"] = 180316474
+  _L["exp182"] = 189332297
+  _L["exp183"] = 198798911
+  _L["exp184"] = 208738856
+  _L["exp185"] = 219175798
+  _L["exp186"] = 230134587
+  _L["exp187"] = 241641316
+  _L["exp188"] = 253723381
+  _L["exp189"] = 266409550
+  _L["exp190"] = 279730027
+  _L["exp191"] = 293716528
+  _L["exp192"] = 308402354
+  _L["exp193"] = 323822471
+  _L["exp194"] = 340013594
+  _L["exp195"] = 357014273
+  _L["exp196"] = 374864986
+  _L["exp197"] = 393608235
+  _L["exp198"] = 413288646
+  _L["exp199"] = 433953078
+ 
+  _L["total150"] = _L["exp150"] + _L["total100"]
+  _L["total151"] = _L["exp151"] + _L["total150"]
+  _L["total152"] = _L["exp152"] + _L["total151"]
+  _L["total153"] = _L["exp153"] + _L["total152"]
+  _L["total154"] = _L["exp154"] + _L["total153"]
+  _L["total155"] = _L["exp155"] + _L["total154"]
+  _L["total156"] = _L["exp156"] + _L["total155"]
+  _L["total157"] = _L["exp157"] + _L["total156"]
+  _L["total158"] = _L["exp158"] + _L["total157"]
+  _L["total159"] = _L["exp159"] + _L["total158"]
+  _L["total160"] = _L["exp160"] + _L["total159"]
+  _L["total161"] = _L["exp161"] + _L["total160"]
+  _L["total162"] = _L["exp162"] + _L["total161"]
+  _L["total163"] = _L["exp163"] + _L["total162"]
+  _L["total164"] = _L["exp164"] + _L["total163"]
+  _L["total165"] = _L["exp165"] + _L["total164"]
+  _L["total166"] = _L["exp166"] + _L["total165"]
+  _L["total167"] = _L["exp167"] + _L["total166"]
+  _L["total168"] = _L["exp168"] + _L["total167"]
+  _L["total169"] = _L["exp169"] + _L["total168"]
+  _L["total170"] = _L["exp170"] + _L["total169"]
+  _L["total171"] = _L["exp171"] + _L["total170"]
+  _L["total172"] = _L["exp172"] + _L["total171"]
+  _L["total173"] = _L["exp173"] + _L["total172"]
+  _L["total174"] = _L["exp174"] + _L["total173"]
+  _L["total175"] = _L["exp175"] + _L["total174"]
+  _L["total176"] = _L["exp176"] + _L["total175"]
+  _L["total177"] = _L["exp177"] + _L["total176"]
+  _L["total178"] = _L["exp178"] + _L["total177"]
+  _L["total179"] = _L["exp179"] + _L["total178"]
+  _L["total180"] = _L["exp180"] + _L["total179"]
+  _L["total181"] = _L["exp181"] + _L["total180"]
+  _L["total182"] = _L["exp182"] + _L["total181"]
+  _L["total183"] = _L["exp183"] + _L["total182"]
+  _L["total184"] = _L["exp184"] + _L["total183"]
+  _L["total185"] = _L["exp185"] + _L["total184"]
+  _L["total186"] = _L["exp186"] + _L["total185"]
+  _L["total187"] = _L["exp187"] + _L["total186"]
+  _L["total188"] = _L["exp188"] + _L["total187"]
+  _L["total189"] = _L["exp189"] + _L["total188"]
+  _L["total190"] = _L["exp190"] + _L["total189"]
+  _L["total191"] = _L["exp191"] + _L["total190"]
+  _L["total192"] = _L["exp192"] + _L["total191"]
+  _L["total193"] = _L["exp193"] + _L["total192"]
+  _L["total194"] = _L["exp194"] + _L["total193"]
+  _L["total195"] = _L["exp195"] + _L["total194"]
+  _L["total196"] = _L["exp196"] + _L["total195"]
+  _L["total197"] = _L["exp197"] + _L["total196"]
+  _L["total198"] = _L["exp198"] + _L["total197"]
+  _L["total199"] = _L["exp199"] + _L["total198"]
+
+
+
+  if tonumber(level) &lt; 151 then
+    snd.haveleft = 0
+  elseif tonumber(level) &gt; 199 then
+    snd.haveleft = 0
+  else
+    snd.haveleft = _L["total199"]*100 + 455650731*100 - (_L["total"..level]*100) - expcal
+    snd.haveleft2 = _L["total199"] + 455650731 - _L["total"..level] - expcal
+    snd.totalxp = _L["total199"]
+  end
+  
+  --echo("\nRemaining xp: "..snd.haveleft.." Percet left: "..((snd.totalxp / snd.haveleft2)*100))
+ 
+ 
+end</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
