@@ -17961,6 +17961,8 @@ if snd.class == "Teradrim" then
 			if snd.balance.momentum then
 				string = "earth momentum"..snd.sep..string
 			end
+      
+      string = string..snd.sep.."golem recover"
 		
 			if string ~= snd.last_attack and not snd.waiting.queue then
 				snd.last_attack = string
@@ -19173,6 +19175,8 @@ if snd.class == "Teradrim" then
 			if snd.balance.momentum then
 				string = "earth momentum"..snd.sep..string
 			end
+      
+      string = string..snd.sep.."golem recover"
 		
 			if string ~= snd.last_attack and not snd.waiting.queue then
 				snd.last_attack = string
@@ -22990,7 +22994,8 @@ end</script>
 
     if not snd.waiting.queue then
       
-      if snd.cureset == "archivist" and not snd.checkAff("disfigurement") and not snd.checkAff("slickness") then
+      if (snd.cureset == "archivist" and not snd.checkAff("disfigurement") and not snd.checkAff("slickness"))
+        or (table.contains(pet_classes, snd.cureset) and not snd.checkAff("disfigurement")) then
 				table.insert(snd.giving, 1, "disfigurement")
 			end
       
@@ -22998,8 +23003,28 @@ end</script>
 				table.insert(snd.giving, 1, "slickness")
 			end
       
-      if snd.cureset == "archivist" and not snd.checkAff("blindness") and snd.checkAff("slickness") then
+      if (snd.cureset == "archivist" or snd.cureset == "ascendril") and not snd.checkAff("blindness") then
 				table.insert(snd.giving, 1, "blindness")
+			end
+      
+      if snd.cureset == "ascendril" and not snd.checkAff("stupidity") then
+				table.insert(snd.giving, 1, "stupidity")
+			end
+      
+      if snd.cureset == "ascendril" and not snd.checkAff("peace") then
+				table.insert(snd.giving, 1, "peace")
+			end
+      
+      if snd.cureset == "monk" and not snd.checkAff("blindness") then
+				table.insert(snd.giving, 1, "blindness")
+			end
+      
+      if snd.cureset == "monk" and not snd.checkAff("peace") then
+				table.insert(snd.giving, 1, "peace")
+			end
+      
+      if snd.cureset == "monk" and not snd.checkAff("clumsiness") then
+				table.insert(snd.giving, 1, "clumsiness")
 			end
       
       for i in pairs(snd.giving) do
@@ -23049,16 +23074,13 @@ end</script>
         if energy &gt;= 4 and not snd.currentsactive then
           string = string.."ALCHEMY currents "..snd.target..snd.sep
           comingattack = "currents"
-        elseif not snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) then
+        elseif not snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) and energy &gt;= 2 then
           string = string.."ALCHEMY ROUSING "..snd.target..snd.sep
           comingattack = "rousing"
         else
           string = string.."ALCHEMY STATIC "..snd.target..snd.sep
           comingattack = "static"
         end
-      elseif not snd.quills and hp &lt; 40 and snd.cureset == "carnifex" then
-        string = "BOTANY QUILLS me"..snd.sep
-        comingattack = "quills"
       elseif snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 3) and not snd.incomingomen then
         string = string.."DERIVE CAUSALITY "..snd.target.." in 6"..snd.sep
         comingattack = "causality"
@@ -23068,9 +23090,12 @@ end</script>
       elseif not snd.proned() and energy &gt;= 3 and snd.thorncount &gt;= 3 and not snd.checkAff("writhe_vines") then
         string = string.."ALCHEMY CATALYSE"..snd.sep.."ALCHEMY UPSET "..snd.target
         comingattack = "upset"
-      elseif not snd.checkAff("vitalbane") and energy &gt;= 2 then
-        string = string.."ALCHEMY MALIGNANT "..snd.target..snd.sep
-        comingattack = "malignant"
+      elseif not snd.quills and not snd.quillsused then --and hp &lt; 40 and snd.cureset == "carnifex" 
+        string = "BOTANY QUILLS me"..snd.sep
+        comingattack = "quills"
+      elseif not snd.checkAff("paranoia") and snd.checkAff("hallucinations") and snd.checksomeAffs({"blight", "infestation", "stormtouched"}, 2) then
+        string = string.."DERIVE HALLUCINOGEN "..snd.target.." paranoia"
+        comingattack = "hallucinogen"
       elseif euphcount &gt;= 2 and not snd.checkAff("infestation") then
         string = string.."ALCHEMY INFILTRATIVE "..snd.target..snd.sep
         comingattack = "infiltrative"
@@ -23092,9 +23117,9 @@ end</script>
         end
         string = string.."ALCHEMY ELECTROSHOCK "..snd.target..snd.sep
         comingattack = "electroshock"
-      elseif not snd.checkAff("paranoia") and snd.checkAff("hallucinations") and snd.checksomeAffs({"blight", "infestation", "stormtouched"}, 2) then
-        string = string.."DERIVE HALLUCINOGEN "..snd.target.." paranoia"
-        comingattack = "hallucinogen"
+      elseif not snd.checkAff("vitalbane") and energy &gt;= 2 then
+        string = string.."ALCHEMY MALIGNANT "..snd.target..snd.sep
+        comingattack = "malignant"
       else 
         if snd.checksomeAffs({"blight", "infestation", "paranoia"}, 2) and not snd.checkAff("stormtouched") then
           string = string.."ALCHEMY VIRULENT "..snd.target.." "..venom
@@ -23110,18 +23135,16 @@ end</script>
         string = string..snd.sep.."alchemy educe "..snd.target..snd.sep
       end
       
-      if snd.alchemystored == "" then
+      if snd.alchemystored == "" and not snd.incomingomen then
         if not snd.checksomeAffs({"paresis","stupidity"}, 1) and comingattack ~= "electroshock" and comingattack == "neurotic" then
           string = "alchemy prepare electroshock"..snd.sep
-        elseif snd.incomingomen then
-          if not snd.checkAff("lifebane") then
-            string = "alchemy prepare intrusive"..snd.sep
-          else
-            string = "alchemy prepare static"..snd.sep
-          end
-        elseif not snd.currentsactive and comingattack ~= "currents" then
-          string = "alchemy prepare currents"..snd.sep
-        elseif not snd.checkAff("vitalbane") then
+        --elseif not snd.checksomeAffs({"paresis","stupidity"}, 1) and comingattack ~= "electroshock" and snd.cureset == "monk" then
+          --string = "alchemy prepare electroshock"..snd.sep
+        --elseif not snd.currentsactive and comingattack ~= "currents" and snd.cureset == "monk" then
+         -- string = "alchemy prepare currents"..snd.sep
+        elseif not snd.checkAff("feeble_arms") and snd.cureset == "monk" then
+          string = "alchemy prepare virulent"..snd.sep
+        elseif not snd.checkAff("vitalbane") and comingattack ~= "malignant" and snd.cureset ~= "monk" then
           string = "alchemy prepare malignant"..snd.sep
         elseif not snd.checkAff("infestation") and comingattack ~= "infiltrative" and euphcount &gt;= 3 then
           string = "alchemy prepare infiltrative"..snd.sep
@@ -23131,11 +23154,11 @@ end</script>
       end       
       
       if snd.shamanpet == "" then
-        string = "experiment request toxic"..snd.sep.."order experiment follow me"..snd.sep..string
+        string = "experiment request arachnidal"..snd.sep.."order experiment follow me"..snd.sep..string
       end
   
-      if snd.shamanpet ~= "toxic" and snd.balance.morph then
-        string = "experiment reconfigure toxic"..snd.sep.."order experiment follow me"..snd.sep..string
+      if snd.shamanpet ~= "arachnidal" and snd.balance.morph then
+        string = "experiment reconfigure arachnidal"..snd.sep.."order experiment follow me"..snd.sep..string
       end
     
       if not snd.fetishattuned then
@@ -23154,7 +23177,11 @@ end</script>
       
       if #snd.fetish_list &gt; 0 and not table.contains(snd.fetish_list, "inhibiting") then
         string = "compound augment galvanic invigorant inhibiting intoxicant"..snd.sep..string
-      end      
+      end   
+            
+      if not string.find(gmcp.Char.Vitals.wield_left, "conduit") then
+        string = "quickwield both conduit"..snd.sep..string
+      end   
 
 		  if snd.toggles.affcalling and not snd.target_gone then
 			   string = call..string
@@ -23178,7 +23205,7 @@ end</script>
 								<name>Reclaim Kill (Shaman Tweaks)</name>
 								<script>if snd.class == "Alchemist" then
 
-  if snd.timer_check("fitness", 1, "more than") then
+  if snd.timer_check("fitness", 2, "more than") then
     snd.giving = {
 		  "paresis",
       "asthma",
@@ -23190,10 +23217,10 @@ end</script>
 	    "stupidity",
 	    "recklessness",
 	    "haemophilia",
-	    "sensitivity",
+	    "ringing_ears",
 	    }
       cecho("\n&lt;red&gt;Fitness is down.")        
-  elseif snd.timer_check("focus", 1, "more than") then
+  elseif snd.timer_check("focus", 2, "more than") then
     snd.giving = {
       "anorexia",
       "stupidity", 
@@ -23201,7 +23228,7 @@ end</script>
       "weariness",
       "clumsiness",
 			"recklessness",
-      "sensitivity",
+      "ringing_ears",
 			"dizziness",
       "peace",
 		  }
@@ -23209,19 +23236,17 @@ end</script>
   else	
     snd.giving = {
       "paresis",
-      "clumsiness",
-      "asthma",
-      "slickness",
       "anorexia",
       "shyness",
-      "sensitivity",
-      "vomiting",
       "stupidity",
       "weariness",
-      "allergies",
-      "haemophilia",
       "recklessness",
       "dizziness",
+      "peace",
+      "asthma",
+	    "slickness",
+	    "haemophilia",
+	    "ringing_ears",
       "voyria", 
     }
   end
@@ -23294,16 +23319,16 @@ end</script>
 				table.insert(snd.giving, 1, "disfigurement")
 			end
       
-      if (table.contains(phys_classes, snd.cureset) and not snd.checkAff("weariness")) then
-        table.insert(snd.giving, 1, "weariness")
-      end
-      
-      if snd.cureset == "archivist" and snd.checkAff("disfigurement") and not snd.checkAff("slickness") then
-				table.insert(snd.giving, 1, "slickness")
+      if (snd.cureset == "archivist" or snd.cureset == "bloodborn") and not snd.checkAff("blindness") then
+				table.insert(snd.giving, 1, "blindness")
 			end
       
-      if snd.cureset == "archivist" and not snd.checkAff("blindness") and snd.checkAff("slickness") then
-				table.insert(snd.giving, 1, "blindness")
+      if snd.cureset == "ascendril" and not snd.checkAff("stupidity") then
+				table.insert(snd.giving, 1, "stupidity")
+			end
+      
+      if snd.cureset == "ascendril" and not snd.checkAff("peace") then
+				table.insert(snd.giving, 1, "peace")
 			end
       
       for i in pairs(snd.giving) do
@@ -23354,12 +23379,12 @@ end</script>
         comingattack = "hallucinogen"
       elseif snd.incomingomen then
         if energy &gt;= 2 then
-          string = "alchemy catalyse"..snd.sep
+          string = string.."alchemy catalyse"..snd.sep
         end         
-        if energy &gt;= 4 and not snd.currentsactive and snd.alchemystored ~= "currents" then
+        if energy &gt;= 4 and not snd.currentsactive then
           string = string.."ALCHEMY currents "..snd.target..snd.sep
           comingattack = "currents"
-        elseif not snd.checksomeAffs({"no_courage", "ringing_ears"}, 1) then
+        elseif not snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) and energy &gt;= 2 then
           string = string.."ALCHEMY ROUSING "..snd.target..snd.sep
           comingattack = "rousing"
         else
@@ -23394,11 +23419,11 @@ end</script>
         string = "ALCHEMY PATHOGEN "..snd.target..snd.sep
         comingattack = "pathogen"
       else
-        if not snd.their_tree and not snd.checkAff("stormtouched") then
+        --if not snd.their_tree and not snd.checkAff("stormtouched") then
           string = "ALCHEMY VIRULENT "..snd.target.." "..venom..snd.sep
-        else
-          string = "ALCHEMY VIRULENT "..snd.target..snd.sep
-        end
+        --else
+         -- string = "ALCHEMY VIRULENT "..snd.target..snd.sep
+        --end
         comingattack = "virulent"
       end
       
@@ -23415,10 +23440,6 @@ end</script>
           else
             string = "alchemy prepare static"..snd.sep
           end
-        elseif not snd.currentsactive and comingattack ~= "currents" then
-          string = "alchemy prepare currents"..snd.sep
-        elseif not snd.checkAff("vitalbane") then
-          string = "alchemy prepare malignant"..snd.sep
         elseif not snd.checkAff("infestation") and comingattack ~= "infiltrative" and euphcount &gt;= 3 then
           string = "alchemy prepare infiltrative"..snd.sep
         elseif not snd.checkAff("blight") and comingattack ~= "pathogen" and anticount &gt;= 3 then
@@ -23427,11 +23448,11 @@ end</script>
       end      
       
       if snd.shamanpet == "" then
-        string = "experiment request toxic"..snd.sep.."order experiment follow me"..snd.sep..string
+        string = "experiment request arachnidal"..snd.sep.."order experiment follow me"..snd.sep..string
       end
   
-      if snd.shamanpet ~= "toxic" and snd.balance.morph then
-        string = "experiment reconfigure toxic"..snd.sep.."order experiment follow me"..snd.sep..string
+      if snd.shamanpet ~= "arachnidal" and snd.balance.morph then
+        string = "experiment reconfigure arachnidal"..snd.sep.."order experiment follow me"..snd.sep..string
       end
     
       if not snd.fetishattuned then
@@ -23451,6 +23472,10 @@ end</script>
       if #snd.fetish_list &gt; 0 and not table.contains(snd.fetish_list, "inhibiting") then
         string = "compound augment galvanic invigorant inhibiting intoxicant"..snd.sep..string
       end 
+            
+      if not string.find(gmcp.Char.Vitals.wield_left, "conduit") then
+        string = "quickwield both conduit"..snd.sep..string
+      end  
       
 			if snd.toggles.affcalling and not snd.target_gone then
 				string = call..string
