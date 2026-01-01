@@ -1285,6 +1285,7 @@ kaistrike = false,
 might = false,
 absorb = false,
 recover = false,
+sleech = false,
 
 }</script>
 					<eventHandlerList />
@@ -1365,6 +1366,7 @@ recover = false,
   rattle = true, -- teradrim/tidesage rattle/reprisal
   grapple = true, --teradrim/tidesage grapple/clutch
   dome = true,
+  sleech = true,
 }</script>
 					<eventHandlerList />
 				</Script>
@@ -1945,7 +1947,7 @@ snd.registerEvent("SunderGMCPRoomAddPlayer", "gmcp.Room.AddPlayer", gmcp_people_
     if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
       snd.toggle("generics")
     end
-  end  
+  end
   
 end
 
@@ -2188,44 +2190,38 @@ function snd.do_queue()
       if snd.defenses_loaded and snd.toggles.defenses then
         for k in pairs(snd.defenses) do
           if snd.defenses[k].state == "down" and snd.defenses[k].needit then
-          if k == "def_vitality" then
-            if snd.balance.vitality and snd.full_vitals() then
+            if k == "def_vitality" then
+              if snd.balance.vitality and snd.full_vitals() then
+                snd.queue[k] = true
+              end
+            elseif k == "def_clarity" then
+              if not snd.checksomeSelfAffs(snd.cures.antipsychotic, 1) then
+                snd.queue[k] = true
+              end
+            elseif (k == "def_shroud" or k == "def_ghost" or k == "def_hiding") then
+              if snd.defenses.def_phased.state ~= "deffed" then
+                snd.queue[k] = true
+              end
+            elseif (k == "def_miasma" or k == "def_safeguard" or k == "def_warmth") then
+              if not (snd.defenses.def_miasma.state == "deffed" or snd.defenses.def_safeguard.state == "deffed" or snd.defenses.def_warmth.state == "deffed") then
+                snd.queue[k] = true
+              end
+            elseif k == "def_soulcage" then
+              if snd.balance.soulcage then
+                snd.queue[k] = true
+              end
+            else
               snd.queue[k] = true
             end
-          elseif k == "def_clarity" then
-            if not snd.checksomeSelfAffs(snd.cures.antipsychotic, 1) then
-              snd.queue[k] = true
-            end
-          elseif (k == "def_shroud" or k == "def_ghost" or k == "def_hiding") then
-            if snd.defenses.def_phased.state ~= "deffed" then
-              snd.queue[k] = true
-            end
-          elseif (k == "def_miasma" or k == "def_safeguard" or k == "def_warmth") then
-            if
-                not (
-                  snd.defenses.def_miasma.state == "deffed" or
-                  snd.defenses.def_safeguard.state == "deffed" or
-                  snd.defenses.def_warmth.state == "deffed"
-                )
-            then
-              snd.queue[k] = true
-            end
-          elseif k == "def_soulcage" then
-            if snd.balance.soulcage then
-              snd.queue[k] = true
-            end
-          else
-            snd.queue[k] = true
           end
         end
       end
-    end
-    if snd.queued ~= nil then
-      snd.queue.queue = true
-    end
+      if snd.queued ~= nil then
+        snd.queue.queue = true
+      end
       if #snd.setting_priority &gt; 0 then
         snd.firstaid_go = true
-      end
+      end 
       if snd.bashing_loaded then
         if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
           snd.queue.loot = true
@@ -2233,68 +2229,67 @@ function snd.do_queue()
         if snd.moving_to ~= "none" then
           snd.queue.moving = true
         end
-      end
-      if snd.regenerate_check() then
-        snd.queue.regenerate = true
       end 
-      if snd.restore_check() then
-        snd.queue.restoration = true
-      end
-      
-      snd.queue.activecures = true 
-          
-      if snd.need_fitness then
-        snd.do_fitness()
-      end      
-      if snd.panacea_check() and snd.class == "Alchemist" then
-        snd.do_panacea()
-      end     
-      if snd.recover_check() and snd.class == "Ravager" then
-        snd.do_recover()
-      end     
-      if snd.absorb_check() and snd.class == "Teradrim" then
-        snd.do_absorb()
-      end      
-      if snd.cleanse_check() and snd.class == "Earthcaller" then
-        snd.do_cleanse()
-      end     
-      if snd.might_check() and snd.class == "Executor" then
-        snd.do_might()
-      end       
-      if snd.purify_check() and snd.class == "Praenomen" then
-        snd.do_purify()
-      end     
-      if snd.purge_check() and snd.class == "Carnifex" then
-        snd.do_purge()
-      end 
-      if snd.rage_check() then
-        snd.do_rage()
-      end  
-      if snd.toggles.parrying then
-        snd.parry()
-      end
-      if snd.hidden_afflictions &gt;= 2 then
-        snd.queue.diagnose = true
-      end
-      if snd.have_aff("barbed_arrow") then
-        snd.queue.barbed_arrow = true
-      end
-      if snd.have_aff("embedded_dagger") then
-        snd.queue.embedded_dagger = true
-      end
-      
-      if snd.toilup and not snd.toilon then
-        snd.toil_function()
-      elseif not snd.toilup and snd.toilon then
-        snd.toil_function()
-      end
-      
-      if snd.metawakeon then
-        snd.queue.metawake = true
-      end
-      
-      if snd.toggles.bashing and snd.bashing_loaded then
-        snd.queue.bashing = true
+        if snd.regenerate_check() then
+          snd.queue.regenerate = true
+        end 
+        if snd.restore_check() then
+          snd.queue.restoration = true
+        end 
+      if not snd.toggles.attacking then 
+        if snd.need_fitness then
+          snd.do_fitness()
+        end      
+        if snd.panacea_check() and snd.class == "Alchemist" then
+          snd.do_panacea()
+        end     
+        if snd.recover_check() and snd.class == "Ravager" then
+          snd.do_recover()
+        end     
+        if snd.leech_check() and snd.class == "Sciomancer" then
+          snd.do_sleech()
+        end  
+        if snd.absorb_check() and snd.class == "Teradrim" then
+          snd.do_absorb()
+        end      
+        if snd.cleanse_check() and snd.class == "Earthcaller" then
+          snd.do_cleanse()
+        end     
+        if snd.might_check() and snd.class == "Executor" then
+          snd.do_might()
+        end       
+        if snd.purify_check() and snd.class == "Praenomen" then
+          snd.do_purify()
+        end     
+        if snd.purge_check() and snd.class == "Carnifex" then
+          snd.do_purge()
+        end 
+        if snd.rage_check() then
+          snd.do_rage()
+        end  
+        if snd.toggles.parrying then
+          snd.parry()
+        end
+        if snd.hidden_afflictions &gt;= 2 then
+          snd.queue.diagnose = true
+        end
+        if snd.have_aff("barbed_arrow") then
+          snd.queue.barbed_arrow = true
+        end
+        if snd.have_aff("embedded_dagger") then
+          snd.queue.embedded_dagger = true
+        end      
+        if snd.toilup and not snd.toilon then
+          snd.toil_function()
+        elseif not snd.toilup and snd.toilon then
+          snd.toil_function()
+        end     
+        if snd.metawakeon then
+          snd.queue.metawake = true
+        end      
+        if snd.toggles.bashing and snd.bashing_loaded then
+          snd.queue.bashing = true
+        end
       end
       
       if snd.toggles.attacking and snd.offense_loaded then
@@ -2307,9 +2302,9 @@ function snd.do_queue()
         if snd.balance.dome and not snd.toggles.survive and snd.check_dome() then
           snd.do_dome()
         elseif snd.balance.barrier and snd.barriering then
-					snd.send("qeb strum lyre")
-					snd.barriering = false
-					tempTimer(2,[[snd.barriering = true]])
+			   snd.send("qeb strum lyre")
+			   snd.barriering = false
+   		   tempTimer(2,[[snd.barriering = true]])
         end
       end
     end
@@ -3881,9 +3876,24 @@ end
 function snd.do_fitness()
   local fitnessstring = ""
   if snd.can_fitness() and snd.need_fitness and snd.full_balance() then
-    snd.send("fitness") --..snd.sep..fitnessstring
+    snd.send("fitness")
     snd.last_type = "fitness"
     snd.last_item = "fitness"
+    snd.waiting.balance = true
+    tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>nimbleness</name>
+						<packageName></packageName>
+						<script>
+function snd.do_nimbleness()
+  if snd.balance.nimbleness and snd.full_balance() then
+    snd.send("nimbleness")
+    snd.last_type = "nimbleness"
+    snd.last_item = "nimbleness"
     snd.waiting.balance = true
     tempTimer(snd.delay(), [[snd.waiting.balance = false]])
   end
@@ -4288,6 +4298,41 @@ function snd.pull_dagger()
 end</script>
 						<eventHandlerList />
 					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>leech / renewal</name>
+						<packageName></packageName>
+						<script>function snd.leech_check()
+if snd.balance.sleech and not snd.waiting.sleech and not snd.have_aff("fallen") and not snd.checksomeSelfAffs({"left_arm_crippled","right_arm_crippled"},2) and not snd.checksomeSelfAffs({"paresis","paralysis"},1) then
+    if snd.have_aff("asthma") and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1) and snd.checksomeSelfAffs({"slickness","anorexia","slough"},2) then
+      return true
+    elseif snd.need_fitness and not snd.can_fitness() then
+      return true
+    elseif snd.have_aff("impatience") and snd.checksomeSelfAffs(snd.mental_affs, 2) then
+      return true
+    elseif snd.checksomeSelfAffs(snd.physical_affs, 3) then
+    end
+  end
+  return false
+end
+
+function snd.do_sleech()
+  
+      if snd.class == "Sciomancer" then
+        snd.send("cast leech")
+        echo("(cast leech)")
+      else
+        snd.send("hex renewal")
+        echo("(hex renewal)")        
+      end
+      
+      snd.last_type = "leech"
+      snd.last_item = "leech"
+      snd.waiting.sleech = true
+      tempTimer(snd.delay(), [[snd.waiting.sleech = false]])
+end
+</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Firstaid Help</name>
@@ -4391,6 +4436,140 @@ end</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
+						<name>Pill covering curing (Self)</name>
+						<packageName></packageName>
+						<script>function snd.pillcoveringcuring_self()
+
+  -- ANTIPSYCHOTIC
+  snd.antipsychoticcurecover_self = true
+  local antipsychoticlist = {"sadness", "confusion", "dementia", "hallucinations", "paranoia", "hatred", "hypersomnia", "addiction",  "psychosis", "blight"}
+  local antipsychoticcount = 0
+  for i = 1, tonumber(#antipsychoticlist) do
+    local antipsychoone = antipsychoticlist[i]
+    if table.contains(snd.have_aff, antipsychoone) then
+      antipsychoticcount = antipsychoticcount + 1 
+    end
+  end
+  if tonumber(antipsychoticcount) &lt; 2 then
+    snd.antipsychoticcurecover_self = false
+  end  
+  
+  -- COAGULATION
+  snd.coagulationcurecover_self = true
+  local coagulationlist = {"lethargy", "allergies", "delirium", "extravasation", "vomiting", "exhaustion", "dyscrasia", "rend", "haemophilia"}
+  local coagulationcount = 0
+  for i = 1, tonumber(#coagulationlist) do
+    local coagone = coagulationlist[i]
+    if table.contains(snd.have_aff, coagone) then
+      coagulationcount = coagulationcount + 1 
+    end
+  end
+  if tonumber(coagulationcount) &lt; 2 then
+    snd.coagulationcurecover_self = false
+  end    
+
+  -- DECONGESTANT
+  snd.decongestantcurecover_self = true
+  local decongestantlist = {"clumsiness", "hypochondria", "weariness", "asthma", "sensitivity", "ringing_ears", "impairment", "sepsis"}
+  local decongestantcount = 0
+  for i = 1, tonumber(#decongestantlist) do
+    local deconone = decongestantlist[i]
+    if table.contains(snd.have_aff, deconone) then
+      decongestantcount = decongestantcount + 1 
+    end
+  end
+  if tonumber(decongestantcount) &lt; 2 then
+    snd.decongestantcurecover_self = false
+  end 
+
+  -- DEPRESSANT
+  snd.depressantcurecover_self = true
+  local depressantlist = {"mercy", "recklessness", "egocentrism", "masochism", "agoraphobia", "mania", "vertigo", "claustrophobia", "nyctophobia"}
+  local depressantcount = 0
+  for i = 1, tonumber(#depressantlist) do
+    local depressone = depressantlist[i]
+    if table.contains(snd.have_aff, depressone) then
+      depressantcount = depressantcount + 1 
+    end
+  end
+  if tonumber(depressantcount) &lt; 2 then
+    snd.depressantcurecover_self = false
+  end
+
+  -- EUCRASIA
+  snd.eucrasiacurecover_self = true
+  local eucrasialist = {"misery", "hopelessness", "echoes", "hollow", "narcolepsy", "loneliness", "perplexity", "self_loathing"}
+  local eucrasiacount = 0
+  for i = 1, tonumber(#eucrasialist) do
+    local eucrasiaone = eucrasialist[i]
+    if table.contains(snd.have_aff, eucrasiaone) then
+      eucrasiacount = eucrasiacount + 1 
+    end
+  end
+  if tonumber(eucrasiacount) &lt; 2 then
+    snd.eucrasiacurecover_self = false
+  end
+  
+  --EUPHORIANT
+  snd.euphoriantcurecover_self = true
+  local euphoriantlist = {"self_pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonance", "infestation"}
+  local euphoriantcount = 0
+  for i = 1, tonumber(#euphoriantlist) do
+    local euphorone = euphoriantlist[i]
+    if table.contains(snd.have_aff, euphorone) then
+      euphoriantcount = euphoriantcount + 1 
+    end
+  end
+  if tonumber(euphoriantcount) &lt; 2 then
+    snd.euphoriantcurecover_self = false
+  end  
+  
+  -- OPIATE
+  snd.opiatecurecover_self = true
+  local opiatelist = {"paresis", "paralysis", "mirroring", "crippled_body", "crippled", "blisters", "slickness", "arrhythmia", "slough"}
+  local opiatecount = 0
+  for i = 1, tonumber(#opiatelist) do
+    local opieone = opiatelist[i]
+    if table.contains(snd.have_aff, opieone) then
+      opiatecount = opiatecount + 1 
+    end
+  end
+  if tonumber(opiatecount) &lt; 2 then
+    snd.opiatecurecover_self = false
+  end    
+  
+  -- PANACEA
+  snd.panaceacover_self = true
+  local panacealist = {"stormtouched", "patterns", "rot_spirit", "rot_wither", "rot_heat", "rot_body", "rot_benign"}
+  local panaceacount = 0
+  for i = 1, tonumber(#panacealist) do
+    local panaone = panacealist[i]
+    if table.contains(snd.have_aff, panaone) then
+      panaceacount = panaceacount + 1 
+    end
+  end
+  if tonumber(panaceacount) &lt; 2 then
+    snd.panaceacurecover_self = false
+  end      
+  
+  -- STEROID
+  snd.steroidcurecover_self = true
+  local steroidlist = {"hubris", "peace", "agony", "accursed", "hypotension", "infatuation", "laxity", "superstition", "justice", "magnanimity"}
+  local steroidcount = 0
+  for i = 1, tonumber(#steroidlist) do
+    local steroone = steroidlist[i]
+    if table.contains(snd.have_aff, steroone) then
+      steroidcount = steroidcount + 1 
+    end
+  end
+  if tonumber(steroidcount) &lt; 2 then
+    snd.steroidcurecover_self = false
+  end  
+  
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
 						<name>Main Firstaid Setting Up</name>
 						<packageName></packageName>
 						<script>function snd.firstaidresetlistnone()
@@ -4414,9 +4593,6 @@ if snd.cureset == "none" then
   if snd.firstaidcuretrack.fangbarrier ~= "1" and not table.contains(snd.setting_priority, "defence fangbarrier 1") then
     table.insert(snd.setting_priority, "defence fangbarrier 1")     
   end
-  if snd.firstaidcuretrack.courage ~= "4" and not table.contains(snd.setting_priority, "defence courage 4") then
-    table.insert(snd.setting_priority, "defence courage 4")     
-  end
   if snd.firstaidcuretrack.waterbreathing ~= "24" and not table.contains(snd.setting_priority, "defence waterbreathing 24") then
     table.insert(snd.setting_priority, "defence waterbreathing 24")     
   end
@@ -4425,8 +4601,8 @@ if snd.cureset == "none" then
   end
   
   -- general
-  if snd.firstaidcuretrack.asleep ~= "2" and not table.contains(snd.setting_priority, "asleep 2") then
-    table.insert(snd.setting_priority, "asleep 2")     
+  if snd.firstaidcuretrack.asleep ~= "1" and not table.contains(snd.setting_priority, "asleep 1") then
+    table.insert(snd.setting_priority, "asleep 1")     
   end
   if snd.firstaidcuretrack.fear ~= "2" and not table.contains(snd.setting_priority, "fear 2") then
     table.insert(snd.setting_priority, "fear 2")     
@@ -4448,77 +4624,164 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.paralysis ~= "1" and not table.contains(snd.setting_priority, "paralysis 1") then
     table.insert(snd.setting_priority, "paralysis 1")     
   end
-  if snd.firstaidcuretrack.crippled_body ~= "1" and not table.contains(snd.setting_priority, "crippled_body 1") then
-    table.insert(snd.setting_priority, "crippled_body 1")     
-  end
-	if snd.firstaidcuretrack.paranoia ~= "2" and not table.contains(snd.setting_priority, "paranoia 2") then
-		table.insert(snd.setting_priority, "paranoia 2")     
+	if snd.firstaidcuretrack.hypersomnia ~= "1" and not table.contains(snd.setting_priority, "hypersomnia 1") then
+		table.insert(snd.setting_priority, "hypersomnia 1")     
 	end
-  if snd.firstaidcuretrack.exhaustion ~= "2" and not table.contains(snd.setting_priority, "exhaustion 2") then
-	  table.insert(snd.setting_priority, "exhaustion 2")     
+	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
+		table.insert(snd.setting_priority, "paresis 1")     
+	end
+	if snd.firstaidcuretrack.slough ~= "1" and not table.contains(snd.setting_priority, "slough 1") then
+		table.insert(snd.setting_priority, "slough 1")     
+	end
+	if snd.firstaidcuretrack.mirroring ~= "2" and not table.contains(snd.setting_priority, "mirroring 2") then
+		table.insert(snd.setting_priority, "mirroring 2")     
+	end
+  if snd.firstaidcuretrack.asthma ~= "2" and not table.contains(snd.setting_priority, "asthma 2") then
+    table.insert(snd.setting_priority, "asthma 2")     
+  end
+	if snd.firstaidcuretrack.weariness ~= "2" and not table.contains(snd.setting_priority, "weariness 2") then
+		table.insert(snd.setting_priority, "weariness 2")     
+	end
+  if snd.firstaidcuretrack.clumsiness ~= "2" and not table.contains(snd.setting_priority, "clumsiness 2") then
+    table.insert(snd.setting_priority, "clumsiness 2")     
+  end
+	if snd.firstaidcuretrack.sepsis ~= "3" and not table.contains(snd.setting_priority, "sepsis 3") then
+		table.insert(snd.setting_priority, "sepsis 3")     
+	end
+  if snd.firstaidcuretrack.perplexity ~= "3" and not table.contains(snd.setting_priority, "perplexity 3") then
+    table.insert(snd.setting_priority, "perplexity 3")		 
+  end
+	if snd.firstaidcuretrack.addiction ~= "3" and not table.contains(snd.setting_priority, "addiction 3") then
+		table.insert(snd.setting_priority, "addiction 3")
+	end
+	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
+		table.insert(snd.setting_priority, "sensitivity 3")     
+	end
+	if snd.firstaidcuretrack.sadness ~= "4" and not table.contains(snd.setting_priority, "sadness 4") then
+		table.insert(snd.setting_priority, "sadness 4")     
+	end
+	if snd.firstaidcuretrack.faintness ~= "4" and not table.contains(snd.setting_priority, "faintness 4") then
+		table.insert(snd.setting_priority, "faintness 4")     
+	end
+	if snd.firstaidcuretrack.peace ~= "4" and not table.contains(snd.setting_priority, "peace 4") then
+		table.insert(snd.setting_priority, "peace 4")     
+	end
+	if snd.firstaidcuretrack.psychosis ~= "4" and not table.contains(snd.setting_priority, "psychosis 4") then
+		table.insert(snd.setting_priority, "psychosis 4")     
+	end
+	if snd.firstaidcuretrack.confusion ~= "5" and not table.contains(snd.setting_priority, "confusion 5") then
+		table.insert(snd.setting_priority, "confusion 5")     
+	end
+	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
+		table.insert(snd.setting_priority, "hallucinations 5")     
+	end
+	if snd.firstaidcuretrack.accursed ~= "5" and not table.contains(snd.setting_priority, "accursed 5") then
+		table.insert(snd.setting_priority, "accursed 5")     
+	end
+	if snd.firstaidcuretrack.epilepsy ~= "5" and not table.contains(snd.setting_priority, "epilepsy 5") then
+		table.insert(snd.setting_priority, "epilepsy 5")     
+	end
+	if snd.firstaidcuretrack.hypochondria ~= "6" and not table.contains(snd.setting_priority, "hypochondria 6") then
+		table.insert(snd.setting_priority, "hypochondria 6")     
+	end
+	if snd.firstaidcuretrack.impairment ~= "6" and not table.contains(snd.setting_priority, "impairment 6") then
+		table.insert(snd.setting_priority, "impairment 6")     
+	end
+	if snd.firstaidcuretrack.delirium ~= "6" and not table.contains(snd.setting_priority, "delirium 6") then
+		table.insert(snd.setting_priority, "delirium 6")     
+	end
+	if snd.firstaidcuretrack.haemophilia ~= "6" and not table.contains(snd.setting_priority, "haemophilia 6") then
+		table.insert(snd.setting_priority, "haemophilia 6")     
+	end
+	if snd.firstaidcuretrack.lethargy ~= "7" and not table.contains(snd.setting_priority, "lethargy 7") then
+		table.insert(snd.setting_priority, "lethargy 7")     
+	end
+	if snd.firstaidcuretrack.allergies ~= "7" and not table.contains(snd.setting_priority, "allergies 7") then
+		table.insert(snd.setting_priority, "allergies 7")     
+	end
+  if snd.firstaidcuretrack.exhaustion ~= "7" and not table.contains(snd.setting_priority, "exhaustion 7") then
+	  table.insert(snd.setting_priority, "exhaustion 7")     
+	end
+	if snd.firstaidcuretrack.impatience ~= "7" and not table.contains(snd.setting_priority, "impatience 7") then
+		table.insert(snd.setting_priority, "impatience 7")     
+	end
+	if snd.firstaidcuretrack.arrhythmia ~= "8" and not table.contains(snd.setting_priority, "arrhythmia 8") then
+		table.insert(snd.setting_priority, "arrhythmia 8")     
+	end
+	if snd.firstaidcuretrack.blisters ~= "8" and not table.contains(snd.setting_priority, "blisters 8") then
+		table.insert(snd.setting_priority, "blisters 8")     
+	end
+	if snd.firstaidcuretrack.dementia ~= "8" and not table.contains(snd.setting_priority, "dementia 8") then
+		table.insert(snd.setting_priority, "dementia 8")     
+	end
+	if snd.firstaidcuretrack.paranoia ~= "8" and not table.contains(snd.setting_priority, "paranoia 8") then
+		table.insert(snd.setting_priority, "paranoia 8")     
+	end
+	if snd.firstaidcuretrack.extravasation ~= "9" and not table.contains(snd.setting_priority, "extravasation 9") then
+		table.insert(snd.setting_priority, "extravasation 9")     
+	end
+	if snd.firstaidcuretrack.rend ~= "9" and not table.contains(snd.setting_priority, "rend 9") then
+		table.insert(snd.setting_priority, "rend 9")     
+	end
+	if snd.firstaidcuretrack.vomiting ~= "9" and not table.contains(snd.setting_priority, "vomiting 9") then
+		table.insert(snd.setting_priority, "vomiting 9")     
+	end 
+	if snd.firstaidcuretrack.dyscrasia ~= "9" and not table.contains(snd.setting_priority, "dyscrasia 9") then
+		table.insert(snd.setting_priority, "dyscrasia 9")
+	end
+	if snd.firstaidcuretrack.rot_body ~= "10" and not table.contains(snd.setting_priority, "rot_body 10") then
+		table.insert(snd.setting_priority, "rot_body 10")
+	end
+	if snd.firstaidcuretrack.rot_wither ~= "10" and not table.contains(snd.setting_priority, "rot_wither 10") then
+		table.insert(snd.setting_priority, "rot_wither 10")
+	end
+  if snd.firstaidcuretrack.ringing_ears ~= "10" and not table.contains(snd.setting_priority, "ringing_ears 10") then
+    table.insert(snd.setting_priority, "ringing_ears 10")     
+  end
+  if snd.firstaidcuretrack.hypotension ~= "10" and not table.contains(snd.setting_priority, "hypotension 10") then
+    table.insert(snd.setting_priority, "hypotension 10")     
+  end
+  if snd.firstaidcuretrack.self_loathing ~= "11" and not table.contains(snd.setting_priority, "self_loathing 11") then
+    table.insert(snd.setting_priority, "self_loathing 11")		 
+  end 
+  if snd.firstaidcuretrack.narcolepsy ~= "11" and not table.contains(snd.setting_priority, "narcolepsy 11") then
+    table.insert(snd.setting_priority, "narcolepsy 11")     
+  end 
+  if snd.firstaidcuretrack.misery ~= "11" and not table.contains(snd.setting_priority, "misery 11") then
+    table.insert(snd.setting_priority, "misery 11")     
+  end 
+  if snd.firstaidcuretrack.hollow ~= "11" and not table.contains(snd.setting_priority, "hollow 11") then
+    table.insert(snd.setting_priority, "hollow 11")     
+  end 
+	if snd.firstaidcuretrack.recklessness ~= "12" and not table.contains(snd.setting_priority, "recklessness 12") then
+		table.insert(snd.setting_priority, "recklessness 12")     
+	end
+	if snd.firstaidcuretrack.mania ~= "12" and not table.contains(snd.setting_priority, "mania 12") then
+		table.insert(snd.setting_priority, "mania 12")     
+	end
+	if snd.firstaidcuretrack.nyctophobia ~= "12" and not table.contains(snd.setting_priority, "nyctophobia 12") then
+		table.insert(snd.setting_priority, "nyctophobia 12")     
+	end
+	if snd.firstaidcuretrack.masochism ~= "12" and not table.contains(snd.setting_priority, "masochism 12") then
+		table.insert(snd.setting_priority, "masochism 12")     
+	end
+	if snd.firstaidcuretrack.egocentrism ~= "11" and not table.contains(snd.setting_priority, "egocentrism 11") then
+		table.insert(snd.setting_priority, "egocentrism 11")     
+	end
+	if snd.firstaidcuretrack.mercy ~= "7" and not table.contains(snd.setting_priority, "mercy 7") then
+		table.insert(snd.setting_priority, "mercy 7")     
+	end
+	if snd.firstaidcuretrack.agoraphobia ~= "15" and not table.contains(snd.setting_priority, "agoraphobia 15") then
+		table.insert(snd.setting_priority, "agoraphobia 15")     
 	end
 	if snd.firstaidcuretrack.loneliness ~= "2" and not table.contains(snd.setting_priority, "loneliness 2") then
 		table.insert(snd.setting_priority, "loneliness 2")     
 	end
-	if snd.firstaidcuretrack.dizziness ~= "2" and not table.contains(snd.setting_priority, "dizziness 2") then
-		table.insert(snd.setting_priority, "dizziness 2")     
-	end
-  if snd.firstaidcuretrack.blindness ~= "2" and not table.contains(snd.setting_priority, "blindness 2") then
-    table.insert(snd.setting_priority, "blindness 2")     
-  end
 	if snd.firstaidcuretrack.vertigo ~= "3" and not table.contains(snd.setting_priority, "vertigo 3") then
 		table.insert(snd.setting_priority, "vertigo 3")     
 	end
-	if snd.firstaidcuretrack.blight ~= "3" and not table.contains(snd.setting_priority, "blight 3") then
-		table.insert(snd.setting_priority, "blight 3")     
-	end
-	if snd.firstaidcuretrack.infestation ~= "3" and not table.contains(snd.setting_priority, "infestation 3") then
-		table.insert(snd.setting_priority, "infestation 3")     
-	end 
-  if snd.firstaidcuretrack.self_loathing ~= "3" and not table.contains(snd.setting_priority, "self_loathing 3") then
-    table.insert(snd.setting_priority, "self_loathing 3")		 
-  end 
-  if snd.firstaidcuretrack.deafness ~= "3" and not table.contains(snd.setting_priority, "deafness 3") then
-    table.insert(snd.setting_priority, "deafness 3")     
-  end
-  if snd.firstaidcuretrack.perplexity ~= "4" and not table.contains(snd.setting_priority, "perplexity 4") then
-    table.insert(snd.setting_priority, "perplexity 4")		 
-  end
-	if snd.firstaidcuretrack.dyscrasia ~= "4" and not table.contains(snd.setting_priority, "dyscrasia 4") then
-		table.insert(snd.setting_priority, "dyscrasia 4")
-	end
-	if snd.firstaidcuretrack.addiction ~= "4" and not table.contains(snd.setting_priority, "addiction 4") then
-		table.insert(snd.setting_priority, "addiction 4")
-	end
-  if snd.firstaidcuretrack.instawake ~= "4" and not table.contains(snd.setting_priority, "defence instawake 4") then
-    table.insert(snd.setting_priority, "defence instawake 4")     
-  end
-	if snd.firstaidcuretrack.paresis ~= "4" and not table.contains(snd.setting_priority, "paresis 4") then
-		table.insert(snd.setting_priority, "paresis 4")     
-	end
-  if snd.firstaidcuretrack.ringing_ears ~= "5" and not table.contains(snd.setting_priority, "ringing_ears 5") then
-    table.insert(snd.setting_priority, "ringing_ears 5")     
-  end
-  if snd.firstaidcuretrack.clumsiness ~= "5" and not table.contains(snd.setting_priority, "clumsiness 5") then
-    table.insert(snd.setting_priority, "clumsiness 5")     
-  end
-	if snd.firstaidcuretrack.hypochondria ~= "5" and not table.contains(snd.setting_priority, "hypochondria 5") then
-		table.insert(snd.setting_priority, "hypochondria 5")     
-	end
-  if snd.firstaidcuretrack.asthma ~= "5" and not table.contains(snd.setting_priority, "asthma 5") then
-    table.insert(snd.setting_priority, "asthma 5")     
-  end
-	if snd.firstaidcuretrack.confusion ~= "6" and not table.contains(snd.setting_priority, "confusion 6") then
-		table.insert(snd.setting_priority, "confusion 6")     
-	end
-  if snd.firstaidcuretrack.echoes ~= "6" and not table.contains(snd.setting_priority, "echoes 6") then
-    table.insert(snd.setting_priority, "echoes 6")     
-  end 
-	if snd.firstaidcuretrack.nyctophobia ~= "6" and not table.contains(snd.setting_priority, "nyctophobia 6") then
-		table.insert(snd.setting_priority, "nyctophobia 6")     
-	end
-	if snd.firstaidcuretrack.weariness ~= "6" and not table.contains(snd.setting_priority, "weariness 6") then
-		table.insert(snd.setting_priority, "weariness 6")     
+	if snd.firstaidcuretrack.claustrophobia ~= "15" and not table.contains(snd.setting_priority, "claustrophobia 15") then
+		table.insert(snd.setting_priority, "claustrophobia 15")     
 	end
 	if snd.firstaidcuretrack.stormtouched ~= "6" and not table.contains(snd.setting_priority, "stormtouched 6") then
 		table.insert(snd.setting_priority, "stormtouched 6")     
@@ -4526,160 +4789,94 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.agony ~= "7" and not table.contains(snd.setting_priority, "agony 7") then
 		table.insert(snd.setting_priority, "agony 7")		 
 	end	
-	if snd.firstaidcuretrack.accursed ~= "7" and not table.contains(snd.setting_priority, "accursed 7") then
-		table.insert(snd.setting_priority, "accursed 7")     
+	if snd.firstaidcuretrack.rot_benign ~= "10" and not table.contains(snd.setting_priority, "rot_benign 10") then
+		table.insert(snd.setting_priority, "rot_benign 10")
 	end
-	if snd.firstaidcuretrack.mercy ~= "7" and not table.contains(snd.setting_priority, "mercy 7") then
-		table.insert(snd.setting_priority, "mercy 7")     
+	if snd.firstaidcuretrack.rot_spirit ~= "10" and not table.contains(snd.setting_priority, "rot_spirit 10") then
+		table.insert(snd.setting_priority, "rot_spirit 10")
 	end
-	if snd.firstaidcuretrack.arrhythmia ~= "7" and not table.contains(snd.setting_priority, "arrhythmia 7") then
-		table.insert(snd.setting_priority, "arrhythmia 7")     
+	if snd.firstaidcuretrack.rot_heat ~= "10" and not table.contains(snd.setting_priority, "rot_heat 10") then
+		table.insert(snd.setting_priority, "rot_heat 10")
 	end
-	if snd.firstaidcuretrack.recklessness ~= "7" and not table.contains(snd.setting_priority, "recklessness 7") then
-		table.insert(snd.setting_priority, "recklessness 7")     
+	if snd.firstaidcuretrack.dissonance ~= "10" and not table.contains(snd.setting_priority, "dissonance 10") then
+		table.insert(snd.setting_priority, "dissonance 10")     
 	end
-	if snd.firstaidcuretrack.sepsis ~= "8" and not table.contains(snd.setting_priority, "sepsis 8") then
-		table.insert(snd.setting_priority, "sepsis 8")     
+	if snd.firstaidcuretrack.dizziness ~= "11" and not table.contains(snd.setting_priority, "dizziness 11") then
+		table.insert(snd.setting_priority, "dizziness 11")     
 	end
-	if snd.firstaidcuretrack.psychosis ~= "8" and not table.contains(snd.setting_priority, "psychosis 8") then
-		table.insert(snd.setting_priority, "psychosis 8")     
+	if snd.firstaidcuretrack.stupidity ~= "11" and not table.contains(snd.setting_priority, "stupidity 11") then
+		table.insert(snd.setting_priority, "stupidity 11")     
 	end
-	if snd.firstaidcuretrack.impatience ~= "8" and not table.contains(snd.setting_priority, "impatience 8") then
-		table.insert(snd.setting_priority, "impatience 8")     
+	if snd.firstaidcuretrack.shyness ~= "11" and not table.contains(snd.setting_priority, "shyness 11") then
+		table.insert(snd.setting_priority, "shyness 11")     
 	end
-	if snd.firstaidcuretrack.impairment ~= "9" and not table.contains(snd.setting_priority, "impairment 9") then
-		table.insert(snd.setting_priority, "impairment 9")     
+	if snd.firstaidcuretrack.infestation ~= "11" and not table.contains(snd.setting_priority, "infestation 11") then
+		table.insert(snd.setting_priority, "infestation 11")     
+	end 
+	if snd.firstaidcuretrack.crippled ~= "12" and not table.contains(snd.setting_priority, "crippled 12") then
+		table.insert(snd.setting_priority, "crippled 12")     
 	end
-	if snd.firstaidcuretrack.superstition ~= "9" and not table.contains(snd.setting_priority, "superstition 9") then
-		table.insert(snd.setting_priority, "superstition 9")
+  if snd.firstaidcuretrack.crippled_body ~= "12" and not table.contains(snd.setting_priority, "crippled_body 12") then
+    table.insert(snd.setting_priority, "crippled_body 12")     
+  end
+	if snd.firstaidcuretrack.hatred ~= "12" and not table.contains(snd.setting_priority, "hatred 12") then
+		table.insert(snd.setting_priority, "hatred 12")     
 	end
-	if snd.firstaidcuretrack.sensitivity ~= "9" and not table.contains(snd.setting_priority, "sensitivity 9") then
-		table.insert(snd.setting_priority, "sensitivity 9")     
+	if snd.firstaidcuretrack.blight ~= "12" and not table.contains(snd.setting_priority, "blight 12") then
+		table.insert(snd.setting_priority, "blight 12")     
 	end
-	if snd.firstaidcuretrack.peace ~= "9" and not table.contains(snd.setting_priority, "peace 9") then
-		table.insert(snd.setting_priority, "peace 9")     
-	end
-	if snd.firstaidcuretrack.infatuation ~= "10" and not table.contains(snd.setting_priority, "infatuation 10") then
-		table.insert(snd.setting_priority, "infatuation 10")     
-	end
-	if snd.firstaidcuretrack.lethargy ~= "10" and not table.contains(snd.setting_priority, "lethargy 10") then
-		table.insert(snd.setting_priority, "lethargy 10")     
-	end
-	if snd.firstaidcuretrack.justice ~= "10" and not table.contains(snd.setting_priority, "justice 10") then
-		table.insert(snd.setting_priority, "justice 10")     
-	end
-	if snd.firstaidcuretrack.mirroring ~= "11" and not table.contains(snd.setting_priority, "mirroring 11") then
-		table.insert(snd.setting_priority, "mirroring 11")     
-	end
-	if snd.firstaidcuretrack.egocentrism ~= "11" and not table.contains(snd.setting_priority, "egocentrism 11") then
-		table.insert(snd.setting_priority, "egocentrism 11")     
-	end
-	if snd.firstaidcuretrack.laxity ~= "11" and not table.contains(snd.setting_priority, "laxity 11") then
-		table.insert(snd.setting_priority, "laxity 11")     
-	end
-	if snd.firstaidcuretrack.crippled ~= "11" and not table.contains(snd.setting_priority, "crippled 11") then
-		table.insert(snd.setting_priority, "crippled 11")     
-	end
-	if snd.firstaidcuretrack.slough ~= "12" and not table.contains(snd.setting_priority, "slough 12") then
-		table.insert(snd.setting_priority, "slough 12")     
-	end
-	if snd.firstaidcuretrack.rend ~= "12" and not table.contains(snd.setting_priority, "rend 12") then
-		table.insert(snd.setting_priority, "rend 12")     
-	end
-	if snd.firstaidcuretrack.haemophilia ~= "12" and not table.contains(snd.setting_priority, "haemophilia 12") then
-		table.insert(snd.setting_priority, "haemophilia 12")     
+	if snd.firstaidcuretrack.laxity ~= "13" and not table.contains(snd.setting_priority, "laxity 13") then
+		table.insert(snd.setting_priority, "laxity 13")     
 	end
 	if snd.firstaidcuretrack.magnanimity ~= "13" and not table.contains(snd.setting_priority, "magnanimity 13") then
 		table.insert(snd.setting_priority, "magnanimity 13")     
 	end
-	if snd.firstaidcuretrack.delirium ~= "13" and not table.contains(snd.setting_priority, "delirium 13") then
-		table.insert(snd.setting_priority, "delirium 13")     
+	if snd.firstaidcuretrack.superstition ~= "13" and not table.contains(snd.setting_priority, "superstition 13") then
+		table.insert(snd.setting_priority, "superstition 13")
 	end
-	if snd.firstaidcuretrack.extravasation ~= "13" and not table.contains(snd.setting_priority, "extravasation 13") then
-		table.insert(snd.setting_priority, "extravasation 13")     
+	if snd.firstaidcuretrack.justice ~= "14" and not table.contains(snd.setting_priority, "justice 14") then
+		table.insert(snd.setting_priority, "justice 14")     
 	end
-	if snd.firstaidcuretrack.allergies ~= "13" and not table.contains(snd.setting_priority, "allergies 13") then
-		table.insert(snd.setting_priority, "allergies 13")     
+	if snd.firstaidcuretrack.infatuation ~= "14" and not table.contains(snd.setting_priority, "infatuation 14") then
+		table.insert(snd.setting_priority, "infatuation 14")     
 	end
-	if snd.firstaidcuretrack.vomiting ~= "14" and not table.contains(snd.setting_priority, "vomiting 14") then
-		table.insert(snd.setting_priority, "vomiting 14")     
+	if snd.firstaidcuretrack.hubris ~= "14" and not table.contains(snd.setting_priority, "hubris 14") then
+		table.insert(snd.setting_priority, "hubris 14")     
 	end 
-	if snd.firstaidcuretrack.sadness ~= "14" and not table.contains(snd.setting_priority, "sadness 14") then
-		table.insert(snd.setting_priority, "sadness 14")     
+	if snd.firstaidcuretrack.self_pity ~= "14" and not table.contains(snd.setting_priority, "self_pity 14") then
+		table.insert(snd.setting_priority, "self_pity 14")     
 	end
-	if snd.firstaidcuretrack.hatred ~= "14" and not table.contains(snd.setting_priority, "hatred 14") then
-		table.insert(snd.setting_priority, "hatred 14")     
+	if snd.firstaidcuretrack.patterns ~= "15" and not table.contains(snd.setting_priority, "patterns 15") then
+		table.insert(snd.setting_priority, "patterns 15")     
 	end
-	if snd.firstaidcuretrack.hallucinations ~= "14" and not table.contains(snd.setting_priority, "hallucinations 140") then
-		table.insert(snd.setting_priority, "hallucinations 14")     
-	end
-	if snd.firstaidcuretrack.mania ~= "15" and not table.contains(snd.setting_priority, "mania 15") then
-		table.insert(snd.setting_priority, "mania 15")     
-	end
-	if snd.firstaidcuretrack.masochism ~= "15" and not table.contains(snd.setting_priority, "masochism 15") then
-		table.insert(snd.setting_priority, "masochism 15")     
-	end
-	if snd.firstaidcuretrack.agoraphobia ~= "15" and not table.contains(snd.setting_priority, "agoraphobia 15") then
-		table.insert(snd.setting_priority, "agoraphobia 15")     
-	end
-	if snd.firstaidcuretrack.claustrophobia ~= "15" and not table.contains(snd.setting_priority, "claustrophobia 15") then
-		table.insert(snd.setting_priority, "claustrophobia 15")     
-	end
-	if snd.firstaidcuretrack.self_pity ~= "16" and not table.contains(snd.setting_priority, "self_pity 16") then
-		table.insert(snd.setting_priority, "self_pity 16")     
-	end
-	if snd.firstaidcuretrack.stupidity ~= "16" and not table.contains(snd.setting_priority, "stupidity 16") then
-		table.insert(snd.setting_priority, "stupidity 16")     
-	end
-	if snd.firstaidcuretrack.epilepsy ~= "16" and not table.contains(snd.setting_priority, "epilepsy 16") then
-		table.insert(snd.setting_priority, "epilepsy 16")     
-	end
-	if snd.firstaidcuretrack.faintness ~= "16" and not table.contains(snd.setting_priority, "faintness 16") then
-		table.insert(snd.setting_priority, "faintness 16")     
-	end
-	if snd.firstaidcuretrack.shyness ~= "17" and not table.contains(snd.setting_priority, "shyness 17") then
-		table.insert(snd.setting_priority, "shyness 17")     
-	end
-	if snd.firstaidcuretrack.hypersomnia ~= "17" and not table.contains(snd.setting_priority, "hypersomnia 17") then
-		table.insert(snd.setting_priority, "hypersomnia 17")     
-	end
-	if snd.firstaidcuretrack.dissonance ~= "17" and not table.contains(snd.setting_priority, "dissonance 17") then
-		table.insert(snd.setting_priority, "dissonance 17")     
-	end
-	if snd.firstaidcuretrack.hubris ~= "17" and not table.contains(snd.setting_priority, "hubris 17") then
-		table.insert(snd.setting_priority, "hubris 17")     
-	end 
-  if snd.firstaidcuretrack.narcolepsy ~= "18" and not table.contains(snd.setting_priority, "narcolepsy 18") then
-    table.insert(snd.setting_priority, "narcolepsy 18")     
+  if snd.firstaidcuretrack.instawake ~= "15" and not table.contains(snd.setting_priority, "defence instawake 15") then
+    table.insert(snd.setting_priority, "defence instawake 15")     
+  end
+  if snd.firstaidcuretrack.echoes ~= "15" and not table.contains(snd.setting_priority, "echoes 15") then
+    table.insert(snd.setting_priority, "echoes 15")     
   end 
-	if snd.firstaidcuretrack.patterns ~= "18" and not table.contains(snd.setting_priority, "patterns 18") then
-		table.insert(snd.setting_priority, "patterns 18")     
-	end
-	if snd.firstaidcuretrack.dementia ~= "19" and not table.contains(snd.setting_priority, "dementia 19") then
-		table.insert(snd.setting_priority, "dementia 19")     
-	end
-	if snd.firstaidcuretrack.blisters ~= "19" and not table.contains(snd.setting_priority, "blisters 19") then
-		table.insert(snd.setting_priority, "blisters 19")     
-	end
+  if snd.firstaidcuretrack.courage ~= "16" and not table.contains(snd.setting_priority, "defence courage 16") then
+    table.insert(snd.setting_priority, "defence courage 16")     
+  end
  
   -- sip
-  if snd.firstaidcuretrack.speed ~= "2" and not table.contains(snd.setting_priority, "defence speed 2") then
-    table.insert(snd.setting_priority, "defence speed 2")     
+  if snd.firstaidcuretrack.voyria ~= "2" and not table.contains(snd.setting_priority, "voyria 2") then
+    table.insert(snd.setting_priority, "voyria 2")     
   end
-  if snd.firstaidcuretrack.voyria ~= "3" and not table.contains(snd.setting_priority, "voyria 3") then
-    table.insert(snd.setting_priority, "voyria 3")     
+  if snd.firstaidcuretrack.arcane ~= "2" and not table.contains(snd.setting_priority, "defence arcane 2") then
+    table.insert(snd.setting_priority, "defence arcane 2")     
   end
-  if snd.firstaidcuretrack.levitation ~= "3" and not table.contains(snd.setting_priority, "defence levitation 3") then
-    table.insert(snd.setting_priority, "defence levitation 3")     
-  end
-  if snd.firstaidcuretrack.arcane ~= "4" and not table.contains(snd.setting_priority, "defence arcane 4") then
-    table.insert(snd.setting_priority, "defence arcane 4")     
-  end
-	if snd.firstaidcuretrack.etherflux ~= "5" and not table.contains(snd.setting_priority, "etherflux 5") then
-		table.insert(snd.setting_priority, "etherflux 5")     
+	if snd.firstaidcuretrack.etherflux ~= "3" and not table.contains(snd.setting_priority, "etherflux 3") then
+		table.insert(snd.setting_priority, "etherflux 3")     
 	end  
-  if snd.firstaidcuretrack.squelched ~= "6" and not table.contains(snd.setting_priority, "squelched 6") then
-    table.insert(snd.setting_priority, "squelched 6")     
+  if snd.firstaidcuretrack.squelched ~= "4" and not table.contains(snd.setting_priority, "squelched 4") then
+    table.insert(snd.setting_priority, "squelched 4")     
+  end
+  if snd.firstaidcuretrack.speed ~= "5" and not table.contains(snd.setting_priority, "defence speed 5") then
+    table.insert(snd.setting_priority, "defence speed 5")     
+  end
+  if snd.firstaidcuretrack.levitation ~= "6" and not table.contains(snd.setting_priority, "defence levitation 6") then
+    table.insert(snd.setting_priority, "defence levitation 6")     
   end
   
   -- smoke
@@ -4761,231 +4958,231 @@ if snd.cureset == "none" then
     table.insert(snd.setting_priority, "writhe_hoist 6")     
   end
   
-  -- salves
+  -- salves  
   if snd.firstaidcuretrack.pretorso ~= "1" and not table.contains(snd.setting_priority, "PRESTORE torso 30% 1") and not snd.canprerestorenow and tonumber(snd.my_limb_damage["right leg"]) &gt;= 30 then
     table.insert(snd.setting_priority, "PRESTORE torso 30% 1")      
-  end 
-  if snd.firstaidcuretrack.hypothermia ~= "1" and not table.contains(snd.setting_priority, "hypothermia 1") then
-		table.insert(snd.setting_priority, "hypothermia 1")     
-	end
-  if snd.firstaidcuretrack.burnt_skin ~= "1" and not table.contains(snd.setting_priority, "burnt_skin 1") then
-    table.insert(snd.setting_priority, "burnt_skin 1")     
-  end    
-  if snd.firstaidcuretrack.sore_wrist ~= "1" and not table.contains(snd.setting_priority, "sore_wrist 1") then
-		table.insert(snd.setting_priority, "sore_wrist 1")     
-	end     
+  end
   if snd.firstaidcuretrack.mindfog ~= "1" and not table.contains(snd.setting_priority, "mindfog  1") then
 		table.insert(snd.setting_priority, "mindfog  1")     
 	end 
-  if snd.firstaidcuretrack.sore_ankle ~= "2" and not table.contains(snd.setting_priority, "sore_ankle 2") then
-		table.insert(snd.setting_priority, "sore_ankle 2")     
-	end   
-  if snd.firstaidcuretrack.whiplash ~= "2" and not table.contains(snd.setting_priority, "whiplash 2") then
-		table.insert(snd.setting_priority, "whiplash 2")     
-	end 
-  if snd.firstaidcuretrack.destroyed_throat ~= "2" and not table.contains(snd.setting_priority, "destroyed_throat 2") then
-    table.insert(snd.setting_priority, "destroyed_throat 2")   
-  end     
-  if snd.firstaidcuretrack.anorexia ~= "2" and not table.contains(snd.setting_priority, "anorexia 2") then
-    table.insert(snd.setting_priority, "anorexia 2")     
+  if snd.firstaidcuretrack.burnt_skin ~= "1" and not table.contains(snd.setting_priority, "burnt_skin 1") then
+    table.insert(snd.setting_priority, "burnt_skin 1")     
+  end 
+  if snd.firstaidcuretrack.destroyed_throat ~= "1" and not table.contains(snd.setting_priority, "destroyed_throat 1") then
+    table.insert(snd.setting_priority, "destroyed_throat 1")   
+  end    
+  if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
+    table.insert(snd.setting_priority, "anorexia 1")     
   end
-  if snd.firstaidcuretrack.indifference ~= "3" and not table.contains(snd.setting_priority, "indifference 3") then
-		table.insert(snd.setting_priority, "indifference 3")     
-	end  
-  if snd.firstaidcuretrack.heatspear ~= "3" and not table.contains(snd.setting_priority, "heatspear 3") then
-		table.insert(snd.setting_priority, "heatspear 3")     
-	end 
-  if snd.firstaidcuretrack.crushed_chest ~= "3" and not table.contains(snd.setting_priority, "crushed_chest 3") then
-    table.insert(snd.setting_priority, "crushed_chest 3")     
+  if snd.firstaidcuretrack.crushed_chest ~= "2" and not table.contains(snd.setting_priority, "crushed_chest 2") then
+    table.insert(snd.setting_priority, "crushed_chest 2")     
   end 
-  if snd.firstaidcuretrack.weak_grip ~= "3" and not table.contains(snd.setting_priority, "weak_grip 3") then
-		table.insert(snd.setting_priority, "weak_grip 3")     
-	end       
-  if snd.firstaidcuretrack.backstrain ~= "4" and not table.contains(snd.setting_priority, "backstrain 4") then
-		table.insert(snd.setting_priority, "backstrain 4")     
-	end
-  if snd.firstaidcuretrack.stiffness ~= "4" and not table.contains(snd.setting_priority, "stiffness 4") then
-		table.insert(snd.setting_priority, "stiffness 4")     
-	end
-  if snd.firstaidcuretrack.blurry_vision ~= "4" and not table.contains(snd.setting_priority, "blurry_vision 4") then
-		table.insert(snd.setting_priority, "blurry_vision 4")     
-	end 
-  if snd.firstaidcuretrack.cracked_ribs ~= "4" and not table.contains(snd.setting_priority, "cracked_ribs 4") then
-		table.insert(snd.setting_priority, "cracked_ribs 4")
-	end  
-	if snd.firstaidcuretrack.right_leg_bruised_critical ~= "5" and not table.contains(snd.setting_priority, "right_leg_bruised_critical 5")   then
-		table.insert(snd.setting_priority, "right_leg_bruised_critical 5")     
-	end  
-	if snd.firstaidcuretrack.left_leg_bruised_critical ~= "5" and not table.contains(snd.setting_priority, "left_leg_bruised_critical 5") then
-		table.insert(snd.setting_priority, "left_leg_bruised_critical 5")    
-	end  
-	if snd.firstaidcuretrack.right_arm_bruised_critical ~= "5" and not table.contains(snd.setting_priority, "right_arm_bruised_critical 5")  then
-		table.insert(snd.setting_priority, "right_arm_bruised_critical 5")     
-	end 
-	if snd.firstaidcuretrack.left_arm_bruised_critical ~= "5" and not table.contains(snd.setting_priority, "left_arm_bruised_critical 5")  then
-		table.insert(snd.setting_priority, "left_arm_bruised_critical 5")     
-	end 
-	if snd.firstaidcuretrack.torso_bruised_critical ~= "6" and not table.contains(snd.setting_priority, "torso_bruised_critical 6")  then
-		table.insert(snd.setting_priority, "torso_bruised_critical 6")     
-	end
-	if snd.firstaidcuretrack.head_bruised_critical ~= "6" and not table.contains(snd.setting_priority, "head_bruised_critical 6") then
-		table.insert(snd.setting_priority, "head_bruised_critical 6")     
-	end
-  if snd.firstaidcuretrack.left_leg_dislocated ~= "6" and not table.contains(snd.setting_priority, "left_leg_dislocated 6") then
-		table.insert(snd.setting_priority, "left_leg_dislocated 6")     
-	end  
-	if snd.firstaidcuretrack.right_leg_dislocated ~= "6" and not table.contains(snd.setting_priority, "right_leg_dislocated 6") then
-		table.insert(snd.setting_priority, "right_leg_dislocated 6")     
-	end 
-	if snd.firstaidcuretrack.left_arm_dislocated ~= "7" and not table.contains(snd.setting_priority, "left_arm_dislocated 7")  then
-		table.insert(snd.setting_priority, "left_arm_dislocated 7")     
-	end 
-	if snd.firstaidcuretrack.right_arm_dislocated ~= "7" and not table.contains(snd.setting_priority, "right_arm_dislocated 7") then
-		table.insert(snd.setting_priority, "right_arm_dislocated 7")     
-	end
-  if snd.firstaidcuretrack.left_leg_crippled ~= "7" and not table.contains(snd.setting_priority, "left_leg_crippled 7") then
-    table.insert(snd.setting_priority, "left_leg_crippled 7")     
+  if snd.firstaidcuretrack.left_leg_crippled ~= "2" and not table.contains(snd.setting_priority, "left_leg_crippled 2") then
+    table.insert(snd.setting_priority, "left_leg_crippled 2")     
   end 
- 	if snd.firstaidcuretrack.right_leg_crippled ~= "7" and not table.contains(snd.setting_priority, "right_leg_crippled 7") then
-		table.insert(snd.setting_priority, "right_leg_crippled 7")     
+ 	if snd.firstaidcuretrack.right_leg_crippled ~= "2" and not table.contains(snd.setting_priority, "right_leg_crippled 2") then
+		table.insert(snd.setting_priority, "right_leg_crippled 2")     
 	end
+  if snd.firstaidcuretrack.shivering ~= "2" and not table.contains(snd.setting_priority, "shivering 2") then
+		table.insert(snd.setting_priority, "shivering 2")     
+	end
+	if snd.firstaidcuretrack.frozen ~= "3" and not table.contains(snd.setting_priority, "frozen 3") then
+		table.insert(snd.setting_priority, "frozen 3")     
+	end 
+  if snd.firstaidcuretrack.hypothermia ~= "3" and not table.contains(snd.setting_priority, "hypothermia 3") then
+		table.insert(snd.setting_priority, "hypothermia 3")     
+	end  
+ 	if snd.firstaidcuretrack.left_arm_crippled ~= "3" and not table.contains(snd.setting_priority, "left_arm_crippled 3")  then
+		table.insert(snd.setting_priority, "left_arm_crippled 3")     
+	end 
+ 	if snd.firstaidcuretrack.right_arm_crippled ~= "3" and not table.contains(snd.setting_priority, "right_arm_crippled 3") then
+		table.insert(snd.setting_priority, "right_arm_crippled 3")     
+	end 
+  if snd.firstaidcuretrack.feeble_legs ~= "4" and not table.contains(snd.setting_priority, "feeble_legs 4") then
+		table.insert(snd.setting_priority, "feeble_legs 4")     
+	end  
+  if snd.firstaidcuretrack.feeble_arms ~= "4" and not table.contains(snd.setting_priority, "feeble_arms 4") then
+		table.insert(snd.setting_priority, "feeble_arms 4")     
+	end 
+  if snd.firstaidcuretrack.blindness ~= "4" and not table.contains(snd.setting_priority, "blindness 4") then
+    table.insert(snd.setting_priority, "blindness 4")     
+  end
+  if snd.firstaidcuretrack.deafness ~= "4" and not table.contains(snd.setting_priority, "deafness 4") then
+    table.insert(snd.setting_priority, "deafness 4")     
+  end
+  if snd.firstaidcuretrack.cracked_ribs ~= "5" and not table.contains(snd.setting_priority, "cracked_ribs 5") then
+		table.insert(snd.setting_priority, "cracked_ribs 5")
+	end  
   if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-    if snd.firstaidcuretrack.left_leg_broken ~= "7" and not table.contains(snd.setting_priority, "left_leg_broken 7") then
-      table.insert(snd.setting_priority, "left_leg_broken 7")
+    if snd.firstaidcuretrack.left_leg_broken ~= "5" and not table.contains(snd.setting_priority, "left_leg_broken 5") then
+      table.insert(snd.setting_priority, "left_leg_broken 5")
     end
-    if snd.firstaidcuretrack.right_leg_broken ~= "7" and not table.contains(snd.setting_priority, "right_leg_broken 7") then
-      table.insert(snd.setting_priority, "right_leg_broken 7")
+    if snd.firstaidcuretrack.right_leg_broken ~= "5" and not table.contains(snd.setting_priority, "right_leg_broken 5") then
+      table.insert(snd.setting_priority, "right_leg_broken 5")
     end
   end 
-  if snd.firstaidcuretrack.feeble_legs ~= "7" and not table.contains(snd.setting_priority, "feeble_legs 7") then
-		table.insert(snd.setting_priority, "feeble_legs 7")     
+  if snd.firstaidcuretrack.left_leg_dislocated ~= "5" and not table.contains(snd.setting_priority, "left_leg_dislocated 5") then
+		table.insert(snd.setting_priority, "left_leg_dislocated 5")     
 	end  
-  if snd.firstaidcuretrack.feeble_arms ~= "7" and not table.contains(snd.setting_priority, "feeble_arms 7") then
-		table.insert(snd.setting_priority, "feeble_arms 7")     
+	if snd.firstaidcuretrack.right_leg_dislocated ~= "5" and not table.contains(snd.setting_priority, "right_leg_dislocated 5") then
+		table.insert(snd.setting_priority, "right_leg_dislocated 5")     
 	end 
- 	if snd.firstaidcuretrack.left_arm_crippled ~= "8" and not table.contains(snd.setting_priority, "left_arm_crippled 8")  then
-		table.insert(snd.setting_priority, "left_arm_crippled 8")     
+	if snd.firstaidcuretrack.left_arm_dislocated ~= "5" and not table.contains(snd.setting_priority, "left_arm_dislocated 5")  then
+		table.insert(snd.setting_priority, "left_arm_dislocated 5")     
 	end 
- 	if snd.firstaidcuretrack.right_arm_crippled ~= "8" and not table.contains(snd.setting_priority, "right_arm_crippled 8") then
-		table.insert(snd.setting_priority, "right_arm_crippled 8")     
-	end 
+	if snd.firstaidcuretrack.right_arm_dislocated ~= "6" and not table.contains(snd.setting_priority, "right_arm_dislocated 6") then
+		table.insert(snd.setting_priority, "right_arm_dislocated 6")     
+	end
   if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-    if snd.firstaidcuretrack.left_arm_broken ~= "8" and not table.contains(snd.setting_priority, "left_arm_broken 8") then
-      table.insert(snd.setting_priority, "left_arm_broken 8")
+    if snd.firstaidcuretrack.left_arm_broken ~= "6" and not table.contains(snd.setting_priority, "left_arm_broken 6") then
+      table.insert(snd.setting_priority, "left_arm_broken 6")
     end
-    if snd.firstaidcuretrack.right_arm_broken ~= "8" and not table.contains(snd.setting_priority, "right_arm_broken 8") then
-      table.insert(snd.setting_priority, "right_arm_broken 8")
+    if snd.firstaidcuretrack.right_arm_broken ~= "6" and not table.contains(snd.setting_priority, "right_arm_broken 6") then
+      table.insert(snd.setting_priority, "right_arm_broken 6")
     end
   end
-  if snd.firstaidcuretrack.muscle_spasms ~= "9" and not table.contains(snd.setting_priority, "muscle_spasms 9")  then
-		table.insert(snd.setting_priority, "muscle_spasms 9")     
+	if snd.firstaidcuretrack.right_leg_bruised_critical ~= "6" and not table.contains(snd.setting_priority, "right_leg_bruised_critical 6")   then
+		table.insert(snd.setting_priority, "right_leg_bruised_critical 6")     
+	end  
+	if snd.firstaidcuretrack.left_leg_bruised_critical ~= "6" and not table.contains(snd.setting_priority, "left_leg_bruised_critical 6") then
+		table.insert(snd.setting_priority, "left_leg_bruised_critical 6")    
+	end  
+	if snd.firstaidcuretrack.right_arm_bruised_critical ~= "6" and not table.contains(snd.setting_priority, "right_arm_bruised_critical 6")  then
+		table.insert(snd.setting_priority, "right_arm_bruised_critical 6")     
+	end 
+	if snd.firstaidcuretrack.left_arm_bruised_critical ~= "7" and not table.contains(snd.setting_priority, "left_arm_bruised_critical 7")  then
+		table.insert(snd.setting_priority, "left_arm_bruised_critical 7")     
+	end 
+	if snd.firstaidcuretrack.torso_bruised_critical ~= "7" and not table.contains(snd.setting_priority, "torso_bruised_critical 7")  then
+		table.insert(snd.setting_priority, "torso_bruised_critical 7")     
 	end
-	if snd.firstaidcuretrack.gnawing ~= "9" and not table.contains(snd.setting_priority, "gnawing 9") then
+	if snd.firstaidcuretrack.head_bruised_critical ~= "7" and not table.contains(snd.setting_priority, "head_bruised_critical 7") then
+		table.insert(snd.setting_priority, "head_bruised_critical 7")     
+	end
+  if snd.firstaidcuretrack.muscle_spasms ~= "7" and not table.contains(snd.setting_priority, "muscle_spasms 7")  then
+		table.insert(snd.setting_priority, "muscle_spasms 7")     
+	end
+  if snd.firstaidcuretrack.crippled_throat ~= "8" and not table.contains(snd.setting_priority, "crippled_throat 8") then
+		table.insert(snd.setting_priority, "crippled_throat 8")     
+	end 
+  if snd.firstaidcuretrack.left_arm_bruised_moderate ~= "8" and not table.contains(snd.setting_priority, "left_arm_bruised_moderate 8") then
+		table.insert(snd.setting_priority, "left_arm_bruised_moderate 8")     
+	end    
+  if snd.firstaidcuretrack.right_arm_bruised_moderate ~= "8" and not table.contains(snd.setting_priority, "right_arm_bruised_moderate 8") then
+		table.insert(snd.setting_priority, "right_arm_bruised_moderate 8")     
+	end 
+  if snd.firstaidcuretrack.left_leg_bruised_moderate ~= "8" and not table.contains(snd.setting_priority, "left_leg_bruised_moderate 8") then
+		table.insert(snd.setting_priority, "left_leg_bruised_moderate 8")     
+	end  
+  if snd.firstaidcuretrack.right_leg_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "right_leg_bruised_moderate 9") then
+		table.insert(snd.setting_priority, "right_leg_bruised_moderate 9")     
+	end
+  if snd.firstaidcuretrack.torso_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "torso_bruised_moderate 9") then
+		table.insert(snd.setting_priority, "torso_bruised_moderate 9")     
+	end 
+  if snd.firstaidcuretrack.gnawing ~= "9" and not table.contains(snd.setting_priority, "gnawing 9") then
 		table.insert(snd.setting_priority, "gnawing 9")     
 	end 
-	if snd.firstaidcuretrack.head_broken ~= "9" and not table.contains(snd.setting_priority, "head_broken 9") then
-		table.insert(snd.setting_priority, "head_broken 9")
-	end 
-  if snd.firstaidcuretrack.shivering ~= "9" and not table.contains(snd.setting_priority, "shivering 9") then
-		table.insert(snd.setting_priority, "shivering 9")     
+  if snd.firstaidcuretrack.head_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "head_bruised_moderate 9") then
+		table.insert(snd.setting_priority, "head_bruised_moderate 9")     
 	end
-  if snd.firstaidcuretrack.head_mangled ~= "9" and not table.contains(snd.setting_priority, "head_mangled 9") then
-    table.insert(snd.setting_priority, "head_mangled 9")     
-  end  
-	if snd.firstaidcuretrack.torso_mangled ~= "10" and not table.contains(snd.setting_priority, "torso_mangled 10") then
-		table.insert(snd.setting_priority, "torso_mangled 10")     
+	if snd.firstaidcuretrack.spinal_rip ~= "10" and not table.contains(snd.setting_priority, "spinal_rip 10") then
+		table.insert(snd.setting_priority, "spinal_rip 10")     
 	end 
-	if snd.firstaidcuretrack.left_leg_mangled ~= "10" and not table.contains(snd.setting_priority, "left_leg_mangled 10") then
-		table.insert(snd.setting_priority, "left_leg_mangled 10")     
-	end   
-	if snd.firstaidcuretrack.right_leg_mangled ~= "10" and not table.contains(snd.setting_priority, "right_leg_mangled 10") then
-		table.insert(snd.setting_priority, "right_leg_mangled 10")     
+	if snd.firstaidcuretrack.left_arm_bruised ~= "10" and not table.contains(snd.setting_priority, "left_arm_bruised 10") then
+		table.insert(snd.setting_priority, "left_arm_bruised 10")     
+	end
+	if snd.firstaidcuretrack.right_arm_bruised ~= "10" and not table.contains(snd.setting_priority, "right_arm_bruised 10") then
+		table.insert(snd.setting_priority, "right_arm_bruised 10")     
 	end  
-  if snd.firstaidcuretrack.left_arm_mangled ~= "10" and not table.contains(snd.setting_priority, "left_arm_mangled 10") then
-    table.insert(snd.setting_priority, "left_arm_mangled 10")     
-  end
-	if snd.firstaidcuretrack.right_arm_mangled ~= "11" and not table.contains(snd.setting_priority, "right_arm_mangled 11")  then
-		table.insert(snd.setting_priority, "right_arm_mangled 11")     
-	end
-	if snd.firstaidcuretrack.voidgaze ~= "11" and not table.contains(snd.setting_priority, "voidgaze 11") then
-		table.insert(snd.setting_priority, "voidgaze 11")     
+	if snd.firstaidcuretrack.left_leg_bruised ~= "10" and not table.contains(snd.setting_priority, "left_leg_bruised 10") then
+		table.insert(snd.setting_priority, "left_leg_bruised 10")     
 	end 
-	if snd.firstaidcuretrack.frigid ~= "11" and not table.contains(snd.setting_priority, "frigid 11") then
+  if snd.firstaidcuretrack.frigid ~= "11" and not table.contains(snd.setting_priority, "frigid 11") then
 		table.insert(snd.setting_priority, "frigid 11")     
 	end  
-	if snd.firstaidcuretrack.spinal_rip ~= "11" and not table.contains(snd.setting_priority, "spinal_rip 11") then
-		table.insert(snd.setting_priority, "spinal_rip 11")     
+	if snd.firstaidcuretrack.right_leg_bruised ~= "11" and not table.contains(snd.setting_priority, "right_leg_bruised 11") then
+		table.insert(snd.setting_priority, "right_leg_bruised 11")     
+	end
+	if snd.firstaidcuretrack.head_bruised ~= "11" and not table.contains(snd.setting_priority, "head_bruised 11") then
+		table.insert(snd.setting_priority, "head_bruised 11")     
+	end     
+	if snd.firstaidcuretrack.torso_bruised ~= "11" and not table.contains(snd.setting_priority, "torso_bruised 11") then
+		table.insert(snd.setting_priority, "torso_bruised 11")     
+	end   
+  if snd.firstaidcuretrack.head_mangled ~= "12" and not table.contains(snd.setting_priority, "head_mangled 12") then
+    table.insert(snd.setting_priority, "head_mangled 12")     
+  end 
+	if snd.firstaidcuretrack.torso_mangled ~= "12" and not table.contains(snd.setting_priority, "torso_mangled 12") then
+		table.insert(snd.setting_priority, "torso_mangled 12")     
 	end 
-	if snd.firstaidcuretrack.torso_broken ~= "11" and not table.contains(snd.setting_priority, "torso_broken 11") then
-		table.insert(snd.setting_priority, "torso_broken 11")
-	end 
-  if snd.firstaidcuretrack.left_arm_bruised_moderate ~= "12" and not table.contains(snd.setting_priority, "left_arm_bruised_moderate 12") then
-		table.insert(snd.setting_priority, "left_arm_bruised_moderate 12")     
-	end    
-  if snd.firstaidcuretrack.right_arm_bruised_moderate ~= "12" and not table.contains(snd.setting_priority, "right_arm_bruised_moderate 12") then
-		table.insert(snd.setting_priority, "right_arm_bruised_moderate 12")     
-	end 
-  if snd.firstaidcuretrack.left_leg_bruised_moderate ~= "12" and not table.contains(snd.setting_priority, "left_leg_bruised_moderate 12") then
-		table.insert(snd.setting_priority, "left_leg_bruised_moderate 12")     
+	if snd.firstaidcuretrack.left_leg_amputated ~= "12" and not table.contains(snd.setting_priority, "left_leg_amputated 12") then
+		table.insert(snd.setting_priority, "left_leg_amputated 12")     
 	end  
-  if snd.firstaidcuretrack.right_leg_bruised_moderate ~= "13" and not table.contains(snd.setting_priority, "right_leg_bruised_moderate 13") then
-		table.insert(snd.setting_priority, "right_leg_bruised_moderate 13")     
-	end
-  if snd.firstaidcuretrack.torso_bruised_moderate ~= "13" and not table.contains(snd.setting_priority, "torso_bruised_moderate 13") then
-		table.insert(snd.setting_priority, "torso_bruised_moderate 13")     
+	if snd.firstaidcuretrack.left_leg_mangled ~= "12" and not table.contains(snd.setting_priority, "left_leg_mangled 12") then
+		table.insert(snd.setting_priority, "left_leg_mangled 12")     
+	end   
+	if snd.firstaidcuretrack.right_leg_amputated ~= "13" and not table.contains(snd.setting_priority, "right_leg_amputated 13") then
+		table.insert(snd.setting_priority, "right_leg_amputated 13")     
+	end  
+	if snd.firstaidcuretrack.right_leg_mangled ~= "13" and not table.contains(snd.setting_priority, "right_leg_mangled 13") then
+		table.insert(snd.setting_priority, "right_leg_mangled 13")     
+	end  
+	if snd.firstaidcuretrack.left_arm_amputated ~= "13" and not table.contains(snd.setting_priority, "left_arm_amputated 13") then
+		table.insert(snd.setting_priority, "left_arm_amputated 13")     
+	end   
+  if snd.firstaidcuretrack.left_arm_mangled ~= "13" and not table.contains(snd.setting_priority, "left_arm_mangled 13") then
+    table.insert(snd.setting_priority, "left_arm_mangled 13")     
+  end
+  if snd.firstaidcuretrack.manablight ~= "14" and not table.contains(snd.setting_priority, "manablight 14") then
+		table.insert(snd.setting_priority, "manablight 14")     
 	end 
-  if snd.firstaidcuretrack.head_bruised_moderate ~= "13" and not table.contains(snd.setting_priority, "head_bruised_moderate 13") then
-		table.insert(snd.setting_priority, "head_bruised_moderate 13")     
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "13" and not table.contains(snd.setting_priority, "left_arm_broken 13") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_arm_broken 13")
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "14" and not table.contains(snd.setting_priority, "right_arm_broken 14") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 14")
-	end 
+	if snd.firstaidcuretrack.right_arm_amputated ~= "14" and not table.contains(snd.setting_priority, "right_arm_amputated 14") then
+		table.insert(snd.setting_priority, "right_arm_amputated 14")     
+	end  
+	if snd.firstaidcuretrack.right_arm_mangled ~= "14" and not table.contains(snd.setting_priority, "right_arm_mangled 14")  then
+		table.insert(snd.setting_priority, "right_arm_mangled 14")     
+	end  
   if snd.firstaidcuretrack.left_leg_broken ~= "14" and not table.contains(snd.setting_priority, "left_leg_broken 14") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
     table.insert(snd.setting_priority, "left_leg_broken 14")
   end
-	if snd.firstaidcuretrack.right_leg_broken ~= "14" and not table.contains(snd.setting_priority, "right_leg_broken 14") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 14")
+	if snd.firstaidcuretrack.right_leg_broken ~= "15" and not table.contains(snd.setting_priority, "right_leg_broken 15") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
+		table.insert(snd.setting_priority, "right_leg_broken 15")
 	end 
-	if snd.firstaidcuretrack.frozen ~= "14" and not table.contains(snd.setting_priority, "frozen 14") then
-		table.insert(snd.setting_priority, "frozen 14")     
+	if snd.firstaidcuretrack.voidgaze ~= "15" and not table.contains(snd.setting_priority, "voidgaze 15") then
+		table.insert(snd.setting_priority, "voidgaze 15")     
 	end 
-	if snd.firstaidcuretrack.manablight ~= "14" and not table.contains(snd.setting_priority, "manablight 14") then
-		table.insert(snd.setting_priority, "manablight 14")     
-	end 
-  if snd.firstaidcuretrack.lightwound ~= "15" and not table.contains(snd.setting_priority, "lightwound 15") then
-		table.insert(snd.setting_priority, "lightwound 15")    
-	end    
-	if snd.firstaidcuretrack.left_arm_bruised ~= "15" and not table.contains(snd.setting_priority, "left_arm_bruised 15") then
-		table.insert(snd.setting_priority, "left_arm_bruised 15")     
+  if snd.firstaidcuretrack.gloom ~= "15" and not table.contains(snd.setting_priority, "gloom 15") then
+		table.insert(snd.setting_priority, "gloom 15")     
 	end
-	if snd.firstaidcuretrack.right_arm_bruised ~= "15" and not table.contains(snd.setting_priority, "right_arm_bruised 15") then
-		table.insert(snd.setting_priority, "right_arm_bruised 15")     
+	if snd.firstaidcuretrack.left_arm_broken ~= "15" and not table.contains(snd.setting_priority, "left_arm_broken 15") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
+		table.insert(snd.setting_priority, "left_arm_broken 15")
+	end
+	if snd.firstaidcuretrack.right_arm_broken ~= "16" and not table.contains(snd.setting_priority, "right_arm_broken 16") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
+		table.insert(snd.setting_priority, "right_arm_broken 16")
+	end 
+	if snd.firstaidcuretrack.torso_broken ~= "16" and not table.contains(snd.setting_priority, "torso_broken 16") then
+		table.insert(snd.setting_priority, "torso_broken 16")
+	end 
+	if snd.firstaidcuretrack.head_broken ~= "16" and not table.contains(snd.setting_priority, "head_broken 16") then
+		table.insert(snd.setting_priority, "head_broken 16")
+	end   
+  if snd.firstaidcuretrack.whiplash ~= "16" and not table.contains(snd.setting_priority, "whiplash 16") then
+		table.insert(snd.setting_priority, "whiplash 16")     
 	end  
-	if snd.firstaidcuretrack.left_leg_bruised ~= "15" and not table.contains(snd.setting_priority, "left_leg_bruised 15") then
-		table.insert(snd.setting_priority, "left_leg_bruised 15")     
-	end 
-	if snd.firstaidcuretrack.right_leg_bruised ~= "16" and not table.contains(snd.setting_priority, "right_leg_bruised 16") then
-		table.insert(snd.setting_priority, "right_leg_bruised 16")     
+  if snd.firstaidcuretrack.backstrain ~= "17" and not table.contains(snd.setting_priority, "backstrain 17") then
+		table.insert(snd.setting_priority, "backstrain 17")     
 	end
-	if snd.firstaidcuretrack.head_bruised ~= "16" and not table.contains(snd.setting_priority, "head_bruised 16") then
-		table.insert(snd.setting_priority, "head_bruised 16")     
-	end     
-	if snd.firstaidcuretrack.torso_bruised ~= "16" and not table.contains(snd.setting_priority, "torso_bruised 16") then
-		table.insert(snd.setting_priority, "torso_bruised 16")     
-	end     
-  if snd.firstaidcuretrack.ablaze ~= "16" and not table.contains(snd.setting_priority, "ablaze 16") then
-		table.insert(snd.setting_priority, "ablaze 16")     
-	end 
-  if snd.firstaidcuretrack.gloom ~= "17" and not table.contains(snd.setting_priority, "gloom 17") then
-		table.insert(snd.setting_priority, "gloom 17")     
-	end
-  if snd.firstaidcuretrack.deepwound ~= "17" and not table.contains(snd.setting_priority, "deepwound 17") then
-		table.insert(snd.setting_priority, "deepwound 17")     
+  if snd.firstaidcuretrack.sore_wrist ~= "17" and not table.contains(snd.setting_priority, "sore_wrist 17") then
+		table.insert(snd.setting_priority, "sore_wrist 17")     
+	end   
+  if snd.firstaidcuretrack.sore_ankle ~= "17" and not table.contains(snd.setting_priority, "sore_ankle 17") then
+		table.insert(snd.setting_priority, "sore_ankle 17")     
 	end  
- 	if snd.firstaidcuretrack.firstaid_predict_arms ~= "17" and not table.contains(snd.setting_priority, "firstaid_predict_arms 17") then
+  if snd.firstaidcuretrack.collapsed_lung ~= "17" and not table.contains(snd.setting_priority, "collapsed_lung 17") then
+		table.insert(snd.setting_priority, "collapsed_lung 17")     
+	end 
+  if snd.firstaidcuretrack.firstaid_predict_arms ~= "17" and not table.contains(snd.setting_priority, "firstaid_predict_arms 17") then
 		table.insert(snd.setting_priority, "firstaid_predict_arms 17")     
 	end   
  	if snd.firstaidcuretrack.firstaid_predict_legs ~= "17" and not table.contains(snd.setting_priority, "firstaid_predict_legs 17") then
@@ -4994,6 +5191,18 @@ if snd.cureset == "none" then
  	if snd.firstaidcuretrack.firstaid_predict_any_limb ~= "17" and not table.contains(snd.setting_priority, "firstaid_predict_any_limb 17") then
 		table.insert(snd.setting_priority, "firstaid_predict_any_limb 17")     
 	end
+  if snd.firstaidcuretrack.weak_grip ~= "18" and not table.contains(snd.setting_priority, "weak_grip 18") then
+		table.insert(snd.setting_priority, "weak_grip 18")     
+	end   
+  if snd.firstaidcuretrack.indifference ~= "18" and not table.contains(snd.setting_priority, "indifference 18") then
+		table.insert(snd.setting_priority, "indifference 18")     
+	end  
+  if snd.firstaidcuretrack.smashed_throat ~= "18" and not table.contains(snd.setting_priority, "smashed_throat 18") then
+		table.insert(snd.setting_priority, "smashed_throat 18")     
+	end 
+  if snd.firstaidcuretrack.mauled_face ~= "18" and not table.contains(snd.setting_priority, "mauled_face 18") then
+		table.insert(snd.setting_priority, "mauled_face 18")
+	end 
   if snd.firstaidcuretrack.prehead ~= "15" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE head 15% 18") then
     table.insert(snd.setting_priority, "PRESTORE head 15% 18")      
   end 
@@ -5005,50 +5214,47 @@ if snd.cureset == "none" then
   end
   if snd.firstaidcuretrack.preleftleg ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE left leg 20% 18") then
     table.insert(snd.setting_priority, "PRESTORE left leg 20% 18")     
-  end  
+  end 
+  if snd.firstaidcuretrack.deepwound ~= "19" and not table.contains(snd.setting_priority, "deepwound 19") then
+		table.insert(snd.setting_priority, "deepwound 19")     
+	end       
+  if snd.firstaidcuretrack.ablaze ~= "19" and not table.contains(snd.setting_priority, "ablaze 19") then
+		table.insert(snd.setting_priority, "ablaze 19")     
+	end 
+  if snd.firstaidcuretrack.heatspear ~= "19" and not table.contains(snd.setting_priority, "heatspear 19") then
+		table.insert(snd.setting_priority, "heatspear 19")     
+	end  
+  if snd.firstaidcuretrack.blurry_vision ~= "19" and not table.contains(snd.setting_priority, "blurry_vision 19") then
+		table.insert(snd.setting_priority, "blurry_vision 19")     
+	end 
   if snd.firstaidcuretrack.prerightleg ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE right leg 20% 19") then
     table.insert(snd.setting_priority, "PRESTORE right leg 20% 19")      
   end 
   if snd.firstaidcuretrack.pretorso ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE torso 20% 19") then
     table.insert(snd.setting_priority, "PRESTORE torso 20% 19")      
   end 
-	if snd.firstaidcuretrack.left_leg_amputated ~= "19" and not table.contains(snd.setting_priority, "left_leg_amputated 19") then
-		table.insert(snd.setting_priority, "left_leg_amputated 19")     
+  if snd.firstaidcuretrack.watery_eyes ~= "20" and not table.contains(snd.setting_priority, "watery_eyes 20") then
+		table.insert(snd.setting_priority, "watery_eyes 20")     
 	end  
-	if snd.firstaidcuretrack.right_leg_amputated ~= "19" and not table.contains(snd.setting_priority, "right_leg_amputated 19") then
-		table.insert(snd.setting_priority, "right_leg_amputated 19")     
-	end    
-	if snd.firstaidcuretrack.left_arm_amputated ~= "20" and not table.contains(snd.setting_priority, "left_arm_amputated 20") then
-		table.insert(snd.setting_priority, "left_arm_amputated 20")     
-	end    
-	if snd.firstaidcuretrack.right_arm_amputated ~= "20" and not table.contains(snd.setting_priority, "right_arm_amputated 20") then
-		table.insert(snd.setting_priority, "right_arm_amputated 20")     
-	end  
-  if snd.firstaidcuretrack.crippled_throat ~= "20" and not table.contains(snd.setting_priority, "crippled_throat 20") then
-		table.insert(snd.setting_priority, "crippled_throat 20")     
+  if snd.firstaidcuretrack.void ~= "20" and not table.contains(snd.setting_priority, "void 20") then
+		table.insert(snd.setting_priority, "void 20")    
+	end 
+  if snd.firstaidcuretrack.weakvoid ~= "20" and not table.contains(snd.setting_priority, "weakvoid 20") then
+		table.insert(snd.setting_priority, "weakvoid 20")    
 	end 
   if snd.firstaidcuretrack.stuttering ~= "20" and not table.contains(snd.setting_priority, "stuttering 20") then
 		table.insert(snd.setting_priority, "stuttering 20")     
 	end   
+  if snd.firstaidcuretrack.lightwound ~= "21" and not table.contains(snd.setting_priority, "lightwound 21") then
+		table.insert(snd.setting_priority, "lightwound 21")    
+	end
+  if snd.firstaidcuretrack.stiffness ~= "21" and not table.contains(snd.setting_priority, "stiffness 21") then
+		table.insert(snd.setting_priority, "stiffness 21")     
+	end
   if snd.firstaidcuretrack.effused_blood ~= "21" and not table.contains(snd.setting_priority, "effused_blood 21") then
 		table.insert(snd.setting_priority, "effused_blood 21")     
-	end 
-  if snd.firstaidcuretrack.smashed_throat ~= "21" and not table.contains(snd.setting_priority, "smashed_throat 21") then
-		table.insert(snd.setting_priority, "smashed_throat 21")     
-	end 
-  if snd.firstaidcuretrack.void ~= "22" and not table.contains(snd.setting_priority, "void 22") then
-		table.insert(snd.setting_priority, "void 22")    
-	end 
-  if snd.firstaidcuretrack.weakvoid ~= "22" and not table.contains(snd.setting_priority, "weakvoid 22") then
-		table.insert(snd.setting_priority, "weakvoid 22")    
-	end
-  if snd.firstaidcuretrack.collapsed_lung ~= "22" and not table.contains(snd.setting_priority, "collapsed_lung 22") then
-		table.insert(snd.setting_priority, "collapsed_lung 22")     
-	end 
-  if snd.firstaidcuretrack.mauled_face ~= "22" and not table.contains(snd.setting_priority, "mauled_face 22") then
-		table.insert(snd.setting_priority, "mauled_face 22")
-	end 
-  
+	end   
+    
 	snd.firstaidchangecure = false -- keep last
   if #snd.setting_priority &gt; 0 then
     enableTimer("reset check")
@@ -5112,134 +5318,22 @@ end</script>
 							<name>Firstaid Cureset Details Per Class</name>
 							<packageName></packageName>
 							<script>function snd.firstaidassArchivist()
-	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
-		table.insert(snd.setting_priority, "asthma 1")   
-	end	
-	if snd.firstaidcuretrack.allergies ~= "1" and not table.contains(snd.setting_priority, "allergies 1") then
-		table.insert(snd.setting_priority, "allergies 1")   
-	end		
-	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
-		table.insert(snd.setting_priority, "clumsiness 1")   
-	end	
-	if snd.firstaidcuretrack.impairment ~= "2" and not table.contains(snd.setting_priority, "impairment 2") then
-		table.insert(snd.setting_priority, "impairment 2")   
-	end		
-	if snd.firstaidcuretrack.faintness ~= "2" and not table.contains(snd.setting_priority, "faintness 2")	then
-		table.insert(snd.setting_priority, "faintness 2")		 
-	end	 
-	if snd.firstaidcuretrack.lethargy ~= "2" and not table.contains(snd.setting_priority, "lethargy 2") then
-		table.insert(snd.setting_priority, "lethargy 2")
-	end	
-	if snd.firstaidcuretrack.vomiting ~= "2" and not table.contains(snd.setting_priority, "vomiting 2") then
-		table.insert(snd.setting_priority, "vomiting 2")   
-	end	
-	if snd.firstaidcuretrack.haemophilia ~= "3" and not table.contains(snd.setting_priority, "haemophilia 3") then
-		table.insert(snd.setting_priority, "haemophilia 3")   
-	end	
-	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
-		table.insert(snd.setting_priority, "sensitivity 3")   
-	end	
 	if snd.firstaidcuretrack.addiction ~= "3" and not table.contains(snd.setting_priority, "addiction 3")	then
 		table.insert(snd.setting_priority, "addiction 3")		 
 	end		
-	if snd.firstaidcuretrack.blisters ~= "3" and not table.contains(snd.setting_priority, "blisters 3") then
-		table.insert(snd.setting_priority, "blisters 3")   
-	end	
 	if snd.firstaidcuretrack.patterns ~= "4" and not table.contains(snd.setting_priority, "patterns 4")	then
 		table.insert(snd.setting_priority, "patterns 4")		 
 	end	
-	if snd.firstaidcuretrack.exhaustion ~= "4" and not table.contains(snd.setting_priority, "exhaustion 4") then
-		table.insert(snd.setting_priority, "exhaustion 4")   
-	end	
-	if snd.firstaidcuretrack.paresis ~= "4" and not table.contains(snd.setting_priority, "paresis 4") then
-		table.insert(snd.setting_priority, "paresis 4")   
-	end		
-	if snd.firstaidcuretrack.epilepsy ~= "4" and not table.contains(snd.setting_priority, "epilepsy 4") then
-		table.insert(snd.setting_priority, "epilepsy 4")		 
-	end	
-	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
-		table.insert(snd.setting_priority, "hallucinations 5")		 
-	end	
-	if snd.firstaidcuretrack.laxity ~= "5" and not table.contains(snd.setting_priority, "laxity 5")	then
-		table.insert(snd.setting_priority, "laxity 5")		 
-	end
-	if snd.firstaidcuretrack.peace ~= "5" and not table.contains(snd.setting_priority, "peace 5") then
-		table.insert(snd.setting_priority, "peace 5")		 
-	end  
-	if snd.firstaidcuretrack.paranoia ~= "5" and not table.contains(snd.setting_priority, "paranoia 5")	then
-		table.insert(snd.setting_priority, "paranoia 5")		 
-	end	
-	if snd.firstaidcuretrack.mercy ~= "6" and not table.contains(snd.setting_priority, "mercy 6") then
-		table.insert(snd.setting_priority, "mercy 6")		 
-	end	
-	if snd.firstaidcuretrack.infatuation ~= "6" and not table.contains(snd.setting_priority, "infatuation 6")	then
-		table.insert(snd.setting_priority, "infatuation 6")		 
-	end
-	if snd.firstaidcuretrack.masochism ~= "6" and not table.contains(snd.setting_priority, "masochism 6") then
-		table.insert(snd.setting_priority, "masochism 6")		 
-	end	
-	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
-		table.insert(snd.setting_priority, "mania 6")		 
-	end	
-	if snd.firstaidcuretrack.dizziness ~= "7" and not table.contains(snd.setting_priority, "dizziness 7") then
-		table.insert(snd.setting_priority, "dizziness 7")		 
-	end
-	if snd.firstaidcuretrack.magnanimity ~= "7" and not table.contains(snd.setting_priority, "magnanimity 7") then
-		table.insert(snd.setting_priority, "magnanimity 7")		 
-	end	
-	if snd.firstaidcuretrack.shyness ~= "7" and not table.contains(snd.setting_priority, "shyness 7") then
-		table.insert(snd.setting_priority, "shyness 7")		 
-	end	
-	if snd.firstaidcuretrack.extravasation ~= "7" and not table.contains(snd.setting_priority, "extravasation 7") then
-		table.insert(snd.setting_priority, "extravasation 7")   
-	end	
-	if snd.firstaidcuretrack.hypochondria ~= "8" and not table.contains(snd.setting_priority, "hypochondria 8")	then
-		table.insert(snd.setting_priority, "hypochondria 8")		 
-	end	
-	if snd.firstaidcuretrack.weariness ~= "8" and not table.contains(snd.setting_priority, "weariness 8")	then
-		table.insert(snd.setting_priority, "weariness 8")		 
-	end
-	if snd.firstaidcuretrack.stupidity ~= "8" and not table.contains(snd.setting_priority, "stupidity 8")	then
-		table.insert(snd.setting_priority, "stupidity 8")		 
-	end	
-	if snd.firstaidcuretrack.hatred ~= "8" and not table.contains(snd.setting_priority, "hatred 8")	then
-		table.insert(snd.setting_priority, "hatred 8")		 
-	end
-	if snd.firstaidcuretrack.vertigo ~= "9" and not table.contains(snd.setting_priority, "vertigo 9")	then
-		table.insert(snd.setting_priority, "vertigo 9")		 
-	end
-	if snd.firstaidcuretrack.egocentrism ~= "9" and not table.contains(snd.setting_priority, "egocentrism 9")	then
-		table.insert(snd.setting_priority, "egocentrism 9")		 
-	end	
-	if snd.firstaidcuretrack.sadness ~= "9" and not table.contains(snd.setting_priority, "sadness 9")	then
-		table.insert(snd.setting_priority, "sadness 9")		 
-	end	
-	if snd.firstaidcuretrack.dementia ~= "9" and not table.contains(snd.setting_priority, "dementia 9")	then
-		table.insert(snd.setting_priority, "dementia 9")		 
-	end	
  
 	if snd.firstaidcuretrack.deafness ~= "6" and not table.contains(snd.setting_priority, "deafness 6") then
-	table.insert(snd.setting_priority, "deafness 6")   
+    table.insert(snd.setting_priority, "deafness 6")   
 	end
 	if snd.firstaidcuretrack.blindness ~= "8" and not table.contains(snd.setting_priority, "blindness 8") then
-	table.insert(snd.setting_priority, "blindness 8")   
+    table.insert(snd.setting_priority, "blindness 8")   
 	end
 	if snd.firstaidcuretrack.instawake ~= "9" and not table.contains(snd.setting_priority, "defence instawake 9") then
-	table.insert(snd.setting_priority, "defence instawake 9")   
+    table.insert(snd.setting_priority, "defence instawake 9")   
 	end
- 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-	table.insert(snd.setting_priority, "anorexia 1")   
-	end
-	if snd.firstaidcuretrack.frigid ~= "1" and not table.contains(snd.setting_priority, "frigid 1") then
-		table.insert(snd.setting_priority, "frigid 1")   
-	end 
-	if snd.firstaidcuretrack.frozen ~= "1" and not table.contains(snd.setting_priority, "frozen 1") then
-		table.insert(snd.setting_priority, "frozen 1")   
-	end 
-	if snd.firstaidcuretrack.ablaze ~= "1" and not table.contains(snd.setting_priority, "ablaze 1") then
-		table.insert(snd.setting_priority, "ablaze 1")   
-	end 
   
 	snd.firstaidchangecure = false -- keep last
 	if #snd.setting_priority &gt; 0 then
@@ -5251,6 +5345,31 @@ function snd.firstaidassAscendril()
 	if snd.firstaidcuretrack.blisters ~= "1" and not table.contains(snd.setting_priority, "blisters 1") then
 		table.insert(snd.setting_priority, "blisters 1")		 
 	end	 
+  if snd.firstaidcuretrack.etherflux ~= "1" and not table.contains(snd.setting_priority, "etherflux 1") then
+		table.insert(snd.setting_priority, "etherflux 1")		 
+	end	 
+	if snd.firstaidcuretrack.frozen ~= "1" and not table.contains(snd.setting_priority, "frozen 1") then
+		table.insert(snd.setting_priority, "frozen 1")		 
+	end 
+	if snd.firstaidcuretrack.ablaze ~= "2" and not table.contains(snd.setting_priority, "ablaze 2") then
+		table.insert(snd.setting_priority, "ablaze 2")		 
+	end
+  if snd.firstaidcuretrack.shivering ~= "3" and not table.contains(snd.setting_priority, "shivering 3") then
+		table.insert(snd.setting_priority, "shivering 3")		 
+	end 
+	if snd.firstaidcuretrack.frigid ~= "4" and not table.contains(snd.setting_priority, "frigid 4") then
+		table.insert(snd.setting_priority, "frigid 4")		 
+	end	
+	if snd.firstaidcuretrack.hypothmeria ~= "5" and not table.contains(snd.setting_priority, "hypothmeria 5") then
+		table.insert(snd.setting_priority, "hypothmeria 5")		 
+	end	
+	if snd.firstaidcuretrack.torso_mangled ~= "6" and not table.contains(snd.setting_priority, "torso_mangled 6") then
+		table.insert(snd.setting_priority, "torso_mangled 6")		 
+	end
+	if snd.firstaidcuretrack.torso_broken ~= "7" and not table.contains(snd.setting_priority, "torso_broken 7") then
+		table.insert(snd.setting_priority, "torso_broken 7")		 
+	end 
+  
 	if snd.firstaidcuretrack.impairment ~= "2" and not table.contains(snd.setting_priority, "impairment 2") then
 		table.insert(snd.setting_priority, "impairment 2")		 
 	end	 
@@ -5265,61 +5384,12 @@ function snd.firstaidassAscendril()
 	end
 	if snd.firstaidcuretrack.recklessness ~= "6" and not table.contains(snd.setting_priority, "recklessness 6") then
 		table.insert(snd.setting_priority, "recklessness 6")		 
-	end	
-  
+	end	  
   if snd.firstaidcuretrack.instawake ~= "9" and not table.contains(snd.setting_priority, "defence instawake 9") then
 		table.insert(snd.setting_priority, "defence instawake 9")   
 	end 
- 
-	if snd.firstaidcuretrack.etherflux ~= "5" and not table.contains(snd.setting_priority, "etherflux 5") then
-		table.insert(snd.setting_priority, "etherflux 5")		 
-	end	  
- 
-	if snd.firstaidcuretrack.shivering ~= "1" and not table.contains(snd.setting_priority, "shivering 1") then
-		table.insert(snd.setting_priority, "shivering 1")		 
-	end 
-	if snd.firstaidcuretrack.ablaze ~= "1" and not table.contains(snd.setting_priority, "ablaze 1") then
-		table.insert(snd.setting_priority, "ablaze 1")		 
-	end
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "2" and not table.contains(snd.setting_priority, "left_leg_broken 2") then
-			table.insert(snd.setting_priority, "left_leg_broken 2")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "2" and not table.contains(snd.setting_priority, "right_leg_broken 2") then
-			table.insert(snd.setting_priority, "right_leg_broken 2")
-		end
-	end
-	if snd.firstaidcuretrack.frozen ~= "2" and not table.contains(snd.setting_priority, "frozen 2") then
-		table.insert(snd.setting_priority, "frozen 2")		 
-	end 
-	if snd.firstaidcuretrack.head_broken ~= "3" and not table.contains(snd.setting_priority, "head_broken 3") then
-		table.insert(snd.setting_priority, "head_broken 3")		 
-	end
-	if snd.firstaidcuretrack.torso_broken ~= "4" and not table.contains(snd.setting_priority, "torso_broken 4") then
-		table.insert(snd.setting_priority, "torso_broken 4")		 
-	end
-	if snd.firstaidcuretrack.frigid ~= "4" and not table.contains(snd.setting_priority, "frigid 4") then
-		table.insert(snd.setting_priority, "frigid 4")		 
-	end	
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "5" and not table.contains(snd.setting_priority, "left_arm_broken 5") then
-			table.insert(snd.setting_priority, "left_arm_broken 5")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "5" and not table.contains(snd.setting_priority, "right_arm_broken 5") then
-			table.insert(snd.setting_priority, "right_arm_broken 5")
-		end
-	end
-	if snd.firstaidcuretrack.head_mangled ~= "6" and not table.contains(snd.setting_priority, "head_mangled 6") then
-		table.insert(snd.setting_priority, "head_mangled 6")		 
-	end	
-	if snd.firstaidcuretrack.deafness ~= "6" and not table.contains(snd.setting_priority, "deafness 6") then
-		table.insert(snd.setting_priority, "deafness 6")   
-	end
 	if snd.firstaidcuretrack.blindness ~= "7" and not table.contains(snd.setting_priority, "blindness 7") then
 		table.insert(snd.setting_priority, "blindness 7")   
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "7" and not table.contains(snd.setting_priority, "torso_mangled 7") then
-		table.insert(snd.setting_priority, "torso_mangled 7")		 
 	end
  
 	snd.firstaidchangecure = false -- keep last
@@ -5330,169 +5400,44 @@ end
 
 function snd.firstaidassBard() 
 	if snd.firstaidcuretrack.perplexity ~= "1" and not table.contains(snd.setting_priority, "perplexity 1") then
-	table.insert(snd.setting_priority, "perplexity 1")		 
+    table.insert(snd.setting_priority, "perplexity 1")		 
 	end
 	if snd.firstaidcuretrack.shyness ~= "1" and not table.contains(snd.setting_priority, "shyness 1") then
-	table.insert(snd.setting_priority, "shyness 1")		 
+    table.insert(snd.setting_priority, "shyness 1")		 
 	end 
 	if snd.firstaidcuretrack.hopelessness ~= "1" and not table.contains(snd.setting_priority, "hopelessness 1") then
-	table.insert(snd.setting_priority, "hopelessness 1")		 
+    table.insert(snd.setting_priority, "hopelessness 1")		 
 	end 
 	if snd.firstaidcuretrack.misery ~= "1" and not table.contains(snd.setting_priority, "misery 1") then
-	table.insert(snd.setting_priority, "misery 1")		 
+    table.insert(snd.setting_priority, "misery 1")		 
 	end
 	if snd.firstaidcuretrack.hollow ~= "2" and not table.contains(snd.setting_priority, "hollow 2") then
-	table.insert(snd.setting_priority, "hollow 2")		 
+    table.insert(snd.setting_priority, "hollow 2")		 
 	end 
 	if snd.firstaidcuretrack.narcolepsy ~= "2" and not table.contains(snd.setting_priority, "narcolepsy 2") then
-	table.insert(snd.setting_priority, "narcolepsy 2")		 
+    table.insert(snd.setting_priority, "narcolepsy 2")		 
 	end 
 	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
-	table.insert(snd.setting_priority, "stupidity 2")		 
+    table.insert(snd.setting_priority, "stupidity 2")		 
 	end 
 	if snd.firstaidcuretrack.self_loathing ~= "2" and not table.contains(snd.setting_priority, "self_loathing 2") then
-	table.insert(snd.setting_priority, "self_loathing 2")		 
+    table.insert(snd.setting_priority, "self_loathing 2")		 
 	end 
 	if snd.firstaidcuretrack.dizziness ~= "3" and not table.contains(snd.setting_priority, "dizziness 3") then
-	table.insert(snd.setting_priority, "dizziness 3")		 
+    table.insert(snd.setting_priority, "dizziness 3")		 
 	end 
 	if snd.firstaidcuretrack.magnanimity ~= "3" and not table.contains(snd.setting_priority, "magnanimity 3") then
-	table.insert(snd.setting_priority, "magnanimity 3")		 
-	end 
-	if snd.firstaidcuretrack.paresis ~= "3" and not table.contains(snd.setting_priority, "paresis 3") then
-	table.insert(snd.setting_priority, "paresis 3")		 
-	end 
-	if snd.firstaidcuretrack.addiction ~= "3" and not table.contains(snd.setting_priority, "addiction 3") then
-	table.insert(snd.setting_priority, "addiction 3")		 
-	end 
-	if snd.firstaidcuretrack.allergies ~= "4" and not table.contains(snd.setting_priority, "allergies 4") then
-	table.insert(snd.setting_priority, "allergies 4")		 
-	end 
-	if snd.firstaidcuretrack.vomiting ~= "4" and not table.contains(snd.setting_priority, "vomiting 4") then
-	table.insert(snd.setting_priority, "vomiting 4")		 
-	end 
-	if snd.firstaidcuretrack.exhaustion ~= "4" and not table.contains(snd.setting_priority, "exhaustion 4") then
-	table.insert(snd.setting_priority, "exhaustion 4")		 
-	end 
-	if snd.firstaidcuretrack.mania ~= "4" and not table.contains(snd.setting_priority, "mania 4") then
-	table.insert(snd.setting_priority, "mania 4")		 
-	end 
-	if snd.firstaidcuretrack.clumsiness ~= "5" and not table.contains(snd.setting_priority, "clumsiness 5") then
-	table.insert(snd.setting_priority, "clumsiness 5")		 
-	end 
-	if snd.firstaidcuretrack.confusion ~= "5" and not table.contains(snd.setting_priority, "confusion 5") then
-	table.insert(snd.setting_priority, "confusion 5")		 
-	end 
-	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
-	table.insert(snd.setting_priority, "hallucinations 5")		 
-	end 
-	if snd.firstaidcuretrack.asthma ~= "5" and not table.contains(snd.setting_priority, "asthma 5") then
-	table.insert(snd.setting_priority, "asthma 5")		 
-	end 
-	if snd.firstaidcuretrack.haemophilia ~= "6" and not table.contains(snd.setting_priority, "haemophilia 6") then
-	table.insert(snd.setting_priority, "haemophilia 6")		 
-	end 
-	if snd.firstaidcuretrack.weariness ~= "6" and not table.contains(snd.setting_priority, "weariness 6") then
-	table.insert(snd.setting_priority, "weariness 6")		 
-	end 
-	if snd.firstaidcuretrack.sensitivity ~= "6" and not table.contains(snd.setting_priority, "sensitivity 6") then
-	table.insert(snd.setting_priority, "sensitivity 6")		 
+	  table.insert(snd.setting_priority, "magnanimity 3")		 
 	end 
 	if snd.firstaidcuretrack.sadness ~= "6" and not table.contains(snd.setting_priority, "sadness 6") then
-	table.insert(snd.setting_priority, "sadness 6")		 
+	  table.insert(snd.setting_priority, "sadness 6")		 
 	end 
 	if snd.firstaidcuretrack.hatred ~= "7" and not table.contains(snd.setting_priority, "hatred 7") then
-	table.insert(snd.setting_priority, "hatred 7")		 
+	  table.insert(snd.setting_priority, "hatred 7")		 
 	end 
 	if snd.firstaidcuretrack.hypersomnia ~= "7" and not table.contains(snd.setting_priority, "hypersomnia 7") then
-	table.insert(snd.setting_priority, "hypersomnia 7")		 
+    table.insert(snd.setting_priority, "hypersomnia 7")		 
 	end 
-	if snd.firstaidcuretrack.mercy ~= "7" and not table.contains(snd.setting_priority, "mercy 7") then
-	table.insert(snd.setting_priority, "mercy 7")		 
-	end 
-	if snd.firstaidcuretrack.masochism ~= "8" and not table.contains(snd.setting_priority, "masochism 8") then
-	table.insert(snd.setting_priority, "masochism 8")		 
-	end 
-	if snd.firstaidcuretrack.loneliness ~= "8" and not table.contains(snd.setting_priority, "loneliness 8") then
-	table.insert(snd.setting_priority, "loneliness 8")		 
-	end 
- 
-	if snd.firstaidcuretrack.destroyed_throat ~= "1" and not table.contains(snd.setting_priority, "destroyed_throat 1") then
-		table.insert(snd.setting_priority, "destroyed_throat 1")		 
-	end 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.indifference ~= "2" and not table.contains(snd.setting_priority, "indifference 2") then
-		table.insert(snd.setting_priority, "indifference 2")		 
-	end	
-	if snd.firstaidcuretrack.frozen ~= "2" and not table.contains(snd.setting_priority, "frozen 2") then
-		table.insert(snd.setting_priority, "frozen 2")		 
-	end 
-	if snd.firstaidcuretrack.blurry_vision ~= "3" and not table.contains(snd.setting_priority, "blurry_vision 3") then
-		table.insert(snd.setting_priority, "blurry_vision 3")		 
-	end 
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "3" and not table.contains(snd.setting_priority, "left_leg_broken 3") then
-			table.insert(snd.setting_priority, "left_leg_broken 3")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "3" and not table.contains(snd.setting_priority, "right_leg_broken 3") then
-			table.insert(snd.setting_priority, "right_leg_broken 3")
-		end
-	end 
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "4" and not table.contains(snd.setting_priority, "left_arm_broken 4") then
-			table.insert(snd.setting_priority, "left_arm_broken 4")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "4" and not table.contains(snd.setting_priority, "right_arm_broken 4") then
-			table.insert(snd.setting_priority, "right_arm_broken 4")
-		end
-	end
-	if snd.firstaidcuretrack.head_broken ~= "4" and not table.contains(snd.setting_priority, "head_broken 4") then
-		table.insert(snd.setting_priority, "head_broken 4")		 
-	end
-	if snd.firstaidcuretrack.shivering ~= "5" and not table.contains(snd.setting_priority, "shivering 5") then
-		table.insert(snd.setting_priority, "shivering 5")		 
-	end	
-	if snd.firstaidcuretrack.head_mangled ~= "5" and not table.contains(snd.setting_priority, "head_mangled 5") then
-		table.insert(snd.setting_priority, "head_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "left_leg_mangled 6") then
-		table.insert(snd.setting_priority, "left_leg_mangled 6")   
-	end  
-	if snd.firstaidcuretrack.right_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "right_leg_mangled 6") then
-		table.insert(snd.setting_priority, "right_leg_mangled 6")   
-	end 
-	if snd.firstaidcuretrack.left_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "left_arm_mangled 7") then
-		table.insert(snd.setting_priority, "left_arm_mangled 7")   
-	end  
-	if snd.firstaidcuretrack.right_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "right_arm_mangled 7") then
-		table.insert(snd.setting_priority, "right_arm_mangled 7")   
-	end 
-	if snd.firstaidcuretrack.left_leg_broken ~= "8" and not table.contains(snd.setting_priority, "left_leg_broken 8") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_leg_broken 8")
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "8" and not table.contains(snd.setting_priority, "right_leg_broken 8") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 8")
-	end 
-	if snd.firstaidcuretrack.left_arm_broken ~= "9" and not table.contains(snd.setting_priority, "left_arm_broken 9") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_arm_broken 9")
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "9" and not table.contains(snd.setting_priority, "right_arm_broken 9") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 9")
-	end 
-	if snd.firstaidcuretrack.torso_mangled ~= "10" and not table.contains(snd.setting_priority, "torso_mangled 10") then
-		table.insert(snd.setting_priority, "torso_mangled 10")		 
-	end
-	if snd.firstaidcuretrack.torso_broken ~= "10" and not table.contains(snd.setting_priority, "torso_broken 10") then
-		table.insert(snd.setting_priority, "torso_broken 10")		 
-	end
-	if snd.firstaidcuretrack.ablaze ~= "11" and not table.contains(snd.setting_priority, "ablaze 11") then
-		table.insert(snd.setting_priority, "ablaze 11")		 
-	end	
-	if snd.firstaidcuretrack.frigid ~= "11" and not table.contains(snd.setting_priority, "frigid 11") then
-		table.insert(snd.setting_priority, "frigid 11")		 
-	end	
  
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -5501,162 +5446,6 @@ function snd.firstaidassBard()
 end
 
 function snd.firstaidassCarnifex()
-	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
-		table.insert(snd.setting_priority, "paresis 1")		 
-	end	
-	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
-		table.insert(snd.setting_priority, "asthma 1")		 
-	end	
-	if snd.firstaidcuretrack.clumsiness ~= "2" and not table.contains(snd.setting_priority, "clumsiness 2") then
-		table.insert(snd.setting_priority, "clumsiness 2")		 
-	end	
-	if snd.firstaidcuretrack.impairment ~= "2" and not table.contains(snd.setting_priority, "impairment 2") then
-		table.insert(snd.setting_priority, "impairment 2")		 
-	end	
-	if snd.firstaidcuretrack.allergies ~= "2" and not table.contains(snd.setting_priority, "allergies 2") then
-		table.insert(snd.setting_priority, "allergies 2")		 
-	end	
-	if snd.firstaidcuretrack.dizziness ~= "2" and not table.contains(snd.setting_priority, "dizziness 2") then
-		table.insert(snd.setting_priority, "dizziness 2")		 
-	end	
-	if snd.firstaidcuretrack.weariness ~= "3" and not table.contains(snd.setting_priority, "weariness 3") then
-		table.insert(snd.setting_priority, "weariness 3")		 
-	end		
-	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
-		table.insert(snd.setting_priority, "sensitivity 3")		 
-	end			
-	if snd.firstaidcuretrack.vomiting ~= "3" and not table.contains(snd.setting_priority, "vomiting 3") then
-		table.insert(snd.setting_priority, "vomiting 3")		 
-	end
-	if snd.firstaidcuretrack.ringing_ears ~= "3" and not table.contains(snd.setting_priority, "ringing_ears 3") then
-		table.insert(snd.setting_priority, "ringing_ears 3")		 
-	end
-	if snd.firstaidcuretrack.blisters ~= "4" and not table.contains(snd.setting_priority, "blisters 4") then
-		table.insert(snd.setting_priority, "blisters 4")		 
-	end
-	if snd.firstaidcuretrack.mania ~= "4" and not table.contains(snd.setting_priority, "mania 4") then
-		table.insert(snd.setting_priority, "mania 4")		 
-	end
-	if snd.firstaidcuretrack.peace ~= "4" and not table.contains(snd.setting_priority, "peace 4") then
-		table.insert(snd.setting_priority, "peace 4")		 
-	end
-	if snd.firstaidcuretrack.lethargy ~= "4" and not table.contains(snd.setting_priority, "lethargy 4") then
-		table.insert(snd.setting_priority, "lethargy 4")		 
-	end
-	if snd.firstaidcuretrack.haemophilia ~= "5" and not table.contains(snd.setting_priority, "haemophilia 5") then
-		table.insert(snd.setting_priority, "haemophilia 5")		 
-	end
-	if snd.firstaidcuretrack.stupidity ~= "5" and not table.contains(snd.setting_priority, "stupidity 5") then
-		table.insert(snd.setting_priority, "stupidity 5")		 
-	end
-	if snd.firstaidcuretrack.epilepsy ~= "5" and not table.contains(snd.setting_priority, "epilepsy 5") then
-		table.insert(snd.setting_priority, "epilepsy 5")		 
-	end
-	if snd.firstaidcuretrack.hypersomnia ~= "5" and not table.contains(snd.setting_priority, "hypersomnia 5") then
-		table.insert(snd.setting_priority, "hypersomnia 5")		 
-	end
-	if snd.firstaidcuretrack.recklessness ~= "6" and not table.contains(snd.setting_priority, "recklessness 6") then
-		table.insert(snd.setting_priority, "recklessness 6")		 
-	end	
-	
-	if snd.firstaidcuretrack.deafness ~= "6" and not table.contains(snd.setting_priority, "deafness 6") then
-		table.insert(snd.setting_priority, "deafness 6")   
-	end
-	if snd.firstaidcuretrack.blindness ~= "7" and not table.contains(snd.setting_priority, "blindness 7") then
-		table.insert(snd.setting_priority, "blindness 7")   
-	end
-	if snd.firstaidcuretrack.instawake ~= "8" and not table.contains(snd.setting_priority, "defence instawake 8") then
-		table.insert(snd.setting_priority, "defence instawake 8")   
-	end  
- 
-	if snd.firstaidcuretrack.slickness ~= "2" and not table.contains(snd.setting_priority, "slickness 2") then
-		table.insert(snd.setting_priority, "slickness 2")		 
-	end	
- 
-	if snd.firstaidcuretrack.destroyed_throat ~= "1" and not table.contains(snd.setting_priority, "destroyed_throat 1") then
-		table.insert(snd.setting_priority, "destroyed_throat 1")		 
-	end 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.indifference ~= "2" and not table.contains(snd.setting_priority, "indifference 2") then
-		table.insert(snd.setting_priority, "indifference 2")		 
-	end	
-	if snd.firstaidcuretrack.crushed_chest ~= "2" and not table.contains(snd.setting_priority, "crushed_chest 2") then
-		table.insert(snd.setting_priority, "crushed_chest 2")		 
-	end 
-	if snd.firstaidcuretrack.left_leg_broken ~= "3" and not table.contains(snd.setting_priority, "left_leg_broken 3") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_leg_broken 3")
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "3" and not table.contains(snd.setting_priority, "right_leg_broken 3") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 3")
-	end
-	if snd.firstaidcuretrack.frozen ~= "4" and not table.contains(snd.setting_priority, "frozen 4") then
-		table.insert(snd.setting_priority, "frozen 4")		 
-	end 
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "2" and not table.contains(snd.setting_priority, "left_leg_broken 2") then
-			table.insert(snd.setting_priority, "left_leg_broken 2")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "2" and not table.contains(snd.setting_priority, "right_leg_broken 2") then
-			table.insert(snd.setting_priority, "right_leg_broken 2")
-		end
-	end 
-	if snd.firstaidcuretrack.shivering ~= "5" and not table.contains(snd.setting_priority, "shivering 5") then
-		table.insert(snd.setting_priority, "shivering 5")		 
-	end	
-	if snd.firstaidcuretrack.cracked_ribs ~= "5" and not table.contains(snd.setting_priority, "cracked_ribs 5") then
-		table.insert(snd.setting_priority, "cracked_ribs 5")		 
-	end
-	if snd.firstaidcuretrack.blurry_vision ~= "6" and not table.contains(snd.setting_priority, "blurry_vision 6") then
-		table.insert(snd.setting_priority, "blurry_vision 6")		 
-	end 
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "4" and not table.contains(snd.setting_priority, "left_arm_broken 4") then
-			table.insert(snd.setting_priority, "left_arm_broken 4")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "4" and not table.contains(snd.setting_priority, "right_arm_broken 4") then
-			table.insert(snd.setting_priority, "right_arm_broken 4")
-		end
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "6" and not table.contains(snd.setting_priority, "torso_mangled 6") then
-		table.insert(snd.setting_priority, "torso_mangled 6")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "left_leg_mangled 6") then
-		table.insert(snd.setting_priority, "left_leg_mangled 6")   
-	end  
-	if snd.firstaidcuretrack.right_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "right_leg_mangled 6") then
-		table.insert(snd.setting_priority, "right_leg_mangled 6")   
-	end 
-	if snd.firstaidcuretrack.head_mangled ~= "7" and not table.contains(snd.setting_priority, "head_mangled 7") then
-		table.insert(snd.setting_priority, "head_mangled 7")		 
-	end
-	if snd.firstaidcuretrack.head_broken ~= "7" and not table.contains(snd.setting_priority, "head_broken 7") then
-		table.insert(snd.setting_priority, "head_broken 7")		 
-	end
-	if snd.firstaidcuretrack.left_arm_mangled ~= "8" and not table.contains(snd.setting_priority, "left_arm_mangled 8") then
-		table.insert(snd.setting_priority, "left_arm_mangled 8")   
-	end  
-	if snd.firstaidcuretrack.right_arm_mangled ~= "8" and not table.contains(snd.setting_priority, "right_arm_mangled 8") then
-		table.insert(snd.setting_priority, "right_arm_mangled 8")   
-	end 
-	if snd.firstaidcuretrack.torso_broken ~= "9" and not table.contains(snd.setting_priority, "torso_broken 9") then
-		table.insert(snd.setting_priority, "torso_broken 9")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "9" and not table.contains(snd.setting_priority, "left_arm_broken 9") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_arm_broken 9")
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "9" and not table.contains(snd.setting_priority, "right_arm_broken 9") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 9")
-	end 
-	if snd.firstaidcuretrack.frigid ~= "10" and not table.contains(snd.setting_priority, "frigid 10") then
-		table.insert(snd.setting_priority, "frigid 10")		 
-	end	
- 
-	snd.firstaidchangecure = false -- keep last	
-	if #snd.setting_priority &gt; 0 then
-		enableTimer("reset check")
-	end	
 end
 
 function snd.firstaidassIndorani()
@@ -5751,86 +5540,6 @@ function snd.firstaidassIndorani()
     table.insert(snd.setting_priority, "defence courage 9")     
   end
  
-	if snd.firstaidcuretrack.destroyed_throat ~= "1" and not table.contains(snd.setting_priority, "destroyed_throat 1") then
-		table.insert(snd.setting_priority, "destroyed_throat 1")		 
-	end 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.frozen ~= "2" and not table.contains(snd.setting_priority, "frozen 2") then
-		table.insert(snd.setting_priority, "frozen 2")		 
-	end	
-	if snd.firstaidcuretrack.left_leg_crippled ~= "2" and not table.contains(snd.setting_priority, "left_leg_crippled 2") then
-		table.insert(snd.setting_priority, "left_leg_crippled 2")
-	end
-	if snd.firstaidcuretrack.right_leg_crippled ~= "2" and not table.contains(snd.setting_priority, "right_leg_crippled 2") then
-		table.insert(snd.setting_priority, "right_leg_crippled 2")
-	end
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "2" and not table.contains(snd.setting_priority, "left_leg_broken 2") then
-			table.insert(snd.setting_priority, "left_leg_broken 2")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "2" and not table.contains(snd.setting_priority, "right_leg_broken 2") then
-			table.insert(snd.setting_priority, "right_leg_broken 2")
-		end
-	end 
-	if snd.firstaidcuretrack.left_arm_crippled ~= "3" and not table.contains(snd.setting_priority, "left_arm_crippled 3") then
-		table.insert(snd.setting_priority, "left_arm_crippled 3")
-	end
-	if snd.firstaidcuretrack.right_arm_crippled ~= "3" and not table.contains(snd.setting_priority, "right_arm_crippled 3") then
-		table.insert(snd.setting_priority, "right_arm_crippled 3")
-	end
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "3" and not table.contains(snd.setting_priority, "left_arm_broken 3") then
-			table.insert(snd.setting_priority, "left_arm_broken 3")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "3" and not table.contains(snd.setting_priority, "right_arm_broken 3") then
-			table.insert(snd.setting_priority, "right_arm_broken 3")
-		end
-	end
-	if snd.firstaidcuretrack.head_broken ~= "4" and not table.contains(snd.setting_priority, "head_broken 4") then
-		table.insert(snd.setting_priority, "head_broken 4")		 
-	end
-	if snd.firstaidcuretrack.shivering ~= "4" and not table.contains(snd.setting_priority, "shivering 4") then
-		table.insert(snd.setting_priority, "shivering 4")		 
-	end	
-	if snd.firstaidcuretrack.head_mangled ~= "5" and not table.contains(snd.setting_priority, "head_mangled 5") then
-		table.insert(snd.setting_priority, "head_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "5" and not table.contains(snd.setting_priority, "torso_mangled 5") then
-		table.insert(snd.setting_priority, "torso_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "left_leg_mangled 6") then
-		table.insert(snd.setting_priority, "left_leg_mangled 6")   
-	end  
-	if snd.firstaidcuretrack.right_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "right_leg_mangled 6") then
-		table.insert(snd.setting_priority, "right_leg_mangled 6")   
-	end 
-	if snd.firstaidcuretrack.left_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "left_arm_mangled 7") then
-		table.insert(snd.setting_priority, "left_arm_mangled 7")   
-	end  
-	if snd.firstaidcuretrack.right_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "right_arm_mangled 7") then
-		table.insert(snd.setting_priority, "right_arm_mangled 7")   
-	end 
-	if snd.firstaidcuretrack.torso_broken ~= "8" and not table.contains(snd.setting_priority, "torso_broken 8") then
-		table.insert(snd.setting_priority, "torso_broken 8")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "8" and not table.contains(snd.setting_priority, "left_arm_broken 8") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_arm_broken 8")
-	end
-	if snd.firstaidcuretrack.left_leg_broken ~= "9" and not table.contains(snd.setting_priority, "left_leg_broken 9") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_leg_broken 9")
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "9" and not table.contains(snd.setting_priority, "right_leg_broken 9") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 9")
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "10" and not table.contains(snd.setting_priority, "right_arm_broken 10") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 10")
-	end 
-	if snd.firstaidcuretrack.frigid ~= "10" and not table.contains(snd.setting_priority, "frigid 10") then
-		table.insert(snd.setting_priority, "frigid 10")		 
-	end	
- 
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
 		enableTimer("reset check")
@@ -5846,9 +5555,6 @@ function snd.firstaidassInfiltrator()
 	end
 	if snd.firstaidcuretrack.dyscrasia ~= "1" and not table.contains(snd.setting_priority, "dyscrasia 1") then
 		table.insert(snd.setting_priority, "dyscrasia 1")		 
-	end	
-	if snd.firstaidcuretrack.clumsiness ~= "1" and not table.contains(snd.setting_priority, "clumsiness 1") then
-		table.insert(snd.setting_priority, "clumsiness 1")		 
 	end	
 	if snd.firstaidcuretrack.hypersomnia ~= "2" and not table.contains(snd.setting_priority, "hypersomnia 2") then
 		table.insert(snd.setting_priority, "hypersomnia 2")		 
@@ -5874,9 +5580,6 @@ function snd.firstaidassInfiltrator()
 	if snd.firstaidcuretrack.confusion ~= "3" and not table.contains(snd.setting_priority, "confusion 3") then
 		table.insert(snd.setting_priority, "confusion 3")		 
 	end
-	if snd.firstaidcuretrack.paresis ~= "4" and not table.contains(snd.setting_priority, "paresis 4") then
-		table.insert(snd.setting_priority, "paresis 4")		 
-	end	
 	if snd.firstaidcuretrack.sensitivity ~= "4" and not table.contains(snd.setting_priority, "sensitivity 4") then
 		table.insert(snd.setting_priority, "sensitivity 4")		 
 	end
@@ -5888,51 +5591,6 @@ function snd.firstaidassInfiltrator()
 	end
 	if snd.firstaidcuretrack.haemophilia ~= "5" and not table.contains(snd.setting_priority, "haemophilia 5") then
 		table.insert(snd.setting_priority, "haemophilia 5")		 
-	end
-	if snd.firstaidcuretrack.masochism ~= "5" and not table.contains(snd.setting_priority, "masochism 5") then
-		table.insert(snd.setting_priority, "masochism 5")		 
-	end
-	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
-		table.insert(snd.setting_priority, "hallucinations 5")		 
-	end
-	if snd.firstaidcuretrack.epilepsy ~= "5" and not table.contains(snd.setting_priority, "epilepsy 5") then
-		table.insert(snd.setting_priority, "epilepsy 5")		 
-	end
-	if snd.firstaidcuretrack.mania ~= "6" and not table.contains(snd.setting_priority, "mania 6") then
-		table.insert(snd.setting_priority, "mania 6")		 
-	end
-	if snd.firstaidcuretrack.hatred ~= "6" and not table.contains(snd.setting_priority, "hatred 6") then
-		table.insert(snd.setting_priority, "hatred 6")		 
-	end
-	if snd.firstaidcuretrack.dizziness ~= "6" and not table.contains(snd.setting_priority, "dizziness 6") then
-		table.insert(snd.setting_priority, "dizziness 6")		 
-	end
-	if snd.firstaidcuretrack.peace ~= "7" and not table.contains(snd.setting_priority, "peace 7") then
-		table.insert(snd.setting_priority, "peace 7")		 
-	end
-	if snd.firstaidcuretrack.dementia ~= "7" and not table.contains(snd.setting_priority, "dementia 7") then
-		table.insert(snd.setting_priority, "dementia 7")		 
-	end
-	if snd.firstaidcuretrack.agoraphobia ~= "7" and not table.contains(snd.setting_priority, "agoraphobia 7") then
-		table.insert(snd.setting_priority, "agoraphobia 7")		 
-	end
-	if snd.firstaidcuretrack.vertigo ~= "7" and not table.contains(snd.setting_priority, "vertigo 7") then
-		table.insert(snd.setting_priority, "vertigo 7")		 
-	end
-	if snd.firstaidcuretrack.claustrophobia ~= "8" and not table.contains(snd.setting_priority, "claustrophobia 8") then
-		table.insert(snd.setting_priority, "claustrophobia 8")		 
-	end
-	if snd.firstaidcuretrack.loneliness ~= "8" and not table.contains(snd.setting_priority, "loneliness 8") then
-		table.insert(snd.setting_priority, "loneliness 8")		 
-	end
-	if snd.firstaidcuretrack.addiction ~= "8" and not table.contains(snd.setting_priority, "addiction 8") then
-		table.insert(snd.setting_priority, "addiction 8")		 
-	end
-	if snd.firstaidcuretrack.narcolepsy ~= "9" and not table.contains(snd.setting_priority, "narcolepsy 9") then
-		table.insert(snd.setting_priority, "narcolepsy 9")		 
-	end 
-	if snd.firstaidcuretrack.disrupted ~= "9" and not table.contains(snd.setting_priority, "disrupted 9") then
-		table.insert(snd.setting_priority, "disrupted 9")		 
 	end
 	
 	if snd.firstaidcuretrack.instawake ~= "8" and not table.contains(snd.setting_priority, "defence instawake 8") then
@@ -6005,9 +5663,6 @@ function snd.firstaidassLuminary()
 	if snd.firstaidcuretrack.confusion ~= "4" and not table.contains(snd.setting_priority, "confusion 4") then
 		table.insert(snd.setting_priority, "confusion 4")		 
 	end		
-	if snd.firstaidcuretrack.paresis ~= "4" and not table.contains(snd.setting_priority, "paresis 4") then
-		table.insert(snd.setting_priority, "paresis 4")		 
-	end		
 	if snd.firstaidcuretrack.recklessness ~= "4" and not table.contains(snd.setting_priority, "recklessness 4") then
 		table.insert(snd.setting_priority, "recklessness 4")		 
 	end		
@@ -6020,14 +5675,8 @@ function snd.firstaidassLuminary()
 	if snd.firstaidcuretrack.misery ~= "5" and not table.contains(snd.setting_priority, "misery 5") then
 		table.insert(snd.setting_priority, "misery 5")		 
 	end		
-	if snd.firstaidcuretrack.allergies ~= "5" and not table.contains(snd.setting_priority, "allergies 5") then
-		table.insert(snd.setting_priority, "allergies 5")		 
-	end		
 	if snd.firstaidcuretrack.hallucinations ~= "6" and not table.contains(snd.setting_priority, "hallucinations 6") then
 		table.insert(snd.setting_priority, "hallucinations 6")		 
-	end		
-	if snd.firstaidcuretrack.hypersomnia ~= "6" and not table.contains(snd.setting_priority, "hypersomnia 6") then
-		table.insert(snd.setting_priority, "hypersomnia 6")		 
 	end		
 	if snd.firstaidcuretrack.epilepsy ~= "6" and not table.contains(snd.setting_priority, "epilepsy 6") then
 		table.insert(snd.setting_priority, "epilepsy 6")		 
@@ -6047,9 +5696,6 @@ function snd.firstaidassLuminary()
 	if snd.firstaidcuretrack.paranoia ~= "8" and not table.contains(snd.setting_priority, "paranoia 8") then
 		table.insert(snd.setting_priority, "paranoia 8")		 
 	end	
-	if snd.firstaidcuretrack.disrupted ~= "8" and not table.contains(snd.setting_priority, "disrupted 8") then
-		table.insert(snd.setting_priority, "disrupted 8")		 
-	end
 	
 	if snd.firstaidcuretrack.blindness ~= "5" and not table.contains(snd.setting_priority, "blindness 5") then
 		table.insert(snd.setting_priority, "blindness 5")   
@@ -6060,65 +5706,6 @@ function snd.firstaidassLuminary()
 	if snd.firstaidcuretrack.instawake ~= "9" and not table.contains(snd.setting_priority, "defence instawake 9") then
 		table.insert(snd.setting_priority, "defence instawake 9")   
 	end
- 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.ablaze ~= "2" and not table.contains(snd.setting_priority, "ablaze 2") then
-		table.insert(snd.setting_priority, "ablaze 2")		 
-	end	
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "2" and not table.contains(snd.setting_priority, "left_leg_broken 2") then
-			table.insert(snd.setting_priority, "left_leg_broken 2")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "2" and not table.contains(snd.setting_priority, "right_leg_broken 2") then
-			table.insert(snd.setting_priority, "right_leg_broken 2")
-		end
-	end 
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "3" and not table.contains(snd.setting_priority, "left_arm_broken 3") then
-			table.insert(snd.setting_priority, "left_arm_broken 3")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "3" and not table.contains(snd.setting_priority, "right_arm_broken 3") then
-			table.insert(snd.setting_priority, "right_arm_broken 3")
-		end
-	end
-	if snd.firstaidcuretrack.head_broken ~= "4" and not table.contains(snd.setting_priority, "head_broken 4") then
-		table.insert(snd.setting_priority, "head_broken 4")		 
-	end
-	if snd.firstaidcuretrack.head_mangled ~= "5" and not table.contains(snd.setting_priority, "head_mangled 5") then
-		table.insert(snd.setting_priority, "head_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "5" and not table.contains(snd.setting_priority, "torso_mangled 5") then
-		table.insert(snd.setting_priority, "torso_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "left_leg_mangled 6") then
-		table.insert(snd.setting_priority, "left_leg_mangled 6")   
-	end  
-	if snd.firstaidcuretrack.right_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "right_leg_mangled 6") then
-		table.insert(snd.setting_priority, "right_leg_mangled 6")   
-	end 
-	if snd.firstaidcuretrack.left_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "left_arm_mangled 7") then
-		table.insert(snd.setting_priority, "left_arm_mangled 7")   
-	end  
-	if snd.firstaidcuretrack.right_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "right_arm_mangled 7") then
-		table.insert(snd.setting_priority, "right_arm_mangled 7")   
-	end 
-	if snd.firstaidcuretrack.torso_broken ~= "8" and not table.contains(snd.setting_priority, "torso_broken 8") then
-		table.insert(snd.setting_priority, "torso_broken 8")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "8" and not table.contains(snd.setting_priority, "left_arm_broken 8")and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-	table.insert(snd.setting_priority, "left_arm_broken 8")
-	end
-	if snd.firstaidcuretrack.left_leg_broken ~= "9" and not table.contains(snd.setting_priority, "left_leg_broken 9") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-	table.insert(snd.setting_priority, "left_leg_broken 9")
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "9" and not table.contains(snd.setting_priority, "right_leg_broken 9") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 9")
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "10" and not table.contains(snd.setting_priority, "right_arm_broken 10") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 10")
-	end 
  
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -6237,154 +5824,9 @@ function snd.firstaidassMonk()
 end
 
 function snd.firstaidassPraenomen()
-	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
-		table.insert(snd.setting_priority, "asthma 1")		 
+	if snd.firstaidcuretrack.courage ~= "1" and not table.contains(snd.setting_priority, "courage 1") then
+		table.insert(snd.setting_priority, "defence courage 1")		 
 	end
-	if snd.firstaidcuretrack.epilepsy ~= "1" and not table.contains(snd.setting_priority, "epilepsy 1") then
-		table.insert(snd.setting_priority, "epilepsy 1")		 
-	end
-	if snd.firstaidcuretrack.confusion ~= "1" and not table.contains(snd.setting_priority, "confusion 1") then
-		table.insert(snd.setting_priority, "confusion 1")		 
-	end
-	if snd.firstaidcuretrack.stupidity ~= "2" and not table.contains(snd.setting_priority, "stupidity 2") then
-		table.insert(snd.setting_priority, "stupidity 2")		 
-	end
-	if snd.firstaidcuretrack.impatience ~= "2" and not table.contains(snd.setting_priority, "impatience 2") then
-		table.insert(snd.setting_priority, "impatience 2")		 
-	end
-	if snd.firstaidcuretrack.clumsiness ~= "2" and not table.contains(snd.setting_priority, "clumsiness 2") then
-		table.insert(snd.setting_priority, "clumsiness 2")		 
-	end
- 	if snd.firstaidcuretrack.weariness ~= "3" and not table.contains(snd.setting_priority, "weariness 3") then
-		table.insert(snd.setting_priority, "weariness 3")		 
-	end
-	if snd.firstaidcuretrack.paranoia ~= "3" and not table.contains(snd.setting_priority, "paranoia 3") then
-		table.insert(snd.setting_priority, "paranoia 3")		 
-	end
-	if snd.firstaidcuretrack.hallucinations ~= "3" and not table.contains(snd.setting_priority, "hallucinations 3") then
-		table.insert(snd.setting_priority, "hallucinations 3")		 
-	end
-	if snd.firstaidcuretrack.psychosis ~= "3" and not table.contains(snd.setting_priority, "psychosis 3") then
-		table.insert(snd.setting_priority, "psychosis 3")		 
-	end
-	if snd.firstaidcuretrack.sadness ~= "4" and not table.contains(snd.setting_priority, "sadness 4") then
-		table.insert(snd.setting_priority, "sadness 4")		 
-	end
-	if snd.firstaidcuretrack.infatuation ~= "4" and not table.contains(snd.setting_priority, "infatuation 4") then
-		table.insert(snd.setting_priority, "infatuation 4")		 
-	end
-	if snd.firstaidcuretrack.peace ~= "4" and not table.contains(snd.setting_priority, "peace 4") then
-		table.insert(snd.setting_priority, "peace 4")		 
-	end
-	if snd.firstaidcuretrack.haemophilia ~= "4" and not table.contains(snd.setting_priority, "haemophilia 4") then
-		table.insert(snd.setting_priority, "haemophilia 4")		 
-	end
-	if snd.firstaidcuretrack.sepsis ~= "5" and not table.contains(snd.setting_priority, "sepsis 5") then
-		table.insert(snd.setting_priority, "sepsis 5")		 
-	end
-	if snd.firstaidcuretrack.mania ~= "5" and not table.contains(snd.setting_priority, "mania 5") then
-		table.insert(snd.setting_priority, "mania 5")		 
-	end
-	if snd.firstaidcuretrack.masochism ~= "5" and not table.contains(snd.setting_priority, "masochism 5") then
-		table.insert(snd.setting_priority, "masochism 5")		 
-	end
-	if snd.firstaidcuretrack.agoraphobia ~= "5" and not table.contains(snd.setting_priority, "agoraphobia 5") then
-		table.insert(snd.setting_priority, "agoraphobia 5")		 
-	end
-	if snd.firstaidcuretrack.self_pity ~= "6" and not table.contains(snd.setting_priority, "self_pity 6") then
-		table.insert(snd.setting_priority, "self_pity 6")		 
-	end
-	if snd.firstaidcuretrack.vertigo ~= "6" and not table.contains(snd.setting_priority, "vertigo 6") then
-		table.insert(snd.setting_priority, "vertigo 6")		 
-	end
-	if snd.firstaidcuretrack.hubris ~= "6" and not table.contains(snd.setting_priority, "hubris 6") then
-		table.insert(snd.setting_priority, "hubris 6")		 
-	end
-	if snd.firstaidcuretrack.dementia ~= "6" and not table.contains(snd.setting_priority, "dementia 6") then
-		table.insert(snd.setting_priority, "dementia 6")		 
-	end
-	if snd.firstaidcuretrack.rend ~= "7" and not table.contains(snd.setting_priority, "rend 7") then
-		table.insert(snd.setting_priority, "rend 7")		 
-	end
-	if snd.firstaidcuretrack.vomiting ~= "7" and not table.contains(snd.setting_priority, "vomiting 7") then
-		table.insert(snd.setting_priority, "vomiting 7")		 
-	end
-	if snd.firstaidcuretrack.allergies ~= "7" and not table.contains(snd.setting_priority, "allergies 7") then
-		table.insert(snd.setting_priority, "allergies 7")		 
-	end
-	if snd.firstaidcuretrack.disrupted ~= "8" and not table.contains(snd.setting_priority, "disrupted 8") then
-		table.insert(snd.setting_priority, "disrupted 8")		 
-	end
-	
-	if snd.firstaidcuretrack.deafness ~= "6" and not table.contains(snd.setting_priority, "deafness 6") then
-		table.insert(snd.setting_priority, "deafness 6")   
-	end
-	if snd.firstaidcuretrack.blindness ~= "5" and not table.contains(snd.setting_priority, "blindness 5") then
-		table.insert(snd.setting_priority, "blindness 5")   
-	end
- 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.indifference ~= "2" and not table.contains(snd.setting_priority, "indifference 2") then
-		table.insert(snd.setting_priority, "indifference 2")		 
-	end	
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "2" and not table.contains(snd.setting_priority, "left_leg_broken 2") then
-			table.insert(snd.setting_priority, "left_leg_broken 2")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "2" and not table.contains(snd.setting_priority, "right_leg_broken 2") then
-			table.insert(snd.setting_priority, "right_leg_broken 2")
-		end
-	end 
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "3" and not table.contains(snd.setting_priority, "left_arm_broken 3") then
-			table.insert(snd.setting_priority, "left_arm_broken 3")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "3" and not table.contains(snd.setting_priority, "right_arm_broken 3") then
-			table.insert(snd.setting_priority, "right_arm_broken 3")
-		end
-	end
-	if snd.firstaidcuretrack.head_broken ~= "3" and not table.contains(snd.setting_priority, "head_broken 3") then
-		table.insert(snd.setting_priority, "head_broken 3")		 
-	end
-	if snd.firstaidcuretrack.head_mangled ~= "4" and not table.contains(snd.setting_priority, "head_mangled 4") then
-		table.insert(snd.setting_priority, "head_mangled 4")		 
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "4" and not table.contains(snd.setting_priority, "torso_mangled 4") then
-		table.insert(snd.setting_priority, "torso_mangled 4")		 
-	end
-	if snd.firstaidcuretrack.right_leg_mangled ~= "5" and not table.contains(snd.setting_priority, "right_leg_mangled 5") then
-		table.insert(snd.setting_priority, "right_leg_mangled 5")   
-	end 
-	if snd.firstaidcuretrack.left_leg_mangled ~= "5" and not table.contains(snd.setting_priority, "left_leg_mangled 5") then
-		table.insert(snd.setting_priority, "left_leg_mangled 5")   
-	end  
-	if snd.firstaidcuretrack.right_arm_mangled ~= "6" and not table.contains(snd.setting_priority, "right_arm_mangled 6") then
-		table.insert(snd.setting_priority, "right_arm_mangled 6")   
-	end 
-	if snd.firstaidcuretrack.left_arm_mangled ~= "6" and not table.contains(snd.setting_priority, "left_arm_mangled 6") then
-		table.insert(snd.setting_priority, "left_arm_mangled 6")   
-	end  
-	if snd.firstaidcuretrack.torso_broken ~= "7" and not table.contains(snd.setting_priority, "torso_broken 7") then
-		table.insert(snd.setting_priority, "torso_broken 7")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "7" and not table.contains(snd.setting_priority, "left_arm_broken 7")and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-	table.insert(snd.setting_priority, "left_arm_broken 7")
-	end
-	if snd.firstaidcuretrack.left_leg_broken ~= "8" and not table.contains(snd.setting_priority, "left_leg_broken 9") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-	table.insert(snd.setting_priority, "left_leg_broken 8")
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "8" and not table.contains(snd.setting_priority, "right_leg_broken 8") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 8")
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "9" and not table.contains(snd.setting_priority, "right_arm_broken 9") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 9")
-	end 
-
-	if snd.firstaidcuretrack.slickness ~= "2" and not table.contains(snd.setting_priority, "slickness 2") then
-		table.insert(snd.setting_priority, "slickness 2")		 
-	end	
 	
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -6595,9 +6037,6 @@ function snd.firstaidassSentinel()
 	if snd.firstaidcuretrack.weariness ~= "2" and not table.contains(snd.setting_priority, "weariness 2") then
 		table.insert(snd.setting_priority, "weariness 2")		 
 	end 
-	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
-		table.insert(snd.setting_priority, "paresis 1")		 
-	end 
 	if snd.firstaidcuretrack.impairment ~= "2" and not table.contains(snd.setting_priority, "impairment 2") then
 		table.insert(snd.setting_priority, "impairment 2")		 
 	end 
@@ -6624,21 +6063,6 @@ function snd.firstaidassSentinel()
 	end 
 	if snd.firstaidcuretrack.vomiting ~= "4" and not table.contains(snd.setting_priority, "vomiting 4") then
 		table.insert(snd.setting_priority, "vomiting 4")		 
-	end 
-	if snd.firstaidcuretrack.hallucinations ~= "5" and not table.contains(snd.setting_priority, "hallucinations 5") then
-		table.insert(snd.setting_priority, "hallucinations 5")		 
-	end 
-	if snd.firstaidcuretrack.mania ~= "5" and not table.contains(snd.setting_priority, "mania 5") then
-		table.insert(snd.setting_priority, "mania 5")		 
-	end 
-	if snd.firstaidcuretrack.agoraphobia ~= "5" and not table.contains(snd.setting_priority, "agoraphobia 5") then
-		table.insert(snd.setting_priority, "agoraphobia 5")		 
-	end 
-	if snd.firstaidcuretrack.loneliness ~= "5" and not table.contains(snd.setting_priority, "loneliness 5") then
-		table.insert(snd.setting_priority, "loneliness 5")		 
-	end 
-	if snd.firstaidcuretrack.claustrophobia ~= "6" and not table.contains(snd.setting_priority, "claustrophobia 6") then
-		table.insert(snd.setting_priority, "claustrophobia 6")		 
 	end 
 	if snd.firstaidcuretrack.stupidity ~= "6" and not table.contains(snd.setting_priority, "stupidity 6") then
 		table.insert(snd.setting_priority, "stupidity 6")		 
@@ -7000,9 +6424,6 @@ function snd.firstaidassSiderealist()
 end
 
 function snd.firstaidassTemplar()
-	if snd.firstaidcuretrack.paresis ~= "1" and not table.contains(snd.setting_priority, "paresis 1") then
-		table.insert(snd.setting_priority, "paresis 1")		 
-	end
 	if snd.firstaidcuretrack.asthma ~= "1" and not table.contains(snd.setting_priority, "asthma 1") then
 		table.insert(snd.setting_priority, "asthma 1")		 
 	end	
@@ -7058,102 +6479,7 @@ function snd.firstaidassTemplar()
 
 	if snd.firstaidcuretrack.slickness ~= "2" and not table.contains(snd.setting_priority, "slickness 2") then
 		table.insert(snd.setting_priority, "slickness 2")		 
-	end		 
-  
-	if snd.firstaidcuretrack.frozen ~= "1" and not table.contains(snd.setting_priority, "frozen 1") then
-		table.insert(snd.setting_priority, "frozen 1")		 
-	end	
-	if snd.firstaidcuretrack.left_leg_bruised_critical ~= "1" and not table.contains(snd.setting_priority, "left_leg_bruised_critical 1") then
-		table.insert(snd.setting_priority, "left_leg_bruised_critical 1")		 
-	end
-	if snd.firstaidcuretrack.right_leg_bruised_critical ~= "2" and not table.contains(snd.setting_priority, "right_leg_bruised_critical 2") then
-		table.insert(snd.setting_priority, "right_leg_bruised_critical 2")		 
-	end
-	if snd.firstaidcuretrack.left_arm_bruised_critical ~= "2" and not table.contains(snd.setting_priority, "left_arm_bruised_critical 2") then
-		table.insert(snd.setting_priority, "left_arm_bruised_critical 2")		 
-	end
-	if snd.firstaidcuretrack.right_arm_bruised_critical ~= "3" and not table.contains(snd.setting_priority, "right_arm_bruised_critical 3") then
-		table.insert(snd.setting_priority, "right_arm_bruised_critical 3")		 
-	end
-	if snd.firstaidcuretrack.torso_bruised_critical ~= "3" and not table.contains(snd.setting_priority, "torso_bruised_critical 3") then
-		table.insert(snd.setting_priority, "torso_bruised_critical 3")		 
-	end
-	if snd.firstaidcuretrack.head_bruised_critical ~= "4" and not table.contains(snd.setting_priority, "head_bruised_critical 4") then
-		table.insert(snd.setting_priority, "head_bruised_critical 4")		 
-	end
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "4" and not table.contains(snd.setting_priority, "left_leg_broken 4") then
-			table.insert(snd.setting_priority, "left_leg_broken 4")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "4" and not table.contains(snd.setting_priority, "right_leg_broken 4") then
-			table.insert(snd.setting_priority, "right_leg_broken 4")
-		end
-	end 
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "5" and not table.contains(snd.setting_priority, "left_arm_broken 5") then
-			table.insert(snd.setting_priority, "left_arm_broken 5")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "5" and not table.contains(snd.setting_priority, "right_arm_broken 5") then
-			table.insert(snd.setting_priority, "right_arm_broken 5")
-		end
-	end
-	if snd.firstaidcuretrack.head_broken ~= "5" and not table.contains(snd.setting_priority, "head_broken 5") then
-		table.insert(snd.setting_priority, "head_broken 5")		 
-	end 
-	if snd.firstaidcuretrack.shivering ~= "5" and not table.contains(snd.setting_priority, "shivering 5") then
-		table.insert(snd.setting_priority, "shivering 5")		 
-	end	
-	if snd.firstaidcuretrack.head_mangled ~= "6" and not table.contains(snd.setting_priority, "head_mangled 6") then
-		table.insert(snd.setting_priority, "head_mangled 6")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "6" and not table.contains(snd.setting_priority, "left_leg_mangled 6") then
-	  table.insert(snd.setting_priority, "left_leg_mangled 6")		 
-	end
-	if snd.firstaidcuretrack.right_leg_mangled ~= "7" and not table.contains(snd.setting_priority, "right_leg_mangled 7") then
-		table.insert(snd.setting_priority, "right_leg_mangled 7")		 
-	end
-	if snd.firstaidcuretrack.left_arm_mangled ~= "7" and not table.contains(snd.setting_priority, "left_arm_mangled 7") then
-		table.insert(snd.setting_priority, "left_arm_mangled 7")		 
-	end
-	if snd.firstaidcuretrack.right_arm_mangled ~= "8" and not table.contains(snd.setting_priority, "right_arm_mangled 8") then
-		table.insert(snd.setting_priority, "right_arm_mangled 8")		 
-	end 
-	if snd.firstaidcuretrack.right_arm_bruised_moderate ~= "8" and not table.contains(snd.setting_priority, "right_arm_bruised_moderate 8") then
-		table.insert(snd.setting_priority, "right_arm_bruised_moderate 8")		 
-	end
-	if snd.firstaidcuretrack.left_arm_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "left_arm_bruised_moderate 9") then
-		table.insert(snd.setting_priority, "left_arm_bruised_moderate 9")		 
-	end
-	if snd.firstaidcuretrack.left_leg_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "left_leg_bruised_moderate 9") then
-		table.insert(snd.setting_priority, "left_leg_bruised_moderate 9")		 
-	end
-	if snd.firstaidcuretrack.right_leg_bruised_moderate ~= "10" and not table.contains(snd.setting_priority, "right_leg_bruised_moderate 10") then
-		table.insert(snd.setting_priority, "right_leg_bruised_moderate 10")		 
-	end
-  if snd.firstaidcuretrack.head_bruised_moderate ~= "10" and not table.contains(snd.setting_priority, "head_bruised_moderate 10") then
-		table.insert(snd.setting_priority, "head_bruised_moderate 10")		 
-	end
-	if snd.firstaidcuretrack.torso_bruised_moderate ~= "11" and not table.contains(snd.setting_priority, "torso_bruised_moderate 11") then
-		table.insert(snd.setting_priority, "torso_bruised_moderate 11")		 
-	end
-	if snd.firstaidcuretrack.right_leg_broken ~= "11" and not table.contains(snd.setting_priority, "right_leg_broken 11") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 11")		 
-	end
-	if snd.firstaidcuretrack.left_leg_broken ~= "12" and not table.contains(snd.setting_priority, "left_leg_broken 12") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_leg_broken 12")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "12" and not table.contains(snd.setting_priority, "left_arm_broken 12") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_arm_broken 12")		 
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "13" and not table.contains(snd.setting_priority, "right_arm_broken 13") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 13")		 
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "13" and not table.contains(snd.setting_priority, "torso_mangled 13") then
-		table.insert(snd.setting_priority, "torso_mangled 13")		 
-	end
-	if snd.firstaidcuretrack.torso_broken ~= "14" and not table.contains(snd.setting_priority, "torso_broken 14") then
-		table.insert(snd.setting_priority, "torso_broken 14")		 
-	end
+	end		
 	
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -7203,115 +6529,6 @@ function snd.firstaidassTeradrim()
 	if snd.firstaidcuretrack.indifference ~= "1" and not table.contains(snd.setting_priority, "indifference 1") then
 		table.insert(snd.setting_priority, "indifference 1")		 
 	end	
-	if snd.firstaidcuretrack.left_leg_bruised_critical ~= "1" and not table.contains(snd.setting_priority, "left_leg_bruised_critical 1") then
-		table.insert(snd.setting_priority, "left_leg_bruised_critical 1")		 
-	end
-	if snd.firstaidcuretrack.right_leg_bruised_critical ~= "2" and not table.contains(snd.setting_priority, "right_leg_bruised_critical 2") then
-		table.insert(snd.setting_priority, "right_leg_bruised_critical 2")		 
-	end
-	if snd.firstaidcuretrack.left_arm_bruised_critical ~= "2" and not table.contains(snd.setting_priority, "left_arm_bruised_critical 2") then
-		table.insert(snd.setting_priority, "left_arm_bruised_critical 2")		 
-	end
-	if snd.firstaidcuretrack.right_arm_bruised_critical ~= "3" and not table.contains(snd.setting_priority, "right_arm_bruised_critical 3") then
-		table.insert(snd.setting_priority, "right_arm_bruised_critical 3")		 
-	end
-	if snd.firstaidcuretrack.torso_bruised_critical ~= "3" and not table.contains(snd.setting_priority, "torso_bruised_critical 3") then
-		table.insert(snd.setting_priority, "torso_bruised_critical 3")		 
-	end
-	if snd.firstaidcuretrack.head_bruised_critical ~= "4" and not table.contains(snd.setting_priority, "head_bruised_critical 4") then
-		table.insert(snd.setting_priority, "head_bruised_critical 4")		 
-	end
-	if snd.firstaidcuretrack.right_leg_dislocated ~= "4" and not table.contains(snd.setting_priority, "right_leg_dislocated 4") then
-		table.insert(snd.setting_priority, "right_leg_dislocated 4")		 
-	end
-	if snd.firstaidcuretrack.right_arm_dislocated ~= "5" and not table.contains(snd.setting_priority, "right_arm_dislocated 5") then
-		table.insert(snd.setting_priority, "right_arm_dislocated 5")		 
-	end
-	if snd.firstaidcuretrack.left_leg_dislocated ~= "5" and not table.contains(snd.setting_priority, "left_leg_dislocated 5") then
-		table.insert(snd.setting_priority, "left_leg_dislocated 5")		 
-	end
-	if snd.firstaidcuretrack.left_arm_dislocated ~= "6" and not table.contains(snd.setting_priority, "left_arm_dislocated 6") then
-		table.insert(snd.setting_priority, "left_arm_dislocated 6")		 
-	end
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "6" and not table.contains(snd.setting_priority, "left_leg_broken 6") then
-			table.insert(snd.setting_priority, "left_leg_broken 6")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "6" and not table.contains(snd.setting_priority, "right_leg_broken 6") then
-			table.insert(snd.setting_priority, "right_leg_broken 6")
-		end
-	end 
-	if snd.firstaidcuretrack.anorexia ~= "6" and not table.contains(snd.setting_priority, "anorexia 6") then
-		table.insert(snd.setting_priority, "anorexia 6")		 
-	end	
-	if snd.firstaidcuretrack.right_leg_broken ~= "7" and not table.contains(snd.setting_priority, "right_leg_broken 7") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_leg_broken 7")		 
-	end
-	if snd.firstaidcuretrack.left_leg_broken ~= "7" and not table.contains(snd.setting_priority, "left_leg_broken 7") and not snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_leg_broken 7")		 
-	end 
-	if snd.firstaidcuretrack.collapsed_lung ~= "7" and not table.contains(snd.setting_priority, "collapsed_lung 7") then
-		table.insert(snd.setting_priority, "collapsed_lung 7")		 
-	end	
-	if snd.firstaidcuretrack.right_arm_bruised_moderate ~= "8" and not table.contains(snd.setting_priority, "right_arm_bruised_moderate 8") then
-		table.insert(snd.setting_priority, "right_arm_bruised_moderate 8")		 
-	end
-	if snd.firstaidcuretrack.left_arm_bruised_moderate ~= "8" and not table.contains(snd.setting_priority, "left_arm_bruised_moderate 8") then
-		table.insert(snd.setting_priority, "left_arm_bruised_moderate 8")		 
-	end
-	if snd.firstaidcuretrack.left_leg_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "left_leg_bruised_moderate 9") then
-		table.insert(snd.setting_priority, "left_leg_bruised_moderate 9")		 
-	end
-	if snd.firstaidcuretrack.right_leg_bruised_moderate ~= "9" and not table.contains(snd.setting_priority, "right_leg_bruised_moderate 9") then
-		table.insert(snd.setting_priority, "right_leg_bruised_moderate 9")		 
-	end
-  if snd.firstaidcuretrack.head_bruised_moderate ~= "10" and not table.contains(snd.setting_priority, "head_bruised_moderate 10") then
-		table.insert(snd.setting_priority, "head_bruised_moderate 10")		 
-	end
-	if snd.firstaidcuretrack.torso_bruised_moderate ~= "10" and not table.contains(snd.setting_priority, "torso_bruised_moderate 10") then
-		table.insert(snd.setting_priority, "torso_bruised_moderate 10")		 
-	end
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "10" and not table.contains(snd.setting_priority, "left_arm_broken 10") then
-			table.insert(snd.setting_priority, "left_arm_broken 10")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "10" and not table.contains(snd.setting_priority, "right_arm_broken 10") then
-			table.insert(snd.setting_priority, "right_arm_broken 10")
-		end
-	end
-	if snd.firstaidcuretrack.head_broken ~= "11" and not table.contains(snd.setting_priority, "head_broken 11") then
-		table.insert(snd.setting_priority, "head_broken 11")		 
-	end 
-	if snd.firstaidcuretrack.shivering ~= "11" and not table.contains(snd.setting_priority, "shivering 11") then
-		table.insert(snd.setting_priority, "shivering 11")		 
-	end	
-	if snd.firstaidcuretrack.head_mangled ~= "12" and not table.contains(snd.setting_priority, "head_mangled 12") then
-		table.insert(snd.setting_priority, "head_mangled 12")		 
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "12" and not table.contains(snd.setting_priority, "torso_mangled 12") then
-		table.insert(snd.setting_priority, "torso_mangled 12")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "13" and not table.contains(snd.setting_priority, "left_leg_mangled 13") then
-	  table.insert(snd.setting_priority, "left_leg_mangled 13")		 
-	end
-	if snd.firstaidcuretrack.right_leg_mangled ~= "13" and not table.contains(snd.setting_priority, "right_leg_mangled 13") then
-		table.insert(snd.setting_priority, "right_leg_mangled 13")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "14" and not table.contains(snd.setting_priority, "left_arm_broken 14") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "left_arm_broken 14")		 
-	end
-	if snd.firstaidcuretrack.right_arm_broken ~= "14" and not table.contains(snd.setting_priority, "right_arm_broken 14") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		table.insert(snd.setting_priority, "right_arm_broken 14")		 
-	end
-	if snd.firstaidcuretrack.left_arm_mangled ~= "15" and not table.contains(snd.setting_priority, "left_arm_mangled 15") then
-		table.insert(snd.setting_priority, "left_arm_mangled 15")		 
-	end
-	if snd.firstaidcuretrack.right_arm_mangled ~= "15" and not table.contains(snd.setting_priority, "right_arm_mangled 15") then
-		table.insert(snd.setting_priority, "right_arm_mangled 15")		 
-	end 
-	if snd.firstaidcuretrack.torso_broken ~= "16" and not table.contains(snd.setting_priority, "torso_broken 16") then
-		table.insert(snd.setting_priority, "torso_broken 16")		 
-	end
 	
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -7381,68 +6598,6 @@ function snd.firstaidassWayfarer()
 	if snd.firstaidcuretrack.blindness ~= "6" and not table.contains(snd.setting_priority, "blindness  6") then
 		table.insert(snd.setting_priority, "blindness 6")   
 	end
- 
-	if snd.firstaidcuretrack.anorexia ~= "1" and not table.contains(snd.setting_priority, "anorexia 1") then
-		table.insert(snd.setting_priority, "anorexia 1")		 
-	end	
-	if snd.firstaidcuretrack.blurry_vision ~= "1" and not table.contains(snd.setting_priority, "blurry_vision 1") then
-		table.insert(snd.setting_priority, "blurry_vision 1")		 
-	end	
-	if snd.firstaidcuretrack.watery_eyes ~= "1" and not table.contains(snd.setting_priority, "watery_eyes 1") then
-		table.insert(snd.setting_priority, "watery_eyes 1")		 
-	end	
-	if snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
-		if snd.firstaidcuretrack.left_arm_broken ~= "2" and not table.contains(snd.setting_priority, "left_arm_broken 2") then
-			table.insert(snd.setting_priority, "left_arm_broken 2")
-		end
-		if snd.firstaidcuretrack.right_arm_broken ~= "2" and not table.contains(snd.setting_priority, "right_arm_broken 2") then
-			table.insert(snd.setting_priority, "right_arm_broken 2")
-		end
-	end
-	if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
-		if snd.firstaidcuretrack.left_leg_broken ~= "2" and not table.contains(snd.setting_priority, "left_leg_broken 2") then
-			table.insert(snd.setting_priority, "left_leg_broken 2")
-		end
-		if snd.firstaidcuretrack.right_leg_broken ~= "2" and not table.contains(snd.setting_priority, "right_leg_broken 2") then
-			table.insert(snd.setting_priority, "right_leg_broken 2")
-		end
-	end 
-	if snd.firstaidcuretrack.head_broken ~= "3" and not table.contains(snd.setting_priority, "head_broken 3") then
-		table.insert(snd.setting_priority, "head_broken 3")		 
-	end 
-	if snd.firstaidcuretrack.head_mangled ~= "3" and not table.contains(snd.setting_priority, "head_mangled 3") then
-		table.insert(snd.setting_priority, "head_mangled 3")		 
-	end
-	if snd.firstaidcuretrack.torso_mangled ~= "4" and not table.contains(snd.setting_priority, "torso_mangled 4") then
-		table.insert(snd.setting_priority, "torso_mangled 4")		 
-	end
-	if snd.firstaidcuretrack.left_leg_mangled ~= "4" and not table.contains(snd.setting_priority, "left_leg_mangled 4") then
-	  table.insert(snd.setting_priority, "left_leg_mangled 4")		 
-	end
-	if snd.firstaidcuretrack.left_arm_broken ~= "4" and not table.contains(snd.setting_priority, "left_arm_broken 4") then
-		table.insert(snd.setting_priority, "left_arm_broken 4")		 
-	end 
-	if snd.firstaidcuretrack.right_arm_broken ~= "5" and not table.contains(snd.setting_priority, "right_arm_broken 5") then
-		table.insert(snd.setting_priority, "right_arm_broken 5")		 
-	end 
-	if snd.firstaidcuretrack.right_leg_mangled ~= "5" and not table.contains(snd.setting_priority, "right_leg_mangled 5") then
-		table.insert(snd.setting_priority, "right_leg_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.left_arm_mangled ~= "5" and not table.contains(snd.setting_priority, "left_arm_mangled 5") then
-		table.insert(snd.setting_priority, "left_arm_mangled 5")		 
-	end
-	if snd.firstaidcuretrack.right_arm_mangled ~= "5" and not table.contains(snd.setting_priority, "right_arm_mangled 5") then
-		table.insert(snd.setting_priority, "right_arm_mangled 5")		 
-	end 
-	if snd.firstaidcuretrack.torso_broken ~= "6" and not table.contains(snd.setting_priority, "torso_broken 6") then
-		table.insert(snd.setting_priority, "torso_broken 6")		 
-	end
-	if snd.firstaidcuretrack.left_leg_broken ~= "7" and not table.contains(snd.setting_priority, "left_leg_broken 7") then
-		table.insert(snd.setting_priority, "left_leg_broken 7")		 
-	end  
-	if snd.firstaidcuretrack.right_leg_broken ~= "7" and not table.contains(snd.setting_priority, "right_leg_broken 7") then
-		table.insert(snd.setting_priority, "right_leg_broken 7")		 
-	end  
 	
 	snd.firstaidchangecure = false -- keep last	
 	if #snd.setting_priority &gt; 0 then
@@ -7606,6 +6761,275 @@ function snd.firstaidassZealot()
 end</script>
 							<eventHandlerList />
 						</Script>
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Aff elevate function</name>
+						<packageName></packageName>
+						<script>function snd.elevatecheck()
+  snd.pillcoveringcuring_self()
+  if snd.cureset == "infiltrator" then
+    if snd.have_aff("impatience") and snd.have_aff("shyness") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "shyness"))
+		  table.insert(snd.ordered_list, 1, "shyness")
+    end
+  elseif snd.cureset == "indorani" then
+    if snd.have_aff("withering") and snd.not_aff("aeon") and snd.not_aff("slickness") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "withering"))
+		  table.insert(snd.ordered_list, 1, "withering")
+    end
+  elseif snd.cureset == "bard" then
+    if snd.have_aff("dizziness") and (snd.have_aff("stupidity") or snd.have_aff("shyness"))then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dizziness"))
+		  table.insert(snd.ordered_list, 1, "dizziness")
+    elseif snd.have_aff("stupidity") and snd.have_aff("shyness") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
+		  table.insert(snd.ordered_list, 1, "stupidity")
+    elseif snd.have_aff("misery") and (snd.have_aff("perplexity") or snd.have_aff("self_loathing")) then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "misery"))
+		  table.insert(snd.ordered_list, 1, "misery")
+    elseif snd.have_aff("perplexity") and snd.have_aff("self_loathing") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "perplexity"))
+		  table.insert(snd.ordered_list, 1, "perplexity")
+    elseif snd.have_aff("besilence") and snd.cureset == "bard" then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "besilence"))
+		  table.insert(snd.ordered_list, 1, "besilence")
+    end
+  elseif snd.cureset == "siderealist" then
+    if snd.have_aff("hallucinations") and snd.have_aff("echoes") then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "echoes"))
+		  table.insert(snd.ordered_list, 1, "echoes")
+    end
+  elseif snd.cureset == "luminary" then
+    if (snd.have_aff("asthma") and snd.have_aff("hypochondria")) and snd.cureset == "luminary" then
+		  table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hypochondria"))
+		  table.insert(snd.ordered_list, 1, "hypochondria")
+    end
+	elseif snd.cureset == "shaman" then
+		if snd.have_aff("dread") and snd.checksomeSelfAffs(snd.mental_affs, 3) and not snd.have_aff("impatience") then
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dread"))
+			table.insert(snd.ordered_list, 1, "dread")
+		elseif (snd.have_aff("impatience") or snd.have_aff("shyness")) then
+			if snd.have_aff("stupidity") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
+				table.insert(snd.ordered_list, 1, "stupidity")
+			elseif snd.have_aff("dizziness") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dizziness"))
+				table.insert(snd.ordered_list, 1, "dizziness")   
+			elseif snd.have_aff("epilepsy") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "epilepsy"))
+				table.insert(snd.ordered_list, 1, "epilepsy")        
+			elseif snd.have_aff("shyness") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "shyness"))
+				table.insert(snd.ordered_list, 1, "shyness")        
+			else
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "impatience"))
+				table.insert(snd.ordered_list, 1, "impatience")
+			end
+		elseif snd.have_aff("paranoia") then
+			if snd.have_aff("confusion") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
+				table.insert(snd.ordered_list, 1, "confusion")
+			elseif snd.have_aff("dementia") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dementia"))
+				table.insert(snd.ordered_list, 1, "dementia")   
+			elseif snd.have_aff("hallucinations") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hallucinations"))
+				table.insert(snd.ordered_list, 1, "hallucinations")        
+			else
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paranoia"))
+				table.insert(snd.ordered_list, 1, "paranoia") 
+			end
+		elseif snd.have_aff("agoraphobia") or snd.have_aff("vertigo") or snd.have_aff("claustrophobia") or snd.have_aff("nyctophobia") then
+			if snd.have_aff("recklessness") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "recklessness"))
+				table.insert(snd.ordered_list, 1, "recklessness")
+			elseif snd.have_aff("masochism") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "masochism"))
+				table.insert(snd.ordered_list, 1, "masochism")        
+			elseif snd.have_aff("agoraphobia") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "agoraphobia"))
+				table.insert(snd.ordered_list, 1, "agoraphobia")        
+			elseif snd.have_aff("mania") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "mania"))
+				table.insert(snd.ordered_list, 1, "mania")           
+			elseif snd.have_aff("vertigo") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "vertigo"))
+				table.insert(snd.ordered_list, 1, "vertigo")    
+			elseif snd.have_aff("claustrophobia") then
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "claustrophobia"))
+				table.insert(snd.ordered_list, 1, "claustrophobia") 
+			else
+				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "nyctophobia"))
+				table.insert(snd.ordered_list, 1, "nyctophobia")
+			end
+		elseif snd.have_aff("superstition") then
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "superstition"))
+			table.insert(snd.ordered_list, 1, "superstition")
+		elseif snd.have_aff("loneliness") then
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "loneliness"))
+			table.insert(snd.ordered_list, 1, "loneliness")
+		end
+	elseif snd.cureset == "templar" then
+    if (snd.have_aff("crippled_body") or snd.have_aff("crippled")) then
+      if snd.have_aff("delirium") then
+		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "delirium"))
+		    table.insert(snd.ordered_list, 1, "delirium")
+      elseif snd.have_aff("extravasation") then
+		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "extravasation"))
+		    table.insert(snd.ordered_list, 1, "extravasation")
+      elseif snd.have_aff("extravasation") and snd.have_aff("haemophilia") then
+		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "haemophilia"))
+		    table.insert(snd.ordered_list, 1, "haemophilia")
+      end
+    end
+  elseif snd.cureset == "carnifex" then
+    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
+      for _, aff in pairs(snd.physical_affs) do
+        if snd.have_aff(aff) then
+           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+           table.insert(snd.ordered_list, 1, aff)
+        end
+      end
+    end
+  elseif snd.cureset == "praenomen" then
+    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
+      for _, aff in pairs(snd.physical_affs) do
+        if snd.have_aff(aff) then
+           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+           table.insert(snd.ordered_list, 1, aff)
+        end
+      end
+    else
+      if snd.have_aff("hubris") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hubris"))
+        table.insert(snd.ordered_list, 1, "hubris")
+		  elseif snd.have_aff("self_pity") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "self_pity"))
+        table.insert(snd.ordered_list, 1, "self_pity")
+		  elseif snd.have_aff("sadness") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "sadness"))
+        table.insert(snd.ordered_list, 1, "sadness")
+		  elseif snd.have_aff("mercy") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "mercy"))
+        table.insert(snd.ordered_list, 1, "mercy")
+		  elseif snd.have_aff("stupidity") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
+        table.insert(snd.ordered_list, 1, "stupidity")
+		  elseif snd.have_aff("epilepsy") then
+        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "epilepsy"))
+        table.insert(snd.ordered_list, 1, "epilepsy")
+      elseif snd.checksomeSelfAffs(snd.mental_affs, 3) then
+        for _, aff in pairs(snd.mental_affs) do
+          if snd.have_aff(aff) then
+            table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+            table.insert(snd.ordered_list, 1, aff)
+          end
+        end
+      end
+    end
+  elseif snd.cureset == "archivist" then
+    if snd.checksomeSelfAffs(snd.physical_affs, 1) then
+      for _, aff in pairs(snd.physical_affs) do
+        if snd.have_aff(aff) then
+           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
+           table.insert(snd.ordered_list, 1, aff)
+        end
+      end
+    elseif snd.have_aff("patterns") and snd.have_aff("lemniscate") and snd.checksomeSelfAffs(snd.physical_affs, 0) then
+      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "patterns"))
+      table.insert(snd.ordered_list, 1, "patterns")
+    end
+	end
+	if snd.my_last_cured == "clumsiness" and snd.have_aff("slickness") and snd.class == "Carnifex" then
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
+			table.insert(snd.ordered_list, 1, "slickness")
+  end
+  if snd.have_aff("disfigurement") and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "disfigurement"))
+		table.insert(snd.ordered_list, 1, "disfigurement")
+	end
+  if snd.have_aff("clumsiness") and (snd.class == "Carnifex" or snd.class == "Revenant") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "clumsiness"))
+		table.insert(snd.ordered_list, 1, "clumsiness")
+	end
+  if snd.have_aff("burnt_skin") then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "burnt_skin"))
+		table.insert(snd.ordered_list, 1, "burnt_skin")
+	end
+  if snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "faintness"))
+		table.insert(snd.ordered_list, 1, "faintness")
+	end
+  if snd.have_aff("allergies") and not snd.have_aff("asthma") and not snd.have_aff("paralysis") and not (snd.have_aff("clumsiness") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) then
+		if tonumber(allergycount) &gt; 4 then
+      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies"))
+		  table.insert(snd.ordered_list, 1, "allergies")
+    end
+	end
+	if (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
+		table.insert(snd.ordered_list, 1, "slickness")
+	end
+	if (snd.have_aff("confusion") and snd.have_aff("impatience") and (snd.have_aff("stupidity") or snd.have_aff("dizziness") or snd.have_aff("shyness") or snd.have_aff("epilepsy"))) and not snd.cureset == "infiltrator" and not snd.cureset == "indorani" and not snd.cureset == "shapeshifter" and not snd.cureset == "templar" then
+		if snd.have_aff("asthma") and not snd.can_fitness() then
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
+			table.insert(snd.ordered_list, 2, "confusion")
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
+			table.insert(snd.ordered_list, 1, "asthma")
+		else
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
+			table.insert(snd.ordered_list, 1, "confusion")
+		end
+  end
+	if snd.have_aff("disrupted") and snd.have_aff("confusion") then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
+		table.insert(snd.ordered_list, 1, "confusion")
+  end
+  if not snd.have_aff("disrupted") and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+		if snd.have_aff("asthma") and not snd.can_fitness() then
+			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
+			table.insert(snd.ordered_list, 1, "asthma")	
+		end
+  end
+	if snd.have_aff("paralysis") then
+		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
+		table.insert(snd.ordered_list, 1, "paralsyis")
+  end
+  
+  if table.contains(snd.elevatedaff, snd.ordered_list[1]) then
+    if snd.elevatedaff[1] ~= snd.ordered_list[1] then
+      send("firstaid unelevate "..snd.elevatedaff[1])
+      echo("\n"..snd.elevatedaff[1].." is being unelevated with higher priority item")
+      send("firstaid elevate "..snd.ordered_list[1])
+      echo("\n"..snd.ordered_list[1].." is being elevated as higher priority")
+    else
+      echo("\n"..snd.ordered_list[1].." is already elevated")
+      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, snd.ordered_list[1]))
+      if table.contains(snd.firstaidpredict, snd.ordered_list[1]) then
+        table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, snd.ordered_list[1]))
+      end
+      if table.contains(snd.firstaidtobepredicted, snd.ordered_list[1]) then
+        table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.ordered_list[1]))
+      end
+    end
+  else 
+    if snd.elevatedaff[1] ~= snd.ordered_list[1] and #snd.ordered_list &gt;= 1 and snd.have_aff(snd.ordered_list[1]) then
+      if snd.ordered_list[1] == "gloom" then
+				send("firstaid priority defence courage 26", false)
+				snd.firstaidchangecure = true
+			end
+			send("firstaid elevate "..snd.ordered_list[1])
+      echo("\n"..snd.ordered_list[1].." being elevated")
+      if table.contains(snd.firstaidpredict, snd.ordered_list[1]) then
+        table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, snd.ordered_list[1]))
+      end
+      if table.contains(snd.firstaidtobepredicted, snd.ordered_list[1]) then
+        table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.ordered_list[1]))
+      end
+    end
+  end  
+end</script>
+						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Clot Check</name>
@@ -8036,251 +7460,6 @@ function snd.can_regenerate()
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
-						<name>Aff elevate function</name>
-						<packageName></packageName>
-						<script>function snd.elevatecheck()
-	if snd.have_aff("paralysis") then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
-		table.insert(snd.ordered_list, 1, "paralsyis")
-	elseif not snd.have_aff("disrupted") and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
-		if snd.have_aff("asthma") and not snd.can_fitness() then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
-			table.insert(snd.ordered_list, 1, "asthma")	
-		end
-	elseif snd.have_aff("disrupted") and snd.have_aff("confusion") then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
-		table.insert(snd.ordered_list, 1, "confusion")
-	elseif snd.have_aff("confusion") and snd.have_aff("impatience") and (snd.have_aff("stupidity") or snd.have_aff("dizziness") or snd.have_aff("shyness") or snd.have_aff("epilepsy")) and not snd.cureset == "infiltrator" and not snd.cureset == "indorani" and not snd.cureset == "shapeshifter" and not snd.cureset == "templar" then
-		if snd.have_aff("asthma") and not snd.can_fitness() then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
-			table.insert(snd.ordered_list, 2, "confusion")
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
-			table.insert(snd.ordered_list, 1, "asthma")
-		else
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
-			table.insert(snd.ordered_list, 1, "confusion")
-		end
-	elseif (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
-		table.insert(snd.ordered_list, 1, "slickness")
-	elseif (snd.have_aff("asthma") and snd.have_aff("hypochondria")) and snd.cureset == "luminary" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hypochondria"))
-		table.insert(snd.ordered_list, 1, "hypochondria")
-	elseif snd.have_aff("allergies") and not snd.have_aff("asthma") and not snd.have_aff("paralysis") and not (snd.have_aff("clumsiness") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies"))
-		table.insert(snd.ordered_list, 1, "allergies")
-	elseif snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "faintness"))
-		table.insert(snd.ordered_list, 1, "faintness")
-	elseif snd.have_aff("burnt_skin") then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "burnt_skin"))
-		table.insert(snd.ordered_list, 1, "burnt_skin")
-	elseif snd.have_aff("impatience") and snd.have_aff("shyness") and snd.cureset == "infiltrator" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "shyness"))
-		table.insert(snd.ordered_list, 1, "shyness")
-	elseif snd.have_aff("clumsiness") and (snd.class == "Carnifex" or snd.class == "Revenant") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "clumsiness"))
-		table.insert(snd.ordered_list, 1, "clumsiness")
-	elseif snd.have_aff("disfigurement") and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "disfigurement"))
-		table.insert(snd.ordered_list, 1, "disfigurement")
-	elseif snd.have_aff("hallucinations") and snd.have_aff("echoes") and snd.cureset == "siderealist" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "echoes"))
-		table.insert(snd.ordered_list, 1, "echoes")
-	elseif snd.have_aff("dizziness") and (snd.have_aff("stupidity") or snd.have_aff("shyness")) and snd.cureset == "bard" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dizziness"))
-		table.insert(snd.ordered_list, 1, "dizziness")
-	elseif snd.have_aff("stupidity") and snd.have_aff("shyness") and snd.cureset == "bard" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
-		table.insert(snd.ordered_list, 1, "stupidity")
-	elseif snd.have_aff("misery") and (snd.have_aff("perplexity") or snd.have_aff("self_loathing")) and snd.cureset == "bard" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "misery"))
-		table.insert(snd.ordered_list, 1, "misery")
-	elseif snd.have_aff("perplexity") and snd.have_aff("self_loathing") and snd.cureset == "bard" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "perplexity"))
-		table.insert(snd.ordered_list, 1, "perplexity")
-	elseif snd.my_last_cured == "clumsiness" and snd.have_aff("slickness") and snd.class == "Carnifex" then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
-			table.insert(snd.ordered_list, 1, "slickness")
-	elseif snd.have_aff("besilence") and snd.cureset == "bard" then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "besilence"))
-		table.insert(snd.ordered_list, 1, "besilence")
-	elseif snd.have_aff("withering") and snd.cureset == "indorani" and snd.not_aff("aeon") and snd.not_aff("slickness") then
-		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "withering"))
-		table.insert(snd.ordered_list, 1, "withering")
-	elseif snd.cureset == "shaman" then
-		if snd.have_aff("dread") and snd.checksomeSelfAffs(snd.mental_affs, 3) then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dread"))
-			table.insert(snd.ordered_list, 1, "dread")
-		elseif snd.have_aff("impatience") or snd.have_aff("shyness") then
-			if snd.have_aff("stupidity") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
-				table.insert(snd.ordered_list, 1, "stupidity")
-			elseif snd.have_aff("dizziness") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dizziness"))
-				table.insert(snd.ordered_list, 1, "dizziness")   
-			elseif snd.have_aff("epilepsy") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "epilepsy"))
-				table.insert(snd.ordered_list, 1, "epilepsy")        
-			elseif snd.have_aff("shyness") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "shyness"))
-				table.insert(snd.ordered_list, 1, "shyness")        
-			else
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "impatience"))
-				table.insert(snd.ordered_list, 1, "impatience")
-			end
-		elseif snd.have_aff("paranoia") then
-			if snd.have_aff("confusion") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
-				table.insert(snd.ordered_list, 1, "confusion")
-			elseif snd.have_aff("dementia") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "dementia"))
-				table.insert(snd.ordered_list, 1, "dementia")   
-			elseif snd.have_aff("hallucinations") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hallucinations"))
-				table.insert(snd.ordered_list, 1, "hallucinations")        
-			else
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paranoia"))
-				table.insert(snd.ordered_list, 1, "paranoia") 
-			end
-		elseif snd.have_aff("agoraphobia") or snd.have_aff("vertigo") or snd.have_aff("claustrophobia") or snd.have_aff("nyctophobia") then
-			if snd.have_aff("recklessness") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "recklessness"))
-				table.insert(snd.ordered_list, 1, "recklessness")
-			elseif snd.have_aff("masochism") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "masochism"))
-				table.insert(snd.ordered_list, 1, "masochism")        
-			elseif snd.have_aff("agoraphobia") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "agoraphobia"))
-				table.insert(snd.ordered_list, 1, "agoraphobia")        
-			elseif snd.have_aff("mania") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "mania"))
-				table.insert(snd.ordered_list, 1, "mania")           
-			elseif snd.have_aff("vertigo") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "vertigo"))
-				table.insert(snd.ordered_list, 1, "vertigo")    
-			elseif snd.have_aff("claustrophobia") then
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "claustrophobia"))
-				table.insert(snd.ordered_list, 1, "claustrophobia") 
-			else
-				table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "nyctophobia"))
-				table.insert(snd.ordered_list, 1, "nyctophobia")
-			end
-		elseif snd.have_aff("superstition") then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "superstition"))
-			table.insert(snd.ordered_list, 1, "superstition")
-		elseif snd.have_aff("loneliness") then
-			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "loneliness"))
-			table.insert(snd.ordered_list, 1, "loneliness")
-		end
-	elseif snd.cureset == "templar" then
-    if (snd.have_aff("crippled_body") or snd.have_aff("crippled")) then --and not snd.have_aff("paralysis") 
-      if snd.have_aff("delirium") then
-		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "delirium"))
-		    table.insert(snd.ordered_list, 1, "delirium")
-      elseif snd.have_aff("extravasation") then
-		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "extravasation"))
-		    table.insert(snd.ordered_list, 1, "extravasation")
-      elseif snd.have_aff("extravasation") and snd.have_aff("haemophilia") then
-		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "haemophilia"))
-		    table.insert(snd.ordered_list, 1, "haemophilia")
-      end
-    end
-  elseif snd.cureset == "carnifex" then
-    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
-      for _, aff in pairs(snd.physical_affs) do
-        if snd.have_aff(aff) then
-           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
-           table.insert(snd.ordered_list, 1, aff)
-        end
-      end
-    end
-  elseif snd.cureset == "praenomen" then
-    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
-      for _, aff in pairs(snd.physical_affs) do
-        if snd.have_aff(aff) then
-           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
-           table.insert(snd.ordered_list, 1, aff)
-        end
-      end
-    else
-      if snd.have_aff("hubris") then
-        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "hubris"))
-        table.insert(snd.ordered_list, 1, "hubris")
-		  elseif snd.have_aff("self_pity") then
-        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "self_pity"))
-        table.insert(snd.ordered_list, 1, "self_pity")
-		  elseif snd.have_aff("sadness") then
-        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "sadness"))
-        table.insert(snd.ordered_list, 1, "sadness")
-		  elseif snd.have_aff("mercy") then
-        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "mercy"))
-        table.insert(snd.ordered_list, 1, "mercy")
-		  elseif snd.have_aff("stupidity") then
-        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "stupidity"))
-        table.insert(snd.ordered_list, 1, "stupidity")
-		  elseif snd.have_aff("epilepsy") then
-        table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "epilepsy"))
-        table.insert(snd.ordered_list, 1, "epilepsy")
-      elseif snd.checksomeSelfAffs(snd.mental_affs, 3) then
-        for _, aff in pairs(snd.mental_affs) do
-          if snd.have_aff(aff) then
-            table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
-            table.insert(snd.ordered_list, 1, aff)
-          end
-        end
-      end
-    end
-  elseif snd.cureset == "archivist" then
-    if snd.checksomeSelfAffs(snd.physical_affs, 1) then
-      for _, aff in pairs(snd.physical_affs) do
-        if snd.have_aff(aff) then
-           table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
-           table.insert(snd.ordered_list, 1, aff)
-        end
-      end
-    elseif snd.have_aff("patterns") and snd.have_aff("lemniscate") and snd.checksomeSelfAffs(snd.physical_affs, 0) then
-      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "patterns"))
-      table.insert(snd.ordered_list, 1, "patterns")
-    end
-	end
-  
-  if table.contains(snd.elevatedaff, snd.ordered_list[1]) then
-    if snd.elevatedaff[1] ~= snd.ordered_list[1] then
-      send("firstaid unelevate "..snd.elevatedaff[1])
-      echo("\n"..snd.elevatedaff[1].." is being unelevated with higher priority item")
-      send("firstaid elevate "..snd.ordered_list[1])
-      echo("\n"..snd.ordered_list[1].." is being elevated as higher priority")
-    else
-      echo("\n"..snd.ordered_list[1].." is already elevated")
-      table.remove(snd.ordered_list, table.index_of(snd.ordered_list, snd.ordered_list[1]))
-      if table.contains(snd.firstaidpredict, snd.ordered_list[1]) then
-        table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, snd.ordered_list[1]))
-      end
-      if table.contains(snd.firstaidtobepredicted, snd.ordered_list[1]) then
-        table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.ordered_list[1]))
-      end
-    end
-  else 
-    if snd.elevatedaff[1] ~= snd.ordered_list[1] and #snd.ordered_list &gt;= 1 and snd.have_aff(snd.ordered_list[1]) then
-      if snd.ordered_list[1] == "gloom" then
-				send("firstaid priority defence courage 26", false)
-				snd.firstaidchangecure = true
-			end
-			send("firstaid elevate "..snd.ordered_list[1])
-      echo("\n"..snd.ordered_list[1].." being elevated")
-      if table.contains(snd.firstaidpredict, snd.ordered_list[1]) then
-        table.remove(snd.firstaidpredict, table.index_of(snd.firstaidpredict, snd.ordered_list[1]))
-      end
-      if table.contains(snd.firstaidtobepredicted, snd.ordered_list[1]) then
-        table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, snd.ordered_list[1]))
-      end
-    end
-  end  
-end</script>
-						<eventHandlerList />
-					</Script>
-					<Script isActive="yes" isFolder="no">
 						<name>Secondary curing lines for hidden affs</name>
 						<packageName></packageName>
 						<script>function snd.seccures()
@@ -8512,6 +7691,9 @@ end</script>
         enableTimer("recklessblackouttimer")
       end
     end
+  elseif aff ~= "" and snd.not_aff(aff) then
+    cecho("&lt;red&gt;\nYou didn't know you had: "..aff)
+    snd.my_last_cured = aff
   end
     
 end
@@ -9568,10 +8750,10 @@ local specialExits = {
   { from = 19060, to = 1643, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 24548, to = 26577, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 19344, to = 26594, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 15414, to = 15167, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 15167, to = 15414, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 27126, to = 15135, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 15135, to = 27126, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+--  { from = 15414, to = 15167, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+--  { from = 15167, to = 15414, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+--  { from = 27126, to = 15135, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+--  { from = 15135, to = 27126, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 73506, to = 58866, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 4694, to = 26585, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 9192, to = 26568, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -15071,7 +14253,7 @@ aff_battlelust = {state = "healed", effect = "", cures = {}, assess = false, tim
 aff_blackstar = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_bowelgore = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_burden = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_city_hatred = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_city_hatred = {state = "healed", effect = "", cures = {focus = "send"}, assess = false, timer = createStopWatch()},
 aff_dread = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_etherflux = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hobbled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -24129,23 +23311,6 @@ end
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">
-							<name>Focustracker Target</name>
-							<packageName></packageName>
-							<script>function snd.focustracker()
-  snd.focustrack = 4.8
-    if snd.checkAff("delirium") then
-    snd.focustrack = getEpoch() + 5
-  end   
-  if snd.checkAff("laxity") then
-    snd.focustrack = getEpoch() + 2
-  end
-  if focustrack_timer then killTimer(focustrack_timer) end
-  focustrack_timer = tempTimer(snd.focustrack - 2.5, [[snd.core()]])
-  snd.focustrack = snd.focustrack + getEpoch()   
-end  </script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
 							<name>Pill covering curing</name>
 							<packageName></packageName>
 							<script>function snd.pillcoveringcuring()
@@ -25946,10 +25111,11 @@ function snd.attack(attack, new)
     end
   
     str = "stand"..snd.sep..str
-  
-    if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset == "melee" then
+    
+    if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset ~= "upsets" and snd.avoidanceset ~= "ranged" then
       str = "nimbleness"..snd.sep..str
-    end 
+    end
+    
     if gmcp.Char.Vitals.pipe == "1" and (snd.have_aff("slickness") or snd.have_aff("slough")) then
       fitnessstring = "smoke yarrow"..snd.sep
     end
@@ -25983,6 +25149,8 @@ function snd.attack(attack, new)
       snd.do_purify()
     elseif snd.purge_check() and snd.class == "Carnifex" then
       snd.do_purge()
+    elseif snd.leech_check() and snd.class == "Sciomancer" then
+      snd.do_sleech()
     elseif snd.rage_check() then
       snd.do_rage()
     else  
@@ -26062,16 +25230,13 @@ function snd.attack(attack, new)
       else
         snd.send("qeb " .. str)
       end
-  
 end
 
 function snd.starting_attack()
-  snd.send("target nothing with left" .. snd.sep .. "target nothing with right")
-  snd.send("leading off")
   if not snd.toggles.attacking then
     snd.toggle("attacking")
   end
-  snd.class_hitting = "none"
+  --snd.class_hitting = "none"
   snd.active_hound = "none"
   snd.implant = "none"
 end
@@ -29755,7 +28920,7 @@ end</script>
         ["deranged"] = "hallucinations",
         ["lethargic"] = "lethargy",
         ["ringing"] = "ringing_ears",
-        ["blurring"] = "blurry_vision",
+        ["blurring"] = "watery_eyes",
         ["debilitating"] = "weariness",
         ["enraging"] = "mania",
         ["angry"] = "hatred",
@@ -31347,6 +30512,17 @@ function snd.calc.sepsis()
   end
   return 0
 end
+
+function snd.calc.sepsis_self()
+  if not snd.have_aff("sepsis") then return 0 end
+  local count = (snd.checksomeSelfAffs(snd.cures.euphoriant, 1) and 1 or 0) + 
+                (snd.checksomeSelfAffs(snd.cures.antipsychotic, 1) and 1 or 0) +
+                (snd.checksomeSelfAffs(snd.cures.depressant, 1) and 1 or 0)
+  if count &gt; 0 then
+    return count * .3 -.1
+  end
+  return 0
+end
 </script>
 					<eventHandlerList />
 				</Script>
@@ -31398,6 +30574,9 @@ snd.timers = snd.timers or {}
 snd.timers.pill = snd.timers.pill or {}
 snd.timers.focus = snd.timers.focus or {}
 snd.timers.tree = snd.timers.tree or {}
+snd.timers.pill_self = snd.timers.pill_self or {}
+snd.timers.focus_self = snd.timers.focus_self or {}
+snd.timers.tree_self = snd.timers.tree_self or {}
 snd.timers.fitness = snd.timers.fitness or {}
 snd.timers.restoration = snd.timers.restoration or {}
 snd.timers.rebounding = snd.timers.rebounding or {}
@@ -31495,6 +30674,22 @@ function snd.track_pill(target)
   end
 end
 
+function snd.track_pill_self(self)
+  if self:lower() == gmcp.Char.Name.name:lower() then
+    snd.timers.pill_self.start = getEpoch()
+    local limit = 1.9
+    if snd.last.herb and snd.last.herb == "panacea" then
+      limit = limit * 2
+    end
+    limit = limit + snd.calc.sepsis_self()
+    
+    if snd.have_aff("aeon") then
+      limit = limit+1
+    end
+    snd.timers.pill_self.limit = limit
+  end
+end
+
 function snd.track_focus(target)
   if target:lower() == snd.target:lower() then
     snd.timers.focus.start = getEpoch()
@@ -31506,6 +30701,20 @@ function snd.track_focus(target)
     end
     if snd.checkAff("laxity") then limit = limit+2 end
     snd.timers.focus.limit = limit
+  end
+end
+
+function snd.track_focus_self(self)
+  if self:lower() == gmcp.Char.Name.name:lower() then
+    snd.timers.focus_self.start = getEpoch()
+    local limit = 5
+    if snd.have_aff("delirium") then
+      limit = 10
+    elseif snd.have_aff("mental_fatigue") then
+      limit = 7
+    end
+    if snd.have_aff("laxity") then limit = limit+2 end
+    snd.timers.focus_self.limit = limit
   end
 end
 
@@ -31563,6 +30772,15 @@ function snd.track_tree(target)
     local limit = 10
     if snd.checkAff("laxity") then limit = limit+2 end
     snd.timers.tree.limit = limit
+  end
+end
+
+function snd.track_tree_self(self)
+  if self:lower() == gmcp.Char.Name.name:lower() then
+    snd.timers.tree_self.start = getEpoch()
+    local limit = 10
+    if snd.have_aff("laxity") then limit = limit+2 end
+    snd.timers.tree_self.limit = limit
   end
 end
 
@@ -36470,6 +35688,7 @@ snd.bashing_area_beginning_rooms ={
 function snd.aa()
   if not snd.toggles.bashing then snd.toggle("bashing") end
   snd.room_clear = true
+  snd.bashing_function()
   snd.defenses.def_vigor.needit = true
   if not snd.leadingon then
     snd.send("leading on")
@@ -37063,7 +36282,8 @@ sunder_areaPaths = {
   v72336 = "72040",
   v72337 = "72157",
   v72344 = "72359",
-  v72346 = "72032",
+  v72346 = "72470",
+  v72470 = "72032",
   v72347 = "72057",
   v72349 = "72354",
   v72353 = "72349",
@@ -49023,6 +48243,9 @@ function snd.bashing_function()
 				  if snd.have_aff("shock") then -- let's use overdrive if we have shock, adds to new class bashing attack line
             battack = "overdrive"..snd.sep..battack..snd.sep.."recoup"
 					end
+          if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset ~= "upsets" and snd.avoidanceset ~= "ranged" then
+            battack = "nimbleness"..snd.sep..battack
+          end
 				end
 			end
       
@@ -49035,10 +48258,7 @@ function snd.bashing_function()
         if mp &gt;= 50 then
           battack = "clot 500"..snd.sep..battack
         end  
-      end 
-      if snd.balance.nimbleness and snd.not_aff("fallen") then
-        battack = "nimbleness"..snd.sep..battack
-      end 
+      end
     
 			if tonumber(snd.toggles.gauntlet_level) &gt;= 2 then battack = battack..snd.sep end -- if you have a level 2 gauntlet, auto-absorb, .."absorb ylem"
       
@@ -49317,14 +48537,14 @@ function snd.ravager_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
   mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 
-  if (hp &lt;= 55 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then  
+  if (hp &lt;= 60 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then  
     if not snd.shield_check and mp &gt;= 20 then
       if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 and snd.cauterize then
         battack = "invoke prolong me"..snd.sep
         snd.cauterize = false
         tempTimer(2,[[snd.cauterize = true]])
       else
-        if hp &lt;= 55 then
+        if hp &lt;= 60 then
           battack = "seethe"
         elseif mp &lt;= 50 then
           battack = "meditate"
