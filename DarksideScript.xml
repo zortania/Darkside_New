@@ -1019,6 +1019,7 @@ function snd.reset_me()
   snd.cureset = "none"
   snd.firstaidresetlistnone()
   enableTimer("Firstaidstatustimer")
+  allergycount = 0
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -4229,10 +4230,12 @@ end
 						<name>recover / boost</name>
 						<packageName></packageName>
 						<script>function snd.recover_check()
-if snd.class == "Zealot" or snd.class == "Ravager" then
 if snd.balance.recover and not snd.waiting.recover and not snd.have_aff("fallen") and tonumber(gmcp.Char.Vitals.ego) &gt;= 500 then
-    if snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
+    if snd.cureset == "shaman" then
+      if snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) or
+        (snd.have_aff("dread") and snd.checksomeSelfAffs(snd.mental_affs, 3) and not snd.have_aff("impatience")) then
       return true
+      end
     elseif snd.cureset == "sciomancer" and snd.checksomeSelfAffs({"weariness", "clumsiness", "vomiting", "dementia"},3) then
       return true
     elseif snd.cureset == "praenomen" and snd.checksomeSelfAffs(snd.mental_affs, 4) then
@@ -4242,7 +4245,6 @@ if snd.balance.recover and not snd.waiting.recover and not snd.have_aff("fallen"
     end
   end
   return false
-end
 end
 
 function snd.do_recover()
@@ -6956,7 +6958,7 @@ end</script>
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "burnt_skin"))
 		table.insert(snd.ordered_list, 1, "burnt_skin")
 	end
-  if snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") then
+  if snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") and not snd.have_aff("impatience") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "faintness"))
 		table.insert(snd.ordered_list, 1, "faintness")
 	end
@@ -13876,6 +13878,7 @@ aff_cracked_ribs = {state = "healed", effect = "", cures = {salve = "mending to 
 aff_crippled = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_crippled_body = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_crippled_throat = {state = "healed", effect = "", cures = {salve = "mending to head", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_crosswiring = { state = "healed", effect = "", cures = { salve = "epidermal to head" }, assess = false, timer = createStopWatch() }, 
 aff_crushed_chest = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_crushed_elbows = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_crushed_kneecaps = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -14253,7 +14256,8 @@ aff_battlelust = {state = "healed", effect = "", cures = {}, assess = false, tim
 aff_blackstar = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_bowelgore = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_burden = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_city_hatred = {state = "healed", effect = "", cures = {focus = "send"}, assess = false, timer = createStopWatch()},
+aff_dread = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_inhibiting_aroma = {state = "healed", effect = "", cures = {focus = "send"}, assess = false, timer = createStopWatch()},
 aff_dread = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_etherflux = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hobbled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -15842,7 +15846,7 @@ snd.cures = {
   },
 
   epidermal_head = {
-    "indifference",
+    "crosswiring",
     "stuttering",
     "blurry_vision",
     "watery_eyes",
@@ -15852,11 +15856,11 @@ snd.cures = {
     "deafness"
   },
 
-  epidermal = {
+  epidermal = { 
     "anorexia",
     "gorged",
+    "crosswiring",
     --"effused_blood",
-    "indifference",
     "stuttering",
     "blurry_vision",
     "watery_eyes",
@@ -15865,6 +15869,8 @@ snd.cures = {
   },
 
   caloric = {
+    "mindfog",
+    "indifference",
     "hypothermia",
     "frozen",
     "frigid",
@@ -23759,10 +23765,10 @@ end
 
 function snd.took_limb_dmg(limb, amount, restoration)
   if limb and amount then
-    -- if snd.checkAff("armor_tattoo") and amount &gt; 0 then
-      -- amount = amount / 2
-      -- snd.last_limb_dmg = amount
-    -- end
+    if snd.checkAff("indifference") and amount &gt; 0 then
+      amount = amount * 1.15
+      snd.last_limb_dmg = amount
+    end
     if restoration then --resto apply
       snd.limb_dmg[limb] = snd.limb_dmg[limb] + math.min(-0.01, amount + 2 * snd.fleshbaneStacks)
       if snd.fleshbaneTimer then killTimer(snd.fleshbaneTimer) end
@@ -23798,7 +23804,7 @@ function snd.took_limb_dmg(limb, amount, restoration)
         snd.target_cured(limb:gsub(" ", "_") .. "_mangled")
         snd.limb_status[limb] = "broken"
       end
-    elseif snd.skill_being_used == "Rekindle" or snd.skill_being_used == "Reconstruct" then
+    elseif snd.skill_being_used == "Rekindle" or snd.skill_being_used == "Reconstruct" or snd.skill_being_used == "Reknit" then
       if snd.limb_dmg[limb] &lt; 33.33 then
         snd.target_cured(limb:gsub(" ", "_") .. "_broken")
         snd.limb_status[limb] = "healed"
@@ -25007,7 +25013,7 @@ end</script>
   {
     ["head"] =
     {
-      "indifference",
+      "crosswiring",
       "stuttering",
       "blurry_vision",
       "watery_eyes",
@@ -25024,7 +25030,7 @@ end</script>
   },
   caloric =
   {
-    ["head"] = { "mindfog" },
+    ["head"] = { "mindfog", "indifference" },
     ["torso"] = { "hypothermia", "frozen", "frigid", "shivering" },
     ["left arm"] = {},
     ["right arm"] = {},
@@ -28401,11 +28407,11 @@ end</script>
     Gleam = function(target, inflict, conditional)
       if not inflict or not conditional then return end
       local map = {
-        burning = {"red","recklessness"},
+        burning = {"red","crosswiring"},
         crushing = {"orange", "gnawing"},
         radiant = {"yellow", "dizziness"},
         noxious = {"green", "clumsiness"},
-        frigid = {"blue", "mindfog"},
+        frigid = {"blue", "shivering"},
         temporal = {"indigo", "paresis"},
         twisted = {"violet", "paranoia"},
       }
@@ -28504,14 +28510,42 @@ end</script>
   ["Ostension"] = {
     Averroes = function(target, bolt, limb)
       snd.last_hit_limb = limb
-      snd.last_limb_dmg = 15
+      if bolt == "Upsurge" then
+        snd.last_limb_dmg = 30
+        for _, aff in pairs({
+          "irradiated_head",
+          "irradiated_left_leg",
+          "irradiated_right_leg",
+          "irradiated_torso",
+          "irradiated_left_arm",
+          "irradiated_right_arm",
+          }) do
+          snd.target_cured(aff) 
+        end
+      else
+        snd.last_limb_dmg = 15
+      end
       snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-      snd.onHit2({"Parry"})
+      if bolt == "Bolt" and
+      not snd.checksomeAffs({
+      "irradiated_head",
+      "irradiated_left_leg",
+      "irradiated_right_leg",
+      "irradiated_torso",
+      "irradiated_left_arm",
+      "irradiated_right_arm",
+      }, 1) then
+        snd.maybe_affs = {"irradiated_"..limb}
+      end
+      snd.onHit2({ "Parry" })
     end,
     Eja = function(target, kodosa, ability) -- "kodosa" is a filler conditional for this ability
       if ability == "mend" then
-        for _, limb in ipairs({"left_arm","right_arm","left_leg","right_leg"}) do
-          if snd.checkAff(limb.."_crippled") and not snd.checkAff(limb.."_broken") then snd.target_cured(limb.."_crippled") return end
+        for _, limb in ipairs({ "left_arm", "right_arm", "left_leg", "right_leg" }) do
+          if snd.checkAff(limb .. "_crippled") and not snd.checkAff(limb .. "_broken") then
+            snd.target_cured(limb .. "_crippled")
+            return
+          end
         end
       end
     end,
@@ -28528,9 +28562,9 @@ end</script>
     end,
     Ontesme = function(target, ability)
       if ability == "Illgrasp" then
-        snd.target_got("illgrasp")
+        snd.target_got("indifference")
         snd.illgraspcounter = 4
-        snd.affTimers.start("illgrasp", 180)
+        snd.affTimers.start("indifference", 180)
       end
     end,
   },

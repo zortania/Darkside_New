@@ -99,7 +99,8 @@
 				if level &lt; 90 then
 					area = "the Shattered Vortex (Low Level)"
         else
-          area = "the Shattered Vortex (Shadow)"
+          --area = "the Shattered Vortex (Shadow)"
+          area = "the Shattered Vortex (All)"
 				end
 				if area ~= snd.my.area then
 					cecho("\n&lt;green&gt;Entering: " .. area)
@@ -3303,7 +3304,24 @@ snd.hidden_afflictions = 0
 snd.firstaidpredict = {}
 snd.ordered_list = {}
 snd.firstaidtobepredicted = {}
-snd.elevatedaff = {}</script>
+snd.elevatedaff = {}
+snd.hidden_afflictions = 0
+snd.crescentable = true
+snd.runemarkMajor = "none"
+snd.runemarkMinor = "none"
+snd.current_dodge = "none"
+snd.disablefocus = false
+snd.currentsactive = false
+snd.their_tree = false
+snd.alchemyprepare = false
+snd.alchemystored = ""
+snd.parrying = "none"
+snd.hiddentype = "none"
+snd.firstaidclassset = false
+snd.cureset = "none"
+snd.firstaidresetlistnone()
+enableTimer("Firstaidstatustimer")
+allergycount = 0</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -8845,7 +8863,7 @@ end</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Shaman Shell</name>
-									<script>if snd.focusing then
+									<script>if snd.focusing and snd.not_aff("impatience") and not snd.checksomeSelfAffs(snd.cures.tree, 3) then
   snd.disablefocus = true
 end</script>
 									<triggerType>0</triggerType>
@@ -8861,15 +8879,17 @@ end</script>
 									<regexCodeList>
 										<string>^Your tree tattoo becomes hot to the touch as \w+'s shell fetish clatters noisily.$</string>
 										<string>^\w+'s intoxicant compound dimly flares, its smoke muddling your tree tattoo.$</string>
+										<string>You quickly pull your hand away from the scorching surface of your tree tattoo.</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
 										<integer>1</integer>
+										<integer>3</integer>
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Shaman Feather</name>
-									<script>if not snd.focusing then
+									<script>if snd.disablefocus then
   snd.disablefocus = false
 end</script>
 									<triggerType>0</triggerType>
@@ -12492,6 +12512,48 @@ end</script>
 									<integer>3</integer>
 								</regexCodePropertyList>
 							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Upsurge used</name>
+								<script>snd.balance.upsurge = false</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>You use Ostension Averroes Upsurge </string>
+									<string>You cannot call upon an upsurge of power just yet.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>2</integer>
+									<integer>3</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Upsurge back</name>
+								<script>snd.balance.upsurge = true</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>You may call upon an upsurge of magical power again.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>3</integer>
+								</regexCodePropertyList>
+							</Trigger>
 						</TriggerGroup>
 						<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Tattoos</name>
@@ -14843,11 +14905,11 @@ if gmcp.Room.Info.area == "the Shattered Vortex" then
   if level &lt; 90 then
     area = "the Shattered Vortex (Low Level)"
   else
-    --area = "the Shattered Vortex (All)"
+    area = "the Shattered Vortex (All)"
   --elseif snd.faction == "spirit" then
     --area = "the Shattered Vortex (Spirit)"
   --elseif snd.faction == "shadow" then
-    area = "the Shattered Vortex (Shadow)"
+    --area = "the Shattered Vortex (Shadow)"
   end
   snd.load_targets(area)
 elseif matches[2] == "the twisted expanse of the Bloodwood" or gmcp.Room.Info.area == "the Bloodwood" then
@@ -36429,6 +36491,16 @@ end</script>
 										<name>Averroes Bolt Irradiated Limb Damage</name>
 										<script>if snd.target == matches[2] then
   snd.took_limb_dmg(matches[3], 7)
+  for _, aff in pairs({
+      "irradiated_head",
+      "irradiated_left_leg",
+      "irradiated_right_leg",
+      "irradiated_torso",
+      "irradiated_left_arm",
+      "irradiated_right_arm",
+      }) do
+      snd.target_cured(aff) 
+  end
 end</script>
 										<triggerType>0</triggerType>
 										<conditonLineDelta>0</conditonLineDelta>
@@ -36445,6 +36517,35 @@ end</script>
 										</regexCodeList>
 										<regexCodePropertyList>
 											<integer>1</integer>
+										</regexCodePropertyList>
+									</Trigger>
+									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+										<name>No irradiated limb</name>
+										<script>for _, aff in pairs({
+    "irradiated_head",
+    "irradiated_left_leg",
+    "irradiated_right_leg",
+    "irradiated_torso",
+    "irradiated_left_arm",
+    "irradiated_right_arm",
+    }) do
+    snd.target_cured(aff) 
+end</script>
+										<triggerType>0</triggerType>
+										<conditonLineDelta>0</conditonLineDelta>
+										<mStayOpen>0</mStayOpen>
+										<mCommand></mCommand>
+										<packageName></packageName>
+										<mFgColor>#ff0000</mFgColor>
+										<mBgColor>#ffff00</mBgColor>
+										<mSoundFile></mSoundFile>
+										<colorTriggerFgColor>#000000</colorTriggerFgColor>
+										<colorTriggerBgColor>#000000</colorTriggerBgColor>
+										<regexCodeList>
+											<string>Your opponent must have an irradiated limb.</string>
+										</regexCodeList>
+										<regexCodePropertyList>
+											<integer>3</integer>
 										</regexCodePropertyList>
 									</Trigger>
 								</TriggerGroup>
@@ -39212,6 +39313,59 @@ end</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>^The (\w+) slices on (\w+) fester, interfering with the restoration of \w+ limbs\.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>feeble legs symptom</name>
+									<script>if matches[2] == snd.target then
+    snd.target_got("feeble_legs")
+  elseif snd.toggles.nontargetgags and snd.toggles.gags then
+    deleteFull()
+  end
+  </script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^(\w+)'s legs nearly give way underneath \w+\.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Crosswiring proc</name>
+									<script>if snd.target == matches[2] then
+  if not snd.checkAff("crosswiring") then
+    snd.target_got("crosswiring")
+  end
+  if snd.checkAff("indifference") then -- indiff is already in the snd.took_limb_dmg function
+    snd.last_limb_dmg = snd.last_limb_dmg/1.15
+  end
+  snd.took_limb_dmg(matches[3], snd.last_limb_dmg/2)
+end</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^Pain flares within (\w+)'s eyes as \w+ (.+) spasms\.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -57080,7 +57234,7 @@ end</script>
 								<integer>0</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Demons</name>
 							<script>send("qeb give 50 demon to provent")</script>
 							<triggerType>0</triggerType>
@@ -57100,7 +57254,7 @@ end</script>
 								<integer>0</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Turtles/Treants</name>
 							<script>send("qeb give 50 treant to ayeli"..snd.sep.."give 50 turtle to ayeli")</script>
 							<triggerType>0</triggerType>
@@ -57120,7 +57274,7 @@ end</script>
 								<integer>0</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Warriors</name>
 							<script>send("give 50 warrior to frional")</script>
 							<triggerType>0</triggerType>
