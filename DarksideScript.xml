@@ -94,12 +94,19 @@ function snd.stap()
   snd.toggles.fastwalk = false
   if snd.defenses.def_seismicity.state == "deffed" then
      snd.send("TECTONIC SEISMICITY end"..snd.sep)
+  end  
+  if snd.defenses.def_shine.state == "deffed" then
+     snd.send("evoke shine end"..snd.sep)
   end
   if snd.enemylist and snd.class == "Sciomancer" then
     send("config enemylist off")
   end
   if snd.graft then
-    snd.send("osso cease graft")
+    if snd.class == "Earthcaller" then
+      snd.send("osso cease graft")
+    elseif snd.class == "Luminary" then
+      snd.send("angel cease empathy")
+    end
   end
   raiseEvent("sunder_update_toggles")
 end
@@ -218,6 +225,16 @@ end</script>
     tempTimer(1, function()
       snd.connected = true
       snd.class = ""
+      if gmcp.Char.Status.name == "Linyive" then
+        snd.toggles.goggle_level = 20
+	      snd.toggles.gauntlet_level = 20
+      elseif gmcp.Char.Status.name == "Mirse" then
+        snd.toggles.goggle_level = 0
+	      snd.toggles.gauntlet_level = 2
+      else
+        snd.toggles.goggle_level = 0
+	      snd.toggles.gauntlet_level = 0
+      end
       snd.changeClass()
       raiseEvent("sunder_login")
     end)
@@ -229,8 +246,8 @@ end</script>
     if level &gt;= 99 then
       tempTimer(5, [[send("raceskill active", false)]])
     end
-  enableTimer("Firstaidstatustimer")
-  enableTimer("Stay online")
+    enableTimer("Firstaidstatustimer")
+    enableTimer("Stay online")
                  
   end)
   
@@ -282,7 +299,7 @@ end
 function hasSkill(skill, tree)
   if not snd.skills then return false end
   skill = skill:lower()
-  if skill == "200" then return gmcp.Char.Status.class == "None" end
+  if skill == "200" then return gmcp.Char.Status.class == "(None)" end
   if skill == "generic" or skill == "goggle" then return true end
   if snd.assumed_class ~= nil then return true end
   if tree then
@@ -601,7 +618,7 @@ end
 					<packageName></packageName>
 					<script>function snd.changeClass()
   if not snd.connected then return end
-  local gmcpClass = gmcp.Char.Status.class == "(None)" and "None" or gmcp.Char.Status.class
+  local gmcpClass = snd.charstats.class
   if snd.class == gmcpClass then return end
   snd.class = gmcpClass
   tempTimer(1, function()
@@ -958,6 +975,7 @@ end</script>
 					<script>function snd.get_moving()
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
   if snd.can_path and snd.can_cast() and hp &gt;= 85 and snd.moving_to ~= "none" then
+    snd.do_loot()
     if snd.toggles.gallop then
       if gmcp.Char.Vitals.mounted == "0" then
         snd.mount()
@@ -1381,6 +1399,7 @@ sleech = false,
 					<name>Affliction types</name>
 					<packageName></packageName>
 					<script>snd.physical_affs = {
+"crosswiring",
 "paralysis",
 "paresis",
 "right_arm_crippled",
@@ -1484,8 +1503,8 @@ snd.other_affs = {
 "rot_benign",
 "idiocy",
 "plodding",
-"crippled",
-"crippled_body",
+"lameness",
+"sundering",
 "accursed",
 "agony",
 "superstition",
@@ -1934,20 +1953,31 @@ snd.registerEvent("SunderGMCPRoomAddPlayer", "gmcp.Room.AddPlayer", gmcp_people_
     end
   end
   
-  --if gmcp.Room.Info.area == "Tcanna Island" and snd.toggles.generics then
-  --  snd.toggle("generics")
-  if gmcp.Room.Info.area == "The Forgotten Mausoleum" and snd.toggles.generics then
-    snd.toggle("generics")
-  elseif gmcp.Room.Info.area == "Dun Fortress" and snd.toggles.generics then
-    snd.toggle("generics")
-  --elseif gmcp.Room.Info.area == "Qor Qogol" and snd.toggles.generics then
-  --  snd.toggle("generics")
-  --elseif gmcp.Room.Info.area == "the abandoned remnants of Xaanhal" and snd.toggles.generics then --gmcp.Room.Info.area ~= "the abandoned remnants of Xaanhal" and
-  --  snd.toggle("generics")
-  elseif not snd.toggles.generics then
-    if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
+  if snd.class == "Alchemist" then
+    if snd.toggles.generics then
       snd.toggle("generics")
     end
+  else
+    --if gmcp.Room.Info.area == "Tcanna Island" and snd.toggles.generics then
+    --  snd.toggle("generics")
+    if gmcp.Room.Info.area == "The Forgotten Mausoleum" and snd.toggles.generics then
+      snd.toggle("generics")
+    elseif gmcp.Room.Info.area == "Dun Fortress" and snd.toggles.generics then
+      snd.toggle("generics")
+    elseif gmcp.Room.Info.area == "Qor Qogol" and snd.toggles.generics then
+      snd.toggle("generics")
+    elseif gmcp.Room.Info.area == "the Shattered Vortex" and snd.toggles.generics then
+      snd.toggle("generics")
+    elseif gmcp.Room.Info.area == "the Offspring" and snd.toggles.generics then
+      snd.toggle("generics")
+    elseif not snd.toggles.generics then
+      if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "the Offspring" and gmcp.Room.Info.area ~= "the Shattered Vortex" and gmcp.Room.Info.area ~= "Qor Qogol" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
+        snd.toggle("generics")
+      end
+    end
+  end
+  if mmp.paused then
+    mmp.pause("off")
   end
   
 end
@@ -1968,7 +1998,6 @@ snd.registerEvent("SunderGMCPRoomInfo", "gmcp.Room.Info", gmcp_room)
   if snd.can_cast() and (snd.class ~= "Wayfarer" or snd.can_axe()) then
     snd.last_attack = "none"
   end
-  hp = (100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)) or 100
   mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
   if snd.check_dome() and snd.toggles.dome and #snd.people_hitting_me &gt;= 2 and not snd.toggles.bashing then -- or snd.aff_tally() &gt;= 5 or hp &lt; 50)
@@ -2154,9 +2183,9 @@ function snd.core()
         snd.firstaid_go = true
       end
     
-      if snd.toggles.active and snd.healing_loaded and snd.have_aff("asleep") and snd.toggles.standing then
-        snd.send("wake")
-      end
+      --if snd.toggles.active and snd.healing_loaded and snd.have_aff("asleep") and snd.toggles.standing then
+       -- snd.send("wake")
+      --end
       
       if snd.functional() then
 
@@ -2183,6 +2212,8 @@ end</script>
 -- @function snd.do_queue
 function snd.do_queue()
   snd.queue = {}
+  mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
+  hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
   if not snd.channeling then
     if snd.toggles.active then
       if not snd.pipes_lit and snd.toggles.lighting then
@@ -2231,14 +2262,14 @@ function snd.do_queue()
           snd.queue.moving = true
         end
       end 
-        if snd.regenerate_check() then
-          snd.queue.regenerate = true
-        end 
-        if snd.restore_check() then
-          snd.queue.restoration = true
-        end 
+      if snd.regenerate_check() then
+         snd.queue.regenerate = true
+      end 
+      if snd.restore_check() then
+         snd.queue.restoration = true
+      end 
       if not snd.toggles.attacking then 
-        if snd.need_fitness then
+        if snd.need_fitness and snd.have_aff("asthma") then
           snd.do_fitness()
         end      
         if snd.panacea_check() and snd.class == "Alchemist" then
@@ -2253,10 +2284,10 @@ function snd.do_queue()
         if snd.absorb_check() and snd.class == "Teradrim" then
           snd.do_absorb()
         end      
-        if snd.cleanse_check() and snd.class == "Earthcaller" then
+        if snd.cleanse_check() and (snd.class == "Earthcaller" or snd.class == "Luminary") then
           snd.do_cleanse()
         end     
-        if snd.might_check() and snd.class == "Executor" then
+        if snd.might_check() and (snd.class == "Executor" or snd.class == "Sentinel") then
           snd.do_might()
         end       
         if snd.purify_check() and snd.class == "Praenomen" then
@@ -2299,10 +2330,26 @@ function snd.do_queue()
         end
       end
       
-      if snd.need_dome or snd.toggles.survive then
-        if snd.balance.dome and not snd.toggles.survive and snd.check_dome() then
+      if snd.need_dome then
+        if snd.balance.dome and snd.check_dome() then
           snd.do_dome()
-        elseif snd.balance.barrier and snd.barriering then
+        elseif gmcp.Char.Status.name == "Mirse" and snd.shield_check then
+          snd.send("qeb touch shield")
+        elseif snd.balance.barrier and snd.barriering and gmcp.Char.Status.name == "Linyive" then
+			   snd.send("qeb strum lyre")
+			   snd.barriering = false
+   		   tempTimer(2,[[snd.barriering = true]])
+        elseif snd.class == "None" then
+          if (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon")) and not snd.self_prone() then
+            string = "aetherial revitalise"
+          end
+        end
+      end
+      
+      if snd.toggles.survive then
+        if hp &lt; 60 and gmcp.Char.Status.name == "Mirse" and snd.shield_check then
+          snd.send("qeb touch shield")
+        elseif snd.balance.barrier and snd.barriering and gmcp.Char.Status.name == "Linyive" then
 			   snd.send("qeb strum lyre")
 			   snd.barriering = false
    		   tempTimer(2,[[snd.barriering = true]])
@@ -2558,7 +2605,7 @@ end</script>
 -- @function snd.do_stuff
 snd.coreActionMap = snd.coreActionMap or {
   queue = function() snd.send_attack(snd.queued) end,
-  lighting = function() snd.do_lighting() end,  
+  --lighting = function() snd.do_lighting() end,  
   diagnose = function() snd.do_diagnose() end,
   fitness = function() snd.do_fitness() end,
   barbed_arrow = function() snd.pull_arrow() end,
@@ -2584,6 +2631,7 @@ if not snd.channeling then
         local def = snd.defenses[i]
         local method = next(def.balance)
         if method then
+          --echo(i)
           if not snd.method_priority[method].func then display(i) display(method) end
           snd.method_priority[method].func(i)
         else
@@ -2840,7 +2888,7 @@ snd.priorities =
     "def_shaman_warding",
     "def_insight",
     "def_foreststride",
-    "def_overwatch",
+    --"def_overwatch",
     "def_hypersight",
     "def_defiance",
     "def_glaciation",
@@ -3966,7 +4014,7 @@ end
      or snd.checksomeSelfAffs({"asthma","confusion","paralysis"},3) 
      or (snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("anorexia") and snd.checksomeSelfAffs({"slickness","slough"},1))
      or (snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.checksomeSelfAffs({"asthma","anorexia"},2))
-     or snd.checksomeSelfAffs({"crippled","paralysis","anorexia"},3) then
+     or snd.checksomeSelfAffs({"lameness","paralysis","anorexia"},3) then
       return true
     end
   end
@@ -4064,9 +4112,9 @@ end</script>
       return true
     elseif snd.checksomeSelfAffs({"asthma","confusion"},2) and snd.checksomeSelfAffs({"paralysis","paresis"},1) then
       return true
-    elseif snd.checksomeSelfAffs({"crippled","anorexia"},2) and snd.checksomeSelfAffs({"paralysis","paresis"},1) then
+    elseif snd.checksomeSelfAffs({"lameness","anorexia"},2) and snd.checksomeSelfAffs({"paralysis","paresis"},1) then
       return true
-    elseif snd.checksomeSelfAffs({"crippled","crippled_body"},2) then
+    elseif snd.checksomeSelfAffs({"lameness","sundering"},2) then
       return true
     elseif snd.checksomeSelfAffs({"confusion","hallucinations","dementia"},3) then
       return true
@@ -4230,6 +4278,7 @@ end
 						<name>recover / boost</name>
 						<packageName></packageName>
 						<script>function snd.recover_check()
+if snd.class == "Ravager" then
 if snd.balance.recover and not snd.waiting.recover and not snd.have_aff("fallen") and tonumber(gmcp.Char.Vitals.ego) &gt;= 500 then
     if snd.cureset == "shaman" then
       if snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) or
@@ -4245,6 +4294,7 @@ if snd.balance.recover and not snd.waiting.recover and not snd.have_aff("fallen"
     end
   end
   return false
+end
 end
 
 function snd.do_recover()
@@ -4528,7 +4578,7 @@ end</script>
   
   -- OPIATE
   snd.opiatecurecover_self = true
-  local opiatelist = {"paresis", "paralysis", "mirroring", "crippled_body", "crippled", "blisters", "slickness", "arrhythmia", "slough"}
+  local opiatelist = {"paresis", "paralysis", "mirroring", "sundering", "lameness", "blisters", "slickness", "arrhythmia", "slough"}
   local opiatecount = 0
   for i = 1, tonumber(#opiatelist) do
     local opieone = opiatelist[i]
@@ -4815,11 +4865,11 @@ if snd.cureset == "none" then
 	if snd.firstaidcuretrack.infestation ~= "11" and not table.contains(snd.setting_priority, "infestation 11") then
 		table.insert(snd.setting_priority, "infestation 11")     
 	end 
-	if snd.firstaidcuretrack.crippled ~= "12" and not table.contains(snd.setting_priority, "crippled 12") then
-		table.insert(snd.setting_priority, "crippled 12")     
+	if snd.firstaidcuretrack.lameness ~= "12" and not table.contains(snd.setting_priority, "lameness 12") then
+		table.insert(snd.setting_priority, "lameness 12")     
 	end
-  if snd.firstaidcuretrack.crippled_body ~= "12" and not table.contains(snd.setting_priority, "crippled_body 12") then
-    table.insert(snd.setting_priority, "crippled_body 12")     
+  if snd.firstaidcuretrack.sundering ~= "12" and not table.contains(snd.setting_priority, "sundering 12") then
+    table.insert(snd.setting_priority, "sundering 12")     
   end
 	if snd.firstaidcuretrack.hatred ~= "12" and not table.contains(snd.setting_priority, "hatred 12") then
 		table.insert(snd.setting_priority, "hatred 12")     
@@ -5362,8 +5412,8 @@ function snd.firstaidassAscendril()
 	if snd.firstaidcuretrack.frigid ~= "4" and not table.contains(snd.setting_priority, "frigid 4") then
 		table.insert(snd.setting_priority, "frigid 4")		 
 	end	
-	if snd.firstaidcuretrack.hypothmeria ~= "5" and not table.contains(snd.setting_priority, "hypothmeria 5") then
-		table.insert(snd.setting_priority, "hypothmeria 5")		 
+	if snd.firstaidcuretrack.hypothermia ~= "5" and not table.contains(snd.setting_priority, "hypothermia 5") then
+		table.insert(snd.setting_priority, "hypothermia 5")		 
 	end	
 	if snd.firstaidcuretrack.torso_mangled ~= "6" and not table.contains(snd.setting_priority, "torso_mangled 6") then
 		table.insert(snd.setting_priority, "torso_mangled 6")		 
@@ -6441,8 +6491,8 @@ function snd.firstaidassTemplar()
 	if snd.firstaidcuretrack.allergies ~= "2" and not table.contains(snd.setting_priority, "allergies 2") then
 		table.insert(snd.setting_priority, "allergies 2")		 
 	end
-	if snd.firstaidcuretrack.crippled ~= "2" and not table.contains(snd.setting_priority, "crippled 2") then
-		table.insert(snd.setting_priority, "crippled 2")		 
+	if snd.firstaidcuretrack.lameness ~= "2" and not table.contains(snd.setting_priority, "lameness 2") then
+		table.insert(snd.setting_priority, "lameness 2")		 
 	end
 	if snd.firstaidcuretrack.sensitivity ~= "3" and not table.contains(snd.setting_priority, "sensitivity 3") then
 		table.insert(snd.setting_priority, "sensitivity 3")		 
@@ -6872,7 +6922,7 @@ end</script>
 			table.insert(snd.ordered_list, 1, "loneliness")
 		end
 	elseif snd.cureset == "templar" then
-    if (snd.have_aff("crippled_body") or snd.have_aff("crippled")) then
+    if (snd.have_aff("sundering") or snd.have_aff("lameness")) then
       if snd.have_aff("delirium") then
 		    table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "delirium"))
 		    table.insert(snd.ordered_list, 1, "delirium")
@@ -6885,7 +6935,7 @@ end</script>
       end
     end
   elseif snd.cureset == "carnifex" then
-    if snd.checksomeSelfAffs(snd.physical_affs, 3) then
+    if snd.checksomeSelfAffs(snd.physical_affs, 3) and snd.elevatedaff[1] ~= "blisters" then
       for _, aff in pairs(snd.physical_affs) do
         if snd.have_aff(aff) then
            table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
@@ -6941,38 +6991,31 @@ end</script>
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "patterns"))
       table.insert(snd.ordered_list, 1, "patterns")
     end
-	end
-	if snd.my_last_cured == "clumsiness" and snd.have_aff("slickness") and snd.class == "Carnifex" then
+	elseif snd.my_last_cured == "clumsiness" and snd.have_aff("slickness") and snd.class == "Carnifex" then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
 			table.insert(snd.ordered_list, 1, "slickness")
-  end
-  if snd.have_aff("disfigurement") and (snd.class == "Indorani" or snd.class == "Executor" or snd.class == "Carnifex") then
+  elseif snd.have_aff("disfigurement") and (snd.class == "Indorani" or (snd.class == "Executor" or snd.class == "Sentinel") or snd.class == "Carnifex") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "disfigurement"))
 		table.insert(snd.ordered_list, 1, "disfigurement")
-	end
-  if snd.have_aff("clumsiness") and (snd.class == "Carnifex" or snd.class == "Revenant") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
+	elseif snd.have_aff("clumsiness") and (snd.class == "Carnifex" or snd.class == "Revenant") and not (snd.have_aff("paresis") or snd.have_aff("paralysis")) then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "clumsiness"))
 		table.insert(snd.ordered_list, 1, "clumsiness")
 	end
   if snd.have_aff("burnt_skin") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "burnt_skin"))
 		table.insert(snd.ordered_list, 1, "burnt_skin")
-	end
-  if snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") and not snd.have_aff("impatience") then
+	elseif snd.have_aff("faintness") and not snd.have_aff("paresis") and not snd.have_aff("paralysis") and not snd.have_aff("patterns") and not snd.have_aff("impatience") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "faintness"))
 		table.insert(snd.ordered_list, 1, "faintness")
-	end
-  if snd.have_aff("allergies") and not snd.have_aff("asthma") and not snd.have_aff("paralysis") and not (snd.have_aff("clumsiness") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) then
+	elseif snd.have_aff("allergies") and not snd.have_aff("asthma") and not snd.have_aff("paralysis") and not (snd.have_aff("clumsiness") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) then
 		if tonumber(allergycount) &gt; 4 then
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies"))
 		  table.insert(snd.ordered_list, 1, "allergies")
     end
-	end
-	if (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) then
+	elseif (snd.have_aff("anorexia") and snd.have_aff("asthma") and snd.have_aff("slickness")) then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "slickness"))
 		table.insert(snd.ordered_list, 1, "slickness")
-	end
-	if (snd.have_aff("confusion") and snd.have_aff("impatience") and (snd.have_aff("stupidity") or snd.have_aff("dizziness") or snd.have_aff("shyness") or snd.have_aff("epilepsy"))) and not snd.cureset == "infiltrator" and not snd.cureset == "indorani" and not snd.cureset == "shapeshifter" and not snd.cureset == "templar" then
+	elseif (snd.have_aff("confusion") and snd.have_aff("impatience") and (snd.have_aff("stupidity") or snd.have_aff("dizziness") or snd.have_aff("shyness") or snd.have_aff("epilepsy"))) and not snd.cureset == "infiltrator" and not snd.cureset == "indorani" and not snd.cureset == "shapeshifter" and not snd.cureset == "templar" then
 		if snd.have_aff("asthma") and not snd.can_fitness() then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 			table.insert(snd.ordered_list, 2, "confusion")
@@ -6982,18 +7025,15 @@ end</script>
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 			table.insert(snd.ordered_list, 1, "confusion")
 		end
-  end
-	if snd.have_aff("disrupted") and snd.have_aff("confusion") then
+  elseif snd.have_aff("disrupted") and snd.have_aff("confusion") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "confusion"))
 		table.insert(snd.ordered_list, 1, "confusion")
-  end
-  if not snd.have_aff("disrupted") and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
+  elseif not snd.have_aff("disrupted") and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
 		if snd.have_aff("asthma") and not snd.can_fitness() then
 			table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "asthma"))
 			table.insert(snd.ordered_list, 1, "asthma")	
 		end
-  end
-	if snd.have_aff("paralysis") then
+  elseif snd.have_aff("paralysis") then
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "paralysis"))
 		table.insert(snd.ordered_list, 1, "paralsyis")
   end
@@ -7518,9 +7558,9 @@ function snd.can_regenerate()
 	elseif snd.healingcall == "The mirroring curse has been lifted." then 
 		aff = "mirroring"
 	elseif snd.healingcall == "You are no longer crippled." then 
-		aff = "crippled_body"
-	elseif snd.healingcall == "Your legs are no longer crippled." then 
-		aff = "crippled"
+		aff = "sundering"
+	elseif snd.healingcall == "Your legs are no longer lame." then 
+		aff = "lameness"
 	elseif snd.healingcall == "The blisters upon your skin cease to weep fluids." then
 		aff = "blisters"
 	elseif snd.healingcall == "Your glands cease their oily secretion." then
@@ -7643,7 +7683,7 @@ function snd.can_regenerate()
     aff = "dyscrasia"
   elseif snd.healingcall == "The strength in your arms returns to you." then
     aff = "feeble_arms"
-  elseif snd.healingcall == "The strength in your legs returns to you." then
+  elseif snd.healingcall == "Your legs are no longer lame." then
     aff = "feeble_legs"
   elseif snd.healingcall == "The abnormal misery that held you has lifted." then
     aff = "misery"
@@ -8663,7 +8703,6 @@ local specialExits = {
   { from = 57263, to = 61011, command = [=[script: send("climb rope") mmp.customwalkdelay(5)]=],                                           locked = false, weight = 40 },
   
   --various worm warps  
-  --bonro area ones
   { from = 44806, to = 44704, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 44704, to = 44806, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 31899, to = 44803, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8684,7 +8723,6 @@ local specialExits = {
   { from = 39166, to = 44792, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 44811, to = 77067, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 77067, to = 44811, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  
   { from = 50825, to = 11174, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 11174, to = 50825, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26765, to = 9962, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8752,10 +8790,6 @@ local specialExits = {
   { from = 19060, to = 1643, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 24548, to = 26577, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 19344, to = 26594, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
---  { from = 15414, to = 15167, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
---  { from = 15167, to = 15414, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
---  { from = 27126, to = 15135, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
---  { from = 15135, to = 27126, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 73506, to = 58866, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 4694, to = 26585, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 9192, to = 26568, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8823,7 +8857,6 @@ local specialExits = {
   { from = 27717, to = 11300, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 19296, to = 26618, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 13051, to = 60698, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 18576, to = 26610, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 5740, to = 1598, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 5724, to = 26600, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 17600, to = 1647, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8857,7 +8890,6 @@ local specialExits = {
   { from = 26608, to = 73619, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26615, to = 1745, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26613, to = 21348, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 26612, to = 12288, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26619, to = 11634, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26618, to = 19296, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26617, to = 17039, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8904,6 +8936,7 @@ local specialExits = {
   { from = 26633, to = 3413, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26765, to = 9962, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 35647, to = 77062, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 77062, to = 35647, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32428, to = 5671, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 36824, to = 26623, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 34759, to = 17038, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8967,6 +9000,7 @@ local specialExits = {
   { from = 50493, to = 29626, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 50750, to = 58037, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 50531, to = 77066, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 77066, to = 50531, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 23037, to = 33872, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 50760, to = 27229, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 50475, to = 27323, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8982,19 +9016,17 @@ local specialExits = {
   { from = 60718, to = 31534, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 20856, to = 55139, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 62526, to = 26448, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 56972, to = 1452, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 56972, to = 1452, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 68613, to = 61011, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 68612, to = 57392, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 46384, to = 49813, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 61074, to = 41261, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 61011, to = 68613, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 73619, to = 26608, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 12288, to = 26612, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 12154, to = 1646, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 12335, to = 26622, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 12154, to = 1646, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 25727, to = 59975, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32386, to = 11757, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 3553, to = 26567, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 3553, to = 26567, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 57634, to = 20744, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 49465, to = 38271, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 73432, to = 48770, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -9005,16 +9037,16 @@ local specialExits = {
   { from = 51354, to = 52595, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 49441, to = 51287, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 49440, to = 33904, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 1295, to = 49875, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 1298, to = 26621, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 1296, to = 72093, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 1295, to = 49875, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 1298, to = 26621, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 1296, to = 72093, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 48770, to = 73432, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 10093, to = 26574, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 10092, to = 26589, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 3411, to = 6580, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 3413, to = 26633, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 5671, to = 32428, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 5672, to = 69606, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 3411, to = 6580, command = [=[worm warp]=],                                                                                      locked = false, weight = 30 },
+  { from = 3413, to = 26633, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 5671, to = 32428, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 5672, to = 69606, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 58684, to = 26578, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 58912, to = 26606, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 74381, to = 26625, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -9027,7 +9059,9 @@ local specialExits = {
   { from = 32497, to = 34077, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32496, to = 35417, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32459, to = 38812, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 38812, to = 32459, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32457, to = 31923, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 31923, to = 32457, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32478, to = 50481, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 35519, to = 48762, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 34444, to = 32492, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -9035,6 +9069,7 @@ local specialExits = {
   { from = 35520, to = 57733, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32240, to = 49548, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 46717, to = 44703, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 44703, to = 46717, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 35417, to = 32496, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 34077, to = 32497, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 35199, to = 35521, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -9042,28 +9077,53 @@ local specialExits = {
   { from = 29645, to = 29540, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 34912, to = 32494, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 27323, to = 50475, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 26433, to = 6603, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 26442, to = 9971, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 26445, to = 4663, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 26433, to = 6603, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 26442, to = 9971, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 26445, to = 4663, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 26444, to = 55188, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26448, to = 62526, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 32932, to = 15810, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 57729, to = 33905, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 57733, to = 35520, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 58037, to = 50750, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 69606, to = 5672, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 69606, to = 5672, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 69608, to = 66458, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 49813, to = 46384, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 55276, to = 26568, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 55276, to = 26605, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 66380, to = 1671, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 4406, to = 26627, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 66380, to = 1671, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 4406, to = 26627, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 11757, to = 32386, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 11765, to = 26597, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 57119, to = 32464, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 32464, to = 57119, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 57118, to = 57391, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 57087, to = 8765, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 57087, to = 8765, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
   { from = 57086, to = 61058, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 49471, to = 34053, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 34053, to = 49471, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 77211, to = 76494, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 76494, to = 77211, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 19578, to = 70619, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 70619, to = 19578, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 19576, to = 70305, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 70305, to = 19576, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 69527, to = 70308, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 70308, to = 69527, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 30, to = 18233, command = [=[worm warp]=],                                                                                       locked = false, weight = 30 },
+  { from = 18233, to = 30, command = [=[worm warp]=],                                                                                       locked = false, weight = 30 },
+  { from = 62755, to = 18232, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 18232, to = 62755, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 60029, to = 18238, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 18238, to = 60029, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 1286, to = 72391, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 72391, to = 1286, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 1287, to = 72435, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 72435, to = 1287, command = [=[worm warp]=],                                                                                     locked = false, weight = 30 },
+  { from = 61408, to = 11758, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 11758, to = 61408, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 61413, to = 17651, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
+  { from = 17651, to = 61413, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   
     --misc crap 
   { from = 55680, to = 56977, command = [=[script: send("climb shaft") mmp.customwalkdelay(3)]=],                                           locked = false, weight = 30 },
@@ -11336,8 +11396,8 @@ if _comp(demonwalker.config, {}) then demonwalker:load() end
   def_seraph_halo = { defense = "seraph_halo", type = "gold", effect = "Seraph absorb aff and defence", balance = { special = "seraph halo" }, skill = "200" },
   def_seraph_store = { defense = "seraph_store", type = "gold", effect = "Return to your fancy room on death", balance = {}, skill = "200" },
 
---Aetherial
-  def_aetherial_form = { defense = "aetherial_form", type = "normal", effect = "You are a star", balance = { balanceequilibriumtake = "arise heavens brutal" }, skill = "200" },
+--aetherial
+  def_aetherial_form = { defense = "aetherial_form", type = "normal", effect = "Star light, star bright", balance = { balanceequilibriumtake = "arise heavens brutal" }, skill = "200" },
   def_aetherial_bastion = { defense = "aetherial_bastion", type = "normal", effect = "Protect you and absorb afflictions", balance = { balanceequilibriumtake = "aetherial bastion" }, skill = "200" },
   def_aetherial_presence = { defense = "aetherial_presence", type = "normal", effect = "Grants crit and dodge chance", balance = { balanceequilibriumtake = "aetherial presence on" }, skill = "200" },
   def_aetherial_torment = { defense = "aetherial_torment", type = "normal", effect = "Aura that damages and sometimes affs enemies", balance = { balanceequilibriumtake = "aetherial torment on" }, skill = "200" },
@@ -11494,7 +11554,6 @@ function snd.def_have(defense)
       end
     end
   end
-  snd.def_needed = false
 end
 
 --- Put up a defense.
@@ -11530,7 +11589,6 @@ function snd.def_take(defense)
   if snd.defenses[defense].state == "deffed" then
     --  deleteLine()
     snd.message("You: &lt;red&gt;LOSE &lt;white&gt;" .. defense .. ".", "defense")
-  --snd.def_needed = true
   end
   snd.def_remove(defense)
 end
@@ -11542,7 +11600,6 @@ function snd.def_remove(defense)
   end
   if snd.defenses[defense].state ~= "waiting" then
     snd.defenses[defense].state = "down"
-    --snd.def_needed = true
   end
 end</script>
 					<eventHandlerList />
@@ -11819,7 +11876,7 @@ end</script>
   ["Your reflexes are honed to a razor-sharp level."] = "reflexes",
   ["Contempt and spite drive your body onwards."] = "contempt",
   ["Your bloodlust powers your restless velocity."] = "velocity",
-  ["You are untouchable; ranged magics are nothing before you."] = "untouchable",
+  ["You are untouchable; ranged attacks are nothing before you."] = "untouchable",
   ["Your ego is inflated beyond even its normally high limits."] = "inflated",
   ["You are observing your victim with predatory insticts."] = "predation",
   ["Your thoughts are consumed by sweet, agonising delirium."] = "delirium",
@@ -12221,7 +12278,7 @@ end</script>
     --heatsight = {level = 1, non_goggle_method = {needybalancetake = "heatsight"}, non_goggle_skill = "Heatsight"},
     nightsight = { level = 1, non_goggle = { special = "nightsight" }, non_goggle_skill = "Nightsight" },
     -- mindseye_tattoo = {level = 2, non_goggle = {balanceequilibrium = "touch allsight"}, non_goggle_skill = "Generic"},
-    thirdeye = { level = 2, non_goggle = { eat = "acuity" }, non_goggle_skill = "Generic" },
+    thirdeye = { level = 2, non_goggle = { special = "thirdeye" }, non_goggle_skill = "Generic" },
     overwatch = { level = 5, non_goggle = { "" }, non_goggle_skill = "Generic" },
     insight = { level = 8, non_goggle = { needyequilibriumtake = "mind insight on" }, non_goggle_skill = "Insight" },
     lifevision = { level = 9, non_goggle = { balanceequilibriumtake = "lifevision" }, non_goggle_skill = "Lifevision" },
@@ -12292,12 +12349,14 @@ end
 					<script>snd.defenses_loaded = true
 
 function snd.load_def(option)
+  snd.goggle_update()
   snd.defupPending = option
   send("def", false)
 end
 
 function snd.load_def2(option)
   class_catch()
+  snd.goggle_update()
   if snd.def_options[option] ~= nil then
     snd.trim_priorities()
     snd.defenses_loaded = true
@@ -12309,6 +12368,9 @@ function snd.load_def2(option)
     not string.find(gmcp.Char.Status.race, "Tekal") then
         snd.def_options[option]["def_safeguard"] = "on"
     end
+    
+    snd.def_options.general_defs.def_mindseye = snd.toggles.mindseye and "once" or nil
+    
     --    end
     local my_def_choice_and_generic_defenses = {}
     if option ~= "none" then
@@ -12346,6 +12408,7 @@ function snd.load_def2(option)
       --add chameleon if you have the toggle for it
       snd.defenses.def_chameleon.needit = snd.toggles.chameleon
       snd.defenses.def_lifesense.needit = snd.toggles.lifesense
+      snd.defenses.def_camouflage.needit = snd.toggles.camouflage
     end
   else
     snd.message("No such defense option as &lt;red&gt;" .. option .. "&lt;white&gt;!", "echo")
@@ -12360,22 +12423,22 @@ end
 					<packageName></packageName>
 					<script>snd.def_options = {
 
-none = {
+  none = {
 
-},
-
-general_defs = {
-def_thirdeye = "on",
-def_mindseye = "once",
-def_cloak = "on",
-def_deathsight = "on",
-def_insomnia = "on",
-def_nightsight = "on",
-def_clarity = "on",
-def_overwatch = "on",
-def_insight = "on",
-def_lifevision = "on",
-def_safeguard = "on",
+  },
+  general_defs = {
+    def_thirdeye = "on",
+    def_mindseye = "once",
+    def_cloak = "on",
+    def_instawake = "on",
+    def_deathsight = "on",
+    def_insomnia = "on",
+    def_arcane = "on",
+    def_levitation = "on",
+    def_speed = "on",
+    def_nightsight = "on",
+    def_clarity = "once",
+    def_safeguard = "on",
 },
 
 akkari = {
@@ -12400,9 +12463,10 @@ def_cognisance = "once",
 def_resuscitation = "on",
 def_conduit_crutch = "on",
 def_lifevision = "on",
-def_discipline_fieldstudies = "on",
+--def_discipline_fieldstudies = "on",
 def_discipline_biology = "on",
 def_discipline_research = "on",
+def_discipline_compounding = "on",
 def_blightbringer = "on",
 
 },
@@ -12504,15 +12568,15 @@ def_ghosted = "on",
 def_shroud = "on",
 def_lipreading = "on",
 def_weaving = "on",
---def_cloak = "on",
 },
 
 luminary = {
-def_lightshield = "once",
-def_inspiration_constitution = "once",
-def_fireblock = "once",
-def_constitution = "once",
-def_boilingblood = "on",
+    def_lightshield = "once",
+    def_inspiration = "once",
+    def_fireblock = "once",
+    def_constitution = "once",
+    def_insulation = "once",
+    def_boilingblood = "once",
 },
 
 monk = {
@@ -12656,6 +12720,25 @@ siderealist = {
   def_foresight = "once",
   def_stargleam = "on",
 },
+  sylvan = {
+    def_thrive_constitution = "once",
+    def_indurated = "on",
+    def_persisted = "on",
+    def_celerity = "once",
+    def_bloodscent = "once",
+    def_lifevision = "once",
+    -- def_prowl = "on",
+    def_stalking = "once",
+    def_abundance = "on",
+    def_redress = "on",
+    def_concealing = "once",
+    def_veering = "once",
+    def_awe = "once",
+    -- def_seedward = "on",
+    def_bloodbath = "once",
+    def_favour = "once",
+    def_wildfury = "once",
+  },
 
 templar = {
 def_maingauche = "once",
@@ -12818,7 +12901,6 @@ aetherial = {
   def_aetherial_torment = "on",
   def_aetherial_agility = "on",
   def_aetherial_band_stored = "once",
-  def_safeguard = "on",
 },
 seraph = {
   def_seraph_radiate = "on",
@@ -13133,7 +13215,7 @@ end
 				snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
 			end
 		elseif snd.cureset == "shapeshifter" then
-			if (snd.have_aff("watery_eyes") or snd.have_aff("blurry_vision")) and snd.not_aff("mauled_face") and (snd.class == "Executor" or snd.class == "Indorani" or snd.class == "Carnifex" or snd.class == "Teradrim" or snd.class == "Oneiromancer" or snd.class == "Sentinel" or snd.class == "Shaman" or snd.class == "Warden" or snd.class == "Earthcaller" or snd.class == "Luminary") then
+			if (snd.have_aff("watery_eyes") or snd.have_aff("blurry_vision")) and snd.not_aff("mauled_face") and ((snd.class == "Executor" or snd.class == "Sentinel") or snd.class == "Indorani" or snd.class == "Carnifex" or snd.class == "Teradrim" or snd.class == "Oneiromancer" or snd.class == "Sentinel" or snd.class == "Shaman" or snd.class == "Warden" or snd.class == "Earthcaller" or snd.class == "Luminary") then
 				snd.toparry = "head"
 			elseif snd.have_aff("right_leg_broken") and snd.have_aff("left_leg_broken") then
 				rparry = {"left leg","right leg"}
@@ -13418,7 +13500,8 @@ end
 		elseif snd.class == "Ravager" then
 			snd.send("oppose "..snd.toparry)
 		else
-      if snd.wielded.left.full~="empty" or snd.wielded.right.full~="empty" or snd.class == "Shapeshifter" then
+      if not hasSkill("Parrying") then
+      elseif snd.wielded.left.full~="empty" or snd.wielded.right.full~="empty" or snd.class == "Shapeshifter" then
         snd.send("parry "..snd.toparry)
       end
 		end
@@ -13471,7 +13554,9 @@ function snd.remove_all_affs()
   for i in pairs(snd.afflictions) do
     snd.aff_remove(i)
   end
-
+  
+  snd.predictions = {}
+  
   snd.hidden_afflictions = 0
 
   snd.defer_ui_update = nil
@@ -13669,8 +13754,7 @@ function snd.affTimers.start(aff, time, reset) --reset is true if it'll reset th
     snd.affTimers.kill(aff)
     snd.affTimers.list[aff] = tempTimer(time, function() snd.target_cured(aff) end)
   end
-end
-</script>
+end</script>
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
@@ -13796,6 +13880,7 @@ end
  
    aff_redshift        = { state = "healed", effect = "Delayed damage based on distance", cures = {}, assess = false, timer = createStopWatch() },
  
+   aff_unconsciousness            = { state = "healed", effect = "Unconscious", cures = {}, assess = false, timer = createStopWatch() },
    aff_conflicted                 = { state = "healed", effect = "Your next two appeals must be from two different categories, or you will take heavy acumen damage", cures = {}, assess = false, timer = createStopWatch() },
    aff_confounded                 = { state = "healed", effect = "Your ability to score compelling points with appeals is disabled", cures = {}, assess = false, timer = createStopWatch() },
    aff_dissuaded                  = { state = "healed", effect = "You have recently lost a Persuasion battle and cannot undertake another", cures = {}, assess = false, timer = createStopWatch() },
@@ -13811,7 +13896,6 @@ aff_prone = {state = "healed", effect = "cannot move or attack, must STAND", cur
 aff_asleep = {state = "healed", effect = "cannot do anything other than WAKE", cures = {}, assess = false, timer = createStopWatch()},
 aff_stun = {state = "healed", effect = "cannot do anything", cures = {}, assess = false, timer = createStopWatch()},
 aff_aeon = {state = "healed", effect = "delays all actions", cures = {smoke = "elm"}, assess = false, timer = createStopWatch()},
-aff_unconsciousness            = { state = "healed", effect = "Unconscious", cures = {}, assess = false, timer = createStopWatch() },
 
 aff_paresis = {state = "healed", effect = "prevents tattoos and movement", cures = {herb = "bloodroot"}, assess = false, timer = createStopWatch()},
 aff_paralysis = {state = "healed", effect = "prevents attacks, movement, and tattoos", cures = {herb = "bloodroot"}, assess = false, timer = createStopWatch()},
@@ -13819,8 +13903,8 @@ aff_anorexia = {state = "healed", effect = "prevents eating", cures = {tree = "s
 aff_asthma = {state = "healed", effect = "prevents smoking", cures = {tree = "send", herb = "kelp"}, assess = false, timer = createStopWatch()},
 aff_slickness = {state = "healed", effect = "prevents applying salves", cures = {tree = "send", smoke = "valerian", herb = "bloodroot"}, assess = false, timer = createStopWatch()},
 
-aff_a_crippled_arm = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_a_crippled_leg = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_crippled_arm = {state = "healed", effect = "", cures = {salve = "mending to arms", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_crippled_leg = {state = "healed", effect = "", cures = {salve = "mending to legs", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_adder_tarot = {state = "healed", effect = "", cures = {balanceequilibrium = "rip card from body"}, assess = false, timer = createStopWatch()},
 
 aff_ablaze = {state = "healed", effect = "", cures = {salve = "mending to body", tree = "send"}, assess = false, timer = createStopWatch()},
@@ -13875,8 +13959,8 @@ aff_confusion = {state = "healed", effect = "", cures = {herb = "ash", tree = "s
 aff_conviction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_corsin_weight = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_cracked_ribs = {state = "healed", effect = "", cures = {salve = "mending to torso", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_crippled = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_crippled_body = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_lameness = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_sundering = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_crippled_throat = {state = "healed", effect = "", cures = {salve = "mending to head", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_crosswiring = { state = "healed", effect = "", cures = { salve = "epidermal to head" }, assess = false, timer = createStopWatch() }, 
 aff_crushed_chest = {state = "healed", effect = "", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
@@ -13912,6 +13996,7 @@ aff_faintness = {state = "healed", effect = "", cures = {}, assess = false, time
 aff_fear = {state = "healed", effect = "", cures = {special = "compose"}, assess = false, timer = createStopWatch()},
 aff_feeble_arms = { state = "healed", effect = "Lowers dex by 3", cures = { salve = "press epidermal to arms" }, assess = false, timer = createStopWatch() },
 aff_feeble_legs = { state = "healed", effect = "Standing up costs balance", cures = { salve = "press epidermal to legs" }, assess = false, timer = createStopWatch() },
+aff_festering_wounds = {state = "healed", effect = "explode after some time, hurting allies!", cures = {}, assess = false, timer = createStopWatch()},
 aff_fire_weakness = {state = "healed", effect = "more dmg from fire source", cures = {}, assess = false, timer = createStopWatch()},
 aff_flamewreathed_limb = {state = "healed", effect = "extra limb damage if hit by fire spell", cures = {}, assess = false, timer = createStopWatch()},
 aff_flared = {state = "healed", effect = "unable to stealth or go incorporeal", cures = {}, assess = false, timer = createStopWatch()},
@@ -13936,31 +14021,35 @@ aff_head_bruised_moderate = {state = "healed", effect = "", cures = {salve = "me
 aff_head_broken = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_mangled = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_head_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
+aff_heavy = {state = "healed", effect = "delayed movement", cures = {}, assess = false, timer = createStopWatch()},
 aff_arrhythmia = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hellsight = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_heatspear = {state = "healed", effect = "can't cure ablaze", cures = {salve = "restoration to torso"}, assess = false, timer = createStopWatch()},
 aff_hollow = {state = "healed", effect = "mana drain + aff if alone", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
-aff_hopelessness = {state = "healed", effect = "writhe and tumble stopping", cures = {herb = "eucrasia"}, assess = false, timer = createStopWatch()},
 aff_hubris = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_hopelessness = {state = "healed", effect = "writhe and tumble stopping", cures = {herb = "eucrasia"}, assess = false, timer = createStopWatch()},
 aff_hypersomnia = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hypertension = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hypochondria = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_hypothermia = {state = "healed", effect = "", cures = {salve = "epidermal to torso", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_idiocy = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_impeded = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
+aff_impairment = {state = "healed", effect = "longer stuns, no racials", cures = {herb = "decongestant"}, assess = false, timer = createStopWatch()},
+aff_plodding = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_ice_encased = {state = "healed", effect = "longer salve bal, extra blunt dmg", cures = {}, assess = false, timer = createStopWatch()},
 aff_illgrasp = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_imbued = {state = "healed", effect = "auto gravity from scio spells", cures = {}, assess = false, timer = createStopWatch()},
-aff_impairment = {state = "healed", effect = "longer stuns, no racials", cures = {herb = "decongestant"}, assess = false, timer = createStopWatch()},
 aff_impatience = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
-aff_impeded = {state = "healed", effect = "10% slower pills, cured by removing gravity", cures = {}, assess = false, timer = createStopWatch()},
 aff_indifference = {state = "healed", effect = "", cures = {salve = "epidermal to head", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_infernal_seal = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infernal_shroud = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_infestation = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_inhibiting_aroma = {state = "healed", effect = "harder to move", cures = {}, assess = false, timer = createStopWatch()},
 aff_insomnia = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_irradiated_limb = {state = "healed", effect = "more damage from bolt", cures = {}, assess = false, timer = createStopWatch()},
 aff_intimidated = {state = "healed", effect = "can't heal above 90%", cures = {}, assess = false, timer = createStopWatch()},
 aff_justice = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_lacerations = {state = "healed", effect = "Bleeding on movement and after expiry", cures = {}, assess = false, timer = createStopWatch()},
 aff_laxity = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_leeched_aura = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_arm_amputated = {state = "healed", effect = "", cures = {salve = "restoration to arms"}, assess = false, timer = createStopWatch()},
@@ -13983,20 +14072,23 @@ aff_left_leg_dislocated = {state = "healed", effect = "", cures = {salve = "mend
 aff_left_leg_mangled = {state = "healed", effect = "", cures = {salve = "restoration to legs"}, assess = false, timer = createStopWatch()},
 aff_left_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_left_leg_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
-aff_lemniscate = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lesser_atrophy = {state = "healed", effect = "do less damage", cures = {}, timer = createStopWatch()},
+aff_lemniscate = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lethargy = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_lifebane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lightwound = {state = "healed", effect = "extra bleeding", cures = {salve = "mending to body"}, assess = false, timer = createStopWatch()},
 aff_hypotension = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_loneliness = {state = "healed", effect = "", cures = {herb = "eucrasia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_infatuation = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_infirmity = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_magicbane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_magic_fire = {state = "healed", effect = "ablaze mask aff", cures = {salve = "mending"}, assess = false, timer = createStopWatch()},
 aff_magic_weakness = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_magnanimity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_malevolence = {state = "healed", effect = "destroys shield, extra damage from weather", cures = {}, assess = false, timer = createStopWatch()},
 aff_manablight = {state = "healed", effect = "mana loss on torso hit", cures = {salve = "epidermal to torso"}, assess = false, timer = createStopWatch()},
 aff_marked  = {state = "healed", effect = "marked by a mage", cures = {}, assess = false, timer = createStopWatch()},
+aff_marrowchill = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_masochism = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_mauled_face = {state = "healed", effect = "", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_delirium = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
@@ -14027,7 +14119,6 @@ aff_peace = {state = "healed", effect = "", cures = {herb = "bellwort", tree = "
 aff_penance = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_perplexity = {state = "healed", effect = "can't manipulate items", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_petrified = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_plodding = {state = "healed", effect = "", cures = {moss = "send", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_extravasation = {state = "healed", effect = "", cures = {herb = "ginseng", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_polymorph = {state = "healed", effect = "divine only? unsure", cures = {}, assess = false, timer = createStopWatch()},
 aff_poison_weakness = {state = "healed", effect = "more dmg from poison source", cures = {}, assess = false, timer = createStopWatch()},
@@ -14076,17 +14167,11 @@ aff_ringing_ears = {state = "healed", effect = "unable to become deaf until cure
 aff_ripped_groin = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_spleen = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_throat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_rot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_heat = {state = "healed", effect = "shaderot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_spirit = {state = "healed", effect = "shaderot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
-aff_rot_wither = {state = "healed", effect = "shaderot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_ruptured_eardrum = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sadness = {state = "healed", effect = "", cures = {herb = "ash", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_salve_seared = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sand_trapped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_fog_trapped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_slough = {state = "healed", effect = "", cures = {herb = "bloodroot", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_sapped_constitution = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sapped_dexterity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sapped_intelligence = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -14102,6 +14187,11 @@ aff_self_pity = {state = "healed", effect = "", cures = {herb = "goldenseal", tr
 aff_seduction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_sensitivity = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_stoneheld = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
+aff_rot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_heat = {state = "healed", effect = "shaderot3 - can't apply caloric", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_spirit = {state = "healed", effect = "shaderot2 - shadow damage", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
+aff_rot_wither = {state = "healed", effect = "shaderot4 - passive lethargy", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_shadow_coat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadow_weakness = {state = "healed", effect = "more dmg from shadow source", cures = {}, assess = false, timer = createStopWatch()},
 aff_shadowbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -14150,6 +14240,7 @@ aff_troubled_breathing = {state = "healed", effect = "", cures = {}, assess = fa
 aff_vertigo = {state = "healed", effect = "", cures = {herb = "lobelia", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_vinethorns = {state = "healed", effect = "", cures = {special = "pull thorn from body"}, assess = false, timer = createStopWatch()},
 aff_vitalbane = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_virulence = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_void = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_voidgaze = {state = "healed", effect = "gives stacking affs while active", cures = {salve = "restoration to head"}, assess = false, timer = createStopWatch()},
 aff_voidtrapped = {state = "healed", effect = "stuck prone for a bit via voidgaze", cures = {}, assess = false, timer = createStopWatch()},
@@ -14157,16 +14248,15 @@ aff_vomiting = {state = "healed", effect = "", cures = {herb = "ginseng", tree =
 aff_voyria = {state = "healed", effect = "", cures = {vial = "immunity"}, assess = false, timer = createStopWatch()},
 aff_weak_grip = {state = "healed", effect = "bypass fist sigil", cures = {tree = "send", salve = "soothing to arms"}, assess = false, timer = createStopWatch()},
 aff_weakvoid = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_weariness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
 aff_whiplash = {state = "healed", effect = "head dmg", cures = {tree = "send", salve = "soothing to legs"}, assess = false, timer = createStopWatch()},
-aff_windbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_winterheart = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_weariness = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send", focus = "send"}, assess = false, timer = createStopWatch()},
+aff_windbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_withering = {state = "healed", effect = "", cures = {smoke = "elm", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_wraith = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_writhe_armpitlock = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_bind = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_hoist = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
-aff_writhe_ice = {state = "healed", effect = "brrrr", cures = {}, assess = false, timer = createStopWatch()},
 aff_writhe_impaled = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_lure = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_necklock = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
@@ -14178,6 +14268,7 @@ aff_writhe_vines = {state = "healed", effect = "", cures = {writhe = "send"}, as
 aff_writhe_web = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_grappled = {state = "healed", effect = "", cures = {writhe = "send"}, assess = false, timer = createStopWatch()},
 aff_writhe_stasis = {state = "healed", effect = "can't move, can attack", cures = {}, assess = false, timer = createStopWatch()},
+aff_writhe_ice = {state = "healed", effect = "brrrr", cures = {}, assess = false, timer = createStopWatch()},
 
 aff_awakened = {state = "healed", effect = "Some bard nonsense", cures = {}, assess = false, timer = createStopWatch()},
 
@@ -14193,7 +14284,6 @@ aff_intoxicated = {state = "healed", effect = "", cures = {smoke = "todisplay"},
 aff_writhe_dartpinned = {state = "healed", effect = "", cures = {smoke = "todisplay"}, assess = false, timer = createStopWatch()},
 
 ---- Mirror affs here
-
 --Voidseer
 aff_sonder = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_etched_disgust = {state = "healed", effect = "circle affs cant be cured by pill", cures = {}, assess = false, timer = createStopWatch()},
@@ -14256,10 +14346,8 @@ aff_battlelust = {state = "healed", effect = "", cures = {}, assess = false, tim
 aff_blackstar = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_bowelgore = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_burden = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
+aff_city_hatred = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_dread = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_inhibiting_aroma = {state = "healed", effect = "", cures = {focus = "send"}, assess = false, timer = createStopWatch()},
-aff_dread = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_etherflux = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_hobbled = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_internal_disarray = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_lightheart = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -14271,8 +14359,6 @@ aff_spirit_tendril = {state = "healed", effect = "", cures = {}, assess = false,
 aff_staggered = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_symbol_marked = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_thunderbrand = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_excess_melancholic = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_trickery = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_typhonpoison = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_vacuity = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_varach_rot = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -14286,9 +14372,14 @@ aff_fragments = {state = "healed", effect = "", cures = {}, assess = false, time
 aff_immobility = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
 aff_timewarped = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_inaccuracy = {state = "healed", effect = "Reduced accuracy", cures = {}, assess = false, timer = createStopWatch()},
+aff_hoodwink = {state = "healed", effect = "Drains health", cures = {}, assess = false, timer = createStopWatch()},
+aff_trickery = {state = "healed", effect = "Drains mana", cures = {}, assess = false, timer = createStopWatch()},
 
 aff_mindfog = {state = "healed", effect = "Can't cure mentals", cures = {salve = "caloric to head"}, assess = false, timer = createStopWatch()},
 aff_phosphenes = {state = "healed", effect = "Head trauma knocks eq", cures = {salve = "soothing to head"}, assess = false, timer = createStopWatch()},
+
+aff_limited_appeals = {state = "healed", effect = "Can only hold two appeals", cures = {}, assess = false, timer = createStopWatch()},
+aff_slandered = {state = "healed", effect = "do 20% less resolve damage", cures = {}, assess = false, timer = createStopWatch()},
 }</script>
 					<eventHandlerList />
 				</Script>
@@ -14318,6 +14409,16 @@ function snd.have_def(defense)
     return false
   end
   return snd.defenses[defense].state == "deffed"
+end
+
+function snd.def_stacks(defense)
+  if not string.find(defense, "def_") then
+    defense = "def_" .. defense
+  end
+  if not snd.defenses[defense] or snd.defenses[defense].state ~= "deffed" then
+    return 0
+  end
+  return snd.defenses[defense].stacks or 0  
 end
 
 function snd.aff_tally()
@@ -15400,6 +15501,7 @@ snd.healingcall = ""
 snd.endgamedef = ""
 snd.endgamehealth = ""
 snd.limbbrokencount = {}
+allergycount = 0
 
 -- Bashing stuff
 snd.resolve = "0"
@@ -15734,8 +15836,8 @@ snd.cures = {
     "paralysis",
     "paresis",
     "mirroring",
-    "crippled_body",
-    "crippled",
+    "sundering",
+    "lameness",
     "blisters",
     "slickness",
     "arrhythmia",
@@ -15827,6 +15929,7 @@ snd.cures = {
   },
 
   willow = {
+    "infirmity",
     "aeon",
     "hellsight",
     "deadening"
@@ -15940,7 +16043,7 @@ snd.cures = {
       "hypochondria",
       "stupidity",
       "impatience",
-      "crippled_body",
+      "sundering",
       "impairment",
       "recklessness",
       "infatuation",
@@ -16170,6 +16273,9 @@ zealot = {"Zeal", "Purification", "Psionics", "Brutality", "Ravaging", "Egotism"
 
   ["battlefury defend"] = true,
   ["riving juxtapose"] = true,
+  
+  ["righteousness protect"] = true,
+  ["manifestation shade"] = true,
 
   ["righteousness unity"] = true,
   ["manifestation engulf"] = true,
@@ -16184,6 +16290,27 @@ zealot = {"Zeal", "Purification", "Psionics", "Brutality", "Ravaging", "Egotism"
   
   ["enlightenment withstand"] = true,
   ["numerology sublimation"] = true,
+  
+  ["purification cascade"] = true,
+  ["ravaging begrudge"] = true,
+  
+  ["tiarna renewal"] = true,
+  ["chaos mend"] = true,
+  ["titan defy"] = true,
+  ["nocturn stitching"] = true,
+  ["adherent purify"] = true,
+  ["morale purify"] = true,
+  ["malevolent purify"] = true,
+  ["strife purify"] = true,
+  ["corruption purify"] = true,
+  ["memory purify"] = true,
+  ["tyranny purify"] = true,
+  ["instinct purify"] = true,
+  ["aetherial revitalise"] = true,
+  ["sagani wellspring"] = true,
+  ["seraph soothe"] = true,
+  ["astral ambrosia"] = true,
+  ["glacian erase"] = true,
 }</script>
 					<eventHandlerList />
 				</Script>
@@ -16237,8 +16364,8 @@ zealot = {"Zeal", "Purification", "Psionics", "Brutality", "Ravaging", "Egotism"
 conviction = "conviction",
 delirium = "disrupt",
 extravasation = "disrupt",
-crippled = "cripple",
-crippled_body = "cripple",
+lameness = "cripple",
+sundering = "cripple",
 hemorrhage = "hemorrhage",
 flared = "flare",
 
@@ -16288,10 +16415,10 @@ snd.venoms = {
 function snd.venomEffect(venom)
   local aff = ""
   if venom == "cripple" then
-    if snd.checkAff("crippled") then
-      aff = "crippled_body"
+    if snd.checkAff("lameness") then
+      aff = "sundering"
     else
-      aff = "crippled"
+      aff = "lameness"
     end
   elseif venom == "disrupt" then
     if snd.checkAff("extravasation") then
@@ -18676,11 +18803,11 @@ end</script>
   --The following afflictions count as phobias:
   --Fear, agoraphobia, claustrophobia, vertigo, loneliness, shyness, paranoia, or superstition.
   local phobiacount = {"fear", "agoraphobia", "claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition"}
-  snd.phobiatotal = 0
+  phobiatotal = 0
   for i = 1, tonumber(#phobiacount) do
     local affliction = phobiacount[i]
     if table.contains(snd.curtarget, affliction) then
-      snd.phobiatotal = snd.phobiatotal + 1 
+      phobiatotal = snd.phobiatotal + 1 
     end
   end
   snd.candread = false
@@ -19969,7 +20096,7 @@ end</script>
   -- look at adding in anquish
   snd.Chirography()
   snd.blockingexitfunc()
-  if table.contains(snd.curtarget, "mortalterror") and table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "extravasation") and table.contains(snd.curtarget, "crippled_body") and table.contains(snd.curtarget, "paralysis") and not table.contains(snd.curtarget, "shielded") and not table.contains(snd.curtarget, "reflection") then
+  if table.contains(snd.curtarget, "mortalterror") and table.contains(snd.curtarget, "delirium") and table.contains(snd.curtarget, "extravasation") and table.contains(snd.curtarget, "sundering") and table.contains(snd.curtarget, "paralysis") and not table.contains(snd.curtarget, "shielded") and not table.contains(snd.curtarget, "reflection") then
     snd.queueattack = snd.queueattack.. "chirography cull " ..snd.aim.. "" ..snd.separator 
   elseif not dolo.temp.enemies[snd.aim] and not toggleVars.teammode and not snd.maximumenemies and #snd.combatqueue &lt; 1 then
 		snd.queueattack = snd.queueattack.. "unally " ..snd.aim.. "" ..snd.separator 
@@ -20100,10 +20227,10 @@ end</script>
   elseif not table.contains(snd.curtarget, "anorexia") then
 		snd.scythevenom1 = "slike"
     
-	elseif not table.contains(snd.curtarget, "crippled_body") and table.contains(snd.curtarget, "mortalterror") then
+	elseif not table.contains(snd.curtarget, "sundering") and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom1 = "azu"
   
-	elseif not table.contains(snd.curtarget, "crippled_body") and not table.contains(snd.curtarget, "crippled") and table.contains(snd.curtarget, "mortalterror") then
+	elseif not table.contains(snd.curtarget, "sundering") and not table.contains(snd.curtarget, "lameness") and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom1 = "azu"  
     
 	elseif not table.contains(snd.curtarget, "extravasation") and table.contains(snd.curtarget, "mortalterror") then
@@ -20207,10 +20334,10 @@ end</script>
 	elseif not table.contains(snd.curtarget, "anorexia") and snd.scythevenom1 ~= "slike" then
 		snd.scythevenom2 = "slike"
 	
-  elseif not table.contains(snd.curtarget, "crippled_body") and snd.scythevenom1 ~= "azu" and table.contains(snd.curtarget, "mortalterror") then
+  elseif not table.contains(snd.curtarget, "sundering") and snd.scythevenom1 ~= "azu" and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom2 = "azu"
   
-	elseif not table.contains(snd.curtarget, "crippled_body") and not table.contains(snd.curtarget, "crippled") and snd.scythevenom1 ~= "azu" and table.contains(snd.curtarget, "mortalterror") then
+	elseif not table.contains(snd.curtarget, "sundering") and not table.contains(snd.curtarget, "lameness") and snd.scythevenom1 ~= "azu" and table.contains(snd.curtarget, "mortalterror") then
 		snd.scythevenom2 = "azu"  
     
 	elseif not table.contains(snd.curtarget, "extravasation") and snd.scythevenom1 ~= "dirne" and table.contains(snd.curtarget, "mortalterror") then
@@ -20336,7 +20463,7 @@ end</script>
   if toggleVarsClass.afflictionmode then 
     if not table.contains(snd.curtarget, "mortalterror") then
       mark = "bimre"    
-    elseif not table.contains(snd.curtarget, "crippled_body") then
+    elseif not table.contains(snd.curtarget, "sundering") then
       mark = "azu"
     elseif not table.contains(snd.curtarget, "delirium") then
       mark = "dirne"
@@ -20357,7 +20484,7 @@ end</script>
       mark = "bimre"    
     elseif not table.contains(snd.curtarget, "delirium") then
       mark = "dirne"   
-    elseif not table.contains(snd.curtarget, "crippled_body") then
+    elseif not table.contains(snd.curtarget, "sundering") then
       mark = "azu"
     end 
     if tonumber(gmcp.Char.Vitals.charge_left) &gt;= 140 and tonumber(gmcp.Char.Vitals.charge_right) &gt;= 140 then  -- attacks before
@@ -20658,7 +20785,7 @@ end</script>
 --80 both hands for iyeldo
     if not table.contains(snd.curtarget, "mortalterror") then
       mark = "bimre"    
-    elseif not table.contains(snd.curtarget, "crippled_body") then
+    elseif not table.contains(snd.curtarget, "sundering") then
       mark = "azu"
     elseif not table.contains(snd.curtarget, "delirium") then
       mark = "dirne"
@@ -22984,8 +23111,8 @@ snd.deformvenoms = {
 "collapsed_lung",                 
 "confusion",                                                           
 "cracked_ribs",                   
-"crippled",                       
-"crippled_body",                  
+"lameness",                       
+"sundering",                  
 "crippled_throat",                
 "crushed_chest",                  
 "crushed_elbows",                 
@@ -23407,7 +23534,7 @@ end
   
   -- OPIATE
   snd.opiatecurecover = true
-  local opiatelist = {"paresis", "paralysis", "mirroring", "crippled_body", "crippled", "blisters", "slickness", "arrhythmia", "slough"}
+  local opiatelist = {"paresis", "paralysis", "mirroring", "sundering", "lameness", "blisters", "slickness", "arrhythmia", "slough"}
   local opiatecount = 0
   for i = 1, tonumber(#opiatelist) do
     local opieone = opiatelist[i]
@@ -23727,6 +23854,7 @@ function snd.untarget()
   snd.bashing.engaged = false
   snd.bashing.targeted = false
   snd.last_attack = "none"
+  snd.bash_shielded = false
   if snd.bashing.stopping then
     snd.message("Bashing OFF!")
     if snd.toggles.bashing then
@@ -23896,9 +24024,10 @@ function snd.target_got(affliction)
     end
   end
 
-  if affliction == "crippled_body" then
-    snd.target_cured("crippled")
+  if affliction == "sundering" then
+    snd.target_cured("lameness")
   end
+  
   if affliction  == "aeon" then
     snd.aeon_got()
   end
@@ -24120,7 +24249,7 @@ end</script>
       if snd.maybe_affs[1] == "placeholder" then
         snd.last_aff = ""
         table.remove(snd.maybe_affs, 1)
-      elseif snd.maybe_affs[1]:find("crippled") then
+      elseif snd.maybe_affs[1]:find("lameness") then
         snd.target_got(snd.maybe_affs[1])
         table.remove(snd.maybe_affs, 1)
         table.insert(snd.last_affs, aff)
@@ -24203,8 +24332,8 @@ function snd.checkAff(affliction)
     else
       return false
     end
-  elseif affliction == "crippled" then
-    if table.contains(snd.target_has, affliction) or table.contains(snd.target_has, "crippled_body") then
+  elseif affliction == "lameness" then
+    if table.contains(snd.target_has, affliction) or table.contains(snd.target_has, "sundering") then
       return true
     else
       return false
@@ -24516,6 +24645,7 @@ function snd.reset_target()
 	 snd.empowerready = true
 	 snd.empowertype = "nil"
   end
+  --snd.target_cured("mutagen")
   
   --200
   snd.doubleattack = false
@@ -24585,7 +24715,6 @@ function snd.removeProneStates(all) -- Reset a target back to standing w/no writ
 
   local other_prones = {
     "frozen",
-    "indifference",
     "asleep",
     "paralysis",
   }
@@ -25101,7 +25230,6 @@ end
 
 function snd.attack(attack, new)
   
-    local strr = ""
     local str = ""
     local fitnessstring = ""
     local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
@@ -25128,37 +25256,48 @@ function snd.attack(attack, new)
     if gmcp.Char.Vitals.salve == "1" and snd.have_aff("anorexia") then
       fitnessstring = fitnessstring.."apply epidermal to torso"..snd.sep
     end
+    if gmcp.Char.Vitals.herb == "1" and (snd.not_aff("paresis") or snd.not_aff("paralysis")) then
+      fitnessstring = fitnessstring.."eat opiate"..snd.sep
+    end
     if gmcp.Char.Vitals.herb == "1" and snd.have_aff("impatience") and (snd.not_aff("paresis") or snd.not_aff("paralysis")) then
       fitnessstring = fitnessstring.."eat euphoriant"..snd.sep
     end
     if gmcp.Char.Vitals.tree == "1" and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and (snd.have_aff("impatience") or snd.aff_tally() &gt; 2) then
       fitnessstring = fitnessstring.."touch tree"..snd.sep
     end
-    if gmcp.Char.Vitals.focus == "1" and snd.can_focus() and snd.aff_count_focus() &gt; 0 then
+    if gmcp.Char.Vitals.focus == "1" and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and snd.can_focus() and snd.aff_count_focus() &gt; 0 then
       fitnessstring = fitnessstring.."focus"..snd.sep
     end
     if snd.can_fitness() and snd.need_fitness and snd.have_aff("asthma") then
-      str = "fitness"..snd.sep..fitnessstring..str
+      str = "fitness"..snd.sep..fitnessstring
     elseif snd.can_shrug() and snd.shrug_check() then
-      str = "shrug venom"..snd.sep..fitnessstring..str
+      str = "shrug venom"..snd.sep..fitnessstring
     elseif snd.panacea_check() and snd.class == "Alchemist" then
-      snd.do_panacea()
+      str = "botany subvert"..snd.sep..fitnessstring
     elseif snd.recover_check() and snd.class == "Ravager" then
-      snd.do_recover()
+      str = "ego boost"..snd.sep..fitnessstring
     elseif snd.absorb_check() and snd.class == "Teradrim" then
-      snd.do_absorb()
-    elseif snd.cleanse_check() and snd.class == "Earthcaller" then
-      snd.do_cleanse()
-    elseif snd.might_check() and snd.class == "Executor" then
-      snd.do_might()
+      str = "earth absorb"..snd.sep..fitnessstring
+    elseif snd.cleanse_check() and (snd.class == "Earthcaller" or snd.class == "Luminary") then
+      if snd.class == "Earthcaller" then
+        str = "tectonic thermics"..snd.sep..fitnessstring
+      else
+        str = "evoke cleansing"..snd.sep..fitnessstring
+      end
+    elseif snd.might_check() and (snd.class == "Executor" or snd.class == "Sentinel") then
+      if snd.class == "Sentinel" then
+        str = "might"..snd.sep..fitnessstring
+      else
+        str = "grit"..snd.sep..fitnessstring
+      end
     elseif snd.purify_check() and snd.class == "Praenomen" then
-      snd.do_purify()
+      str = "purify blood"..snd.sep..fitnessstring
     elseif snd.purge_check() and snd.class == "Carnifex" then
-      snd.do_purge()
+      str = "soul purge"..snd.sep..fitnessstring
     elseif snd.leech_check() and snd.class == "Sciomancer" then
-      snd.do_sleech()
-    elseif snd.rage_check() then
-      snd.do_rage()
+      str = "botany subvert"..snd.sep..fitnessstring
+    --elseif snd.rage_check() then
+      --str = "botany subvert"..snd.sep..fitnessstring..str
     else  
       if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") then
         str = "diag"..snd.sep..str
@@ -25460,14 +25599,13 @@ end</script>
         snd.target_got("disfigurement")
         snd.unmasked = true
         tempTimer(25, [[snd.unmasked = false]])
-        snd.glory = snd.glory - 1
       else
         snd.target_got("magic_weakness")
         snd.target_got("fire_weakness")
         tempTimer(30, [[snd.target_cured("magic_weakness")]])
         tempTimer(30, [[snd.target_cured("fire_weakness")]])
-        snd.glory = snd.glory - 1
       end
+      snd.glory = snd.glory - 1
     end,
     Volley = function(target)
       enableTrigger("Aetherial Volley / Chaos Claw")
@@ -25478,7 +25616,9 @@ end</script>
       end
     end,
     Omission = function(target, shield)
-      snd.hamartia_used = true
+      if snd.hitting == "You" then
+        snd.hamartia_used = true
+      end
       if shield then
         snd.used.shield = false
       end
@@ -25820,9 +25960,11 @@ end</script>
   ["Experimentation"] = {
     Prognosis = function(target)
                     snd.target_got("dread")
+                        snd.mutmaster = snd.hitting
                         if snd.hitting == "You" then
                           snd.my_dread = true
                           snd.their_dread = false
+                          snd.message("Your dread was placed")
                         else
                           snd.my_dread = false
                           snd.their_dread = true
@@ -26424,9 +26566,18 @@ end</script>
                    snd.target_got("distortion")
                    snd.souldistortready = false
                  end,   
-    Wither = function(target)
-               enableTrigger("Wither Limb Messages")
-             end,
+    --Wither = function(target)
+      --         enableTrigger("Wither Limb Messages")
+        --     end,
+    Malice = function(target, limbs)
+      if limbs == "arms" then
+        snd.target_got("left_arm_crippled")
+        snd.target_got("right_arm_crippled")
+      elseif limbs == "legs" then
+        snd.target_got("left_leg_crippled")
+        snd.target_got("right_leg_crippled")
+      end
+    end,
     Wraith = function(target)
                snd.target_got("soul_wraith")
              end,
@@ -26469,7 +26620,7 @@ end</script>
         
  Acidspit = function(target)
               if snd.checkAff("weariness") then
-                snd.target_got("crippled")
+                snd.target_got("lameness")
               else
                 snd.target_got("weariness")
               end
@@ -27813,7 +27964,7 @@ end</script>
                   --snd.onHit2({"Dodge", "Parry"})
                 end,
     PressurePoint = function(target)
-                	snd.maybe_affs = {"stiffness", "muscle_spasms"},
+                	snd.maybe_affs = {"stiffness", "muscle_spasms"}
                   snd.onHit2({ "Dodge" }, "Double Aff")
                 end,
     Plexus = function(target)
@@ -28085,7 +28236,7 @@ end</script>
                     end,                   
       Falter = function(target, shadowprice)
                 	if snd.checkAff("dizziness") then snd.target_got("dementia") end
-                  if snd.checkAff("weariness") then snd.target_got("crippled") end
+                  if snd.checkAff("weariness") then snd.target_got("lameness") end
                 end,
       Shadowbrand = function(target, conditional)
                   if conditional == "Shadowprice" or conditional == "end" then
@@ -28199,7 +28350,7 @@ end</script>
                     end,                   
       Anathemise = function(target, spiritpact)
                 	if snd.checkAff("dizziness") then snd.target_got("dementia") end
-                  if snd.checkAff("weariness") then snd.target_got("crippled") end
+                  if snd.checkAff("weariness") then snd.target_got("lameness") end
                 end, 
                                  
       Vilipend = function(target, spiritpact)
@@ -28680,6 +28831,7 @@ end</script>
   ["Shamanism"] = {
     Premonition = function(target)
                     snd.target_got("dread")
+                        snd.mutmaster = snd.hitting
                         if snd.hitting == "You" then
                           snd.my_dread = true
                           snd.their_dread = false
@@ -28755,11 +28907,12 @@ end</script>
           snd.target_got("torso_mangled")
           end,
     Lacerate = function(target)
+                table.insert(snd.maybe_affs, "lacerations" )
                 table.insert(snd.maybe_affs, "rend")
                 snd.last_hit_limb = "torso"
                 snd.last_limb_dmg = 9
                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
-                snd.onHit2({"Dodge", "Parry"})
+                snd.onHit2({ "Dodge", "Parry" }, "Double Aff")
                end,        
     Facemaul = function(target)
               if snd.checkAff("blindness") then
@@ -29957,8 +30110,16 @@ end</script>
     Inhibit = function(target)
                snd.target_got("inhibited")
              end,    
-    Spear = function(target)
-               enableTrigger("Spear Limb Messages")
+    --Spear = function(target)
+            --   enableTrigger("Spear Limb Messages")
+    Spear = function(target, limbs)
+      if limbs == "arms" then
+        snd.target_got("left_arm_crippled")
+        snd.target_got("right_arm_crippled")
+      elseif limbs == "legs" then
+        snd.target_got("left_leg_crippled")
+        snd.target_got("right_leg_crippled")
+      end
              end,
     Intercept = function(target)
                snd.used.shield = true
@@ -30026,7 +30187,7 @@ end</script>
                end,    
  Harrier = function(target)
               if snd.checkAff("weariness") then
-                snd.target_got("crippled")
+                snd.target_got("lameness")
               else
                 snd.target_got("weariness")
               end
@@ -30275,7 +30436,7 @@ end</script>
                   --snd.onHit2({"Dodge", "Parry"})
                 end,
     Twinpress = function(target)
-                	snd.maybe_affs = {"stiffness","muscle_spasms"},
+                	snd.maybe_affs = {"stiffness","muscle_spasms"}
                   snd.onHit2({ "Dodge" }, "Double Aff")    
                 end,
     Clawtwist = function(target)
@@ -35376,6 +35537,7 @@ end</script>
 						<name>move</name>
 						<packageName></packageName>
 						<script>function snd.move()
+if snd.waitingOnReanimation then return end
   x = bot.info.room
   x = "v" .. x
   if bot.going then
@@ -35723,7 +35885,7 @@ function snd.aa()
   if not snd.toggles.bashing then snd.toggle("bashing") end
   snd.room_clear = true
   snd.bashing_function()
-  snd.defenses.def_vigor.needit = true
+  --snd.defenses.def_vigor.needit = true
   if not snd.leadingon then
     snd.send("leading on")
   end
@@ -35738,25 +35900,27 @@ end
 				<Script isActive="yes" isFolder="no">
 					<name>bashing variables</name>
 					<packageName></packageName>
-					<script>
+					<script>--- Sunder Bashing Functions
+-- @module Bashing
+
 snd.bashing_loaded = true
 
 snd.room_clear = false
 
 snd.bashing = {
-target = "none",
-target_type = "long",
-target_word = "",
-old_target = "",
-target_number = "",
-target_desc = "",
-corpse_word = "",
-corpse_number = "",
-corpse_desc = "",
-target_priority = 10000,
-engaged = false,
-targeted = false,
-stopping = false
+  target = "none",
+  target_type = "long",
+  target_word = "",
+  old_target = "",
+  target_number = "",
+  target_desc = "",
+  corpse_word = "",
+  corpse_number = "",
+  corpse_desc = "",
+  target_priority = 10000,
+  engaged = false,
+  targeted = false,
+  stopping = false
 }
 
 snd.area_found = false
@@ -35823,8 +35987,8 @@ snd.vermin = 0</script>
 {area = "the Three Rock Outpost", level = "60+", targets = {"a huge, scarred wildcat","a beautiful wild horse","a mountain wildcat",  "a wildcat kitten", "a long-haired buffalo", "an enormous Troll bandit","a shifty bandit", "the cave bear, White Ghost"}, items = {"the paw of White Ghost"}},
 {area = "the village of Bihrkaen", level = "60-80", targets = {"a bihrkaen ambusher", "a grotesque snapping turtle", "a mire hound", "a bog hound", "a mire pup", "an alpha female hound", "an alpha male hound"}},
 --{area = "the village of Bihrkaen", level = "60-80", targets = {"Ilumn Mist", "Unlok Houndclaw", "a weary laborer", "a mossy hound", "a sickly carrion crow", "a thin bihrkaen","a bihrkaen ambusher","a bihrkaen huntress","a hulking bihrkaen protector","a horrifying bihrkaen", "a grotesque snapping turtle", "a mire hound", "a bog hound", "a mire pup", "an alpha female hound", "a slender mud adder", "a speckled, brown turtle", "an alpha male hound"}},
---{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf", "a large, snowy fox", "silver-feathered orel", "a large bhfaol", "a gargantuan Augerweald rabbit", "a tall, white elk", }},
-{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf",}},
+{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf", "a large, snowy fox", "silver-feathered orel", "a large bhfaol", "a gargantuan Augerweald rabbit", "a tall, white elk", }},
+--{area = "the Augerweald", level = "65-80", targets = {"an agitated direwolf",}},
 {area = "the Fractal Bloom", level = "65+", targets = {"a towering crystalline entity", "a slender crystalline entity", "a radiant crystalline entity", "a squat crystalline entity", "a fractured crystalline entity", "a faceted crystalline entity"}}, 
 {area = "the Kalydian Forest", level = "65+", targets = {"a gaunt elk",  "a rabid rabbit", "a ravenous squirrel"}},
 {area = "the Salma Settlement", level = "70-80", targets = {"a busy mage", "a bemused artist", "an engrossed scholar", "an ordinary woman", "a dark-haired woman", "a Salmati guard", "a dark-furred bear", "a Salmati warrior", "a common man", "an energetic child", "an unclean miner", "a wild-eyed scientist"}},
@@ -35905,7 +36069,7 @@ snd.vermin = 0</script>
 {area = "the Maul", level = "99", targets = {"a gaunt Aslinn guard", "an Aslinn slave catcher", "a snarling vakmut warhound", "a ravenous vakmut warhound", "a lithe Aslinn houndmaster", "a wary Aslinn slaver", "a wretched Aslinn slaver", "a cruel Aslinn guard", "a menacing Aslinn gladiator", "a scarred Aslinn gladiator"}},
 {area = "the forgotten depths of Mount Helba", level = "99", targets = {"a towering fungal abomination", "a withered fungal abomination"}},
 {area = "the Bakal Chasm", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
-{area = "a basilisk lair", level = "100+", targets = {"a cave basilisk", "an Ursal elite guard", "a blindfolded Utari"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}},
+{area = "a basilisk lair", level = "100+", targets = {"a cave basilisk"}, items = {"the corpse of a Utari soldier", "a large piece of debris",}}, -- "an Ursal elite guard", "a blindfolded Utari"
 {area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling", "a spine-necked arrex", "a sabre-toothed abosvi", "a prowling barbed abosvi", "a mottled grey mountain goat"}},
 --{area = "Clawhook Range", level = "100+", targets = {"an agitated basilisk", "an oversized, grey basilisk", "an armored, brown basilisk", "a spiked basilisk", "a grey and brown basilisk", "a blinded basilisk", "a juvenile basilisk", "a basilisk hatchling"}},
 {area = "the Welto Trench", level = "good luck", targets = {"Match:a %a+ shark", "a storm-wing harpy", "Match:a %a+ torvok", "Match:a %a+ serpent", "Match:a %a+ crab", "Match:a %a+ jellyfish", "a torvok ambusher", "a blacktip shark", "a black hunter shark", "a spotted bull shark", "a scarred hunter shark", "a brown hunter shark", "a scarred welto shark", "a striped hunter shark", "a great white welto shark", "a brown bull shark", "a bronze tiger shark", "a black bull shark", "a spotted tiger shark", "a bronze tiger shark", "a grey hunter shark", "a bronze welto shark", "a brown tiger shark", "a storm-wing harpy", "a spotted welto shark", "a striped welto shark", "a striped tiger shark", "a striped bull shark", "a spotted hunter shark", "a black tiger shark", "a great white bull shark", "a menacing torvok", "a brown welto shark", "a great white tiger shark", "a menacing torvok", "a great white hunter shark", "a great white welto shark", "a bronze bull shark", "a grey tiger shark", "a bronze hunter shark", "a spotted hunter shark", "a scarred tiger shark", "a black welto shark", "a grey bull shark", "a striped welto shark", "a grey welto shark", "a black welto shark", "a scarred bull shark", "a blacktip shark", "a box jellyfish", "a giant manta ray", "a deep water serpent", "a stone crab"}},
@@ -35932,6 +36096,7 @@ snd.vermin = 0</script>
 {area = "Huanazedha", level = "LANU DU", targets = {"a Nazetu eusuchian", "a Nazetu sage of tribe Urrop", "a lean Nazetu Child", "Rax, the Ophidian drug dealer", "Lugra Roosi, sage of Huanazedha", "a Goblin mercenary", "a sickly Nazetu addict", "a shady lurker", "Dudly, a Goblin mercenary", "Jacek, the proprietor", "a Mhun liquor merchant", "a drunk man of indeterminate race", "a Nazetu knife merchant", "a dazed Orc addict", "a bruised Goblin addict", "a sickly Orc addict", "a drunken human man",}},
 {area = "the Aqueducts of Spinesreach", level = "idk", targets = {"a massive rockworm", "a ravenous, infected cricket", "an enormous, mutated cricket"}},
 {area = "the Crimson Coast", level = "idk", targets = {"Match:%a+ %a+ smuggler", "a massive white gull", "a broad-nosed crocodile", "a large sand crab", "a baby seagull", "a grisled, heavily scarred Grecht pirate", "a turgid Troll pirate covered in tattoos", "a scrawny Human pirate wearing a straw hat", "a dainty, sable-sailed Harpy pirate", "a lavishly dressed Mhun pirate", "a peg-legged Imp pirate", "a short, mop-wielding Human pirate", "a lithe, sea-slick Grook pirate with shimmer-dark eyes", "a stout, sure-footed Dwarf pirate", "a finched Minotaur pirate", "a small, snub-nosed Grecht pirate", "a scrawny, one-eyed Rajamalan pirate", "a bearded Gnome pirate", "a bespectacled Orc pirate", "a brassy Ophidian pirate", "a flowering Arborean pirate", "a gaunt, head-shaved Nazetu pirate", "a brawny, hook-handed Kelki pirate", "a powerful, resinous Arborean pirate", "a knife-strapped Kobold pirate", "a tall, tigrine Rajamalan pirate", "a moss-green Arqeshi pirate", "a lumbering, bespectacled Ogre pirate", }},
+{area = "Qor Qogol", level = "95+", targets = {"an empty-eyed child,a stooped nobleman","a moss-veiled noblewoman","a bronze-armored royal guard","a shambling guard","a fungi-laden guard","a shriveled, gold-traced Hlugna merchant","a rust-armored canal guard","a mummified Hlugna matriarch","a withered priest of Dhaivol","a black-boned embalmer","a short Hlugnic trainee","a skeletal Hlugna citizen","a reanimated Hlugna commoner","a haggard skeleton of a Hlugna pauper","a battered, undead Hlugna laborer","a sturdy skeleton of a Hlugna dock worker"}},
 
 }
 
@@ -40373,8 +40538,8 @@ v49322 = "pthcity"
     v59648 = "59647",
     v59694 = "59695",
     v59695 = "59698",
-    v59697 = "59993",
     v59698 = "59697",
+    v59697 = "59993",
     v59993 = "pthcity",
     v59921 = "59988",
     v59988 = "60033",
@@ -40400,9 +40565,8 @@ v49322 = "pthcity"
     v68607 = "68608",
     v68608 = "68609",
     v68609 = "68610",
-    v68610 = "68612",
+    v68610 = "68611",
     v68611 = "68613",
-    v68612 = "68611",
     v68613 = "68618",
     v68614 = "68616",
     v68615 = "68604",
@@ -40772,8 +40936,7 @@ v23911 = "pthcity"
     v61040 = "61041",
     v61041 = "61043",
     v61043 = "61044",
-    v61044 = "68612",
-    v68612 = "pthcity",
+    v61044 = "pthcity",
     v61045 = "61040",
     v61047 = "61048",
     v61048 = "61052",
@@ -42994,8 +43157,7 @@ v25421 = "pthcity"
     v20885 = "20887",
     v20886 = "20918",
     v20887 = "20888",
-    v20888 = "20889",
-    v20889 = "20921",
+    v20888 = "20921",
     v20921 = "pthcity",
     v20890 = "20880",
     v20891 = "20890",
@@ -47781,13 +47943,15 @@ end</script>
 				<Script isActive="yes" isFolder="no">
 					<name>looting</name>
 					<packageName></packageName>
-					<script>
+					<script>--- Check to see if we're able to loot.
+-- @function snd.do_loot
+-- @see snd.loot_it
 function snd.do_loot()
- if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
-  if snd.can_cast() and not snd.waiting.loot then
-   snd.loot_it()
+  if #snd.gathering &gt; 0 or #snd.corpses &gt; 0 then
+    if snd.can_cast() and not snd.waiting.loot then
+      snd.loot_it()
+    end
   end
- end
 end
 
 function snd.loot_it()
@@ -47796,8 +47960,8 @@ function snd.loot_it()
       snd.send("get "..snd.gathering[h])
     end
  end
- snd.corpses = {}
- snd.gathering = {}
+ --snd.corpses = {}
+ --snd.gathering = {}
  snd.have_items = false
  snd.need_loot = false
 end</script>
@@ -47813,9 +47977,20 @@ snd.global_items = {
 --"a delicate flora sample",
 --"a roasted hobgobbler drumstick",
 --"a pile of goopy stuffing",
+
+--"a mortal heart still dripping blood",
+
 "the paw of White Ghost",
-"a massive hunk of Ogre bone",
+
+--"a massive hunk of Ogre bone",
 "a jagged chunk of crystallized ylem",
+
+"a chunk of grey stone", 
+"a chunk of obsidian glass", 
+"a chunk of green and blue stone", 
+"a broken shard of ruby",
+"spectral essence",
+
 "an antipsychotic pill",
 "a decongestant pill",
 "a steroid pill",
@@ -48168,6 +48343,7 @@ function snd.runBasher()
   snd.corpses = {}
   snd.bashing.targeted = false
   snd.bashing.target_priority = 10000
+  snd.bash_shielded = false
   snd.bashing.target = "none"
   for item in pairs(snd.items) do
     if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then
@@ -48192,7 +48368,7 @@ function snd.runBasher()
   if not targetID then
     if snd.bashing_cleanup() then return end
     snd.toggles.bashing = false
-    if bot.going then
+    if bot.going and #snd.gathering &lt; 1 then
       snd.move()
     end
     snd.core()
@@ -48253,7 +48429,7 @@ end</script>
 {class = "Warden", func = function(current) snd.warden_bash() end},
 {class = "Wayfarer", func = function(current) snd.wayfarer_bash() end}, 
 {class = "Zealot", func = function(current) snd.zealot_bash() end},
-{class = "None", func = function(current) snd.chaos_lord_bash() end},
+{class = "None", func = function(current) snd.none_bash() end},
 }
 
 function snd.bashing_function()
@@ -48277,7 +48453,7 @@ function snd.bashing_function()
 				  if snd.have_aff("shock") then -- let's use overdrive if we have shock, adds to new class bashing attack line
             battack = "overdrive"..snd.sep..battack..snd.sep.."recoup"
 					end
-          if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset ~= "upsets" and snd.avoidanceset ~= "ranged" then
+          if snd.balance.nimbleness and snd.not_aff("fallen") and snd.avoidanceset ~= "upsets" and snd.avoidanceset ~= "ranged" and hasSkill("Nimbleness") then
             battack = "nimbleness"..snd.sep..battack
           end
 				end
@@ -48316,8 +48492,8 @@ function snd.bashing_function()
         echo("\nTried to bash, no class ability set.")
       elseif snd.needfollow then
         battack = battack..snd.sep.."follow "..snd.group[1]
-      elseif battack ~= snd.last_attack then -- if your battack isn't the same as your last attempted attack, and you aren't trying to capture ylem
-        snd.last_attack = battack -- ATTACK and not snd.ylem_check
+      elseif battack ~= snd.last_attack and not snd.ylem_check then -- if your battack isn't the same as your last attempted attack, and you aren't trying to capture ylem
+        snd.last_attack = battack -- ATTACK
         if battack ~= "none" then -- if for some reason it's none as your attack, stand
           snd.send("qeb stand"..snd.sep..snd.last_attack)
         end
@@ -48329,18 +48505,43 @@ function snd.bashing_function()
   end
 end
 
-function snd.chaos_lord_bash()
-  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 
-  if hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700 then
+
+local ascendedAttacks = {
+  malevolent = "adherent blossom",
+  strife = "adherent shards",
+  corruption = "adherent spiral",
+  memory = "adherent shend",
+  tyranny = "adherent oppress",
+  instinct = "adherent embitter",
+
+  seraph = "seraph admonish",
+  aetherial = "aetherial spiral",
+  titan = "titan fissure",
+  glacian = "glacian frostbite",
+  nocturn = "nocturn curse",
+  sagani = "sagani quarrel",
+  chaos = "chaos havoc",
+  tiarna = "tiarna glare",
+  astral = "astral evert",
+  none = "kill",
+}
+
+--- 200 bashing function.
+-- This uses the ascendedAttacks table for picking what ur supposed to be doing.
+-- @function snd.none_bash
+function snd.none_bash() --super basic bashing function for 200's.
+  hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
+
+  if (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) or (snd.critimmune and hp &lt;= 60) then
     if snd.shield_check then
       battack = "touch shield"
     else
-      battack = "astral ambrosia"
+      battack = "aetherial revitalise"
     end
   else
-    battack = "astral evert "..snd.bashing.target
- 	end
+    battack = ascendedAttacks[snd.toggles.ascendedtype] .. " " .. snd.bashing.target
+  end
 end
 
 function snd.alchemist_bash()
@@ -48357,7 +48558,9 @@ function snd.alchemist_bash()
     battack = "compound augment galvanic invigorant anesthetic exhilarant"..snd.sep
   end
   
-  if snd.familiar and snd.balance.morph then
+  if snd.shamanpet == "" then
+    battack = battack.."experiment request toxic"..snd.sep.."order experiment passive"..snd.sep.."order experiment follow me"..snd.sep
+  elseif snd.familiar and snd.balance.morph then
     if snd.shamanpet == "tumefactive" then
       battack = battack.."order experiment passive"..snd.sep.."experiment reconfigure toxic"..snd.sep.."order experiment follow me"..snd.sep
     elseif snd.shamanpet == "toxic" then
@@ -48474,7 +48677,7 @@ function snd.earthcaller_bash()
     if not snd.graft then      
       battack = battack..snd.sep.."OSSO GRAFT"
     else
-      if snd.ossocount &lt;= "4300" then
+      if snd.ossocount &lt;= 4300 then
         battack = battack..snd.sep.."OSSO SPLINTER"
       end
     end
@@ -48524,6 +48727,32 @@ function snd.infiltrator_bash()
     end
   else
     battack = "bite "..snd.bashing.target.." camus"
+ 	end
+end
+
+function snd.luminary_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+	
+  if (hp &lt;= 40 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then
+    if snd.shield_check then
+      battack = "touch shield"
+    else
+      battack = "angel drain"..snd.sep.."angel power"
+    end
+  elseif snd.needswarm then
+    battack = "angel summon"
+  elseif snd.bash_shielded then
+    battack = "shield raze " .. snd.bashing.target
+	else
+    battack = "angel touch"..snd.sep.."smite "..snd.bashing.target
+    if not snd.graft then      
+      battack = battack..snd.sep.."angel empathy"
+    else
+      if snd.ossocount &lt;= 4300 then
+        battack = battack..snd.sep.."angel power"
+      end
+    end
  	end
 end
 
@@ -48585,11 +48814,21 @@ function snd.ravager_bash()
         end
       end
     else
-      battack = "touch shield"
+      if hp &lt;= 60 then
+        battack = "seethe"
+      else
+        battack = "touch shield"
+      end
+    end
+  elseif snd.have_aff("blurry_vision") or snd.have_aff("watery_eyes") or snd.have_aff("clumsiness") then
+    if gmcp.Char.Vitals.salve == "1" and (snd.have_aff("blurry_vision") or snd.have_aff("watery_eyes")) then
+      send("press epidermal to head")
+    else
+      battack = "seethe"
     end
   elseif not snd.can_arms() or snd.swagger &gt; 3 then
     battack = "concuss "..snd.bashing.target
-	else
+  else
 		battack = "onslaught "..snd.bashing.target.." bully bully"
 	end
 
@@ -48640,6 +48879,26 @@ function snd.sciomancer_bash()
   end
 end
 
+function snd.sentinel_bash()
+  hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
+  if hp &lt;= 40 and snd.shield_check then
+    battack = "touch shield"
+  elseif snd.bash_shielded then
+    if hasSkill("Reave") then
+      battack = "dhuriv combo " .. snd.bashing.target.." reave thrust"
+    else
+      battack = "touch hammer " .. snd.bashing.target
+    end
+  elseif snd.toggles.newbie then
+    battack = "dhuriv combo " .. snd.bashing.target .. " slash stab"
+  else
+    battack = "dhuriv combo " .. snd.bashing.target .. " crosscut thrust"
+  end
+  if not gmcp.Char.Vitals.wield_left:find("dhurive") then
+    battack = "quickwield both dhurive" .. snd.sep .. battack
+  end
+end
+
 function snd.shapeshifter_bash()
   hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 	
@@ -48684,6 +48943,44 @@ function snd.wayfarer_bash()
   else
     battack = "axe chop "..snd.bashing.target
   end
+end
+
+function snd.zealot_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+
+  if (hp &lt;= 60 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then  
+    if not snd.shield_check and mp &gt;= 20 then
+      if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1000 and snd.cauterize then
+        battack = "enact cauterize me"..snd.sep
+        snd.cauterize = false
+        tempTimer(2,[[snd.cauterize = true]])
+      else
+        if hp &lt;= 60 then
+          battack = "respiration"
+        elseif mp &lt;= 50 then
+          battack = "meditate"
+        end
+      end
+    else
+      if hp &lt;= 60 then
+        battack = "respiration"
+      else
+        battack = "touch shield"
+      end
+    end
+  elseif snd.have_aff("blurry_vision") or snd.have_aff("watery_eyes") or snd.have_aff("clumsiness") then
+    if gmcp.Char.Vitals.salve == "1" and (snd.have_aff("blurry_vision") or snd.have_aff("watery_eyes")) then
+      send("press epidermal to head")
+    else
+      battack = "respiration"
+    end
+  elseif not snd.can_arms() or snd.swagger &gt; 3 then
+    battack = "sunkick "..snd.bashing.target
+  else
+		battack = "flow "..snd.bashing.target.." pummel pummel"
+	end
+
 end</script>
 					<eventHandlerList />
 				</Script>
