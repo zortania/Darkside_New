@@ -4831,6 +4831,8 @@ elseif snd.class == "Infiltrator" then
   snd.send("quickwield left buckler"..snd.sep.."quickwield right dirk")
 elseif snd.class == "Bard" then
 	snd.send("quickwield left falchion")
+elseif snd.class == "Tidesage" then
+  snd.send("quickwield left 415751"..snd.sep.."quickwield right buckler")
 elseif snd.class == "Teradrim" then
   snd.send("quickwield left 143714"..snd.sep.."quickwield right buckler")
 elseif snd.class == "Wayfarer" then
@@ -4864,6 +4866,8 @@ elseif snd.class == "Executor" then
   snd.send("quickwield both ringblade")
 elseif snd.class == "Sentinel" then
   snd.send("quickwield both dhurive")
+elseif snd.class == "Tidesage" then
+  snd.send("quickwield left 139185"..snd.sep.."quickwield right buckler")
 elseif snd.class == "Teradrim" then
   snd.send("quickwield left 448048"..snd.sep.."quickwield right buckler")
 elseif snd.class == "Revenant" then
@@ -20235,6 +20239,316 @@ end</script>
 								<packageName></packageName>
 								<regex>^aff$</regex>
 							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Combo Updated</name>
+								<script>snd.starting_attack()
+function snd.attack_function()
+	if not snd.waiting.queue then
+		if snd.class == "Teradrim" then
+			local attack_map = {
+				["left arm"] = "slam",
+				["left leg"] = "slam",
+				head = "facesmash",
+				torso = "gutsmash",
+				["right arm"] = "slam",
+				["right leg"] = "slam",
+				}
+		elseif snd.class == "Tidesage" then
+			local attack_map = {
+				["left arm"] = "crack",
+				["left leg"] = "crack",
+				head = "crest",
+				torso = "ram",
+				["right arm"] = "crack",
+				["right leg"] = "crack",
+				}
+		end
+
+		local string = ""
+		snd.parrypredictfunc()
+		snd.Teradrimtar()
+		local sand = ""
+		local attack = ""
+		local shield = snd.used.shield
+		local rebounding = snd.used.rebounding
+		local mendingbreaks = 0
+		if snd.checkAff("right_arm_crippled") then
+			mendingbreaks = mendingbreaks + 1
+		end
+		if snd.checkAff("left_arm_crippled") then
+			mendingbreaks = mendingbreaks + 1
+		end
+		if snd.checkAff("left_leg_crippled") then
+			mendingbreaks = mendingbreaks + 1
+		end
+		if snd.checkAff("right_leg_crippled") then
+			mendingbreaks = mendingbreaks + 1
+		end
+		
+		local hammercount = 0
+		for limb, bruising in ipairs(snd.limb_bruising) do
+			if bruising &gt; 1 then 
+				hammercount = hammercount + 1
+			end
+		end
+			
+		local shockwaveLimbs = 0
+		for _, limb in ipairs({"left leg", "right leg", "left arm", "right arm"}) do
+			if snd.limb_bruising[limb] &gt; 0 and not snd.checkAff(limb:gsub(" ","_").."_crippled") then
+				shockwaveLimbs = shockwaveLimbs+1
+			end
+		end
+      
+		local fractureBreakable = {}
+		local bruiseBreakable = {}
+		local furorBreakable = {}
+		local bruiseLimb = "none"
+		
+		local function canBreak(limb, ability)
+			local dmg = snd.calcTeradrimLimbDamage(ability, true, limb)
+			return snd.limb_dmg[limb] &lt; 33.33 and snd.limb_dmg[limb] + dmg &gt; 33.33
+		end
+			
+		local limbLimbs = {["left leg"] = true, ["right leg"] = true, ["left arm"] = true, ["right arm"] = true}
+		for _, limb in ipairs({"left leg", "right leg", "left arm", "right arm", "torso", "head"}) do
+			if limb~= snd.resto_limb and (snd.no_parry() or (snd.parried_limb~=limb and snd.last_struck_limb~=limb)) then
+				if limbLimbs[limb] and canBreak(limb, "fracture") then
+					table.insert(fractureBreakable, limb)
+				end
+				if limbLimbs[limb] and canBreak(limb, "furor") then
+					table.insert(furorBreakable, limb)
+				end
+				if canBreak(limb, attack_map[limb]) then
+					table.insert(bruiseBreakable, limb)
+				end
+				if bruiseLimb == "none" and snd.limb_bruising[limb]&lt;2 then
+					bruiseLimb = limb
+				end
+			end
+		end
+
+		if snd.class == "Teradrim" then
+			local sandstorm = tonumber(gmcp.Char.Vitals.sandstorm)    
+      
+			if not snd.used.shield and hammercount &gt; 2 then
+				attack = "earth hammer "..snd.target
+			elseif not table.contains(gmcp.Room.Info.details, "sandy") then
+				attack = "sand flood"
+			elseif sandstorm == 0 then
+				attack = "sand storm"
+			elseif snd.defenses.def_sand_swelter.state ~= "deffed" then
+				attack = "sand swelter on"
+			elseif snd.runemarkMinor ~= "yellow" or snd.runemarkMajor ~= "yellow" then
+				attack = "earth inscribe yellow upon yellow"
+			elseif snd.theytumbling then
+				if not snd.limb_bruising["head"] == 2 then
+					attack = "earth facesmash " ..snd.target.. " "..snd.sep
+				elseif not snd.checkAff("collapsed_lung") and snd.parried_limb ~= "torso" then
+					if not quicksand then
+						sand = "sand quicksand "..snd.target.." storm"..snd.sep
+					    quicksand = true
+					end
+					attack = "earth pulp "..snd.target.." "..snd.sep
+				else
+					attack = "earth batter " ..snd.target.. " head"..snd.sep
+				end
+			elseif snd.lev_gone and ((shockwaveLimbs &gt; 1 and not snd.checkAff("fallen")) or shockwaveLimbs &gt; 2) then
+				attack = "earth shockwave "..snd.target..snd.sep    
+			elseif not snd.checkAff("collapsed_lung") and snd.proned() and snd.parried_limb ~= "torso" then
+				attack = "earth pulp "..snd.target.." "..snd.sep
+			elseif snd.proned() and snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled", "left_leg_crippled", "right_leg_crippled"},2) then
+				attack = "earth quake"
+			elseif snd.checksomeAffs({"left_leg_broken","right_leg_broken"},1) and not snd.checkAff("fallen") then
+				attack = "earth overhand "..snd.target
+			else
+				if shield then
+					attack = "earth stoneblast "..snd.target
+				elseif #furorBreakable &gt; 1 then
+					attack = "earth furor "..snd.target.." "..furorBreakable[1].." "..furorBreakable[2]
+				elseif #bruiseBreakable &gt; 0 then
+					attack = "earth "..attack_map[bruiseBreakable[1]].." "..snd.target.." "..bruiseBreakable[1]
+				elseif #fractureBreakable &gt; 0 then
+					attack = "earth fracture "..snd.target.." "..fractureBreakable[1]
+				elseif mendingbreaks &gt; 3 then
+					attack = "earth quake "..snd.target
+				else
+					attack = "earth "..attack_map[bruiseLimb].." "..snd.target.." "..bruiseLimb
+				end
+			end
+        
+			--Sand decisions
+			if sandstorm == 5 then
+				if snd.proned() and not quicksand then
+					sand = "sand quicksand "..snd.target.." storm"..snd.sep
+					quicksand = true
+					if not snd.checkAff("collapsed_lung") and snd.parried_limb ~= "torso" then
+						attack = "earth pulp "..snd.target.." "..snd.sep
+					end
+				elseif not snd.checkAff("slough") then
+					sand = "sand curse " ..snd.target.. " storm"..snd.sep
+				elseif not snd.checksomeAffs({"left_leg_crippled","right_leg_crippled","left_arm_crippled","right_arm_crippled"},4) then
+					sand = "sand scourge "..snd.target.." storm"..snd.sep
+				end
+			end
+			--end sand decisions
+      
+			if (shield or rebounding) and sandstorm &gt; 3 then
+				sand = sand.."sand slice "..snd.target.." storm"..snd.sep
+			end
+        
+			if sand:find("storm") then
+				string = sand..attack
+			elseif rebounding and sandstorm &lt; 2 then
+				string = "earth stoneblast "..snd.target
+			else
+				string = attack
+			end
+  
+			if snd.nopets then
+				string = "golem call"..snd.sep..string
+			end 
+  
+			if not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end     
+      
+			if snd.balance.earthenwill then
+				if not snd.checkAff("arrhythmia") and snd.limb_bruising["torso"] &gt;= 1 then
+					string = "prepare earthenwill heartpunch"..snd.sep..string
+				elseif snd.checkAff("shock") then
+					string = "prepare earthenwill pummel"..snd.sep..string
+				elseif snd.proned() and snd.checkAff("torso_broken") and not snd.checkAff("writhe_grappled") then
+					string = "prepare earthenwill grapple"..snd.sep..string
+				elseif snd.proned() then
+					string = "prepare earthenwill rip"..snd.sep..string
+				end
+			end
+  
+			if snd.balance.momentum then
+				string = "earth momentum"..snd.sep..string
+			end
+      
+			if not snd.pillarhere then
+				string = "sand pillar"..snd.sep..string      
+			end
+		elseif snd.class == "Tidesage" then
+			local sandstorm = tonumber(gmcp.Char.Vitals.apparition)    
+      
+			if not snd.used.shield and hammercount &gt; 2 then
+				attack = "tide keelhaul "..snd.target
+			elseif not table.contains(gmcp.Room.Info.details, "fogged") then
+				attack = "fog inundate"
+			elseif sandstorm == 0 then
+				attack = "fog apparition"
+			elseif snd.defenses.def_sirensong.state ~= "deffed" then
+				attack = "fog sirensong on"
+			elseif snd.runemarkMinor ~= "yellow" or snd.runemarkMajor ~= "yellow" then
+				attack = "tide daub yellow upon yellow"
+			elseif snd.theytumbling then
+				if not snd.limb_bruising["head"] == 2 then
+					attack = "tide crest " ..snd.target.. " "..snd.sep
+				elseif not snd.checkAff("collapsed_lung") and snd.parried_limb ~= "torso" then
+					if not quicksand then
+						sand = "fog undertow "..snd.target.." apparition"..snd.sep
+					    quicksand = true
+					end
+					attack = "tide wreck "..snd.target.." "..snd.sep
+				else
+					attack = "tide clobber " ..snd.target.. " head"..snd.sep
+				end
+			elseif snd.lev_gone and ((shockwaveLimbs &gt; 1 and not snd.checkAff("fallen")) or shockwaveLimbs &gt; 2) then
+				attack = "tide capsize "..snd.target..snd.sep    
+			elseif not snd.checkAff("collapsed_lung") and snd.proned() and snd.parried_limb ~= "torso" then
+				attack = "tide wreck "..snd.target.." "..snd.sep
+			elseif snd.proned() and snd.checksomeAffs({"left_arm_crippled", "right_arm_crippled", "left_leg_crippled", "right_leg_crippled"},2) then
+				attack = "tide udulation"
+			elseif snd.checksomeAffs({"left_leg_broken","right_leg_broken"},1) and not snd.checkAff("fallen") then
+				attack = "tide breach "..snd.target
+			else
+				if shield then
+					attack = "tide riptide "..snd.target
+				elseif #furorBreakable &gt; 1 then
+					attack = "tide pitch "..snd.target.." "..furorBreakable[1].." "..furorBreakable[2]
+				elseif #bruiseBreakable &gt; 0 then
+					attack = "tide "..attack_map[bruiseBreakable[1]].." "..snd.target.." "..bruiseBreakable[1]
+				elseif #fractureBreakable &gt; 0 then
+					attack = "tide buckle "..snd.target.." "..fractureBreakable[1]
+				elseif mendingbreaks &gt; 3 then
+					attack = "tide udulation "..snd.target
+				else
+					attack = "tide "..attack_map[bruiseLimb].." "..snd.target.." "..bruiseLimb
+				end
+			end
+        
+			--Sand decisions
+			if sandstorm == 5 then
+				if snd.proned() and not quicksand then
+					sand = "fog undertow "..snd.target.." apparition"..snd.sep
+					quicksand = true
+					if not snd.checkAff("collapsed_lung") and snd.parried_limb ~= "torso" then
+						attack = "tide wreck "..snd.target.." "..snd.sep
+					end
+				elseif not snd.checkAff("slough") then
+					sand = "fog terrors " ..snd.target.. " apparition"..snd.sep
+				elseif not snd.checksomeAffs({"left_leg_crippled","right_leg_crippled","left_arm_crippled","right_arm_crippled"},4) then
+					sand = "fog unseen "..snd.target.." apparition"..snd.sep
+				end
+			end
+			--end sand decisions
+      
+			if (shield or rebounding) and sandstorm &gt; 3 then
+				sand = sand.."fog abyss "..snd.target.." apparition"..snd.sep
+			end
+        
+			if sand:find("apparition") then
+				string = sand..attack
+			elseif rebounding and sandstorm &lt; 2 then
+				string = "tide riptide "..snd.target
+			else
+				string = attack
+			end
+  
+			if snd.nopets then
+				string = "synth call"..snd.sep..string
+			end 
+  
+			if not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end     
+      
+			if snd.balance.earthenwill then
+				if not snd.checkAff("arrhythmia") and snd.limb_bruising["torso"] &gt;= 1 then
+					string = "tide engulf trammel"..snd.sep..string
+				elseif snd.checkAff("shock") then
+					string = "tide engulf pound"..snd.sep..string
+				elseif snd.proned() and snd.checkAff("torso_broken") and not snd.checkAff("writhe_grappled") then
+					string = "tide engulf clutch"..snd.sep..string
+				elseif snd.proned() then
+					string = "tide engulf squeeze"..snd.sep..string
+				end
+			end
+  
+			if snd.balance.momentum then
+				string = "tide hightide"..snd.sep..string
+			end
+      
+			if not snd.pillarhere then
+				string = "fog glacier"..snd.sep..string      
+			end		
+		end
+
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = string
+			snd.attack(snd.last_attack)
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
+	end
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex></regex>
+							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
 							<name>Limbs</name>
@@ -24474,842 +24788,297 @@ end</script>
 							<command></command>
 							<packageName></packageName>
 							<regex></regex>
-							<Alias isActive="no" isFolder="no">
-								<name>New Tfix</name>
-								<script>if snd.class == "Earthcaller" then
-  snd.starting_attack()
-  
-  function snd.attack_function()
-
-    if not snd.waiting.queue then
-      
-      local shield = "none"
-      local battle = "none"
-      local chasten = "none"
-      local call = ""
-      local string = ""
-      local baseDamage = 1800
-      local sensitivityBonus = 0
-      local sensitivityBonus = snd.checkAff("sensitivity") and 0.30 or 0
-      local afflictionBonus = 0
-      local afflictionsAboveFive = 0
-      local afflictionsAboveFive = (#snd.target_has - 5) &gt; 0 and #snd.target_has - 5 or 0
-      if afflictionsAboveFive &gt; 0 then 
-        afflictionBonus = afflictionsAboveFive * 0.08
-        if afflictionBonus &gt; 0.80 then
-          afflictionBonus = 0.80
-        end
-      end
-      local totalDamage = 0
-      totalDamage = baseDamage * (1 + afflictionBonus)
-      totalDamage = totalDamage * (1 + sensitivityBonus)
-      totalDamage = totalDamage + 290
-      local can_hellsight = false
-      if ((snd.timer_check("fitness", 10, "more than") and snd.checksomeAffs({"asthma", "weariness"}, 2)) or (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checksomeAffs({"asthma", "impatience"}, 2))) then
-         can_hellsight = true
-      elseif (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checkAff("asthma") and snd.checkAff("impatience")) then
-	       can_hellsight = true
-      elseif snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1) and snd.checkAff("asthma") then
-	       can_hellsight = true
-      elseif (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness")) then
-	       can_hellsight = true
-      end
-    
-      snd.giving_shield = {
-        "no_courage",
-        "misery",
-        "weariness",
-        "paresis",
-        "disrupted",
-       }
-       
-      if snd.checksomeAffs({"asthma", "slickness"}, 2) and not snd.checkAff("anorexia") then -- spur   
-        snd.giving_battle = {
-          "anorexia",  
-          "impatience", 
-          "stupidity", 
-          "self_pity",  
-          "mania",
-          "vertigo",   
-          "migraine",      
-          "ringing_ears",
-        }      
-      elseif not snd.checkAff("migraine") and snd.checkAff("hellsight") then   
-        snd.giving_battle = {
-          "migraine",   
-          "stupidity", 
-          "self_pity",  
-          "mania",
-          "vertigo",  
-          "anorexia", 
-          "ringing_ears",         
-        }     
-      else   
-        snd.giving_battle = {
-          "mania",
-          "ringing_ears",
-          "impatience", 
-          "anorexia",  
-          "self_pity",
-          "vertigo",
-          "stupidity",
-          "migraine",            
-        }      
-      end
-  
-      if snd.checksomeAffs({"asthma", "slickness"}, 2) and not snd.checkAff("anorexia") then    
-        snd.giving_chasten = {
-          "anorexia", 
-          "hypochondria",
-          "self_loathing",
-          "lethargy",   
-          "stupidity",
-          "agony",
-          "justice",  
-          "recklessness",
-          "dementia",
-          "paranoia",
-        }
-      elseif snd.checkAff("hallucinations") and not snd.checkAff("dementia") and not snd.checkAff("hellsight") then     
-        snd.giving_chasten = {
-          "dementia",
-          "hypochondria",
-          "lethargy",   
-          "stupidity",
-          "self_loathing",
-          "justice",  
-          "recklessness",
-          "paranoia",   
-          "anorexia",
-        }    
-      else    
-        snd.giving_chasten = { 
-          "hypochondria", 
-          "self_loathing",
-          "stupidity",
-          "lethargy", 
-          "justice", 
-          "dementia", 
-          "recklessness",  
-          "paranoia", 
-          "anorexia",
-        }
-      end
-
-      cecho("\nPossible Damage: "..totalDamage)
-      
-      --Shield aff pick
-      if snd.used.shield then
-        if snd.checkAff("mania") then
-          shield = "tectonic vent "..snd.target
-        else
-          shield = "shield raze "..snd.target
-        end
-      elseif snd.used.rebounding then
-        if not snd.checkAff("mania") then
-          shield = "tectonic vent "..snd.target..snd.sep
-        elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-          shield = "dirge lull "..snd.target..snd.sep
-        elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
-          shield = "beset "..snd.target..snd.sep   
-        elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
-          shield = "dirge hysteria "..snd.target..snd.sep
-        else
-          shield = "shield raze "..snd.target..snd.sep 
-        end     
-      elseif #snd.target_has &gt;= 4 and snd.checkAff("no_courage") and not snd.used.shield then
-		    if not snd.checkAff("writhe_transfix") then
-			     shield = "tectonic transfixion " .. snd.target..snd.sep
-		    else
-          shield = "shield deface " .. snd.target..snd.sep
-          if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
-    				shield = "osso spur " .. snd.target .. " sensitivity" .. snd.sep .. shield
-			    end
-        end
-      elseif (#snd.target_has &gt;= 10 or tonumber(totalDamage) &gt;= tonumber(snd.health_percent)) and snd.proned() then
-        shield = "shield deface " .. snd.target..snd.sep
-      else
-        -- We need to build up disrupt/affs.
-        for i in ipairs(snd.giving_shield) do
-          if not snd.checkAff(snd.giving_shield[i]) and shield == "none" then
-            shield = snd.subjugation_attacks[snd.giving_shield[i]]
-            if shield ~= "none" then
-              shield = shield.." "..snd.target
-		        end
-          end
-        end
-      end
-      
-      --Battle/Spur aff pick
-      if snd.balance.battle then
-		    for i in ipairs(snd.giving_battle) do
-          if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-            battle = snd.giving_battle[i]
-          end
-		    end
-	    end
-	
-      --Chasten/Subdue aff pick
-      for i in ipairs(snd.giving_chasten) do
-		    if not snd.checkAff(snd.giving_chasten[i]) and chasten == "none" and snd.giving_chasten[i] ~= battle then
-			     chasten = snd.giving_chasten[i]
-		    end
-	    end
- 
-      if battle ~= "none" then
-        if snd.toggles.affcalling and not snd.target_gone then
-          string = "wt spur " .. snd.target .. ": " .. battle .. snd.sep
-        end
-        string = string.."osso spur "..snd.target.." "..battle..snd.sep
-      end
-      
-      if shield ~= "none" then
-      --Add shield/tectonics/dirge attacks
-        string = string..shield..snd.sep
-      end
-	  
-      --Add chasten/subdue choice
-      if not shield:find("slam") or shield:find("transfix") or shield:find("hysteria") or shield:find("crash") then
-        if chasten == "none" then
-          string = string.."subdue "..snd.target
-        else
-          if snd.toggles.affcalling and not snd.target_gone then
-            string = string .. "wt subdue " .. snd.target .. ": " .. chasten .. snd.sep
-          end
-          string = string.."subdue "..snd.target.." "..chasten..snd.sep
-        end
-      end
-      
-      if not shield:find("deface") and not shield:find("transfixion") then
-        if not snd.checkAff("hellsight") and can_hellsight then
-          string = "dirge reckoning "..snd.target..snd.sep 
-        elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") then
-          string = "beset "..snd.target..snd.sep   
-        elseif snd.checksomeAffs({"hypochondria", "weariness"}, 1) and not snd.checkAff("asthma") and not snd.checkAff("agony") then
-          string = "beset "..snd.target..snd.sep   
-        elseif snd.checkAff("agony") and #snd.target_has &gt;= 4 and not snd.checkAff("faulted") then
-          string = "tectonic fault "..snd.target..snd.sep
-        elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
-          string = "osso bleach "..snd.target..snd.sep
-        end
-      end
-      
-      if snd.theytumbling and not snd.checkAff("hellsight") then
-        string = "dirge ordain "..snd.target.." stop"
-      elseif not table.contains(snd.players_here, snd.target) then
-        string = "osso lurch "..snd.target
-      end
-
-      if snd.mana_percent &lt;= 43 and not snd.used.shield then
-        string = "osso fragment "..snd.target..snd.sep
-      end
-      
-      if snd.defenses.def_seismicity.state ~= "deffed" then
-        string = "TECTONIC SEISMICITY"..snd.sep..string
-      end
-      
-      if snd.not_aff("disfigurement") and table.contains(snd.players_here, snd.target) and #snd.players_here &lt;= 1 then
-        string = "osso glean "..snd.target..snd.sep.."contemplate "..snd.target..snd.sep..string
-      else
-        string = "contemplate "..snd.target..snd.sep..string
-      end
-      
-      if snd.needswarm then
-        string = "contemplate "..snd.target..snd.sep.."osso draw"
-      end
-      
-      if string:find("deface") then
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
-        if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
-          string = "quickwield left tower"..snd.sep..string
-        end
-      else
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
-        if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-          string = "quickwield left buckler"..snd.sep..string
-        end
-      end      
-
-      if string ~= snd.last_attack and not snd.waiting.queue then
-        snd.last_attack = string
-        snd.attack(snd.last_attack)
-        snd.waiting.queue = true
-        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      end
-    end
-  end
-  
-  snd.attack_function()
-end
-</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^aff$</regex>
-							</Alias>
-							<Alias isActive="no" isFolder="no">
-								<name>Limb support</name>
-								<script>if snd.class == "Earthcaller" then
-  local limbList = {"left leg", "right leg", "left arm", "right arm"}
-  local battleStack = {"anorexia", "impatience", "mania", "stupidity", "ringing_ears", "vertigo", "self_pity", "migraine"}
-  local chastenStack = {"anorexia", "recklessness", "justice", "stupidity", "self_loathing", "paranoia", "hypochondria", "lethargy"}
-  local overwhelmChasten = {"recklessness", "anorexia", "masochism", "stupidity", "self_loathing", "paranoia", "hypochondria", "lethargy"}
-  local overwhelmBattle = {"ringing_ears", "impatience", "mania", "stupidity", "vertigo", "self_pity", "migraine"}
-  
-  local function getAff(stack)
-    for _, aff in ipairs(stack) do
-      if not snd.checkAff(aff) then return aff end
-    end
-    return "none"
-  end
-  
-  local function getSmashLimb()
-    for _, limb in ipairs(limbList) do --break and cripple
-      if snd.limb_dmg[limb]&gt;8 and snd.limb_dmg[limb]&lt;21.5 and snd.resto_limb~=limb and (snd.parried_limb~=limb or snd.no_parry()) and not snd.checkAff(string.gsub("crippled "..limb," ","_")) then
-        return limb
-      end
-    end
-    for _, limb in ipairs(limbList) do --break
-      if snd.limb_dmg[limb]&gt;8 and snd.limb_dmg[limb]&lt;21.5 and snd.resto_limb~=limb and (snd.parried_limb~=limb or snd.no_parry()) then
-        return limb
-      end
-    end
-    for _, limb in ipairs(limbList) do --mangle
-      if snd.limb_dmg[limb]&gt;41.6 and snd.limb_dmg[limb]&lt;54.1 and (snd.parried_limb~=limb or snd.no_parry()) then
-        return limb
-      end
-    end
-  end
-  
-  snd.starting_attack()
-  function snd.attack_function()
-    local commands = {}
-    local string = ""
-    local battle = getAff(battleStack)
-    local chasten = getAff(chastenStack)
-    local shield = "none"
-    
-    if not snd.waiting.queue then
-      
-      local smashLimb = getSmashLimb()
-      
-      if snd.used.shield then
-        if snd.checkAff("impatience") and not snd.checksomeAffs({"hallucinations", "mania"}, 2) then
-          shield = "tectonic vent "..snd.target
-        else
-          shield = "shield raze "..snd.target
-        end
-      elseif snd.used.rebounding then
-        if not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-          shield = "dirge lull "..snd.target
-        elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
-          shield = "beset "..snd.target   
-        elseif not snd.checkAff("mania") and snd.checkAff("impatience") and not snd.checkAff("hallucinations") then
-          shield = "tectonic vent "..snd.target
-        elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
-          shield = "dirge hysteria "..snd.target
-        else
-          shield = "shield raze "..snd.target  
-        end 
-      elseif snd.proned() then
-        battle = getAff(overwhelmBattle)
-        chasten = getAff(overwhelmChasten)
-        shield = "shield deface "..snd.target
-      elseif not snd.checkAff("salve_seared") then
-        shield = "osso dust "..snd.target 
-      elseif snd.balance.smash and smashLimb then
-        shield = "obliterate "..smashLimb.." "..snd.target
-      else
-        local limb1, limb2
-        for _, limb in ipairs(limbList) do
-          if limb~= snd.resto_limb and (limb~=snd.parried_limb or snd.no_parry()) then
-            if not limb1 then limb1 = limb elseif not limb2 then limb2 = limb end
-          end
-        end
-        if snd.ossocount &lt;= 4300 then
-          shield = "shield crush "..snd.target.." "..limb1.." and "..limb2..snd.sep.."OSSO SPLINTER"
-        else
-          shield = "shield crush "..snd.target.." "..limb1.." and "..limb2
-        end
-        battle = "none"
-        chasten = "none"
-      end      
-      
-      --Battle/Spur aff pick
-      if snd.balance.battle then
-		    for i in pairs(battleStack) do
-          if not snd.checkAff(battleStack[i]) and battle == "none" then
-            battle = battleStack[i]
-          end
-		    end
-	    end
-	
-      --Chasten/Subdue aff pick
-      for i in pairs(chastenStack) do
-		    if not snd.checkAff(chastenStack[i]) and chasten == "none" and chastenStack[i] ~= battle then
-			     chasten = chastenStack[i]
-		    end
-	    end
- 
-      if battle ~= "none" then
-        if snd.toggles.affcalling and not snd.target_gone then
-          string = "wt spur " .. snd.target .. ": " .. battle .. snd.sep
-        end
-        string = string.."osso spur "..snd.target.." "..battle..snd.sep
-      end
-      
-      if shield ~= "none" then
-      --Add shield/tectonics/dirge attacks
-        string = string..shield..snd.sep
-      end
-	  
-      --Add chasten/subdue choice
-      if not shield:find("dust") or shield:find("hysteria") or shield:find("crush") then
-        if chasten == "none" then
-          string = string.."subdue "..snd.target
-        else
-          if snd.toggles.affcalling and not snd.target_gone then
-            string = string .. "wt subdue " .. snd.target .. ": " .. chasten .. snd.sep
-          end
-          string = string.."subdue "..snd.target.." "..chasten..snd.sep
-        end
-      end
-      
-      if snd.theytumbling then
-        string = "dirge ordain "..snd.target.." stop"..snd.sep
-      elseif not table.contains(snd.players_here, snd.target) then
-        string = "osso lurch "..snd.target..snd.sep
-      end
-
-      if snd.mana_percent &lt;= 43 and not snd.used.shield then
-        string = "osso fragment "..snd.target..snd.sep
-      end
-      
-      if snd.defenses.def_seismicity.state ~= "deffed" then
-        string = "TECTONIC SEISMICITY"..snd.sep..string
-      end
-      
-      if snd.not_aff("disfigurement") and table.contains(snd.players_here, snd.target) and #snd.players_here &lt;= 1 then
-        string = "osso glean "..snd.target..snd.sep.."contemplate "..snd.target..snd.sep..string
-      else
-        string = "contemplate "..snd.target..snd.sep..string
-      end
-      
-      if snd.needswarm then
-        string = "contemplate "..snd.target..snd.sep.."osso draw"
-      end
-      
-      if string:find("deface") then
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
-        if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
-          string = "quickwield left tower"..snd.sep..string
-        end
-      else
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
-        if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-          string = "quickwield left buckler"..snd.sep..string
-        end
-      end       
-
-      if string ~= snd.last_attack and not snd.waiting.queue then
-        snd.last_attack = string
-        snd.attack(snd.last_attack)
-        snd.waiting.queue = true
-        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      end
-    end
-  end
-  
-  snd.attack_function()
-end
-</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^limbs$</regex>
-							</Alias>
 							<Alias isActive="yes" isFolder="no">
 								<name>Combo New Tfix</name>
 								<script>snd.starting_attack()
 function snd.attack_function()
-    if not snd.waiting.queue then
-      local shield = "none"
-      local battle = "none"
-      local chasten = "none"
-      local call = ""
-      local string = ""
-      local baseDamage = 1800
-      local sensitivityBonus = 0
-      local sensitivityBonus = snd.checkAff("sensitivity") and 0.30 or 0
-      local afflictionBonus = 0
-      local afflictionsAboveFive = 0
-      local afflictionsAboveFive = (#snd.target_has - 5) &gt; 0 and #snd.target_has - 5 or 0
-      if afflictionsAboveFive &gt; 0 then 
-        afflictionBonus = afflictionsAboveFive * 0.08
-        if afflictionBonus &gt; 0.80 then
-          afflictionBonus = 0.80
-        end
-      end
-      local totalDamage = 0
-      totalDamage = baseDamage * (1 + afflictionBonus)
-      totalDamage = totalDamage * (1 + sensitivityBonus)
-      totalDamage = totalDamage + 290
-      local can_hellsight = false
-      if ((snd.timer_check("fitness", 10, "more than") and snd.checksomeAffs({"asthma", "weariness"}, 2)) or (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checksomeAffs({"asthma", "impatience"}, 2))) then
-         can_hellsight = true
-      elseif (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checkAff("asthma") and snd.checkAff("impatience")) then
-	       can_hellsight = true
-      elseif snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1) and snd.checkAff("asthma") then
-	       can_hellsight = true
-      elseif (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness")) then
-	       can_hellsight = true
-      end
+	if not snd.waiting.queue then
+    local testing = gmcp.Room.Info.area
+    if testing:find("Twin") then
+      twinstate = true
+    else
+      twinstate = false
+    end
+		local shield = "none"
+		local battle = "none"
+		local chasten = "none"
+		local call = ""
+		local string = ""
+		local can_hellsight = false
+		if ((snd.timer_check("fitness", 10, "more than") and snd.checksomeAffs({"asthma", "weariness"}, 2)) or (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checksomeAffs({"asthma", "impatience"}, 2))) then
+			can_hellsight = true
+		elseif (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checkAff("asthma") and snd.checkAff("impatience")) then
+			can_hellsight = true
+		elseif snd.timer_check("fitness", 3, "more than") and snd.checksomeAffs({"weariness","hypochondria","clumsiness"}, 1) and snd.checkAff("asthma") then
+			can_hellsight = true
+		elseif (snd.checksomeAffs({"stupidity", "paresis", "anorexia", "asthma"}, 3) and not snd.checkAff("slickness")) then
+			can_hellsight = true
+		end
     
-      snd.giving_shield = {
-        "no_courage",
-        "misery",
-        "weariness",
-        "paresis",
-        "disrupted",
-       }
-       
-      if snd.checksomeAffs({"asthma", "slickness"}, 2) and not snd.checkAff("anorexia") then -- spur   
-        snd.giving_battle = {
-          "anorexia",  
-          "impatience", 
-          "stupidity", 
-          "self_pity",  
-          "mania",
-          "vertigo",   
-          "migraine",      
-          "ringing_ears",
-        }      
-      elseif not snd.checkAff("migraine") and snd.checkAff("hellsight") then   
-        snd.giving_battle = {
-          "migraine",   
-          "stupidity", 
-          "self_pity",  
-          "mania",
-          "vertigo",  
-          "anorexia", 
-          "ringing_ears",         
-        }     
-      else   
-        snd.giving_battle = {
-          "mania",
-          "ringing_ears",
-          "impatience", 
-          "anorexia",  
-          "self_pity",
-          "vertigo",
-          "stupidity",
-          "migraine",            
-        }      
-      end
-  
-      if snd.checksomeAffs({"asthma", "slickness"}, 2) and not snd.checkAff("anorexia") then    
-        snd.giving_chasten = {
-          "anorexia", 
-          "hypochondria",
-          "self_loathing",
-          "lethargy",   
-          "stupidity",
-          "agony",
-          "justice",  
-          "recklessness",
-          "dementia",
-          "paranoia",
-        }
-      elseif snd.checkAff("hallucinations") and not snd.checkAff("dementia") and not snd.checkAff("hellsight") then     
-        snd.giving_chasten = {
-          "dementia",
-          "hypochondria",
-          "lethargy",   
-          "stupidity",
-          "self_loathing",
-          "justice",  
-          "recklessness",
-          "paranoia",   
-          "anorexia",
-        }    
-      else    
-        snd.giving_chasten = { 
-          "hypochondria", 
-          "self_loathing",
-          "stupidity",
-          "lethargy", 
-          "justice", 
-          "dementia", 
-          "recklessness",  
-          "paranoia", 
-          "anorexia",
-        }
+		snd.giving_shield = {
+			"no_courage",
+			"weariness",
+			"paresis",
+			"disrupted",
+			"misery",
+		  }
+    
+    if not twinstate then
+      snd.giving_battle = {
+				"mania",
+				"impatience", 
+				"anorexia",  
+				"stupidity",
+				"ringing_ears",
+				"self_pity",
+				"vertigo",
+				"migraine",            
+				} 
+      snd.giving_chasten = { 
+				"hypochondria",
+				"anorexia", 
+				"stupidity",
+				"lethargy", 
+				"self_loathing",
+				"justice", 
+				"dementia", 
+				"recklessness",  
+				"paranoia", 
+				}
+    else
+      snd.giving_battle = {
+				"impatience", 
+				"anorexia",  
+				"stupidity",
+				"ringing_ears",
+				"self_pity",
+				"vertigo",
+				"migraine",            
+				"mania",
+				} 
+      snd.giving_chasten = { 
+				"hypochondria",
+				"anorexia", 
+				"stupidity",
+				"lethargy", 
+				"self_loathing",
+				"justice", 
+				"dementia", 
+				"recklessness",  
+				"paranoia", 
+				}
       end
 
-      cecho("\nPossible Damage: "..totalDamage)
-	  
-	  if snd.class == "Earthcaller" then      
-		--Shield aff pick
-		if snd.used.shield then
-			if snd.checkAff("mania") then
-				shield = "tectonic vent "..snd.target
-			else
-				shield = "shield raze "..snd.target
+		-- We need to build up disrupt/affs.
+		for i in ipairs(snd.giving_shield) do
+			if not snd.checkAff(snd.giving_shield[i]) and shield == "none" then
+				if snd.class == "Earthcaller" then
+					shield = snd.subjugation_attacks[snd.giving_shield[i]]
+				elseif snd.class == "Luminary" then
+					shield = snd.spirituality_attacks[snd.giving_shield[i]]
+				end
+				if shield ~= "none" then
+					shield = shield.." "..snd.target
+				end
 			end
-		elseif snd.used.rebounding then
-			if not snd.checkAff("mania") then
-				shield = "tectonic vent "..snd.target..snd.sep
-			elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-				shield = "dirge lull "..snd.target..snd.sep
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
-				shield = "beset "..snd.target..snd.sep   
-			elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
-				shield = "dirge hysteria "..snd.target..snd.sep
-			else
-				shield = "shield raze "..snd.target..snd.sep 
-			end     
-		elseif #snd.target_has &gt;= 4 and snd.checkAff("no_courage") and not snd.used.shield then
-		    if not snd.checkAff("writhe_transfix") then
-			     shield = "tectonic transfixion " .. snd.target..snd.sep
-		    else
+		end     
+		--Battle/Spur aff pick
+		if snd.balance.battle then
+			for i in ipairs(snd.giving_battle) do
+				if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
+					battle = snd.giving_battle[i]
+				end
+			end
+		end
+		--Chasten/Subdue aff pick
+		for i in ipairs(snd.giving_chasten) do
+			if not snd.checkAff(snd.giving_chasten[i]) and chasten == "none" and snd.giving_chasten[i] ~= battle then
+				chasten = snd.giving_chasten[i]
+			end
+		end
+	  
+		if snd.class == "Earthcaller" then      
+			--Shield aff pick
+			if snd.used.shield then
+				if snd.checkAff("mania") then
+					shield = "tectonic vent "..snd.target
+				else
+					shield = "shield raze "..snd.target
+				end
+			elseif snd.used.rebounding then
+				if not snd.checkAff("mania") and not twinstate then
+					shield = "tectonic vent "..snd.target..snd.sep
+				elseif not snd.checkAff("asthma") then
+					shield = "beset "..snd.target..snd.sep   
+				elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
+					shield = "dirge hysteria "..snd.target..snd.sep
+				else
+					shield = "shield raze "..snd.target..snd.sep 
+				end    
+      elseif not snd.checkAff("writhe_transfix") and not twinstate and snd.checkAff("no_courage") and not snd.used.shield then
+        shield = "tectonic transfixion " .. snd.target..snd.sep 
+			elseif #snd.target_has &gt;= 4 and not snd.used.shield and snd.proned() then
 				shield = "shield deface " .. snd.target..snd.sep
 				if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
-    				shield = "osso spur " .. snd.target .. " sensitivity" .. snd.sep .. shield
-			    end
-			end
-		elseif (#snd.target_has &gt;= 10 or tonumber(totalDamage) &gt;= tonumber(snd.health_percent)) and snd.proned() then
-			shield = "shield deface " .. snd.target..snd.sep
-		else
-			-- We need to build up disrupt/affs.
-			for i in ipairs(snd.giving_shield) do
-				if not snd.checkAff(snd.giving_shield[i]) and shield == "none" then
-					shield = snd.subjugation_attacks[snd.giving_shield[i]]
-					if shield ~= "none" then
-						shield = shield.." "..snd.target
-					end
+					shield = "osso spur " .. snd.target .. " sensitivity" .. snd.sep .. shield
 				end
-			end
-		end
-      
-		--Battle/Spur aff pick
-		if snd.balance.battle then
-			for i in ipairs(snd.giving_battle) do
-				if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-					battle = snd.giving_battle[i]
-				end
-		    end
-	    end
-	
-		--Chasten/Subdue aff pick
-		for i in ipairs(snd.giving_chasten) do
-		    if not snd.checkAff(snd.giving_chasten[i]) and chasten == "none" and snd.giving_chasten[i] ~= battle then
-			     chasten = snd.giving_chasten[i]
-		    end
-	    end
+			end 
  
-		if battle ~= "none" and snd.balance.battle then
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = "wt spur " .. snd.target .. ": " .. battle .. snd.sep
-			end
-			string = string.."osso spur "..snd.target.." "..battle..snd.sep
-		end
-      
-		if shield ~= "none" then
-		--Add shield/tectonics/dirge attacks
-			string = string..shield..snd.sep
-		end
-	  
-		--Add chasten/subdue choice
-		if not (shield:find("crush") or shield:find("fault") or shield:find("beset") or shield:find("transfix") or shield:find("hysteria") or shield:find("crash") or shield:find("vent")) then
-			if chasten == "none" then
-				string = string.."subdue "..snd.target
-			else
+			if battle ~= "none" and snd.balance.battle then
 				if snd.toggles.affcalling and not snd.target_gone then
-					string = string .. "wt subdue " .. snd.target .. ": " .. chasten .. snd.sep
+					string = "wt spur " .. snd.target .. ": " .. battle .. snd.sep
 				end
-				string = string.."subdue "..snd.target.." "..chasten..snd.sep
+				string = string.."osso spur "..snd.target.." "..battle..snd.sep
 			end
-		end
       
-		if not shield:find("deface") and not shield:find("transfixion") then
-			if not snd.checkAff("hellsight") and can_hellsight then
-				string = "dirge reckoning "..snd.target..snd.sep 
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") then
-				string = "beset "..snd.target..snd.sep   
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 1) and not snd.checkAff("asthma") and not snd.checkAff("agony") then
-				string = "beset "..snd.target..snd.sep   
-			elseif snd.checkAff("agony") and #snd.target_has &gt;= 4 and not snd.checkAff("faulted") then
-				string = "tectonic fault "..snd.target..snd.sep
-			elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
-				string = "osso bleach "..snd.target..snd.sep
+			if shield ~= "none" then
+			--Add shield/tectonics/dirge attacks
+				string = string..shield..snd.sep
 			end
-		end
+	  
+			--Add chasten/subdue choice
+			if not (shield:find("crush") or shield:find("fault") or shield:find("beset") or shield:find("transfix") or shield:find("hysteria") or shield:find("crash") or shield:find("vent")) then
+				if chasten == "none" then
+					string = string.."subdue "..snd.target
+				else
+					if snd.toggles.affcalling and not snd.target_gone then
+						string = string .. "wt subdue " .. snd.target .. ": " .. chasten .. snd.sep
+					end
+					string = string.."subdue "..snd.target.." "..chasten..snd.sep
+				end
+			end
       
-		if snd.theytumbling and not snd.checkAff("hellsight") then
-			string = "dirge ordain "..snd.target.." stop"
-		elseif not table.contains(snd.players_here, snd.target) then
-			string = "osso lurch "..snd.target
-		end
+			if not shield:find("deface") and not shield:find("transfixion") then
+				if not snd.checkAff("hellsight") and can_hellsight then
+					string = "dirge reckoning "..snd.target..snd.sep 
+				elseif not snd.checkAff("asthma") then
+					string = "beset "..snd.target..snd.sep   
+				elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
+					string = "osso bleach "..snd.target..snd.sep
+				end
+			end
+      
+			if snd.theytumbling and not snd.checkAff("hellsight") then
+				string = "dirge ordain "..snd.target.." stop"
+			elseif not table.contains(snd.players_here, snd.target) then
+				string = "osso lurch "..snd.target
+			end
 
-		if snd.mana_percent &lt;= 43 and not snd.used.shield then
-			string = "osso fragment "..snd.target..snd.sep
-		end
-      
-		if snd.defenses.def_seismicity.state ~= "deffed" then
-			string = "TECTONIC SEISMICITY"..snd.sep..string
-		end
-      
-		if snd.not_aff("disfigurement") and table.contains(snd.players_here, snd.target) and #snd.players_here &lt;= 1 then
-			string = "osso glean "..snd.target..snd.sep.."contemplate "..snd.target..snd.sep..string
-		else
-			string = "contemplate "..snd.target..snd.sep..string
-		end
-      
-		if snd.needswarm then
-			string = "contemplate "..snd.target..snd.sep.."osso draw"
-		end
-      
-		if string:find("deface") then
-			if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-				string = "quickwield right crozier"..snd.sep..string
+			if snd.mana_percent &lt;= 43 and not snd.used.shield then
+				string = "osso fragment "..snd.target..snd.sep
 			end
-			if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
-				string = "quickwield left tower"..snd.sep..string
+      
+			if snd.defenses.def_seismicity.state ~= "deffed" then
+				string = "TECTONIC SEISMICITY"..snd.sep..string
 			end
-		else
-			if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-				string = "quickwield right crozier"..snd.sep..string
-			end
-			if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-				string = "quickwield left buckler"..snd.sep..string
-			end
-		end
-	elseif snd.class == "Luminary" then        
-		--Shield aff pick
-		if snd.used.shield then
-			if snd.checkAff("mania") then
-				shield = "evoke heatwave "..snd.target
+      
+			if snd.not_aff("disfigurement") and table.contains(snd.players_here, snd.target) and #snd.players_here &lt;= 1 then
+				string = "osso glean "..snd.target..snd.sep.."contemplate "..snd.target..snd.sep..string
 			else
-				shield = "shield raze "..snd.target
+				string = "contemplate "..snd.target..snd.sep..string
 			end
-		elseif snd.used.rebounding then
-			if not snd.checkAff("mania") then
-				shield = "evoke heatwave "..snd.target..snd.sep
-			elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-				shield = "perform peace "..snd.target..snd.sep
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
-				shield = "lambaste "..snd.target..snd.sep   
-			elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
-				shield = "perform dazzle "..snd.target..snd.sep
+      
+			if snd.needswarm then
+				string = "contemplate "..snd.target..snd.sep.."osso draw"
+			end
+    
+      if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
+			 string = "quickwield right crozier"..snd.sep..string
+		  end	
+      
+			if string:find("deface") then
+				if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
+					string = "quickwield left tower"..snd.sep..string
+				end
 			else
-				shield = "shield raze "..snd.target..snd.sep 
-			end     
-		elseif #snd.target_has &gt;= 4 and snd.checkAff("no_courage") and not snd.used.shield then
-		    if not snd.checkAff("writhe_transfix") then
-			     shield = "evoke transfixion " .. snd.target..snd.sep
-		    else
+				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
+					string = "quickwield left buckler"..snd.sep..string
+				end
+			end
+		elseif snd.class == "Luminary" then        
+			--Shield aff pick
+			if snd.used.shield then
+				if snd.checkAff("mania") then
+					shield = "evoke heatwave "..snd.target
+				else
+					shield = "shield raze "..snd.target
+				end
+			elseif snd.used.rebounding then
+				if not snd.checkAff("mania") and not twinstate then
+					shield = "evoke heatwave "..snd.target..snd.sep
+				elseif not snd.checkAff("asthma") then
+					shield = "lambaste "..snd.target..snd.sep   
+				elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
+					shield = "perform dazzle "..snd.target..snd.sep
+				else
+					shield = "shield raze "..snd.target..snd.sep 
+				end			    
+      elseif not snd.checkAff("writhe_transfix") and not twinstate and snd.checkAff("no_courage") and not snd.used.shield then
+				shield = "evoke transfixion " .. snd.target..snd.sep
+			elseif #snd.target_has &gt;= 4 and not snd.used.shield and snd.proned() then
 				shield = "shield overwhelm " .. snd.target..snd.sep
 				if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
-    				shield = "angel  battle " .. snd.target .. " sensitivity" .. snd.sep .. shield
-			    end
-			end
-		elseif (#snd.target_has &gt;= 10 or tonumber(totalDamage) &gt;= tonumber(snd.health_percent)) and snd.proned() then
-			shield = "shield overwhelm " .. snd.target..snd.sep
-		else
-			-- We need to build up disrupt/affs.
-			for i in ipairs(snd.giving_shield) do
-				if not snd.checkAff(snd.giving_shield[i]) and shield == "none" then
-					shield = snd.spirituality_attacks[snd.giving_shield[i]]
-					if shield ~= "none" then
-						shield = shield.." "..snd.target
-					end
+					shield = "angel  battle " .. snd.target .. " sensitivity" .. snd.sep .. shield
 				end
 			end
-		end
-      
-		--Battle/Spur aff pick
-		if snd.balance.battle then
-			for i in ipairs(snd.giving_battle) do
-				if not snd.checkAff(snd.giving_battle[i]) and battle == "none" then
-					battle = snd.giving_battle[i]
-				end
-		    end
-	    end
-	
-		--Chasten/Subdue aff pick
-		for i in ipairs(snd.giving_chasten) do
-		    if not snd.checkAff(snd.giving_chasten[i]) and chasten == "none" and snd.giving_chasten[i] ~= battle then
-			     chasten = snd.giving_chasten[i]
-		    end
-	    end
  
-		if battle ~= "none" and snd.balance.battle then
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = "wt battle " .. snd.target .. ": " .. battle .. snd.sep
-			end
-			string = string.."angel battle "..snd.target.." "..battle..snd.sep
-		end
-      
-		if shield ~= "none" then
-		--Add shield/tectonics/dirge attacks
-			string = string..shield..snd.sep
-		end
-	  
-		--Add chasten/subdue choice
-		if not (shield:find("crush") or shield:find("sear") or shield:find("lambaste") or shield:find("transfix") or shield:find("dazzle") or shield:find("crash") or shield:find("heatwave")) then
-			if chasten == "none" then
-				string = string.."chasten "..snd.target
-			else
+			if battle ~= "none" and snd.balance.battle then
 				if snd.toggles.affcalling and not snd.target_gone then
-					string = string .. "wt chasten " .. snd.target .. ": " .. chasten .. snd.sep
+					string = "wt battle " .. snd.target .. ": " .. battle .. snd.sep
 				end
-				string = string.."chasten "..snd.target.." "..chasten..snd.sep
+				string = string.."angel battle "..snd.target.." "..battle..snd.sep
 			end
-		end
       
-		if not shield:find("overwhelm") and not shield:find("transfixion") then
-			if not snd.checkAff("hellsight") and can_hellsight then
-				string = "perform hellsight "..snd.target..snd.sep 
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") then
-				string = "lambaste "..snd.target..snd.sep   
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 1) and not snd.checkAff("asthma") and not snd.checkAff("agony") then
-				string = "lambaste "..snd.target..snd.sep   
-			elseif snd.checkAff("agony") and #snd.target_has &gt;= 4 and not snd.checkAff("tree_seared") then
-				string = "evoke sear "..snd.target..snd.sep
-			elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
-				string = "angel sap "..snd.target..snd.sep
+			if shield ~= "none" then
+			--Add shield/tectonics/dirge attacks
+				string = string..shield..snd.sep
 			end
-		end
+	  
+			--Add chasten/subdue choice
+			if not (shield:find("crush") or shield:find("sear") or shield:find("lambaste") or shield:find("transfix") or shield:find("dazzle") or shield:find("crash") or shield:find("heatwave")) then
+				if chasten == "none" then
+					string = string.."chasten "..snd.target
+				else
+					if snd.toggles.affcalling and not snd.target_gone then
+						string = string .. "wt chasten " .. snd.target .. ": " .. chasten .. snd.sep
+					end
+					string = string.."chasten "..snd.target.." "..chasten..snd.sep
+				end
+			end
       
-		if snd.theytumbling and not snd.checkAff("hellsight") then
-			string = "perform force "..snd.target.." stop"
-		--elseif not table.contains(snd.players_here, snd.target) then
-			--string = "osso lurch "..snd.target
-		end
+			if not shield:find("overwhelm") and not shield:find("transfixion") then
+				if not snd.checkAff("hellsight") and can_hellsight then
+					string = "perform hellsight "..snd.target..snd.sep 
+				elseif not snd.checkAff("asthma") then
+					string = "lambaste "..snd.target..snd.sep   
+				elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
+					string = "angel sap "..snd.target..snd.sep
+				end
+			end
+      
+			if snd.theytumbling and not snd.checkAff("hellsight") then
+				string = "perform force "..snd.target.." stop"
+			--elseif not table.contains(snd.players_here, snd.target) then
+				--string = "osso lurch "..snd.target
+			end
 
-		if snd.mana_percent &lt;= 43 and not snd.used.shield then
-			string = "angel absolve "..snd.target..snd.sep
-		end
+			if snd.mana_percent &lt;= 43 and not snd.used.shield then
+				string = "angel absolve "..snd.target..snd.sep
+			end
       
-		if snd.defenses.def_shine.state ~= "deffed" then
-			string = "evoke shine"..snd.sep..string
-		end
+			if snd.defenses.def_shine.state ~= "deffed" then
+				string = "evoke shine"..snd.sep..string
+			end
       
-		if snd.not_aff("disfigurement") and table.contains(snd.players_here, snd.target) and #snd.players_here &lt;= 1 then
-			string = "angel seek "..snd.target..snd.sep.."contemplate "..snd.target..snd.sep..string
-		else
-			string = "contemplate "..snd.target..snd.sep..string
-		end
+			if snd.not_aff("disfigurement") and table.contains(snd.players_here, snd.target) and #snd.players_here &lt;= 1 then
+				string = "angel seek "..snd.target..snd.sep.."contemplate "..snd.target..snd.sep..string
+			else
+				string = "contemplate "..snd.target..snd.sep..string
+			end
       
-		if snd.needswarm then
-			string = "contemplate "..snd.target..snd.sep.."angel summon"
-		end
+			if snd.needswarm then
+				string = "contemplate "..snd.target..snd.sep.."angel summon"
+			end
     
     if not string.find(gmcp.Char.Vitals.wield_right, "mace") then
 			string = "quickwield right mace"..snd.sep..string
@@ -25324,14 +25093,14 @@ function snd.attack_function()
 				string = "quickwield left buckler"..snd.sep..string
 			end
 		end
-	end
+		end
 	
-	if string ~= snd.last_attack and not snd.waiting.queue then
-		snd.last_attack = string
-		snd.attack(snd.last_attack)
-		snd.waiting.queue = true
-		tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-	end
+		if string ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = string
+			snd.attack(snd.last_attack)
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end
 	end
 end</script>
 								<command></command>
@@ -25342,7 +25111,13 @@ end</script>
 								<name>Combo Limb Support</name>
 								<script>snd.starting_attack()
 function snd.attack_function()
-    local limbList = {"left leg", "right leg", "left arm", "right arm"}
+  local testing = gmcp.Room.Info.area
+  if testing:find("Twin") then
+    twinstate = true
+  else
+    twinstate = false
+  end
+  local limbList = {"left leg", "right leg", "left arm", "right arm"}
 	local battleStack = {"anorexia", "impatience", "mania", "stupidity", "ringing_ears", "vertigo", "self_pity", "migraine"}
 	local chastenStack = {"anorexia", "recklessness", "justice", "stupidity", "self_loathing", "paranoia", "hypochondria", "lethargy"}
 	local overwhelmChasten = {"recklessness", "anorexia", "masochism", "stupidity", "self_loathing", "paranoia", "hypochondria", "lethargy"}
@@ -25384,17 +25159,15 @@ function snd.attack_function()
 	  if snd.class == "Earthcaller" then      
 		--Shield aff pick
 		if snd.used.shield then
-			if snd.checkAff("impatience") and not snd.checksomeAffs({"hallucinations", "mania"}, 2) then
+			if not snd.checkAff("mania") and not twinstate then
 				shield = "tectonic vent "..snd.target
 			else
 				shield = "shield raze "..snd.target
 			end
 		elseif snd.used.rebounding then
-			if snd.checkAff("impatience") and not snd.checksomeAffs({"hallucinations", "mania"}, 2) then
+			if not snd.checkAff("mania") and not twinstate then
 				shield = "tectonic vent "..snd.target..snd.sep
-			elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-				shield = "dirge lull "..snd.target..snd.sep
-			elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
+			elseif not snd.checkAff("asthma") then
 				shield = "beset "..snd.target..snd.sep   
 			elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
 				shield = "dirge hysteria "..snd.target..snd.sep
@@ -25488,32 +25261,30 @@ function snd.attack_function()
 		if snd.needswarm then
 			string = "contemplate "..snd.target..snd.sep.."osso draw"
 		end
+    
+      if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
+			 string = "quickwield right crozier"..snd.sep..string
+		  end	
       
-		if string:find("deface") then
-			if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-				string = "quickwield right crozier"..snd.sep..string
+			if string:find("deface") then
+				if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
+					string = "quickwield left tower"..snd.sep..string
+				end
+			else
+				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
+					string = "quickwield left buckler"..snd.sep..string
+				end
 			end
-			if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
-				string = "quickwield left tower"..snd.sep..string
-			end
-		else
-			if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-				string = "quickwield right crozier"..snd.sep..string
-			end
-			if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-				string = "quickwield left buckler"..snd.sep..string
-			end
-		end
 	elseif snd.class == "Luminary" then        
 		--Shield aff pick
 		if snd.used.shield then
-			if snd.checkAff("impatience") and not snd.checksomeAffs({"hallucinations", "mania"}, 2) then
+			if not snd.checkAff("mania") and not twinstate then
 				shield = "evoke heatwave "..snd.target
 			else
 				shield = "shield raze "..snd.target
 			end
 		elseif snd.used.rebounding then
-			if snd.checkAff("impatience") and not snd.checksomeAffs({"hallucinations", "mania"}, 2) then
+			if not snd.checkAff("mania") and not twinstate then
 				shield = "evoke heatwave "..snd.target..snd.sep
 			elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
 				shield = "perform peace "..snd.target..snd.sep
@@ -25640,32 +25411,21 @@ end</script>
 								<regex>^limbs$</regex>
 							</Alias>
 							<Alias isActive="yes" isFolder="no">
-								<name>Super Testing</name>
+								<name>Combo Lock Support</name>
 								<script>snd.starting_attack()
 function snd.attack_function()
 	if not snd.waiting.queue then
+    local testing = gmcp.Room.Info.area
+    if testing:find("Twin") then
+      twinstate = true
+    else
+      twinstate = false
+    end
 		local shield = "none"
 		local battle = "none"
 		local chasten = "none"
 		local call = ""
 		local string = ""
-		local baseDamage = 1800
-		local sensitivityBonus = 0
-		local sensitivityBonus = snd.checkAff("sensitivity") and 0.30 or 0
-		local afflictionBonus = 0
-		local afflictionsAboveFive = 0
-		local afflictionsAboveFive = (#snd.target_has - 5) &gt; 0 and #snd.target_has - 5 or 0
-		if afflictionsAboveFive &gt; 0 then 
-			afflictionBonus = afflictionsAboveFive * 0.08
-			if afflictionBonus &gt; 0.80 then
-				afflictionBonus = 0.80
-			end
-		end
-		local totalDamage = 0
-		totalDamage = baseDamage * (1 + afflictionBonus)
-		totalDamage = totalDamage * (1 + sensitivityBonus)
-		totalDamage = totalDamage + 290
-		local can_hellsight = false
 		if ((snd.timer_check("fitness", 10, "more than") and snd.checksomeAffs({"asthma", "weariness"}, 2)) or (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checksomeAffs({"asthma", "impatience"}, 2))) then
 			can_hellsight = true
 		elseif (snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checksomeAffs({"agony", "accursed"}, 1) and snd.checkAff("asthma") and snd.checkAff("impatience")) then
@@ -25677,87 +25437,59 @@ function snd.attack_function()
 		end
     
 		snd.giving_shield = {
+			"paresis",
+			"weariness",
+			"disrupted",
 			"no_courage",
 			"misery",
-			"weariness",
-			"paresis",
-			"disrupted",
-			}
-       
-		if snd.checksomeAffs({"asthma", "slickness"}, 2) and not snd.checkAff("anorexia") then -- spur   
-			snd.giving_battle = {
-				"anorexia",  
-				"impatience", 
-				"stupidity", 
-				"self_pity",  
+		  }
+    
+    if not twinstate then
+      snd.giving_battle = {
 				"mania",
-				"vertigo",   
-				"migraine",      
-				"ringing_ears",
-				}   
-				snd.giving_chasten = {
-					"anorexia", 
-					"hypochondria",
-					"self_loathing",
-					"lethargy",   
-					"stupidity",
-					"agony",
-					"justice",  
-					"recklessness",
-					"dementia",
-					"paranoia",
-				}   
-		elseif not snd.checkAff("migraine") and snd.checkAff("hellsight") then   
-			snd.giving_battle = {
-				"migraine",   
-				"stupidity", 
-				"self_pity",  
-				"mania",
-				"vertigo",  
-				"anorexia", 
-				"ringing_ears",         
-				}     
-		else   
-			snd.giving_battle = {
-				"mania",
-				"ringing_ears",
 				"impatience", 
 				"anorexia",  
+				"stupidity",
+				"ringing_ears",
 				"self_pity",
 				"vertigo",
-				"stupidity",
 				"migraine",            
-				}      
-		end
-  
-		if snd.checkAff("hallucinations") and not snd.checkAff("dementia") and not snd.checkAff("hellsight") then     
-			snd.giving_chasten = {
-				"dementia",
+				} 
+      snd.giving_chasten = { 
 				"hypochondria",
-				"lethargy",   
-				"stupidity",
-				"self_loathing",
-				"justice",  
-				"recklessness",
-				"paranoia",   
-				"anorexia",
-				}    
-		else    
-			snd.giving_chasten = { 
-				"hypochondria", 
-				"self_loathing",
+				"anorexia", 
 				"stupidity",
 				"lethargy", 
+				"self_loathing",
 				"justice", 
 				"dementia", 
 				"recklessness",  
 				"paranoia", 
-				"anorexia",
 				}
-		end
+    else
+      snd.giving_battle = {
+				"impatience", 
+				"anorexia",  
+				"stupidity",
+				"ringing_ears",
+				"self_pity",
+				"vertigo",
+				"migraine",            
+				"mania",
+				} 
+      snd.giving_chasten = { 
+				"hypochondria",
+				"anorexia", 
+				"stupidity",
+				"lethargy", 
+				"self_loathing",
+				"justice", 
+				"dementia", 
+				"recklessness",  
+				"paranoia", 
+				}
+      end
 
-		cecho("\nPossible Damage: "..totalDamage)
-		
 		-- We need to build up disrupt/affs.
 		for i in ipairs(snd.giving_shield) do
 			if not snd.checkAff(snd.giving_shield[i]) and shield == "none" then
@@ -25795,28 +25527,20 @@ function snd.attack_function()
 					shield = "shield raze "..snd.target
 				end
 			elseif snd.used.rebounding then
-				if not snd.checkAff("mania") then
+				if not snd.checkAff("mania") and not twinstate then
 					shield = "tectonic vent "..snd.target..snd.sep
-				elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-					shield = "dirge lull "..snd.target..snd.sep
-				elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
+				elseif not snd.checkAff("asthma") then
 					shield = "beset "..snd.target..snd.sep   
 				elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
 					shield = "dirge hysteria "..snd.target..snd.sep
 				else
 					shield = "shield raze "..snd.target..snd.sep 
 				end     
-			elseif #snd.target_has &gt;= 4 and snd.checkAff("no_courage") and not snd.used.shield then
-				if not snd.checkAff("writhe_transfix") then
-					shield = "tectonic transfixion " .. snd.target..snd.sep
-				else
-					shield = "shield deface " .. snd.target..snd.sep
-					if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
-						shield = "osso spur " .. snd.target .. " sensitivity" .. snd.sep .. shield
-					end
-				end
-			elseif (#snd.target_has &gt;= 10 or tonumber(totalDamage) &gt;= tonumber(snd.health_percent)) and snd.proned() then
+			elseif #snd.target_has &gt;= 4 and snd.proned() and not snd.used.shield then
 				shield = "shield deface " .. snd.target..snd.sep
+				if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
+					shield = "osso spur " .. snd.target .. " sensitivity" .. snd.sep .. shield
+				end
 			end 
  
 			if battle ~= "none" and snd.balance.battle then
@@ -25846,12 +25570,8 @@ function snd.attack_function()
 			if not shield:find("deface") and not shield:find("transfixion") then
 				if not snd.checkAff("hellsight") and can_hellsight then
 					string = "dirge reckoning "..snd.target..snd.sep 
-				elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") then
+				elseif not snd.checkAff("asthma") then
 					string = "beset "..snd.target..snd.sep   
-				elseif snd.checksomeAffs({"hypochondria", "weariness"}, 1) and not snd.checkAff("asthma") and not snd.checkAff("agony") then
-					string = "beset "..snd.target..snd.sep   
-				elseif snd.checkAff("agony") and #snd.target_has &gt;= 4 and not snd.checkAff("faulted") then
-					string = "tectonic fault "..snd.target..snd.sep
 				elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
 					string = "osso bleach "..snd.target..snd.sep
 				end
@@ -25880,18 +25600,16 @@ function snd.attack_function()
 			if snd.needswarm then
 				string = "contemplate "..snd.target..snd.sep.."osso draw"
 			end
+    
+      if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
+			 string = "quickwield right crozier"..snd.sep..string
+		  end	
       
 			if string:find("deface") then
-				if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-					string = "quickwield right crozier"..snd.sep..string
-				end
 				if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
 					string = "quickwield left tower"..snd.sep..string
 				end
 			else
-				if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-					string = "quickwield right crozier"..snd.sep..string
-				end
 				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
 					string = "quickwield left buckler"..snd.sep..string
 				end
@@ -25905,28 +25623,20 @@ function snd.attack_function()
 					shield = "shield raze "..snd.target
 				end
 			elseif snd.used.rebounding then
-				if not snd.checkAff("mania") then
+				if not snd.checkAff("mania") and not twinstate then
 					shield = "evoke heatwave "..snd.target..snd.sep
-				elseif not snd.checkAff("peace") and snd.checksomeAffs({"hypochondria", "weariness"}, 1) and snd.checkAff("asthma") and snd.checkAff("accursed") then
-					shield = "perform peace "..snd.target..snd.sep
-				elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") and snd.checksomeAffs({"agony", "accursed"}, 1) then
+				elseif not snd.checkAff("asthma") then
 					shield = "lambaste "..snd.target..snd.sep   
 				elseif not snd.checkAff("confusion") and snd.checkAff("impatience") and not snd.checkAff("dizziness") then
 					shield = "perform dazzle "..snd.target..snd.sep
 				else
 					shield = "shield raze "..snd.target..snd.sep 
 				end     
-			elseif #snd.target_has &gt;= 4 and snd.checkAff("no_courage") and not snd.used.shield then
-				if not snd.checkAff("writhe_transfix") then
-					shield = "evoke transfixion " .. snd.target..snd.sep
-				else
-					shield = "shield overwhelm " .. snd.target..snd.sep
-					if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
-						shield = "angel  battle " .. snd.target .. " sensitivity" .. snd.sep .. shield
-					end
-				end
-			elseif (#snd.target_has &gt;= 10 or tonumber(totalDamage) &gt;= tonumber(snd.health_percent)) and snd.proned() then
+			elseif #snd.target_has &gt;= 4 and snd.proned() and not snd.used.shield then
 				shield = "shield overwhelm " .. snd.target..snd.sep
+				if snd.checkAff("ringing_ears") and not snd.checkAff("sensitivity") then
+					shield = "angel  battle " .. snd.target .. " sensitivity" .. snd.sep .. shield
+				end
 			end
  
 			if battle ~= "none" and snd.balance.battle then
@@ -25956,12 +25666,8 @@ function snd.attack_function()
 			if not shield:find("overwhelm") and not shield:find("transfixion") then
 				if not snd.checkAff("hellsight") and can_hellsight then
 					string = "perform hellsight "..snd.target..snd.sep 
-				elseif snd.checksomeAffs({"hypochondria", "weariness"}, 2) and not snd.checkAff("asthma") then
+				elseif not snd.checkAff("asthma") then
 					string = "lambaste "..snd.target..snd.sep   
-				elseif snd.checksomeAffs({"hypochondria", "weariness"}, 1) and not snd.checkAff("asthma") and not snd.checkAff("agony") then
-					string = "lambaste "..snd.target..snd.sep   
-				elseif snd.checkAff("agony") and #snd.target_has &gt;= 4 and not snd.checkAff("tree_seared") then
-					string = "evoke sear "..snd.target..snd.sep
 				elseif snd.mana_percent &lt;= 50 and snd.checkAff("accursed") and #snd.target_has &lt;= 8 then
 					string = "angel sap "..snd.target..snd.sep
 				end
@@ -26016,7 +25722,7 @@ function snd.attack_function()
 end</script>
 								<command></command>
 								<packageName></packageName>
-								<regex>^test$</regex>
+								<regex>^lock$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
@@ -26538,16 +26244,10 @@ end
       end
       
       if string:find("deface") then
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
         if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
           string = "quickwield left tower"..snd.sep..string
         end
       else
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
         if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
           string = "quickwield left buckler"..snd.sep..string
         end
@@ -26819,16 +26519,10 @@ if snd.class == "Earthcaller" then
       end
       
       if string:find("deface") then
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
         if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
           string = "quickwield left tower"..snd.sep..string
         end
       else
-        if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-          string = "quickwield right crozier"..snd.sep..string
-        end
         if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
           string = "quickwield left buckler"..snd.sep..string
         end
@@ -26868,8 +26562,8 @@ function snd.attack_function()
       local afflictionsAboveFive = 0
       local afflictionsAboveFive = (#snd.target_has - 5) &gt; 0 and #snd.target_has - 5 or 0
       if afflictionsAboveFive &gt; 0 then 
-		afflictionBonus = afflictionsAboveFive * 0.08
-		if afflictionBonus &gt; 0.80 then
+		  afflictionBonus = afflictionsAboveFive * 0.08
+		  if afflictionBonus &gt; 0.80 then
           afflictionBonus = 0.80
         end
       end
@@ -27113,18 +26807,16 @@ function snd.attack_function()
 		if snd.needswarm then
 			string = "contemplate "..snd.target..snd.sep.."osso draw"
 		end
+    
+    if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
+			string = "quickwield right crozier"..snd.sep..string
+		end
       
 		if string:find("deface") then
-			if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-				string = "quickwield right crozier"..snd.sep..string
-			end
 			if not string.find(gmcp.Char.Vitals.wield_left, "tower") then
 				string = "quickwield left tower"..snd.sep..string
 			end
 		else
-			if not string.find(gmcp.Char.Vitals.wield_right, "crozier") then
-				string = "quickwield right crozier"..snd.sep..string
-			end
 			if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
 				string = "quickwield left buckler"..snd.sep..string
 			end

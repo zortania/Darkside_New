@@ -1970,8 +1970,10 @@ snd.registerEvent("SunderGMCPRoomAddPlayer", "gmcp.Room.AddPlayer", gmcp_people_
       snd.toggle("generics")
     elseif gmcp.Room.Info.area == "the Offspring" and snd.toggles.generics then
       snd.toggle("generics")
+    elseif gmcp.Room.Info.area == "Enorian" and snd.toggles.generics then
+      snd.toggle("generics")
     elseif not snd.toggles.generics then
-      if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "the Offspring" and gmcp.Room.Info.area ~= "the Shattered Vortex" and gmcp.Room.Info.area ~= "Qor Qogol" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
+      if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Enorian" and gmcp.Room.Info.area ~= "the Offspring" and gmcp.Room.Info.area ~= "the Shattered Vortex" and gmcp.Room.Info.area ~= "Qor Qogol" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
         snd.toggle("generics")
       end
     end
@@ -25339,16 +25341,22 @@ function snd.attack(attack, new)
   else
     snd.need_dome = false
   end
-  
-      if snd.need_dome or snd.toggles.survive then
-        if snd.class == "Ravager" and snd.blitz then
-          snd.send("qeb rampage")
-        elseif snd.balance.dome then -- and not snd.toggles.survive
+      
+      if snd.need_dome then
+        if snd.balance.dome and snd.check_dome() then
           snd.do_dome()
-        elseif snd.balance.barrier and snd.barriering then
-					snd.send("qeb strum lyre")
-					snd.barriering = false
-					tempTimer(2,[[snd.barriering = true]])
+        elseif snd.class == "Ravager" and snd.blitz then
+          snd.send("qeb rampage")
+        elseif gmcp.Char.Status.name == "Mirse" and snd.shield_check then
+          snd.send("qeb touch shield")
+        elseif snd.balance.barrier and snd.barriering and gmcp.Char.Status.name == "Linyive" then
+			   snd.send("qeb strum lyre")
+			   snd.barriering = false
+   		   tempTimer(2,[[snd.barriering = true]])
+        elseif snd.class == "None" then
+          if (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon")) and not snd.self_prone() then
+            string = "aetherial revitalise"
+          end
         end
       elseif snd.class == "Wayfarer" then
         local axes = 0
@@ -48673,7 +48681,11 @@ function snd.earthcaller_bash()
   elseif snd.needswarm then
     battack = "osso draw"
 	else
-    battack = "osso count"..snd.sep.."quash "..snd.bashing.target
+    if snd.have_aff("clumsiness") or snd.have_aff("watery_eyes") or snd.have_aff("blurry_vision") then
+      battack = "osso count"..snd.sep.."tectonic ashfall "..snd.bashing.target
+    else
+      battack = "osso count"..snd.sep.."quash "..snd.bashing.target
+    end
     if not snd.graft then      
       battack = battack..snd.sep.."OSSO GRAFT"
     else
@@ -48926,6 +48938,26 @@ function snd.teradrim_bash()
     battack = "earth momentum "..snd.sep.."earth batter "..snd.bashing.target..snd.sep.."golem recover"
   else
 		battack = "earth batter "..snd.bashing.target..snd.sep.."golem recover"
+	end
+end
+
+function snd.tidesage_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  endur = 100*(gmcp.Char.Vitals.ep/gmcp.Char.Vitals.maxep)
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  
+  if snd.nopets then
+    battack = "synth call"
+  end
+	
+  if hp &lt;=40 and snd.shield_check then
+    battack = "touch shield"
+  elseif snd.runemarkMinor ~= "blue" or snd.runemarkMajor ~= "blue" then
+		battack = "tide daub blue upon blue"
+  elseif snd.balance.momentum and endur&gt;=45 then
+    battack = "tide hightide"..snd.sep.."tide clobber "..snd.bashing.target..snd.sep.."synth recuperate"
+  else
+		battack = "tide clobber "..snd.bashing.target..snd.sep.."synth recuperate"
 	end
 end
 
