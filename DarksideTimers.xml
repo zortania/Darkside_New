@@ -127,7 +127,8 @@ end</script>
 				</Timer>
 				<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 					<name>Firstaidstatustimer</name>
-					<script>if snd.toggles.active then
+					<script>
+if snd.toggles.active then
 	if gmcp.Char.Status.race == "Aetherial" and snd.endgamedef == "" then
 		snd.endgamedef = "safeguard"
 		snd.endgamehealth = "pulse"
@@ -146,17 +147,18 @@ end</script>
   local have_pill = gmcp.Char.Vitals.herb == "1"
   local have_poultice = gmcp.Char.Vitals.salve == "1"
 
-	if (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"paralysis","paresis"},1))
-		or (snd.checksomeSelfAffs({"accursed","hellsight"},2) and have_pipe and have_pill)
-		or snd.checksomeSelfAffs({"slickness","anorexia"},2)
-		or snd.checksomeSelfAffs({"weariness","slickness"},2)
-		or snd.checksomeSelfAffs({"confusion","paralysis"},2) 
-		or (snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.checksomeSelfAffs({"slickness","slough","anorexia"},2))
-		or (snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("anorexia"))
-		or snd.checksomeSelfAffs({"lameness","paralysis","anorexia"},3)
+	if (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"paralysis","paresis"},1) and (have_pipe and have_pill))
+		or ((snd.checksomeSelfAffs({"accursed","hellsight"},2) or snd.checksomeSelfAffs({"weariness","slickness"},2)) and have_pipe and have_pill)
+		or (snd.checksomeSelfAffs({"slickness","anorexia"},2) and (have_pipe and have_poultice))
+		or (snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.checksomeSelfAffs({"slickness","slough","anorexia"},2) and (have_pipe and have_pill and have_poultice))
+		or ((snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("anorexia") and (have_pill and have_poultice)))
+		or (snd.checksomeSelfAffs({"lameness","paralysis","anorexia"},3) and (have_pill and have_poultice))
 		or (snd.have_aff("aeon") and have_pipe)
+    or (snd.checksomeSelfAffs({"confusion","paralysis"},2) and have_pill)
     or (snd.checksomeSelfAffs({"slickness", "anorexia", "impatience"}, 2) and have_pill and (have_pipe or have_poultice)) 
-    or snd.checksomeSelfAffs({"slickness", "anorexia", "paralysis"}, 3) then
+    or (snd.checksomeSelfAffs({"slickness", "arrhythmia"}, 2) and (have_pipe and have_pill))
+    or (snd.checksomeSelfAffs({"slickness", "destroyed_throat"}, 2) and have_poultice)
+    or (snd.checksomeSelfAffs({"slickness", "anorexia", "paralysis"}, 3) and (have_pipe and have_pill and have_poultice)) then
 		snd.need_fitness = true 
 	else
 		snd.need_fitness = false
@@ -418,6 +420,11 @@ end</script>
 			if reclottimer_timer then killTimer(reclottimer_timer) end
 			reclottimer_timer = tempTimer(1,[[snd.clottime = true]])
 		end
+    if tonumber(gmcp.Char.Vitals.bleeding) &gt; 1500 and snd.cureset == "indorani" and snd.firstadder then
+      send("firstaid adder off")
+    elseif tonumber(gmcp.Char.Vitals.bleeding) &lt; 1500 and snd.cureset == "indorani" and not snd.firstadder then
+      send("firstaid adder 3")
+    end
 	end
   
 	snd.parry()
