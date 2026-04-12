@@ -2328,6 +2328,15 @@ function snd.do_queue()
         end      
         if snd.toggles.bashing and snd.bashing_loaded then
           snd.queue.bashing = true
+        end  
+        if snd.cureset == "bard" and snd.bashing.target == "heartcage" then
+          expandAlias("f")
+	      elseif snd.cureset == "bard" and snd.bashing.target == "ironcollar" then
+		      send("remove ironcollar")
+        elseif snd.not_aff("stun") and ((tonumber(gmcp.Char.Vitals.hp) &lt; 1350 or tonumber(snd.percentesthealth) &lt; 1350) and gmcp.Char.Vitals.hp ~= "0" and (tonumber(gmcp.Char.Vitals.mp) &gt; 3000 and tonumber(snd.percentestmana) &gt; 3000) and snd.not_aff("blackout") and snd.not_aff("asleep")) then
+          send(snd.endgamehealth)
+        elseif hp &lt;= 30 and snd.balance.crystal then
+          send("touch crystal")
         end
       end
       
@@ -2895,7 +2904,7 @@ snd.priorities =
     "def_shaman_warding",
     "def_insight",
     "def_foreststride",
-    "def_overwatch",
+    --"def_overwatch",
     "def_hypersight",
     "def_defiance",
     "def_glaciation",
@@ -7345,8 +7354,8 @@ end  </script>
       if snd.not_aff("stuttering") then
         checkstring = checkstring.."say"..snd.sep
       end 
-    elseif snd.hiddentype == "crescent" then
-      snd.hidden_afflictions = snd.hidden_afflictions + 1
+    --elseif snd.hiddentype == "crescent" then
+      --snd.hidden_afflictions = snd.hidden_afflictions + 1
     elseif snd.cureset == "praenomen" then
       if snd.not_aff("impatience") then
         checkstring = checkstring.."meditate"..snd.sep
@@ -12669,7 +12678,7 @@ def_smothering = "once",
 def_constitution = "once",
 def_insulation = "once",
 def_unbending = "on",
---def_cloak = "on",
+def_cloak = "on",
 },
 
 executor = {
@@ -12716,6 +12725,7 @@ luminary = {
     def_constitution = "once",
     def_insulation = "once",
     def_boilingblood = "once",
+    def_cloak = "on",
 },
 
 monk = {
@@ -16901,7 +16911,7 @@ function Sentinel_Attack_Choice(giving, left, right)
   for i, v in pairs(giving) do
     if not table.contains(snd.target_has, giving[i]) then
       if left == "none" then
-        if snd.used.shield or snd.used.rebounding then
+        if snd.used.shield or snd.used.rebounding or snd.eqbal_timer_check("rebounding", 0.2, "less than") then
           left = "reave"
         elseif table.contains(snd.dhuriv_first, snd.dhuriv_attacks[v]) then
           left = v
@@ -17052,7 +17062,7 @@ snd.accost_accomplices =
     for i, v in pairs(giving) do
       if not table.contains(snd.target_has, giving[i]) then -- and (snd.checkAff("destroyed_throat") and i ~= "anorexia")
         if left == "none" then
-          if snd.used.shield or snd.used.rebounding then
+          if snd.used.shield or snd.used.rebounding or snd.eqbal_timer_check("rebounding", 0.2, "less than") then
             left = "reave"
           elseif table.contains(snd.ringblade_first, snd.ringblade_attacks[v]) then
             left = v
@@ -17795,6 +17805,7 @@ snd.spirituality_attacks = {
   haemophilia = "lambaste",
   confusion = "perform dazzle",
   writhe_transfix = "evoke transfixion",
+  disrupted = "shield crash",
 }
 
 snd.subjugation_attacks = {
@@ -48905,7 +48916,7 @@ function snd.bashing_function()
 				end
 			end
       
-      if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") then
+      if snd.hidden_afflictions &gt;= 2 and snd.not_aff("hypochondria") then
         battack = "diag"
       end
         
@@ -51056,12 +51067,16 @@ registerAnonymousEventHandler("sysLoadEvent", "aatlas.load")</script>
   if string.find(x, "unstable section") then x = x:gsub("an unstable section of ", "") end
   
   if not aatlas.explored[x] and not surveyAttempt then
-    send("survey",false)
-    surveyAttempt = tempTimer(1, [[surveyAttempt = nil]])
+    if gmcp.Char.Status.name ~= "Mirse" then
+      send("survey",false)
+      surveyAttempt = tempTimer(1, [[surveyAttempt = nil]])
+    end
   elseif aatlas.explored[x] then
     if aatlas.explored[x].per &lt; 95 and (aatlas.dayDiff(x) &gt;= 7) and not surveyAttempt then
-      send("survey",false)
-      surveyAttempt = tempTimer(1, [[surveyAttempt = nil]])    
+      if gmcp.Char.Status.name ~= "Mirse" then
+        send("survey",false)
+        surveyAttempt = tempTimer(1, [[surveyAttempt = nil]])    
+      end
     end
   end
 end
