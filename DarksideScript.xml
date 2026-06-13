@@ -225,12 +225,9 @@ end</script>
     tempTimer(1, function()
       snd.connected = true
       snd.class = ""
-      if gmcp.Char.Status.name == "Linyive" then
+      if gmcp.Char.Status.name == "Affi" then
         snd.toggles.goggle_level = 20
-	      snd.toggles.gauntlet_level = 20
-      elseif gmcp.Char.Status.name == "Mirse" then
-        snd.toggles.goggle_level = 3
-	      snd.toggles.gauntlet_level = 2
+	      snd.toggles.gauntlet_level = 9
       else
         snd.toggles.goggle_level = 0
 	      snd.toggles.gauntlet_level = 0
@@ -1037,7 +1034,7 @@ function snd.reset_me()
   snd.cureset = "none"
   snd.firstaidresetlistnone()
   enableTimer("Firstaidstatustimer")
-  allergycount = 0
+  snd.allergycount = 0
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -1357,6 +1354,7 @@ melting = false,
   unbroken = true,
   trepidation = false,
   soulcage = true,
+  lifebloom = true,
   wand = true,
   fury = true,
   arouse = true, --predator arouse
@@ -1966,10 +1964,10 @@ snd.registerEvent("SunderGMCPRoomAddPlayer", "gmcp.Room.AddPlayer", gmcp_people_
       snd.toggle("generics")
     elseif gmcp.Room.Info.area == "the Shattered Vortex" and snd.toggles.generics then
       snd.toggle("generics")
-    elseif gmcp.Room.Info.area == "Enorian" and snd.toggles.generics then
-      snd.toggle("generics")
-    elseif not snd.toggles.generics then
-      if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Enorian" and gmcp.Room.Info.area ~= "the Shattered Vortex" and gmcp.Room.Info.area ~= "Qor Qogol" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
+    --elseif gmcp.Room.Info.area == "the Bloodwood" and snd.toggles.generics then
+    --  snd.toggle("generics")
+    elseif not snd.toggles.generics then-- and gmcp.Room.Info.area ~= "the Bloodwood"
+      if gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "the Shattered Vortex" and gmcp.Room.Info.area ~= "Qor Qogol" and gmcp.Room.Info.area ~= "The Forgotten Mausoleum" then --and gmcp.Room.Info.area ~= "Tcanna Island" and gmcp.Room.Info.area ~= "Dun Fortress" and gmcp.Room.Info.area ~= "Qor Qogol" 
         snd.toggle("generics")
       end
     end
@@ -2074,6 +2072,7 @@ end</script>
 					<script>function snd.deathCheck()
   if gmcp.Char.Afflictions.Add.name == "dead" then
     snd.reset_me()
+    snd.firstaid = false
   
     if snd.have_aff("pre_restore_left_leg") then snd.aff_remove("pre_restore_left_leg") end
     if snd.have_aff("pre_restore_right_leg") then snd.aff_remove("pre_restore_right_leg") end
@@ -2104,6 +2103,7 @@ function snd.deathClear()
         snd.defenses[i].needit = false
       end
       snd.toggles.active = true
+      snd.firstaid = false
       raiseEvent("sunder_update_toggles")
     end
   end
@@ -2158,7 +2158,7 @@ snd.registerEvent("SunderRiftChange", "gmcp.IRE.Rift.Change", riftChange)</scrip
 --- @module core
 function snd.core()
   if not gmcp.Char then return end
-  if not snd.channeling then
+  if gmcp.Char.Vitals.channeling ~= "1" then
     if snd.toggles.active then
       if not snd.waiting.lighting and snd.can_cast() and snd.not_aff("perplexity") and snd.not_aff("paresis")  then
         local commandSent = false
@@ -2212,7 +2212,7 @@ function snd.do_queue()
   snd.queue = {}
   mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
-  if not snd.channeling then
+  if gmcp.Char.Vitals.channeling ~= "1" then
     if snd.toggles.active then
       if not snd.pipes_lit and snd.toggles.lighting then
           snd.queue.lighting = true
@@ -2238,6 +2238,10 @@ function snd.do_queue()
               end
             elseif k == "def_soulcage" then
               if snd.balance.soulcage then
+                snd.queue[k] = true
+              end
+            elseif k == "def_lifebloom" then
+              if snd.balance.lifebloom then
                 snd.queue[k] = true
               end
             else
@@ -2270,16 +2274,16 @@ function snd.do_queue()
         if snd.need_fitness and snd.have_aff("asthma") then
           snd.do_fitness()
         end      
-        if snd.panacea_check() and snd.class == "Alchemist" then
+        if snd.panacea_check() and (snd.class == "Alchemist" or snd.class == "Shaman") then
           snd.do_panacea()
         end         
-        if snd.vein_check() and snd.class == "Bloodborn" then
+        if snd.vein_check() and (snd.class == "Bloodborn" or snd.class == "Ascendril") then
           snd.do_vein()
         end  
         if snd.recover_check() and (snd.class == "Ravager" or snd.class == "Zealot") then
           snd.do_recover()
         end     
-        if snd.leech_check() and snd.class == "Sciomancer" then
+        if snd.leech_check() and (snd.class == "Sciomancer" or snd.class == "Runecarver") then
           snd.do_sleech()
         end  
         if snd.absorb_check() and (snd.class == "Teradrim" or snd.class == "Tidesage") then
@@ -2291,10 +2295,10 @@ function snd.do_queue()
         if snd.might_check() and (snd.class == "Executor" or snd.class == "Sentinel") then
           snd.do_might()
         end       
-        if snd.purify_check() and snd.class == "Praenomen" then
+        if snd.purify_check() and (snd.class == "Praenomen" or snd.class == "Sylvan") then
           snd.do_purify()
         end     
-        if snd.purge_check() and snd.class == "Carnifex" then
+        if snd.purge_check() and (snd.class == "Carnifex" or snd.class == "Warden") then
           snd.do_purge()
         end 
         if snd.rage_check() then
@@ -2339,46 +2343,30 @@ function snd.do_queue()
           snd.queue.attack = true
         end
       end
+      local testing = gmcp.Room.Info.area
+      if testing:find("Conjunction") then
+        twinstate = true
+      else
+        twinstate = false
+      end
       
-      if snd.need_dome then
-        if snd.balance.dome and snd.check_dome() then
+      if snd.need_dome or snd.toggles.survive then
+        if snd.balance.dome and snd.check_dome() and not twinstate then
           snd.do_dome()
-        elseif gmcp.Char.Status.name == "Mirse" then
-          if gmcp.Char.Vitals.mounted == "0" then
-            snd.mount()
-          elseif gmcp.Char.Vitals.mounted == "1" then
-            snd.send("qeb panic mount")
-          elseif snd.shield_check then
-            snd.send("qeb touch shield")
-          end
         elseif gmcp.Char.Vitals.mounted == "1" then
           snd.send("qeb panic mount")
-        elseif snd.balance.barrier and snd.barriering and gmcp.Char.Status.name == "Linyive" then
-			   snd.send("qeb strum lyre")
-			   snd.barriering = false
-   		   tempTimer(2,[[snd.barriering = true]])
+        elseif snd.balance.barrier and snd.barriering then
+          snd.send("qeb strum lyre")
+          snd.barriering = false
+          tempTimer(2,[[snd.barriering = true]])
         elseif snd.class == "None" then
           if (hp &lt;= 75 or snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon")) and not snd.self_prone() then
             string = "aetherial revitalise"
           end
-        end
-      end
-      
-      if snd.toggles.survive then
-        if hp &lt; 75 and gmcp.Char.Status.name == "Mirse" then
-          if gmcp.Char.Vitals.mounted == "0" then
-            snd.mount()
-          elseif gmcp.Char.Vitals.mounted == "1" then
-            snd.send("qeb panic mount")
-          elseif snd.shield_check then
-            snd.send("qeb touch shield")
-          end        
-        elseif gmcp.Char.Vitals.mounted == "1" then
-          snd.send("qeb panic mount")
-        elseif snd.balance.barrier and snd.barriering and gmcp.Char.Status.name == "Linyive" then
-			   snd.send("qeb strum lyre")
-			   snd.barriering = false
-   		   tempTimer(2,[[snd.barriering = true]])
+        elseif gmcp.Char.Vitals.mounted == "0" then
+          snd.mount()
+        elseif snd.shield_check then
+          snd.send("qeb touch shield")
         end
       end
     end
@@ -2648,7 +2636,7 @@ snd.coreActionMap = snd.coreActionMap or {
 }
 
 function snd.do_stuff()
-if not snd.channeling then
+if gmcp.Char.Vitals.channeling ~= "1" then
   for _, i in ipairs(snd.priorities) do
     if snd.queue[i] then
       if snd.coreActionMap[i] then
@@ -2914,7 +2902,7 @@ snd.priorities =
     "def_shaman_warding",
     "def_insight",
     "def_foreststride",
-    --"def_overwatch",
+    "def_overwatch",
     "def_hypersight",
     "def_defiance",
     "def_glaciation",
@@ -3994,6 +3982,21 @@ end</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
+						<name>dome</name>
+						<packageName></packageName>
+						<script>
+function snd.do_dome()
+ if snd.full_balance() then
+  snd.send("manipulate pylon for dome")
+  snd.last_type = "dome"
+  snd.last_item = "dome"
+  snd.waiting.balance = true
+  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
+ end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
 						<name>purge annul</name>
 						<packageName></packageName>
 						<script>purge_threshold = 3
@@ -4080,21 +4083,6 @@ end
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
-						<name>dome</name>
-						<packageName></packageName>
-						<script>
-function snd.do_dome()
- if snd.full_balance() then
-  snd.send("manipulate pylon for dome")
-  snd.last_type = "dome"
-  snd.last_item = "dome"
-  snd.waiting.balance = true
-  tempTimer(snd.delay(), [[snd.waiting.balance = false]])
- end
-end</script>
-						<eventHandlerList />
-					</Script>
-					<Script isActive="yes" isFolder="no">
 						<name>rage</name>
 						<packageName></packageName>
 						<script>
@@ -4112,6 +4100,8 @@ end
 function snd.rage_check()
 
   if not snd.balance.rage then return false end
+  
+  if not hasSkill("Rage") then return false end
   
   if not gmcp then return false end
   if hp ~= nil then
@@ -4172,6 +4162,9 @@ function snd.do_purify()
   if snd.class == "Praenomen" then
     snd.send("purify blood")
     echo("(purify)")
+  elseif snd.class == "Sylvan" then
+    snd.send("naturalise")
+    echo("(naturalise)")
   else
     snd.send("succour")
     echo("(succour)")
@@ -4318,7 +4311,7 @@ end
 </script>
 						<eventHandlerList />
 					</Script>
-					<Script isActive="no" isFolder="no">
+					<Script isActive="yes" isFolder="no">
 						<name>recover / boost</name>
 						<packageName></packageName>
 						<script>function snd.recover_check()
@@ -7111,7 +7104,7 @@ end</script>
 		table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "faintness"))
 		table.insert(snd.ordered_list, 1, "faintness")
 	elseif snd.have_aff("allergies") and not snd.have_aff("asthma") and not snd.have_aff("paralysis") and not (snd.have_aff("clumsiness") or snd.have_aff("hypochondria") or snd.have_aff("weariness")) then
-		if tonumber(allergycount) &gt; 4 then
+		if tonumber(snd.allergycount) &gt; 4 then
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, "allergies"))
 		  table.insert(snd.ordered_list, 1, "allergies")
     end
@@ -8899,7 +8892,6 @@ local specialExits = {
   { from = 53444, to = 35242, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 71885, to = 26575, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 15985, to = 26572, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 15803, to = 1642, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 15867, to = 9968, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 15810, to = 32932, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 19621, to = 26633, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8983,7 +8975,6 @@ local specialExits = {
   { from = 1632, to = 26595, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1639, to = 60202, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1643, to = 19060, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 1642, to = 15803, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1641, to = 14926, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1640, to = 62996, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1647, to = 17600, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -10411,562 +10402,6 @@ function Persuasion.Load()
 end
 registerAnonymousEventHandler("sysDisconnectionEvent", "Persuasion.Save", true)
 registerAnonymousEventHandler("sysLoadEvent", "Persuasion.Load")</script>
-							<eventHandlerList />
-						</Script>
-					</ScriptGroup>
-				</ScriptGroup>
-				<ScriptGroup isActive="yes" isFolder="yes">
-					<name>demonnicAutoWalker</name>
-					<packageName>demonnicAutoWalker</packageName>
-					<script></script>
-					<eventHandlerList />
-					<ScriptGroup isActive="yes" isFolder="yes">
-						<name>demonwalker</name>
-						<packageName></packageName>
-						<script></script>
-						<eventHandlerList />
-						<Script isActive="yes" isFolder="no">
-							<name>Code</name>
-							<packageName></packageName>
-							<script>--[===[
-The MIT License (MIT)
-
-Copyright (c) 2020,2021 Damian Monogue
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
---]===]
-
-demonwalker = demonwalker or {}
-demonwalker.saveFile = getMudletHomeDir() .. "/demonwalkerconfig.lua"
-demonwalker.timerName = "demonwalkerPerfTimer"
-demonwalker.config = demonwalker.config or {}
-if demonwalker.enabled == nil then
-  demonwalker.enabled = false
-end
-
-function demonwalker:echo(msg)
-  if msg == nil then msg = "" end
-  cecho(string.format("\n&lt;purple&gt;(&lt;green&gt;Demonwalker&lt;purple&gt;):&lt;white&gt; %s", msg))
-end
-
-function demonwalker:debugEcho(msg)
-  if not demonwalker.config.debug then return end
-  local msgType = type(msg)
-  if msgType == "table" then
-    demonwalker:echo("DEBUG DISPLAY FOLLOWS\n")
-    display(msg)
-    return
-  end
-  demonwalker:echo("DEBUG: " .. tostring(msg))
-end
-
-function demonwalker:save()
-  table.save(demonwalker.saveFile, demonwalker.config)
-end
-
-function demonwalker:load()
-  local config = {}
-  local cfg = {}
-  local existingSave = io.exists(demonwalker.saveFile)
-  if existingSave then
-    table.load(demonwalker.saveFile, cfg)
-  end
-  if cfg.returnToStart == nil then
-    config.returnToStart = true
-  else
-    config.returnToStart = cfg.returnToStart
-  end
-  if cfg.debug == nil then
-    config.debug = false
-  else
-    config.debug = cfg.debug
-  end
-  config.avoidList = cfg.avoidList or {}
-  config.breadth = cfg.breadth or 10
-  if not _comp(config, cfg) then
-    -- there is a new value which was not in the save file, or there is no savefile yet
-    demonwalker:save()
-  end
-  demonwalker.config = config
-end
-
-function demonwalker:addAvoidRoom(roomID)
-  local ridType = type(roomID)
-  local avoidList = demonwalker.config.avoidList
-  if ridType == "number" then
-    avoidList[roomID] = true
-  elseif ridType == "table" then
-    for _,rid in ipairs(roomID) do
-      avoidList[rid] = true
-    end
-  elseif ridType == "string" then
-    local rid = tonumber(roomID)
-    if rid then
-      avoidList[rid] = true
-    end
-  end
-  demonwalker:save()
-end
-
-function demonwalker:removeAvoidRoom(roomID)
-  local ridType = type(roomID)
-  local avoidList = demonwalker.config.avoidList
-  if ridType == "number" then
-    avoidList[roomID] = nil
-  elseif ridType == "table" then
-    for _,rid in ipairs(roomID) do
-      avoidList[rid] = nil
-    end
-  elseif ridType == "string" then
-    local rid = tonumber(roomID)
-    if rid then
-      avoidList[rid] = nil
-    end
-  end
-  demonwalker:save()
-end
-
-function demonwalker:printAvoidList()
-  local aRooms = table.keys(demonwalker.config.avoidList)
-  demonwalker:echo(" avoidList    : {")
-  demonwalker:echo("  ID#  &lt;green&gt;Room Name &lt;white&gt;(&lt;purple&gt;Area Name&lt;white&gt;),")
-  for _,roomID in spairs(aRooms) do
-    local roomName = getRoomName(roomID)
-    roomName = roomName or "Unknown Room"
-    local roomAreaID = getRoomArea(roomID)
-    local roomArea = "Unknown Area"
-    if roomAreaID then
-      roomArea = getRoomAreaName(roomAreaID)
-    end
-    demonwalker:echo(string.format("  %s &lt;green&gt;%s &lt;white&gt;(&lt;purple&gt;%s&lt;white&gt;),", tostring(roomID), roomName, roomArea))
-  end
-  demonwalker:echo(" } -- avoidList")
-end
-
-function demonwalker:displayConfig()
-  demonwalker:echo("demonwalker.config:")
-  demonwalker:echo(" breadth      : " .. demonwalker.config.breadth)
-  demonwalker:echo(" returnToStart: " .. tostring(demonwalker.config.returnToStart))
-  demonwalker:echo(" debug        : " .. tostring(demonwalker.config.debug))
-  demonwalker:printAvoidList()
-  demonwalker:echo("End demonwalker.config")
-end
-
-function demonwalker:jiggerTable()
-  local rooms = {}
-  for room,_ in pairs(demonwalker.remainingRooms) do
-    rooms[room] = true
-  end
-  demonwalker.remainingRooms = rooms
-end
-
-function demonwalker:init(options)
-  if demonwalker.enabled then
-    return
-  end
-  options = options or {}
-  local rooms = options.rooms or {}
-  local roomsToAvoid = options.avoidRooms or {}
-  local searchTargets = options.searchTargets or {}
-  demonwalker.enabled = true
-  local currentRoom = mmp.currentroom
-  demonwalker.currentRoom = currentRoom
-  demonwalker.startingRoom = currentRoom
-  demonwalker.nextRoom = currentRoom
-  demonwalker.performanceTimes = {}
-  local area = getRoomArea(currentRoom)
-  demonwalker.area = area
-  if #rooms ~= 0 then
-    demonwalker.area = getRoomArea(rooms[1])
-  else
-    rooms = getAreaRooms(area)
-    if rooms[0] then
-      rooms[#rooms+1] = rooms[0]
-      rooms[0] = nil
-    end
-  end
-  demonwalker.remainingRooms = {}
-  demonwalker.failedRooms = {}
-  for _,roomID in ipairs(rooms) do
-    local roomNum = tonumber(roomID)
-    if roomNum then
-      demonwalker.remainingRooms[roomNum] = true
-    else
-      demonwalker.failedRooms[roomID] = true
-    end
-  end
-  for roomID,_ in pairs(demonwalker.config.avoidList) do
-    demonwalker.remainingRooms[roomID] = nil
-  end
-  for _,roomID in ipairs(roomsToAvoid) do
-    demonwalker.remainingRooms[roomID] = nil
-  end
-  demonwalker:setSearchTargets(searchTargets)
-  demonwalker:registerEventHandlers()
-  if table.is_empty(demonwalker.searchTargets) then
-    raiseEvent("demonwalker.arrived")
-    return
-  end
-  demonwalker.checkForItems()
-end
-
-function demonwalker:setSearchTargets(searchTargets)
-  local targets = {}
-  for _,targetName in ipairs(searchTargets) do
-    targets[targetName] = true
-  end
-  demonwalker.searchTargets = targets
-  demonwalker.matchItems = demonwalker:getMatchItems()
-end
-
-function demonwalker:stop()
-  if not demonwalker.enabled then
-    return
-  end
-  demonwalker.currentRoom = nil
-  demonwalker.remainingRooms = nil
-  demonwalker.enabled = false
-  demonwalker:removeEventHandlers()
-  raiseEvent("demonwalker.finished")
-  if demonwalker.config.returnToStart then
-    tempTimer(0, function()
-      mmp.gotoRoom(demonwalker.startingRoom)
-      if mmp.paused then
-        mmp.pause()
-      end
-    end)
-  end
-end
-
-function demonwalker:usage(attemptedCommand)
-  if attemptedCommand then
-    demonwalker:echo(string.format("You attempted to use '%s' and we do not recognize it", attemptedCommand))
-  end
-  demonwalker:echo("dwalk usage:")
-  demonwalker:echo("dwalk")
-  demonwalker:echo(" - displays this usage information")
-  demonwalker:echo("dwalk config")
-  demonwalker:echo(" - displays the full configuration for demonwalker")
-  demonwalker:echo("dwalk report")
-  demonwalker:echo(" - displays a performance report for the current walk if")
-  demonwalker:echo("   one is running, or previous walk if not.")
-  demonwalker:echo("dwalk explore")
-  demonwalker:echo(" - runs through the current area, automatically moving to")
-  demonwalker:echo("   the next room each time it arrives")
-  demonwalker:echo("dwalk stop")
-  demonwalker:echo(" - cancel the current walk, raises 'demonwalker.stop' event")
-  demonwalker:echo("dwalk move")
-  demonwalker:echo(" - move on to the next room in the walk")
-  demonwalker:echo("   raises 'demonwalker.move' event")
-  demonwalker:echo("dwalk avoidList")
-  demonwalker:echo(" - prints out the list of rooms to avoid in all walks")
-  demonwalker:echo("dwalk avoid &lt;roomID&gt;")
-  demonwalker:echo(" - add a roomID to the permanent avoidRooms list")
-  demonwalker:echo("dwalk unavoid &lt;roomID&gt;")
-  demonwalker:echo(" - remove a roomID from the permanent avoidRooms list")
-  demonwalker:echo("dwalk breadth &lt;newBreadth&gt;")
-  demonwalker:echo(" - sets number of rooms away from the current to check")
-  demonwalker:echo("   using breadth-first before brute forcing")
-  demonwalker:echo("dwalk returnToStart &lt;true/false&gt;")
-  demonwalker:echo(" - sets whether to return to your starting room after")
-  demonwalker:echo("   a walk is finished/stopped or not")
-  demonwalker:echo("dwalk debug &lt;true/false&gt;")
-  demonwalker:echo(" - set to true to turn on some debugging echos. WARNING: spammy")
-  demonwalker:echo("dwalk update")
-  demonwalker:echo(" - updates to the latest version of the demonnicAutoWalker package from github")
-  demonwalker:echo("end of dwalk usage")
-end
-
-function demonwalker:move()
-  if not demonwalker.enabled then
-    return
-  end
-  if mmp.paused then
-    tempTimer(0, function() mmp.pause() end)
-    if not demonwalker:atDestination() then
-      return
-    end
-  end
-  demonwalker.nextRoom = demonwalker:closestRoom()
-  if demonwalker.nextRoom ~= "" then
-    tempTimer(0, function() mmp.gotoRoom(demonwalker.nextRoom) end)
-  else
-    raiseEvent("demonwalker.stop")
-  end
-end
-
-function demonwalker:atDestination()
-  return tonumber(mmp.currentroom) == tonumber(demonwalker.nextRoom)
-end
-
-function demonwalker:getMatchItems()
-  local searchTargets = demonwalker.searchTargets
-  local matches = {}
-  for target, _ in pairs(searchTargets) do
-    if target:starts("Match:") then
-      matches[#matches+1] = target:sub(7, -1)
-    end
-  end
-  return matches
-end
-
-function demonwalker:foundItem()
-  local atDestination = demonwalker:atDestination()
-  demonwalker:debugEcho("Stopping because we found something on the search list")
-  if not atDestination then
-    mmp.pause("on")
-  end
-  raiseEvent("demonwalker.arrived")
-end
-
-function demonwalker.checkForItems(event, ...)
-  local searchTargets = demonwalker.searchTargets
-  if table.is_empty(searchTargets) then return end
-  local list = gmcp.Char.Items.List
-  local matches = demonwalker.matchItems
-  if list.location ~= "room" then return end
-  if mmp.paused then return end
-  demonwalker.checked = true
-  local atDestination = demonwalker:atDestination()
-  for _,item in ipairs(list.items) do
-    local name = item.name
-    if searchTargets[name] then
-      demonwalker:foundItem()
-      return
-    else
-      for _, pattern in ipairs(matches) do
-        if name:match(pattern) then
-          demonwalker:foundItem()
-          return
-        end
-      end
-    end
-  end
-  demonwalker:debugEcho("Nothing here, moving on")
-  if atDestination then raiseEvent("demonwalker.move") end
-end
-
-function demonwalker:arrived()
-  if tonumber(mmp.currentroom) == tonumber(demonwalker.nextRoom) then
-    demonwalker.currentRoom = mmp.currentroom
-    demonwalker.remainingRooms[mmp.currentroom] = nil
-    if table.is_empty(demonwalker.searchTargets) then
-      raiseEvent("demonwalker.arrived")
-      return
-    end
-    demonwalker.checked = false
-    demonwalker.failsafe = tempPromptTrigger(
-      function()
-        if not demonwalker.checked then
-          demonwalker.checkForItems()
-        end
-      end
-    , 1)
-  else
-    debugc("demonwalker: Somehow, the mudlet mapper says we have arrived but it is not to the room we said to go to.")
-  end
-end
-
-function demonwalker:failedPath()
-  demonwalker.failedRooms[demonwalker.nextRoom] = true
-  demonwalker.remainingRooms[demonwalker.nextRoom] = nil
-  demonwalker.currentRoom = mmp.currentroom
-  raiseEvent("demonwalker.move")
-end
-
-function demonwalker:getFailedRooms()
-  return table.keys(demonwalker.failedRooms)
-end
-
-function demonwalker:removeEventHandlers()
-  for _, handlerID in pairs(demonwalker.eventHandlers) do
-    killAnonymousEventHandler(handlerID)
-  end
-end
-
-function demonwalker:registerEventHandlers()
-  demonwalker.eventHandlers = demonwalker.eventHandlers or {}
-  demonwalker:removeEventHandlers()
-  demonwalker.eventHandlers.move = registerAnonymousEventHandler("demonwalker.move", demonwalker.move)
-  demonwalker.eventHandlers.stop = registerAnonymousEventHandler("demonwalker.stop", demonwalker.stop)
-  demonwalker.eventHandlers.arrived = registerAnonymousEventHandler("mmapper arrived", demonwalker.arrived)
-  demonwalker.eventHandlers.failedPath = registerAnonymousEventHandler("mmapper failed path", demonwalker.failedPath)
-  demonwalker.eventHandlers.itemCheck = registerAnonymousEventHandler("gmcp.Char.Items.List", demonwalker.checkForItems)
-end
-
-function demonwalker:getAdjacentRooms(roomID)
-  local adjacentRooms = getSpecialExits(roomID)
-  local exits = getRoomExits(roomID)
-  for _,id in pairs(exits) do
-    adjacentRooms[id] = true
-  end
-  return adjacentRooms
-end
-
-function demonwalker:extractFirstUnvisitedRoom(rooms)
-  local remainingRooms = demonwalker.remainingRooms
-  for id,_ in ipairs(rooms) do
-    if remainingRooms[id] then
-      return id
-    end
-  end
-  return nil
-end
-
-function demonwalker:startPerfTimer()
-  createStopWatch(demonwalker.timerName)
-  resetStopWatch(demonwalker.timerName)
-  startStopWatch(demonwalker.timerName)
-end
-
-function demonwalker:recordPerfTime(steps, checks)
-  local perfTime = getStopWatchTime(demonwalker.timerName)
-  stopStopWatch(demonwalker.timerName)
-  demonwalker:debugEcho(string.format("Took %.5f seconds to find our room at %d distance and %d checks\n", perfTime, steps, checks))
-  demonwalker.performanceTimes[#demonwalker.performanceTimes+1] = {time = perfTime, steps = steps, checks = checks}
-end
-
-function demonwalker:performanceReport()
-  local perfTable = demonwalker.performanceTimes
-  local timesMoved = 0
-  if perfTable then
-    timesMoved = #perfTable
-  end
-  local roomsLeft = 0
-  if demonwalker.remainingRooms then
-    roomsLeft = table.size(demonwalker.remainingRooms)
-  end
-  if timesMoved == 0 then
-    demonwalker:echo("No performance report to generate, have not moved")
-    return
-  end
-  local steps = {}
-  local times = {}
-  local checks = {}
-  local totalSteps = 0
-  local totalTime = 0
-  local totalChecks = 0
-  for _, info in ipairs(perfTable) do
-    totalSteps = totalSteps + info.steps
-    totalTime = totalTime + info.time
-    totalChecks = totalChecks + info.checks
-    steps[#steps+1] = info.steps
-    times[#times+1] = info.time
-    checks[#checks+1] = info.checks
-  end
-  local averageTime = totalTime / timesMoved
-  local averageSteps = totalSteps / timesMoved
-  local averageChecks = totalChecks / timesMoved
-  table.sort(steps)
-  table.sort(times)
-  table.sort(checks)
-  local half = timesMoved / 2
-  local medianSteps = 0
-  local medianTime = 0
-  local medianChecks = 0
-  local roundedHalf = math.ceil(half)
-  if roundedHalf &gt; half then
-    medianSteps = steps[roundedHalf]
-    medianTime = times[roundedHalf]
-    medianChecks = checks[roundedHalf]
-  else
-    medianSteps = (steps[half] + steps[half + 1]) / 2
-    medianTime = (times[half] + times[half+1]) / 2
-    medianChecks = (checks[half] + checks[half+1]) / 2
-  end
-  local longestMove = steps[#steps]
-  local longestTime = times[#times]
-  local mostChecks = checks[#checks]
-  local numberFailedRooms = table.size(demonwalker.failedRooms or {})
-  demonwalker:echo("Performance report of current demonwalk!")
-  demonwalker:echo("Note: Number of steps actually taken may be more or less")
-  demonwalker:echo("as the walker does not always take the reported number of")
-  demonwalker:echo("steps due to mmp overshooting or some interruption.")
-  demonwalker:echo(string.format("Rooms left in this walk : %d", roomsLeft))
-  demonwalker:echo(string.format("Total times moved       : %d", timesMoved))
-  demonwalker:echo(string.format("Total steps taken       : %d", totalSteps))
-  demonwalker:echo(string.format("Avg steps per move      : %.3f", averageSteps))
-  demonwalker:echo(string.format("Median steps per move   : %.3f", medianSteps))
-  demonwalker:echo(string.format("Longest move            : %0d", longestMove))
-  demonwalker:echo(string.format("Total time calculating  : %.3f", totalTime))
-  demonwalker:echo(string.format("Avg time per move       : %.3f", averageTime))
-  demonwalker:echo(string.format("Median time per move    : %.3f", medianTime))
-  demonwalker:echo(string.format("Longest time            : %.3f", longestTime))
-  demonwalker:echo(string.format("Total checks            : %d", totalChecks))
-  demonwalker:echo(string.format("Avg checks per move     : %.3f", averageChecks))
-  demonwalker:echo(string.format("Median checks per move  : %.3f", medianChecks))
-  demonwalker:echo(string.format("Most checks             : %0d", mostChecks))
-  demonwalker:echo(string.format("Rooms we failed to hit  : %0d", numberFailedRooms))
-  demonwalker:echo("End of performance report")
-end
-
-function demonwalker:closestRoom()
-  local remainingRooms = demonwalker.remainingRooms
-  local startingRoom = mmp.currentroom
-  if not remainingRooms or table.is_empty(remainingRooms) then return "" end
-  demonwalker:startPerfTimer()
-  local roomsToCheck = {
-    [startingRoom] = true
-  }
-  local numberOfChecks = 0
-  for iteration = 1, demonwalker.config.breadth do
-    demonwalker:debugEcho("Iteration: " .. iteration)
-    local newRooms = {}
-    for room,_ in pairs(roomsToCheck) do
-      demonwalker:debugEcho("Checking adjacent rooms of :" .. room)
-      for id,_ in pairs(demonwalker:getAdjacentRooms(room)) do
-        numberOfChecks = numberOfChecks + 1
-        demonwalker:debugEcho("Checking roomID: " .. id)
-        if remainingRooms[id] then
-          demonwalker:recordPerfTime(iteration, numberOfChecks)
-          return id
-        end
-        newRooms[id] = true
-      end
-    end
-    roomsToCheck = newRooms
-  end
-  demonwalker:debugEcho("Did not find a room within the configured breadth:" .. numberOfChecks)
-  -- we didn't find an unvisited room within demonwalker.config.breadth steps, so now let's loop the remaining rooms list
-  local distance = 99999
-  local minDistance = demonwalker.config.breadth + 1
-  local targetRoom = ""
-  for roomID,_ in pairs(remainingRooms) do
-    numberOfChecks = numberOfChecks + 1
-    local ok, pathLength = getPath(startingRoom, roomID)
-    if not ok then 
-      remainingRooms[roomID] = nil
-    elseif pathLength &lt; distance then
-      distance = pathLength
-      targetRoom = roomID
-      if distance &lt;= minDistance then
-        demonwalker:recordPerfTime(distance, numberOfChecks)
-        return targetRoom
-      end
-    end
-  end
-  demonwalker:recordPerfTime(distance, numberOfChecks)
-  return targetRoom
-end
-
-if _comp(demonwalker.config, {}) then demonwalker:load() end
-</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -13255,13 +12690,13 @@ end
 	elseif snd.cureset == "monk" then
 		if snd.my_limb_damage["head"] &gt; 99 then
 			snd.toparry = "head"
-		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 10 and snd.restorationlimbfailtemp ~= "right leg" and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
+		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 10 and snd.restorationlimbfail ~= "right leg" and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
 			snd.toparry = "right leg"
-		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 10 and snd.restorationlimbfailtemp ~= "left leg" and gmcp.Char.Vitals.prone == "1" then
+		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 10 and snd.restorationlimbfail ~= "left leg" and gmcp.Char.Vitals.prone == "1" then
 			snd.toparry = "left leg"
-		elseif snd.have_aff("left_leg_broken") and snd.have_aff("right_leg_broken") and snd.restorationlimbfailtemp == "right leg" then
+		elseif snd.have_aff("left_leg_broken") and snd.have_aff("right_leg_broken") and snd.restorationlimbfail == "right leg" then
 			snd.toparry = "left leg"
-		elseif snd.have_aff("left_leg_broken") and snd.have_aff("right_leg_broken") and snd.restorationlimbfailtemp == "left leg" then
+		elseif snd.have_aff("left_leg_broken") and snd.have_aff("right_leg_broken") and snd.restorationlimbfail == "left leg" then
 			snd.toparry = "right leg"						
 		elseif snd.have_aff("left_leg_broken") and not snd.have_aff("right_leg_broken") and snd.my_limb_damage["right leg"] &gt; 20 then
 			snd.toparry = "right leg"
@@ -13270,9 +12705,9 @@ end
 		elseif snd.my_limb_damage["left leg"] &gt; 20 and snd.my_limb_damage["right leg"] &gt; 20 then
 			rparry = {"left leg", "right leg"}
 			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
-		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfailtemp == "right arm" then
+		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfail == "right arm" then
 			snd.toparry = "left arm"
-		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfailtemp == "left arm" then
+		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfail == "left arm" then
 			snd.toparry = "right arm"						
 		elseif snd.have_aff("left_arm_broken") and not snd.have_aff("right_arm_broken") and snd.my_limb_damage["right arm"] &gt; 20 then
 			snd.toparry = "right arm"
@@ -13306,16 +12741,16 @@ end
 	elseif snd.cureset == "predator" then
 		if snd.have_aff("torso_broken") then
 			snd.toparry = "torso"
-		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 10 and snd.restorationlimbfailtemp ~= "right leg" and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
+		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 10 and snd.restorationlimbfail ~= "right leg" and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
 			snd.toparry = "right leg"
-		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 10 and snd.restorationlimbfailtemp ~= "left leg" and gmcp.Char.Vitals.prone == "1" then
+		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 10 and snd.restorationlimbfail ~= "left leg" and gmcp.Char.Vitals.prone == "1" then
 			snd.toparry = "left leg"
 		elseif snd.have_aff("right_leg_broken") and snd.have_aff("left_leg_broken") then
 			rparry = {"left leg", "right leg"}
 			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
-		elseif snd.have_aff("left_leg_broken") and not snd.have_aff("right_leg_broken") and snd.restorationlimbfailtemp == "left leg" then
+		elseif snd.have_aff("left_leg_broken") and not snd.have_aff("right_leg_broken") and snd.restorationlimbfail == "left leg" then
 			snd.toparry = "right leg"
-		elseif snd.have_aff("right_leg_broken") and not snd.have_aff("left_leg_broken") and snd.restorationlimbfailtemp == "right leg" then
+		elseif snd.have_aff("right_leg_broken") and not snd.have_aff("left_leg_broken") and snd.restorationlimbfail == "right leg" then
 			snd.toparry = "left leg"				
 		elseif snd.have_aff("left_leg_broken") and not snd.have_aff("right_leg_broken") and snd.my_limb_damage["right leg"] &gt; 15 then
 			snd.toparry = "right leg"
@@ -13324,9 +12759,9 @@ end
 		elseif snd.my_limb_damage["left leg"] &gt; 22 and snd.my_limb_damage["right leg"] &gt; 22 then
 			rparry = {"left leg", "right leg"}
 			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
-		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfailtemp == "right arm" then
+		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfail == "right arm" then
 			snd.toparry = "left arm"
-		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfailtemp == "left arm" then
+		elseif snd.have_aff("left_arm_broken") and snd.have_aff("right_arm_broken") and snd.restorationlimbfail == "left arm" then
 			snd.toparry = "right arm"						
 		elseif snd.have_aff("left_arm_broken") and not snd.have_aff("right_arm_broken") and snd.my_limb_damage["right arm"] &gt; 20 then
 			snd.toparry = "right arm"
@@ -13605,7 +13040,7 @@ end
 	elseif snd.cureset == "zealot" then
 		if snd.heelrush ~= snd.toparry then
 			snd.toparry = snd.heelrush
-		elseif snd.my_limb_damage["torso"] &gt; 12 and snd.restorationlimbfailtemp ~= "torso" then
+		elseif snd.my_limb_damage["torso"] &gt; 12 and snd.restorationlimbfail ~= "torso" then
 			snd.toparry = "torso"
 		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 15 and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
 			snd.toparry = "right leg"
@@ -13628,13 +13063,13 @@ end
 		end
 	else
 		if #snd.people_hitting_me &gt; 2 then
-			if snd.have_aff("right_leg_broken") and not snd.have_aff("right_leg_mangled") and snd.restorationlimbfailtemp ~= "right leg" then
+			if snd.have_aff("right_leg_broken") and not snd.have_aff("right_leg_mangled") and snd.restorationlimbfail ~= "right leg" then
 				snd.toparry = "right leg"
-			elseif snd.have_aff("left_leg_broken") and not snd.have_aff("left_leg_mangled") and snd.restorationlimbfailtemp ~= "left leg" then
+			elseif snd.have_aff("left_leg_broken") and not snd.have_aff("left_leg_mangled") and snd.restorationlimbfail ~= "left leg" then
 				snd.toparry = "left leg"
-			elseif snd.have_aff("right_arm_broken") and not snd.have_aff("right_arm_mangled") and snd.restorationlimbfailtemp ~= "right arm" then
+			elseif snd.have_aff("right_arm_broken") and not snd.have_aff("right_arm_mangled") and snd.restorationlimbfail ~= "right arm" then
 				snd.toparry = "right arm"
-			elseif snd.have_aff("left_arm_broken") and not snd.have_aff("left_arm_mangled") and snd.restorationlimbfailtemp ~= "left arm" then
+			elseif snd.have_aff("left_arm_broken") and not snd.have_aff("left_arm_mangled") and snd.restorationlimbfail ~= "left arm" then
 				snd.toparry = "left arm"
 			elseif snd.have_aff("blisters") then
 				snd.toparry = "head"
@@ -15658,7 +15093,8 @@ end</script>
 					<Script isActive="yes" isFolder="no">
 						<name>PvP variables</name>
 						<packageName></packageName>
-						<script>snd.channeling = false
+						<script>-- General Items
+
 snd.offense_loaded = true
 snd.hitting = "none"
 snd.callers = {}
@@ -15681,81 +15117,90 @@ snd.alertness = {}
 snd.alertnessDir = "none"
 snd.enemy_used_regenerate = false
 snd.who_called_affs = ""
-currently_fishing = false
-snd.needwisdom = true
-
--- Event/Instance shit
-snowballs = 0
-flintstoogecount = 0
-snd.arraynumber = {}
-
--- Misc me stuff
 snd.def_needed = false
 snd.defended = false
+snd.last_healed = ""
+snd.using_both_hands = 0
+snd.current_offense = ""
+snd.use_hourglass_on_prismatic = false
+snd.giving = {}
+snd.hound_queue = {}
+snd.target_has = {}
+snd.player_has = {}
+snd.rebounded = false
+snd.target_impaled = false -- do we specifically have our target imapled
+snd.disperse = "none" -- Can be set to none, callers or all.
 
--- Firstaid assistance stuff
-snd.my_last_cured = ""
-snd.ordered_list = {}
-snd.elevated = false
-snd.firstaidspam = false
-snd.setting_priority = {}
-snd.firstaidcuretrack = snd.firstaidcuretrack or {}
+-- Misc Items
+currently_fishing = false
+snd.snowballs = 0
+snd.flintstoogecount = 0
+snd.arraynumber = {}
+
+-- Firstaid Items
+
 snd.metawakeon = false
-snd.firstaidchangecure = false
-snd.elevatedaff = {}
-snd.firstaidcureset = "none"
-snd.firstaidpredict = {}
-snd.firstaidtobepredicted = {}
 snd.percentesthealth = 100
 snd.percentestmana = 100
 snd.waking = false
 snd.restand = true
 snd.firstaid = true
 snd.firstadder = true
-snd.statustimer = true
 snd.clottime = true
 snd.firstaidclotlevel = "60"
-snd.restorationlimbfail = "none"
-snd.restorationlimbfailtemp = "none"
-snd.vitalizing = true
-snd.prestore = false
 snd.focusing = true
 snd.disablefocus = false
 snd.stormtouching = false
-snd.backbroken = 0
-snd.topdamageprelimb = "none"
 snd.percentesthealth = 0
 snd.percentestmana = 0
 snd.lasthealth = 0
 snd.lastmana = 0
-snd.firstaid_go = true
-snd.update_priority = 0
-snd.firstaidtrack = ""
-reset_cures = false
-snd.canprerestorenow = true
-snd.hiddentype = "none"
-snd.last_healed = ""
-snd.howllist = {}
-snd.snarlcount = 0
-snd.healingcall = ""
 snd.endgamedef = ""
 snd.endgamehealth = ""
-snd.limbbrokencount = {}
-allergycount = 0
+snd.allergycount = 0
 
--- Bashing stuff
+-- Prediction and Elevate Items
+
+snd.my_last_cured = ""
+snd.ordered_list = {}
+snd.elevated = false
+snd.setting_priority = {}
+snd.firstaidcuretrack = snd.firstaidcuretrack or {}
+snd.firstaidchangecure = false
+snd.elevatedaff = {}
+snd.firstaidpredict = {}
+snd.firstaidtobepredicted = {}
+snd.hiddentype = "none"
+snd.firstaid_go = true
+snd.update_priority = 0
+reset_cures = false
+snd.healingcall = ""
+snd.howllist = {}
+snd.snarlcount = 0
+snd.hidden_check = false
+
+-- Self Limb Specific
+
+snd.restorationlimbfail = "none"
+snd.restorationlimbfailtemp = "none"
+snd.backbroken = 0
+snd.topdamageprelimb = "none"
+snd.prestore = false
+snd.limbbrokencount = {}
+snd.canprerestorenow = true
+
+-- Bashing Items
+
 snd.resolve = "0"
 
--- PvP Misc
-snd.spectype = ""
-snd.parried = false
+-- Misc PvP Items
+
 snd.block = ""
 snd.reblock = false
 snd.shield_check = true
 snd.theytumbling = false
 snd.theyrandir = "none"
 snd.theyran = false
-snd.hidden_check = false
 snd.recoverytime = 0
 snd.treetrack = 0
 snd.recontrack = 0
@@ -15780,10 +15225,7 @@ snd.divertstance = "none"
 snd.barriering = true
 snd.tailstrike = "none"
 
---Bard
-snd.weaving = true
-
---200 Things
+-- 200 
 
 snd.doubleattack = false
 snd.hamartia_used = false
@@ -15792,54 +15234,9 @@ snd.unmasked = false
 snd.glory = 0
 snd.storedascendvenom = "none"
 
-snd.using_both_hands = 0
+-- Archivist / Voidseer
 
---Templar / Revenant
-snd.templar_weapon_one = "shortsword344140" -- used for Templar offenses
-snd.templar_weapon_two = "shortsword344388" -- used for Templar offenses
-snd.templar_last_limb = ""
-snd.templarHits = 0
-
-snd.current_offense = ""
-
--- Shapeshifter
-snd.neckdragdir = "none"
-snd.jawlocked = false
-
---Sciomancer/Runecarver
-snd.gravity = 0
-snd.reflection_charge = 3
-snd.repay = 0
-snd.firefly_down = false
-snd.shadeling = false
-snd.reflected = false
-snd.gravitycollapse = false
-snd.haunted = false
-snd.canforgive = true
-snd.toilon = false
-snd.toilup = false
-snd.singhere = false
-snd.scourgecount = 0
-snd.shadowpricecount = 0
-
---Sentinel/Executor
-snd.exploit = false
-snd.nopets = false
-snd.kindleused = false
-snd.scythevenomapp = "none"
-snd.scythevenom1 = "none"
-snd.scythevenomapp2 = "none"
-snd.splattercount = 0
-snd.splattertwo = "none"
-snd.splatterone = "none"
-snd.softlocked = false
-snd.efficiency = false
-snd.efficiencycount = 0
-snd.smokescreen = true
-snd.horseshoe = true
-
---Archivist/Voidseer
-snd.my_token = "354928"
+snd.my_token = ""
 snd.empowerready = false
 snd.geoinvert = false
 snd.geotrace = false
@@ -15861,7 +15258,119 @@ snd.bloodwork = true
 snd.hexcount = 0
 snd.crescentable = true
 
---Shaman/Alchemist
+-- Ascendril / Bloodborn
+
+snd.flamewreathed = {limb = "", resonance = ""}
+snd.glimpse = "none"
+snd.glimpsing = false
+snd.reflection_charge = 3
+snd.stalled_skill = ""
+snd.fulcrum_call = true
+snd.fulcrum_ready = true
+snd.fulcrum_exists = false
+snd.rimespear = false
+snd.rimespeared = 0
+snd.rimespear_going = false
+snd.rimespear_count = 0
+
+-- Bard
+
+snd.weaving = true
+
+-- Carnifex / Warden
+
+snd.soul = 100
+snd.implant = "none"
+snd.active_hound = "none"
+snd.enfrost = false
+snd.souldistortready = true
+snd.houndtarget = "none"
+snd.ulrelapse = false
+
+-- Indorani / Oneiromancer
+
+snd.adder_attached = false
+snd.adder_ready = false
+snd.target_has_aura = true
+snd.need_leech_aura = true
+snd.need_deform = true
+snd.adderafflict = "none"
+snd.flowered = false
+snd.bowl = false
+snd.wheelused = false
+snd.deformed = false
+snd.cardcount = 0
+snd.leechrelease = false
+
+-- Infiltrator
+
+snd.hypno = "none"
+snd.last_hypno = 0
+snd.hyp = 0
+snd.total_hypno = 0
+snd.sleight = "void"
+
+-- Luminary / Earthcaller
+
+snd.battle_aff = "none"
+snd.chasten_aff = "none"
+snd.needswarm = true
+snd.graft = false
+
+-- Predator
+
+snd.fleshbaneStacks = 0
+snd.swoopVenoms = {}
+
+-- Monk
+
+snd.target_numbed = false
+snd.mindlocked = false
+snd.mindclamped = false
+snd.hardenBonesProc = false
+snd.mindAffliction = snd.mindAffliction or "paralyse"
+snd.stance = ""
+snd.transmutation = true
+snd.locking = false
+snd.kaistrikelimb = ""
+snd.kipup = false
+
+-- Sciomancer / Runecarver
+
+snd.gravity = 0
+snd.reflection_charge = 3
+snd.repay = 0
+snd.firefly_down = false
+snd.shadeling = false
+snd.reflected = false
+snd.gravitycollapse = false
+snd.haunted = false
+snd.canforgive = true
+snd.toilon = false
+snd.toilup = false
+snd.singhere = false
+snd.scourgecount = 0
+snd.shadowpricecount = 0
+
+-- Sentinel / Executor
+
+snd.exploit = false
+snd.nopets = false
+snd.kindleused = false
+snd.scythevenomapp = "none"
+snd.scythevenom1 = "none"
+snd.scythevenomapp2 = "none"
+snd.splattercount = 0
+snd.splattertwo = "none"
+snd.splatterone = "none"
+snd.softlocked = false
+snd.efficiency = false
+snd.efficiencycount = 0
+snd.smokescreen = true
+snd.horseshoe = true
+
+-- Shaman / Alchemist
+
 snd.shamanpet = ""
 snd.stormcloud = false
 snd.incomingomen = false
@@ -15883,7 +15392,29 @@ snd.blightneeded = false
 snd.phobiatotal = 0
 snd.their_tree = true
 
---Wayfarer
+-- Shapeshifter
+
+snd.neckdragdir = "none"
+snd.jawlocked = false
+
+-- Templar / Revenant
+
+snd.templar_weapon_one = "shortsword344140" -- used for Templar offenses
+snd.templar_weapon_two = "shortsword344388" -- used for Templar offenses
+snd.templar_last_limb = ""
+snd.templarHits = 0
+
+-- Teradrim / Tidesage
+
+snd.lev_gone = false
+snd.runemarkMajor = "none"
+snd.runemarkMinor = "none"
+snd.canrattle = true
+snd.canchoke = true
+snd.pillarhere = false
+
+-- Wayfarer
+
 snd.highjumped = false
 snd.enraged = false
 snd.dropstrikeready = false
@@ -15893,42 +15424,8 @@ snd.assaultlimb = "none"
 snd.canenrage = true
 snd.usedtoss = false
 
---Teradrim / Tidesage
-snd.lev_gone = false
-snd.runemarkMajor = "none"
-snd.runemarkMinor = "none"
+-- Zealot / Ravager
 
-  snd.canrattle = true
-  snd.canchoke = true
-  snd.pillarhere = false
-
---Indorani/Oneiromancer
-snd.adder_attached = false
-snd.adder_ready = false
-snd.target_has_aura = true
-snd.need_leech_aura = true
-snd.need_deform = true
-snd.adderafflict = "none"
-snd.flowered = false
-snd.bowl = false
-snd.wheelused = false
-snd.deformed = false
-snd.cardcount = 0
-snd.leechrelease = false
-
---Monk
-snd.target_numbed = false
-snd.mindlocked = false
-snd.mindclamped = false
-snd.hardenBonesProc = false
-snd.mindAffliction = snd.mindAffliction or "paralyse"
-snd.stance = ""
-snd.transmutation = true
-snd.locking = false
-snd.kaistrikelimb = ""
-snd.kipup = false
-
---Zealot/Ravager
 snd.zenith = false
 snd.zenith_coming = false
 snd.zenith_nope = false
@@ -15946,48 +15443,6 @@ snd.rebuke_limb = "none"
 snd.hackles = true
 snd.recover = true
 snd.wrath = true
-
---Ascendril/Bloodborn
-snd.flamewreathed = {limb = "", resonance = ""}
-snd.glimpse = "none"
-snd.glimpsing = false
-snd.reflection_charge = 3
-snd.stalled_skill = ""
-snd.fulcrum_call = true
-snd.fulcrum_ready = true
-snd.fulcrum_exists = false
-snd.rimespear = false
-snd.rimespeared = 0
-snd.rimespear_going = false
-snd.rimespear_count = 0
-
---Carnifex/Warden
-snd.soul = 100
-snd.implant = "none"
-snd.active_hound = "none"
-snd.enfrost = false
-snd.souldistortready = true
-snd.houndtarget = "none"
-snd.ulrelapse = false
-
---Infiltrator
-snd.hypno = "none"
-snd.last_hypno = 0
-snd.hyp = 0
-snd.total_hypno = 0
-snd.sleight = "void"
-
---Luminary/Earthcaller
-snd.battle_aff = "none"
-snd.chasten_aff = "none"
-snd.needswarm = true
-snd.graft = false
-
---Predator
-snd.fleshbaneStacks = 0
-snd.swoopVenoms = {}
-
-snd.disperse = "none" -- Can be set to none, callers or all.
 
 snd.limbs = {}
 snd.parried_limb = snd.parried_limb or "none"
@@ -16027,14 +15482,6 @@ torso = 0,
 ["left leg"] = 0,
 ["right leg"] = 0
 }
-
-snd.use_hourglass_on_prismatic = false
-snd.giving = {}
-snd.hound_queue = {}
-snd.target_has = {}
-snd.player_has = {}
-snd.rebounded = false
-snd.target_impaled = false -- do we specifically have our target imapled
 
 </script>
 						<eventHandlerList />
@@ -17875,7 +17322,7 @@ snd.hound_attacks = {
     frigid = "tundralhowl",
     shivering = "tundralhowl",
     no_insulation = "tundralhowl",
-    blurry_vision = "ululate",
+    watery_eyes = "ululate",
     mark = "mark",
     loki = "contagion",
     bite = "bite",
@@ -17895,7 +17342,7 @@ snd.hound_attacks = {
     frigid = "freeze",
     shivering = "freeze",
     no_insulation = "freeze",
-    blurry_vision = "dirge",
+    watery_eyes = "dirge",
     mark = "mark",
     loki = "sabotage",
     assault = "assault",
@@ -25518,12 +24965,20 @@ function snd.attack(attack, new)
     end
     if snd.can_fitness() and snd.need_fitness and snd.have_aff("asthma") then
       str = "fitness"..snd.sep..fitnessstring
-    elseif snd.can_shrug() and snd.shrug_check() then
+    elseif snd.can_shrug() and snd.shrug_check() and snd.class == "Infiltrator" then
       str = "shrug venom"..snd.sep..fitnessstring
-    elseif snd.panacea_check() and snd.class == "Alchemist" then
-      str = "botany subvert"..snd.sep..fitnessstring
-    elseif snd.vein_check() and snd.class == "Bloodborn" then
-      str = "well vein"..snd.sep..fitnessstring
+    elseif snd.panacea_check() and (snd.class == "Alchemist" or snd.class == "Shaman") then
+      if snd.class == "Alchemist" then
+        str = "botany subvert"..snd.sep..fitnessstring
+      else
+        str = "nature panacea"..snd.sep..fitnessstring
+      end
+    elseif snd.vein_check() and (snd.class == "Bloodborn" or snd.class == "Ascendril") then
+      if snd.class == "Bloodborn" then
+        str = "well vein"..snd.sep..fitnessstring
+      else
+        str = "fulcrum restore"..snd.sep..fitnessstring
+      end
     elseif snd.recover_check() and (snd.class == "Ravager" or snd.class == "Zealot") then
       if snd.class == "Ravager" then
         str = "ego boost"..snd.sep..fitnessstring
@@ -25548,14 +25003,26 @@ function snd.attack(attack, new)
       else
         str = "grit"..snd.sep..fitnessstring
       end
-    elseif snd.purify_check() and snd.class == "Praenomen" then
-      str = "purify blood"..snd.sep..fitnessstring
-    elseif snd.purge_check() and snd.class == "Carnifex" then
-      str = "soul purge"..snd.sep..fitnessstring
-    elseif snd.leech_check() and snd.class == "Sciomancer" then
-      str = "botany subvert"..snd.sep..fitnessstring
-    --elseif snd.rage_check() then
-      --str = "botany subvert"..snd.sep..fitnessstring..str
+    elseif snd.purify_check() and (snd.class == "Praenomen" or snd.class == "Sylvan") then
+      if snd.class == "Praenomen" then
+        str = "purify blood"..snd.sep..fitnessstring
+      else
+        str = "naturalise"..snd.sep..fitnessstring
+      end
+    elseif snd.purge_check() and (snd.class == "Carnifex" or snd.class == "Warden") then
+      if snd.class == "Carnifex" then
+        str = "soul purge"..snd.sep..fitnessstring
+      else
+        str = "ancest annul"..snd.sep..fitnessstring
+      end
+    elseif snd.leech_check() and (snd.class == "Sciomancer" or snd.class == "Runecarver") then
+      if snd.class == "Sciomancer" then
+        str = "cast leech"..snd.sep..fitnessstring
+      else
+        str = "hex renewal"..snd.sep..fitnessstring
+      end
+    elseif snd.rage_check() then
+      str = "rage"..snd.sep..fitnessstring..str
     else  
       if snd.hidden_afflictions &gt;= 3 and snd.not_aff("hypochondria") then
         str = "diag"..snd.sep..str
@@ -25597,13 +25064,19 @@ function snd.attack(attack, new)
   else
     snd.need_dome = false
   end
+      local testing = gmcp.Room.Info.area
+      if testing:find("Conjunction") then
+        twinstate = true
+      else
+        twinstate = false
+      end
       
-      if snd.need_dome then
-        if snd.balance.dome and snd.check_dome() then
+      if snd.need_dome or snd.toggles.survive then
+        if snd.balance.dome and snd.check_dome() and not twinstate then
           snd.do_dome()
-        elseif snd.class == "Ravager" and snd.blitz then
-          snd.send("qeb rampage")
-        elseif snd.balance.barrier and snd.barriering and gmcp.Char.Status.name == "Linyive" then
+        elseif snd.class == "Zealot" and snd.blitz then
+          snd.send("qeb blitz")
+        elseif snd.balance.barrier and snd.barriering then
 			   snd.send("qeb strum lyre")
 			   snd.barriering = false
    		   tempTimer(2,[[snd.barriering = true]])
@@ -48448,9 +47921,9 @@ end</script>
 					<packageName></packageName>
 					<script>
 snd.global_items = {
---"a sample of fur and hide",
---"a dirt sample",
---"a delicate flora sample",
+"a sample of fur and hide",
+"a dirt sample",
+"a delicate flora sample",
 --"a roasted hobgobbler drumstick",
 --"a pile of goopy stuffing",
 
@@ -48681,6 +48154,12 @@ snd.global_items = {
 }
 
 snd.global_targets = {
+--mirror event
+"a scorched Zealot soul-shade",
+"a waxen Sentaari revenant",
+"an empty-eyed Carnifex remnant",
+"a static-drenched Syssin phantom",
+
 --elds
 "a billowing dust eld",
 "an oozing magma eld",
@@ -48832,7 +48311,7 @@ function snd.runBasher()
         table.insert(snd.gathering, snd.items[item][id])
       end
     elseif
-      (item:find("the corpse of") or item:find("the discarded remains of") or item:find("the withered husk of"))
+      (item:find("the corpse of") or item:find("the discarded remains of") or item:find("the withered husk of") or item:find("dusted carcass of"))
       and not item:find("staked")
     then
       for id in pairs(snd.items[item]) do
@@ -48954,6 +48433,10 @@ function snd.bashing_function()
       hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
       wp = 100*(gmcp.Char.Vitals.wp/gmcp.Char.Vitals.maxwp)
       bp = tonumber(gmcp.Char.Vitals.blood)
+      
+      if mp &lt;= 20 and snd.balance.wand and tonumber(gmcp.Char.Vitals.bleeding) &gt; 500 then
+        battack = "touch wand"..snd.sep..battack
+      end
       
       if hp &lt;= 30 and snd.balance.crystal then
         battack = "touch crystal"..snd.sep..battack
@@ -49257,10 +48740,22 @@ function snd.monk_bash()
   if (hp &lt;= 30 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 500) and snd.shield_check then
       battack = battack.."touch shield"..snd.sep
 	elseif snd.stance ~= "scorpion" then
-    battack = battack.."combo "..snd.bashing.target.." scs ucp ucp"..snd.sep
+    battack = battack.."combo "..snd.bashing.target.." scs ucp ucp"
   else 
-    battack = battack.."combo "..snd.bashing.target.." spk ucp ucp"..snd.sep
+    battack = battack.."combo "..snd.bashing.target.." spk ucp ucp"
 	end
+end
+
+function snd.oneiromancer_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  
+  if (hp &lt;= 30 or snd.have_aff("blackout") or mp &lt;= 30 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 500) and snd.shield_check then
+      battack = battack..snd.sep.."touch shield"
+	elseif hp &lt;= 55 then
+    battack = "unfurl flower at me"
+  else
+    battack = "impel athame at "..snd.bashing.target
+  end
 end
 
 function snd.praenomen_bash()
@@ -49420,6 +48915,8 @@ function snd.shaman_bash()
     if snd.shield_check then
       battack = "touch shield"
     end
+  elseif snd.bash_shielded then
+    battack = battack.."commune leafstorm "..snd.bashing.target
   else
     if tonumber(gmcp.Char.Vitals.energy) &gt; 3 then
       battack = battack.."commune boost"..snd.sep.."commune lightning "..snd.bashing.target
@@ -49635,6 +49132,10 @@ snd.generic_bashing_table_by_area = {
 
 
 snd.generic_bashing_table_specific_names = {
+["a scorched Zealot soul-shade"] = "soul",
+["a waxen Sentaari revenant"] = "soul",
+["an empty-eyed Carnifex remnant"] = "soul",
+["a static-drenched Syssin phantom"] = "soul",
 ["a long-tailed bullfrog"] = "frog",
 ["a snow wight"] = "wight",
 ["a long-lost warleader's shade"] = "shade",
@@ -50837,7 +50338,7 @@ snd.questing_loaded = true
 snd.quest_items = {
 ["Three Widows"] = {"a handful of hay", "a packet of seeds", "a simple net", "a simple pickaxe", "a small grey rock"},
 ["Mount Humgurd"] = {"a chunk of mixed ore"},
-["the Siroccian Mountains"] = {"a lump of flaking coal", "a rock of silver ore", "a hematite ore of iron", "a gold nugget"},
+--["the Siroccian Mountains"] = {"a lump of flaking coal", "a rock of silver ore", "a hematite ore of iron", "a gold nugget"},
 }</script>
 					<eventHandlerList />
 				</Script>
