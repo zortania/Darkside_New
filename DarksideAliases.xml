@@ -901,7 +901,7 @@ end</script>
 						<Alias isActive="yes" isFolder="no">
 							<name>Chameleon Targets</name>
 							<script>local people = matches[2]:gsub(",", "")
-peopleTable = matches[2]:split(" ")
+peopleTable = people:split(" ")
 snd.toggles.chameleonPeople = peopleTable
 snd.message("Will try to chameleon as one of: "..table.concat(snd.toggles.chameleonPeople, ", "))</script>
 							<command></command>
@@ -2431,7 +2431,8 @@ snd.get_new_target()</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Solo Route</name>
-						<script>expandAlias("bashpath xaanhal, subterranean, shoals, reef, underbelly, sunwash, beggar, bandit, hideout, domor, bonro, clawhook, bakal, a basilisk lair, dovan, maul, dramedo, forgotten depths, deep underground")
+						<script>expandAlias("bashpath xaanhal, subterranean, shoals, reef, underbelly, sunwash, hideout, domor, bonro, clawhook, bakal, a basilisk lair, dovan, maul, dramedo, forgotten depths, deep underground")
+--beggar, bandit,
 --beggar, bandit, 
 --deep underground, 
 --luzith, 
@@ -2518,6 +2519,29 @@ enableTimer("Deathsense")</script>
 					<command></command>
 					<packageName></packageName>
 					<regex>^shrine list$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Troops Show</name>
+					<script>display(troop_list)</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^troop list$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Fishies Show</name>
+					<script>--display(fisholes_list)
+  local x = #fisholes_list
+  outputsf = {}
+  while x &gt; 0 do
+    local str = mmp.areatabler[getRoomArea(fisholes_list[x])].." ("..fisholes_list[x]..")"
+    table.insert(outputsf, str)
+    x = x - 1
+  end
+  return 
+  echo(table.concat(outputsf, ", ") )</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^filist$</regex>
 				</Alias>
 				<Alias isActive="no" isFolder="no">
 					<name>Check stuff</name>
@@ -2622,6 +2646,13 @@ snd.send("chaostrap sense")</script>
 					<command></command>
 					<packageName></packageName>
 					<regex>^shrine clear$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Troops Delete</name>
+					<script>troop_list = {}</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^troop clear$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Boomerang</name>
@@ -4596,91 +4627,90 @@ end</script>
 							<Alias isActive="yes" isFolder="no">
 								<name>afflictions</name>
 								<script>if snd.class == "Monk" then
-  snd.starting_attack()
+	snd.starting_attack()
       
-  local string = "" -- this will populate with our attack
-  local call = "" -- call your aff you're pushing
-  local kai = tonumber(gmcp.Char.Vitals.kai) 
+	local route = "" -- this will populate with our attack
+	local call = "" -- call your aff you're pushing
+	local kai = tonumber(gmcp.Char.Vitals.kai) 
 
-  snd.giving = {"anorexia", "stupidity", "paresis", "recklessness", "confusion", "epilepsy"}  
-  mymental_aff_count = 0
-  for aff in ipairs(snd.mental_affs) do
-    if table.contains(snd.have_aff, snd.mental_affs[aff]) then
-      mymental_aff_count = mymental_aff_count + 1
-    end
-  end
-  local kai = tonumber(gmcp.Char.Vitals.kai) 
+	snd.giving = {"anorexia", "stupidity", "recklessness", "dizziness", "epilepsy"}  
+	mymental_aff_count = 0
+	for aff in ipairs(snd.mental_affs) do
+		if table.contains(snd.have_aff, snd.mental_affs[aff]) then
+			mymental_aff_count = mymental_aff_count + 1
+		end
+	end
+	local kai = tonumber(gmcp.Char.Vitals.kai) 
     
-  function snd.attack_function()
-    local mental_aff_count = snd.aff_count_mental()
-    banishtarget = false
-    banishselect()      
+	function snd.attack_function()
+		local mental_aff_count = snd.aff_count_mental()
+		snd.banishtarget = false
+		snd.banishselect()      
 
-    if not snd.waiting.queue then
-      if snd.used.shield then
-        string = "sck "..snd.target      
-      elseif snd.theytumbling then
-        string = "slt "..snd.target
-      elseif banishtarget ~= false and kai &gt;= 60 then
-        string = "kai banish "..banishtarget..snd.sep
-      elseif snd.checkAff("blackout") and not snd.checkAff("disrupted") and mental_aff_count &gt; 2 then
-        string = "mind disrupt"
-      elseif snd.proned and not snd.target_impaled then
-        if snd.parried_limb == "left leg" then
-          string = "combo "..snd.target.." wrt right leg hfp right hfp right"
-        elseif snd.parried_limb == "right leg" then
-          string = "combo "..snd.target.." wrt left leg hfp left hfp left"
-        else
-          if (snd.limb_dmg["head"] &gt;= 56) and snd.no_parry() and snd.stance == "tiger" then
-            string = "combo "..snd.target.." axk ucp ucp"
-          --elseif snd.stance ~= "tiger" then
-            --string = "tgs"
-          end
-        end
-      elseif snd.target_impaled then
-        string = "combo "..snd.target.." axk ucp ucp"
-      elseif snd.aff_tally() &gt; 4 and (snd.have_aff("paresis") or snd.have_aff("asthma") or snd.have_aff("slickness") or snd.have_aff("aeon") or snd.have_aff("ablaze") or snd.have_aff("heatspear")) and snd.balance.mindpush then
-        string = "mind push "..snd.target
-      elseif mymental_aff_count &gt;= 2 and not snd.balance.mindcleanse then 
-        string = "mind cleanse me"
-      else
-        one = "none"
-        two = "none"
-        three = "none"
-        for i in ipairs(snd.giving) do
-          if not snd.checkAff(snd.giving[i]) then
-            if one == "none" then
-              one = snd.giving[i]
-            elseif two == "none" then
-              two = snd.giving[i]
-            elseif three == "none" then
-              three = snd.giving[i]
-            end
-          end
-        end
-        if three ~= "none" then
-          string = "mind batter "..snd.target.." "..one.." "..two.." "..three
-        else
-          if snd.parried_limb == "head" then
-            string = "combo "..snd.target.." spk hkp hkp"
-          else
-            string = "combo "..snd.target.." wwk ucp ucp"
-          end
-        end
-      end
+		if not snd.waiting.queue then
+			if snd.used.shield then
+				route = "sck "..snd.target      
+			elseif snd.theytumbling then
+				route = "slt "..snd.target
+			elseif snd.banishtarget ~= false and kai &gt;= 60 then
+				route = "kai banish "..snd.banishtarget..snd.sep
+			elseif snd.checkAff("blackout") and not snd.checkAff("disrupted") and mental_aff_count &gt; 2 then
+				route = "mind disrupt"
+			elseif snd.proned and not snd.target_impaled then
+				if snd.parried_limb == "left leg" then
+					route = "combo "..snd.target.." wrt right leg hfp right hfp right"
+				elseif snd.parried_limb == "right leg" then
+					route = "combo "..snd.target.." wrt left leg hfp left hfp left"
+				elseif (snd.limb_dmg["head"] &gt;= 56) and snd.no_parry() and snd.stance == "tiger" then
+					route = "combo "..snd.target.." axk ucp ucp"
+				end
+			elseif snd.target_impaled then
+				route = "combo "..snd.target.." axk ucp ucp"
+			elseif snd.aff_tally() &gt; 4 and snd.balance.mindpush then
+				route = "mind push "..snd.target.. " silent"
+			elseif mymental_aff_count &gt;= 2 and not snd.balance.mindcleanse then 
+				route = "mind cleanse me"
+			else
+				one = "none"
+				two = "none"
+				three = "none"
+				for i in ipairs(snd.giving) do
+					if not snd.checkAff(snd.giving[i]) then
+						if one == "none" then
+							one = snd.giving[i]
+						elseif two == "none" then
+							two = snd.giving[i]
+						elseif three == "none" then
+							three = snd.giving[i]
+						end
+					end
+				end
+				if three ~= "none" then
+					route = "mind batter "..snd.target.." "..one.." "..two.." "..three
+					if snd.toggles.affcalling and not snd.target_gone then
+						route = "wt Battering "..snd.target..": "..one..", "..two..", "..three..snd.sep..route
+					end
+				else
+					if snd.parried_limb == "head" then
+						route = route.."combo "..snd.target.." spk hkp hkp"
+					else
+						route = route.."combo "..snd.target.." wwk ucp ucp"
+					end
+				end
+			end
       
-      if snd.toggles.affcalling and not snd.target_gone then
-        string = call..string
-		  end
+			if snd.toggles.affcalling and not snd.target_gone then
+				route = call..route
+			end
        
-      if string ~= snd.last_attack and not snd.waiting.queue then
-        snd.last_attack = string
-        snd.attack(snd.last_attack)
-        snd.waiting.queue = true
-        tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      end
-  end
-end
+			if route ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = route
+				snd.attack(snd.last_attack)
+				snd.waiting.queue = true
+				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+			end
+		end
+	end
 
   snd.attack_function()
 end</script>
@@ -4689,70 +4719,124 @@ end</script>
 								<regex>^aff$</regex>
 							</Alias>
 							<Alias isActive="yes" isFolder="no">
-								<name>Default Aff</name>
+								<name>test</name>
 								<script>if snd.class == "Monk" then
-snd.giving = {
-"paresis",
-"stupidity",
-"anorexia",
-"recklessness",
-"dizziness",
-"confusion",
-"epilepsy",
-"hallucinations"
-}
-snd.starting_attack()
-function snd.attack_function()
- if not snd.waiting.queue then
-  if snd.used.shield then
-   string = "combo "..snd.target.." sck ucp ucp"
-    elseif snd.proned() and not snd.checkAff("writhe_impaled") then
-     if snd.parried_limb == "left leg" then
-      string = "combo "..snd.target.." wrt right leg hfp right hfp right"
-     else
-      string = "combo "..snd.target.." wrt left leg hfp left hfp left"
-     end
-  else
-     one = "none"
-     two = "none"
-     three = "none"
-   for i in ipairs(snd.giving) do
-    if not snd.checkAff(snd.giving[i]) then
-     if one == "none" then
-      one = snd.giving[i]
-         elseif two == "none" then
-          two = snd.giving[i]
-         elseif three == "none" then
-          three = snd.giving[i]
-     end
+	snd.starting_attack()
+
+	function snd.attack_function()
+		if not snd.waiting.queue then
+      
+		local route = "" -- this will populate with our attack
+		local call = "" -- call your aff you're pushing
+		local kai = tonumber(gmcp.Char.Vitals.kai) 
+		local mental_aff_count = snd.aff_count_mental()
+		local tekuraKick = ""
+		local firstPunch = ""
+		local secondPunch = ""
+		snd.banishtarget = false
+		snd.banishselect() 
+
+		snd.giving = {"anorexia", "stupidity", "recklessness", "dizziness", "epilepsy"}  
+		mymental_aff_count = 0
+		for aff in ipairs(snd.mental_affs) do
+			if table.contains(snd.have_aff, snd.mental_affs[aff]) then
+				mymental_aff_count = mymental_aff_count + 1
+			end	
+		end
+		
+		snd.giving = {"anorexia", "stupidity", "epilepsy", "recklessness", "confusion", "paresis"}      
+      
+		snd.mindAffliction = "none"
+		for i in ipairs(snd.giving) do
+			if not snd.checkAff(snd.giving[i]) then
+				if snd.mindAffliction == "none" then
+					snd.mindAffliction = snd.giving[i]
+					if snd.mindAffliction == "confusion" then
+						snd.mindAffliction = "confuse"
+					elseif snd.mindAffliction == "paresis" then
+						snd.mindAffliction = "paralyse"
+					end
+				end
+			end
+		end
+      
+		if snd.used.shield then
+			tekuraKick = "sck"
+		elseif snd.stance ~= "bear" and not snd.can_arms() and snd.not_aff("fallen") then
+			tekuraKick = "brs"
+	    elseif snd.stance ~= "tiger" then
+			tekuraKick = "tgs"
+	    elseif snd.checksomeAffs({"left_leg_broken", "right_leg_broken"},1) and not snd.checkAff("fallen") then
+			tekuraKick = "swk"
+		elseif (snd.checkAff("writhe_impaled") or snd.checkAff("head_mangled") or snd.limb_dmg["head"] &gt;= 66.66) and snd.checkAff("fallen") then
+			tekuraKick = "axk"
+		elseif snd.limb_dmg["left leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.resto_limb ~= "left leg" then
+			tekuraKick = "snk left"
+		elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.resto_limb ~= "right leg" then
+			tekuraKick = "snk right"
+		else 
+			tekuraKick = "wwk"
+		end
+		
+		if snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
+			firstPunch = "hfp left"
+		elseif snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
+			firstPunch = "hfp right"
+		else
+		    firstPunch = "hkp"
+		end
+      
+		if snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
+			secondPunch = "hfp left"
+		elseif snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
+			secondPunch = "hfp right"
+		else
+			secondPunch = "hkp"
+		end
+      
+		if snd.theytumbling then
+			route = "slt "..snd.target
+		elseif banishtarget ~= false and kai &gt;= 60 then
+			route = "kai banish "..snd.banishtarget..snd.sep
+		elseif snd.banishtarget ~= false and kai &gt;= 60 then
+			route = "kai banish "..snd.banishtarget..snd.sep
+		elseif snd.checkAff("blackout") and not snd.checkAff("disrupted") and mental_aff_count &gt; 2 then
+			route = "mind disrupt"
+		elseif snd.checkAff("fallen") and not snd.checkAff("writhe_impaled") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then 
+			route = "bbt "..snd.target
+		elseif kai &gt;= 40 and not snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then
+			route = "kai cripple "..snd.target
+		elseif kai &gt;= 20 and snd.parried_limb ~= "torso" and snd.resto_limb == "torso" and snd.limb_dmg["torso"] &gt; 19.99 and snd.balance.kaistrike and snd.timer_check("poultice", 3, "more than") then
+			route = "kai strike "..snd.target
+		elseif (snd.limb_dmg["head"] &gt;= 56 or snd.checkAff("head_mangled")) and snd.checkAff("fallen")  and snd.no_parry() then
+			route = "combo "..snd.target.." axk ucp ucp"
+		else
+			route = "combo "..snd.target.." "..tekuraKick.." "..firstPunch.." "..secondPunch..snd.sep.." mind "..snd.mindAffliction.." "..snd.target
+			call = "wt Afflicting "..snd.target..": "..snd.mindAffliction..snd.sep
+		end
+      
+		if not snd.mindlocked and not snd.locking then
+			route = "mind lock "..snd.target..snd.sep..route
+		end		  
+      
+		if snd.toggles.affcalling and not snd.target_gone then
+			route = call..route
+		end
+       
+		if route ~= snd.last_attack and not snd.waiting.queue then
+			snd.last_attack = route
+			snd.attack(snd.last_attack)
+			snd.waiting.queue = true
+			tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+		end      
     end
-   end
-     if three ~= "none" then
-    string = "mind batter "..snd.target.." "..one.." "..two.." "..three
-        if snd.toggles.affcalling and not snd.target_gone then
-         string = "wt Battering "..snd.target..": "..one..", "..two..", "..three..snd.sep..string
-        end
-     else
-    if snd.parried_limb == "head" then
-     string = "combo "..snd.target.." spk hkp hkp"
-        else
-       string = "combo "..snd.target.." wwk ucp ucp"
-        end
-     end
-  end
-  if string ~= snd.last_attack and not snd.waiting.queue then
-   snd.last_attack = string
-   snd.attack(snd.last_attack)
-   snd.waiting.queue = true
-   tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-  end
- end
-end
-snd.attack_function()
+    
+	end
+  snd.attack_function()
 end</script>
 								<command></command>
 								<packageName></packageName>
-								<regex>^daff$</regex>
+								<regex>^test$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
@@ -5013,6 +5097,8 @@ end</script>
       local string = "" -- this will populate with our attack
       local call = "" -- call your aff you're pushing
       local kai = tonumber(gmcp.Char.Vitals.kai) 
+      snd.banishtarget = false
+      snd.banishselect()
       
       snd.giving = {"anorexia", "stupidity", "epilepsy", "recklessness", "confusion", "paresis"}      
       
@@ -5040,6 +5126,8 @@ end</script>
         tekuraKick = "swk"
       elseif (snd.checkAff("writhe_impaled") or snd.checkAff("head_mangled") or snd.limb_dmg["head"] &gt;= 66.66) and snd.checkAff("fallen") then
         tekuraKick = "axk"
+      elseif snd.parried_limb ~= "torso" and snd.limb_dmg["torso"] &lt; 66.66 then
+        tekuraKick = "spk"
       elseif snd.limb_dmg["left leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "left leg") and snd.resto_limb ~= "left leg" then
         tekuraKick = "snk left"
 	    elseif snd.limb_dmg["right leg"] &lt; 33.33 and (snd.no_parry() or snd.parried_limb ~= "right leg") and snd.resto_limb ~= "right leg" then
@@ -5048,7 +5136,9 @@ end</script>
         tekuraKick = "wwk"
       end
       
-      if snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
+      if snd.parried_limb ~= "torso" and snd.limb_dmg["torso"] &lt; 66.66 then
+        firstPunch = "hkp"
+      elseif snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
         firstPunch = "hfp left"
       elseif snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
         firstPunch = "hfp right"
@@ -5056,7 +5146,9 @@ end</script>
 		    firstPunch = "hkp"
       end
       
-      if snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
+      if snd.parried_limb ~= "torso" and snd.limb_dmg["torso"] &lt; 66.66 then
+        secondPunch = "hkp"
+      elseif snd.parried_limb ~= "left leg" and snd.limb_dmg["left leg"] &lt; 33.33 and snd.resto_limb ~= "left leg" then
         secondPunch = "hfp left"
       elseif snd.parried_limb ~= "right leg" and snd.limb_dmg["right leg"] &lt; 33.33 and snd.resto_limb ~= "right leg" then
         secondPunch = "hfp right"
@@ -5064,13 +5156,10 @@ end</script>
 		    secondPunch = "hkp"
       end
       
-      --banishtarget = false
-      --banishselect()
-      
       if snd.theytumbling then
         string = "slt "..snd.target
-      --elseif banishtarget ~= false and kai &gt;= 60 then
-        --string = "kai banish "..banishtarget..snd.sep
+      elseif snd.banishtarget ~= false and kai &gt;= 60 then
+        string = "kai banish "..snd.banishtarget..snd.sep
       elseif snd.checkAff("fallen") and not snd.checkAff("writhe_impaled") and snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then 
          string = "bbt "..snd.target
       elseif kai &gt;= 40 and not snd.checksomeAffs({"left_leg_crippled", "right_leg_crippled", "right_arm_crippled", "left_arm_crippled"},1) then
@@ -5084,9 +5173,9 @@ end</script>
         call = "wt Afflicting "..snd.target..": "..snd.mindAffliction..snd.sep
       end
       
-      if not snd.mindlocked and not snd.locking then
-        string = "mind lock "..snd.target..snd.sep..string
-      end		  
+      --if not snd.mindlocked and not snd.locking then
+      --  string = "mind lock "..snd.target..snd.sep..string
+      --end		  
       
       if snd.toggles.affcalling and not snd.target_gone then
         string = call..string
@@ -9535,7 +9624,7 @@ function snd.attack_function()
 	 		string = "pounce "..snd.target..snd.sep.."combo "..snd.target.." jugular jugular"
 		elseif not snd.no_parry() then
 	 		string = "combo "..snd.target.." bodypunch jugular"
-    elseif not snd.parried_limb == "head" then
+    elseif snd.parried_limb ~= "head" then
       string = "combo "..snd.target.." jugular skullwhack"
 		else
 	 		string = "combo "..snd.target.." jugular jugular"
@@ -10314,7 +10403,7 @@ end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex></regex>
-						<AliasGroup isActive="yes" isFolder="yes">
+						<AliasGroup isActive="no" isFolder="yes">
 							<name>Misc Aliases</name>
 							<script></script>
 							<command></command>
@@ -10339,7 +10428,7 @@ snd.send("mutagen new four"..snd.sep.."mutagen four potency chronic"..snd.sep.."
 								<script>if snd.class == "Archivist" then
   snd.send("drop "..snd.my_token..snd.sep.."geo invert"..snd.sep.."qeb geo trace me")
 elseif snd.class == "Voidseer" then
-  snd.send("drop "..snd.my_token..snd.sep.."muse cordon"..snd.sep.."qeb muse vine me")
+  snd.send("drop 495987"..snd.sep.."muse cordon"..snd.sep.."qeb muse vine me")
 end</script>
 								<command></command>
 								<packageName></packageName>
@@ -10983,7 +11072,7 @@ end</script>
 				if bioessence &gt;= 1 then
 					string = string.."bio steroid"..snd.sep
 				end
-			elseif physcount &lt;= 2 and not snd.my_impress == "Hex" then
+			elseif physcount &lt;= 2 and snd.my_impress ~= "Hex" then
 				string = impressstring.."incite hex " ..snd.target..snd.sep 
 			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
 				if bioessence &gt;= 1 and not (physcount &gt;= 3) then
@@ -11265,7 +11354,7 @@ end</script>
 				if bioessence &gt;= 1 then
 					string = string.."bio steroid"..snd.sep
 				end
-			elseif physcount &lt;= 2 and not snd.my_impress == "Hex"  then
+			elseif physcount &lt;= 2 and snd.my_impress ~= "Hex"  then
 				string = impressstring.."incite hex " ..snd.target..snd.sep 
 			elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("sealing_square") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
 				string = impressstring.."geo sealing square " ..snd.target..snd.sep
@@ -11547,7 +11636,7 @@ if snd.class == "Archivist" then
 								call = "wt Afflicting "..snd.target..": "..touse[1]
 							end
 						else
-							if not snd.my_incite == "Hex" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
+							if snd.my_incite ~= "Hex" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
 								string = impressstring.."incite hex " ..snd.target..snd.sep
 							else
 								if #tohit &gt;= 1 then
@@ -11593,7 +11682,7 @@ if snd.class == "Archivist" then
 						string = string.."bio steroid"..snd.sep
 					end
 				else
-					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and not snd.my_incite == "Hex"  then
+					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and snd.my_incite ~= "Hex"  then
 						string = impressstring.."incite hex " ..snd.target..snd.sep
 					else
 						if #touse &gt;= 1 then
@@ -26962,7 +27051,7 @@ end</script>
 				end
 				string = string.."ALCHEMY ELECTROSHOCK "..snd.target..snd.sep
 				comingattack = "electroshock"
-			elseif not snd.checkAff("vitalbane") and energy &gt;= 3 and mentcount &lt;= 5 then
+			elseif not snd.checkAff("vitalbane") and energy &gt;= 3 and mentcount &lt;= 2 then
 				string = "ALCHEMY MALIGNANT "..snd.target..snd.sep
 				comingattack = "malignant"
 			else 
@@ -38913,6 +39002,8 @@ end</script>
 		
 			if snd.theyran then -- are they running? Let's go ahead and fetch them back to where we are
 				route = "psi fetch "..snd.target
+			elseif snd.flying then
+				route = "psi vacuum "..snd.target..snd.sep..hackleAttack..snd.sep..zenithAbility
 			elseif snd.instakilltarget == snd.target then
 				route = "palmforce "..snd.target.." strike"
 			elseif (snd.flamestack &gt;= 12 or (snd.flamestack == 11 and gmcp.Char.Vitals.ability_bal == "1")) and not snd.used.shield then
@@ -39040,9 +39131,9 @@ end</script>
       
 			if snd.used.shield then
 				if not snd.checkAff("ablaze") then
-					route = "touch hammer "..snd.target..snd.sep..hackleAttack.." "..snd.target
+					route = "touch hammer "..snd.target..hackleAttack..snd.sep..zenithAbility
 				else
-					route = "enact scorch "..snd.target..snd.sep..hackleAttack.." "..snd.target
+					route = "enact scorch "..snd.target..hackleAttack..snd.sep..zenithAbility
 				end
 			end      
 			if snd.nopets then
@@ -41189,11 +41280,21 @@ end</script>
 								<script>if snd.class == "Alchemist" then
   snd.attack("botany diffuse")
 elseif snd.class == "Shaman" then
-  snd.attack("nature emerge")
+  snd.attack("nature emergence")
 end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^eme$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Gravity Cannon</name>
+								<script>
+if snd.class == "Shaman" then
+  snd.send("qeb commune discharge "..snd.target.." "..matches[2])
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^gc(.*)$</regex>
 							</Alias>
 						</AliasGroup>
 						<AliasGroup isActive="yes" isFolder="yes">
@@ -41835,7 +41936,7 @@ end</script>
 							<packageName></packageName>
 							<regex></regex>
 							<Alias isActive="yes" isFolder="no">
-								<name>Reclaim (Omen Side)</name>
+								<name>Reclamation</name>
 								<script>if snd.class == "Shaman" then
 	snd.starting_attack()
 	function snd.attack_function()
@@ -42012,12 +42113,6 @@ end</script>
 			elseif energy &gt;= 4 and not snd.currentsactive and phobiacount &lt; 3 and mentcount &lt; 5 then
 				string = "commune boost"..snd.sep.."commune staticburst "..snd.target..snd.sep
 				comingattack = "currents"
-			elseif not snd.checkAff("infestation") and (energy &lt; 4 or (euphcount &gt;= 2 and snd.checkAff("dread"))) then
-				string = "commune infest "..snd.target..snd.sep
-				comingattack = "infiltrative"
-			elseif not snd.checkAff("blight") and (energy &lt; 4 or (anticount &gt;= 2 and snd.checkAff("dread"))) then
-				string = "commune spines "..snd.target..snd.sep
-				comingattack = "pathogen"
 			elseif snd.checkAff("dread") and energy &gt;= 2 and (mentcount &gt;= 7 or (mentcount &gt;= 5 and snd.checkAff("impatience"))) and snd.checkAff("recklessness") then
 				if snd.checksomeAffs({"blight", "infestation", "stormtouched"}, 2) and not snd.checkAff("paranoia") and depcount &gt; 3 then
 					string = "shaman divulgence "..snd.target.." paranoia"
@@ -42041,6 +42136,12 @@ end</script>
 			elseif not snd.checkAff("vitalbane") and energy &gt;= 3 and mentcount &lt;= 5 then
 				string = "commune scourge "..snd.target..snd.sep
 				comingattack = "malignant"
+			elseif not snd.checkAff("infestation") then
+				string = "commune infest "..snd.target..snd.sep
+				comingattack = "infiltrative"
+			elseif not snd.checkAff("blight") then
+				string = "commune spines "..snd.target..snd.sep
+				comingattack = "pathogen"
 			else 
 				if energy &gt;= 4 then
 					string = string.."commune boost"..snd.sep
@@ -42057,14 +42158,8 @@ end</script>
 			end
       
 			if snd.alchemystored == "" and energy &gt;= 3 then
-				if mentcount &lt; 3 and not snd.checksomeAffs({"paresis","stupidity"}, 1) and not snd.incomingomen and not snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 3) and not snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 4) then
+				if mentcount &lt; 3 and not snd.checksomeAffs({"paresis","stupidity"}, 1) and not snd.incomingomen then --and not snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 3) and not snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 4) 
 					string = "commune naturaltide overload"..snd.sep
-					call = ""
-				elseif not snd.checkAff("infestation") and comingattack ~= "infiltrative" and euphcount &gt;= 3 then
-					string = "commune naturaltide infest"..snd.sep
-					call = ""
-				elseif not snd.checkAff("blight") and comingattack ~= "pathogen" and anticount &gt;= 3 then
-					string = "commune naturaltide spines"..snd.sep
 					call = ""
 				end
 			end       
@@ -42118,6 +42213,282 @@ end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^kll$</regex>
+							</Alias>
+							<Alias isActive="yes" isFolder="no">
+								<name>Oridez Route</name>
+								<script>if snd.class == "Shaman" then
+	snd.starting_attack()
+	function snd.attack_function()
+		if not snd.waiting.queue then
+  
+			call = ""
+			string =""
+			local venom = "none"
+			local prem = "none"
+			local energy = tonumber(gmcp.Char.Vitals.energy)
+			local comingattack = "none"
+			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp) 
+			local pet_classes = {"sentinel", "carnifex", "praenomen", "teradrim", "indorani", "luminary"}
+			local phys_classes = {"carnifex", "praenomen", "teradrim", "luminary", "monk", "sciomancer", "ascendril"}
+	
+			snd.giving = {
+				"recklessness",
+				"clumsiness",
+				"asthma",
+				"weariness",
+				"shyness",
+				"stupidity",
+				"dizziness",
+				"paresis",
+        "ringing_ears",
+				"haemophilia",
+        "vomiting",
+        "allergies",
+        "slickness",
+        "anorexia",
+        "voyria",        
+				}
+  
+			snd.giving_prem = {
+				"nyctophobia",
+				"vertigo",
+				"agoraphobia",
+				"claustrophobia",
+				"shyness",
+				"loneliness",
+				"paranoia",
+				"superstition",
+				"fear",
+				}
+			
+			local mentcount = 0 
+			for aff in ipairs(snd.mental_affs) do
+				if table.contains(snd.target_has, snd.mental_affs[aff]) then
+					mentcount = mentcount + 1
+				end	
+			end
+			local anticount = 0 
+			for aff2 in pairs(snd.cures.antipsychotic) do
+				if table.contains(snd.target_has, snd.cures.antipsychotic[aff2]) then
+					anticount = anticount + 1
+				end
+			end
+			local euphcount = 0 
+			for aff3 in pairs(snd.cures.euphoriant) do
+				if table.contains(snd.target_has, snd.cures.euphoriant[aff3]) then
+					euphcount = euphcount + 1
+				end
+			end
+			local deconcount = 0 
+			for aff4 in pairs(snd.cures.decongestant) do
+				if table.contains(snd.target_has, snd.cures.decongestant[aff4]) then
+					deconcount = deconcount + 1
+				end
+			end
+			local depcount = 0 
+			for aff6 in pairs(snd.cures.depressant) do
+				if table.contains(snd.target_has, snd.cures.depressant[aff6]) then
+					depcount = depcount + 1
+				end
+			end
+      
+			local phobias = {"fear", "agoraphobia", "claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"}
+			local phobiacount = 0  
+			for aff5 in pairs(phobias) do
+				if table.contains(snd.target_has, phobias[aff5]) then
+					phobiacount = phobiacount + 1
+				end
+			end
+			
+			if (table.contains(phys_classes, snd.cureset) or deconcount &gt; 1) and not snd.checkAff("clumsiness") then
+				table.insert(snd.giving, 1, "clumsiness")
+			end
+			if snd.incomingomen and not snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) then
+				table.insert(snd.giving, 1, "ringing_ears")
+			end
+			if not snd.checkAff("paranoia") and mentcount &gt; 2 and not snd.checkAff("dread") then
+				table.insert(snd.giving_prem, 1, "paranoia")
+			end
+			if not snd.checkAff("loneliness") and mentcount &gt; 2 and not snd.checkAff("dread") then
+				table.insert(snd.giving_prem, 1, "loneliness")
+			end
+			if not snd.checkAff("shyness") and mentcount &gt; 2 and snd.checkAff("impatience") and not snd.checkAff("dread") then
+				table.insert(snd.giving_prem, 1, "shyness")
+			end
+			if not snd.checkAff("shyness") and mentcount &gt; 2 and snd.checkAff("impatience") and not snd.giving_prem[1] == "shyness" then
+				table.insert(snd.giving, 1, "shyness")
+			end
+			if not snd.checkAff("paranoia") and mentcount &gt; 2 and snd.checksomeAffs({"blight", "infestation", "stormtouched"}, 2) then
+				table.insert(snd.giving_prem, 1, "paranoia")
+			end
+      
+			for i in ipairs(snd.giving) do
+				if not snd.checkAff(snd.giving[i]) and venom == "none" then
+					venom = snd.effects[snd.giving[i]]
+				end
+			end
+			if venom == "none" then
+				venom = "loki"
+			end
+  
+			for i in pairs(snd.giving_prem) do
+				if not snd.checkAff(snd.giving_prem[i]) and prem == "none" then
+					prem = snd.giving_prem[i]
+				end
+			end
+      
+			if snd.flying then
+				string = string.."touch tentacle "..snd.target..snd.sep
+			elseif snd.used.shield or snd.checkAff("barrier") then
+				string = string.."commune leafstorm "..snd.target..snd.sep
+			elseif snd.theyran then
+				string = string.."nature pull "..snd.target
+			elseif snd.theytumbling then
+				string = string.."commune strangle "..snd.target
+			elseif snd.instakilltarget == snd.target then
+				string = string.."commune vinelash "..snd.target.." curare"..snd.sep
+			elseif snd.diffuseneeded then
+				string = string.."nature emergence"
+			elseif snd.blightneeded then
+				string = string.."nature overgrowth"
+			elseif not snd.checkAff("dread") and (phobiacount &gt;=4 or mentcount &gt; 2) then
+				string = string.."shaman premonition "..snd.target..snd.sep
+			elseif phobiacount &gt;= 5 and snd.my_dread then
+				string = string.."commune reclamation " ..snd.target
+			elseif snd.incomingomen then
+				if energy &gt;= 2 then
+					string = string.."commune boost"..snd.sep
+				end
+				if not snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) and energy &gt;= 2 then
+					string = string.."commune effusion "..snd.target..snd.sep
+					comingattack = "rousing"
+				elseif not snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) then
+					string = string.."commune vinelash "..snd.target.." prefarar"..snd.sep
+					comingattack = "virulent"
+				elseif not snd.checkAff("clumsiness") and snd.checksomeAffs({"ringing_ears", "sensitivity"}, 1) then
+					string = string.."commune vinelash "..snd.target.." xentio"..snd.sep
+					comingattack = "virulent"
+				else
+					string = string.."commune lightning "..snd.target..snd.sep
+					comingattack = "static"
+				end
+			elseif ((snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 3) and deconcount &gt; 2) or snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 4)) and not snd.incomingomen then
+				if snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 4) and deconcount &gt; 2 then
+					string = "shaman omen "..snd.target.." in 9"..snd.sep
+					comingattack = "causality"
+				elseif snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 3) and deconcount &gt; 3 then 
+					string = "shaman omen "..snd.target.." in 6"..snd.sep
+					comingattack = "causality" 
+				else
+					string = "shaman omen "..snd.target.." in 6"..snd.sep
+					comingattack = "causality"
+				end
+			elseif snd.proned() and not snd.checkAff("writhe_vines") and snd.thorncount &gt;= 3 then
+				string = "commune strangle "..snd.target..snd.sep
+			elseif not snd.proned() and energy &gt;= 3 and snd.thorncount &gt;= 3 and not snd.checkAff("writhe_vines") then
+				string = "commune boost"..snd.sep.."commune slam "..snd.target
+			elseif energy &gt;= 4 and not snd.currentsactive then
+				string = "commune boost"..snd.sep.."commune staticburst "..snd.target..snd.sep
+				comingattack = "currents"
+			elseif snd.checkAff("dread") and energy &gt;= 2 and (mentcount &gt;= 7 or (mentcount &gt;= 5 and snd.checkAff("impatience"))) and snd.checkAff("recklessness") then
+				if snd.checksomeAffs({"blight", "infestation", "stormtouched"}, 2) and not snd.checkAff("paranoia") and depcount &gt; 3 then
+					string = "shaman divulgence "..snd.target.." paranoia"
+					comingattack = "hallucinogen"
+				else
+					string = "shaman divulgence "..snd.target.." "..prem
+					comingattack = "hallucinogen"
+				end
+			elseif not snd.checkAff("impatience") and energy &gt;= 3 then
+				if energy &gt;= 4 and not snd.checkAff("hallucinations") then
+					string = "commune boost"..snd.sep
+				end
+				string = string.."commune sporulation "..snd.target..snd.sep
+				comingattack = "neurotic"
+			elseif not snd.checksomeAffs({"paresis","stupidity"}, 1) and energy &gt;= 3 and snd.alchemystored ~= "electroshock" and snd.currentsactive then
+				if energy &gt;= 4 and not snd.checkAff("blackout") then
+					string = "commune boost"..snd.sep
+				end
+				string = string.."commune overload "..snd.target..snd.sep
+				comingattack = "electroshock"
+			elseif not snd.checkAff("infestation") then
+				string = "commune infest "..snd.target..snd.sep
+				comingattack = "infiltrative"
+			elseif not snd.checkAff("blight") then
+				string = "commune spines "..snd.target..snd.sep
+				comingattack = "pathogen"
+			elseif not snd.checkAff("vitalbane") and energy &gt;= 3 then
+				string = "commune scourge "..snd.target..snd.sep
+				comingattack = "malignant"
+			else 
+				if energy &gt;= 4 then
+					string = string.."commune boost"..snd.sep
+				end
+				string = string.."commune vinelash "..snd.target.." "..venom
+				comingattack = "virulent"
+			end
+      
+			if (snd.alchemystored == "overload" and comingattack == "neurotic")
+				or (comingattack ~= "infiltrative" and snd.alchemystored == "infest" and not snd.checkAff("infestation"))
+				or (comingattack ~= "pathogen" and snd.alchemystored == "spines" and not snd.checkAff("blight")) then
+				string = string..snd.sep.."commune release "..snd.target..snd.sep
+			end
+      
+			if snd.alchemystored == "" and energy &gt;= 3 then
+				if ((mentcount &lt; 3 and not snd.checksomeAffs({"paresis","stupidity"}, 1)) or (snd.currentsactive and not snd.checksomeAffs({"paresis","stupidity"}, 1))) and not snd.incomingomen then --and not snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 3) and not snd.checksomeAffs({"blight", "infestation", "stormtouched", "paranoia"}, 4)
+					string = "commune naturaltide overload"..snd.sep
+					call = ""
+				end
+			end       
+      
+			if snd.shamanpet == "" then
+				string = "familiar summon serpent"..snd.sep.."order spirit follow me"..snd.sep..string
+			end
+  
+			if snd.incomingomen and snd.shamanpet ~= "wyvern" and snd.balance.morph then
+				string = "familiar morph wyvern"..snd.sep.."order spirit follow me"..snd.sep..string
+			elseif snd.shamanpet ~= "serpent" and snd.balance.morph and not snd.incomingomen then
+				string = "familiar morph serpent"..snd.sep.."order spirit follow me"..snd.sep..string
+			end
+    
+			if not snd.fetishattuned then
+				string = "fetish attune "..snd.target..snd.sep..string
+			end
+          
+			if snd.nopets then
+				string = "familiar recall"..snd.sep.."order loyals kill "..snd.target..snd.sep..string
+			elseif not snd.loyalsattacking then
+				string = "order loyals kill "..snd.target..snd.sep..string
+			end
+      
+			if #snd.fetish_list &lt;= 0 then
+				string = "weaponprobe quarterstaff"..snd.sep..string
+			end
+      
+			if #snd.fetish_list &gt; 0 and not table.contains(snd.fetish_list, "stone") then
+				string = "fetish string feather tooth stone shell"..snd.sep..string
+			end  
+            
+			if not string.find(gmcp.Char.Vitals.wield_left, "quarterstaff") then
+				string = "quickwield both quarterstaff"..snd.sep..string
+			end   
+
+			if snd.toggles.affcalling and not snd.target_gone then
+				string = call..string
+			end
+
+			if string ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = string
+				snd.attack(snd.last_attack)
+				snd.waiting.queue = true
+				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
+			end
+		end
+	end
+	snd.attack_function()
+end</script>
+								<command></command>
+								<packageName></packageName>
+								<regex>^kll2$</regex>
 							</Alias>
 						</AliasGroup>
 					</AliasGroup>
@@ -43010,10 +43381,10 @@ if snd.class == "Archivist" then
   snd.send("mutagen new three"..snd.sep.."mutagen three potency chronic"..snd.sep.."mutagen three effect narcotic"..snd.sep.."mutagen three effect atrophic"..snd.sep.."mutagen three effect psychoactive"..snd.sep.."mutagen three complete")
   snd.send("mutagen new four"..snd.sep.."mutagen four potency chronic"..snd.sep.."mutagen four effect degenerative"..snd.sep.."mutagen four effect narcotic"..snd.sep.."mutagen four effect somnolent"..snd.sep.."mutagen four complete")
 elseif snd.class == "Voidseer" then
-  snd.send("mutagen new one"..snd.sep.."mutagen one potency chronic"..snd.sep.."mutagen one effect narcotic"..snd.sep.."mutagen one effect somnolent"..snd.sep.."mutagen one effect reactive"..snd.sep.."mutagen one complete")
-  snd.send("mutagen new two"..snd.sep.."mutagen two potency chronic"..snd.sep.."mutagen two effect narcotic"..snd.sep.."mutagen two effect atrophic"..snd.sep.."mutagen two effect degenerative"..snd.sep.."mutagen two complete")
-  snd.send("mutagen new three"..snd.sep.."mutagen three potency chronic"..snd.sep.."mutagen three effect narcotic"..snd.sep.."mutagen three effect atrophic"..snd.sep.."mutagen three effect psychoactive"..snd.sep.."mutagen three complete")
-  snd.send("mutagen new four"..snd.sep.."mutagen four potency chronic"..snd.sep.."mutagen four effect degenerative"..snd.sep.."mutagen four effect narcotic"..snd.sep.."mutagen four effect somnolent"..snd.sep.."mutagen four complete")
+  snd.send("revelation new one"..snd.sep.."revelation one experience unabating"..snd.sep.."revelation one effect terrifying"..snd.sep.."revelation one effect oscitant"..snd.sep.."revelation one effect prickling"..snd.sep.."revelation one complete")
+  snd.send("revelation new two"..snd.sep.."revelation two experience unabating"..snd.sep.."revelation two effect terrifying"..snd.sep.."revelation two effect enervating"..snd.sep.."revelation two effect wasting"..snd.sep.."revelation two complete")
+  snd.send("revelation new three"..snd.sep.."revelation three experience unabating"..snd.sep.."revelation three effect terrifying"..snd.sep.."revelation three effect enervating"..snd.sep.."revelation three effect kaleidoscopic"..snd.sep.."revelation three complete")
+  snd.send("revelation new four"..snd.sep.."revelation four experience unabating"..snd.sep.."revelation four effect wasting"..snd.sep.."revelation four effect terrifying"..snd.sep.."revelation four effect oscitant"..snd.sep.."revelation four complete")
 end</script>
 								<command></command>
 								<packageName></packageName>
@@ -43107,8 +43478,8 @@ end</script>
 							<packageName></packageName>
 							<regex></regex>
 							<Alias isActive="yes" isFolder="no">
-								<name>Old Aff</name>
-								<script>if snd.class == "Archivist" then
+								<name>No venoms</name>
+								<script>if snd.class == "Voidseer" then
 
 	snd.starting_attack()
 	
@@ -43118,12 +43489,12 @@ end</script>
 			local touse = {}
 			local touse2 = {}
 			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
+			local route = "" 
+			local empower = ""
+			local impress = ""
 			local call = "" 
-			local biostring = ""
-			local bioessence = tonumber(gmcp.Char.Vitals.bio)
+			local bioroute = ""
+			local bioessence = tonumber(gmcp.Char.Vitals.insight)
 			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 			local physcount = 0			
@@ -43170,41 +43541,6 @@ end</script>
 					"recklessness",
 				}
 			end
-      
-			if snd.timer_check("fitness", 1, "more than") then
-				snd.giving_venom = {
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"anorexia",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}	
-			elseif snd.timer_check("focus", 1, "more than") then	 
-				snd.giving_venom = {
-					"anorexia",
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				} 
-			else      
-				snd.giving_venom = {
-					"paresis",
-					"clumsiness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}
-			end
 	
 			for i in ipairs(snd.giving) do
 				if not snd.checkAff(snd.giving[i]) then
@@ -43214,316 +43550,82 @@ end</script>
 				end
 			end
       
-			for k in ipairs(snd.giving_venom) do
-				if not snd.checkAff(snd.giving_venom[k]) then
-					if not table.contains(touse2, snd.giving_venom[k]) then
-						table.insert(touse2, snd.giving_venom[k])
-					end
-				end
-			end
-			for aff in ipairs(touse2) do
-				table.insert(tohit, snd.effects[touse2[aff]])
-			end
-      
 			echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
 			
 			if snd.empowerready then
 				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "empower rafic"..snd.sep
+					empower = "affirm trunk"..snd.sep
 				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "empower yuef"..snd.sep
+					empower = "affirm root"..snd.sep
 				elseif snd.balance.madness then
-					empowerstring = "empower jhako"..snd.sep 
+					empower = "affirm branch"..snd.sep 
 				else
-					empowerstring = ""        
+					empower = ""        
 				end
 			end
       
 			if snd.my_impress == "" then
-				impressstring = "geo impress swirl"..snd.sep
+				impress = "MUSE FOSTER dread"..snd.sep
 			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Bloom" then
-					impressstring = "geo impress bloom"..snd.sep
+				if snd.my_impress ~= "Guilt" then
+					impress = "MUSE FOSTER guilt"..snd.sep
 				end
 			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Star" then
-					impressstring = "geo impress star"..snd.sep
+				if snd.my_impress ~= "Wistful" then
+					impress = "MUSE FOSTER wistful"..snd.sep
 				end
 			elseif not snd.checkAff("delirium") and snd.timer_check("focus", 1, "more than") then
-				if snd.my_impress ~= "Swirl" then
-					impressstring = "geo impress swirl"..snd.sep
+				if snd.my_impress ~= "Dread" then
+					impress = "MUSE FOSTER dread"..snd.sep
 				end
 			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Hex" then
-					impressstring = "geo impress hex"..snd.sep
+				if snd.my_impress ~= "Spite" then
+					impress = "MUSE FOSTER spite"..snd.sep
 				end
 			end
 			
-			if activelock and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-				string = string.."elicit recollection"..snd.sep
-			elseif snd.flying then
-				string = string.."touch tentacle "..snd.target..snd.sep
+			if snd.flying then
+				route = route.."touch tentacle "..snd.target..snd.sep
 			elseif snd.used.shield then
-				string = impressstring.."incite fork "..snd.target..snd.sep
+				route = impress.."FOMENT ANGER "..snd.target..snd.sep
 			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"..snd.sep
-			elseif snd.instakilltarget == snd.target then
-				if snd.target == "Whirran" then
-					string = impressstring.."slash "..snd.target.." delphinium"..snd.sep
-				else
-					string = impressstring.."slash "..snd.target.." curare"..snd.sep
-				end
+				route = impress.."CHAKRA RESILE "..snd.target.." 3"..snd.sep
 			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."elicit unravel "..snd.target 
+				route = empower..impress.."CHAKRA TRANSCEND "..snd.target 
 			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."bio infect "..snd.target.." with one"..snd.sep
+				route = impress.."VOID BESTOW "..snd.target.." with one"..snd.sep
 				if bioessence &gt;= 1 then
-					string = string.."bio steroid"..snd.sep
-				end
-			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
-				if bioessence &gt; 1 and not snd.checkAff("addiction") then
-					string = impressstring.."bio flare "..snd.target..snd.sep
-				else
-					if not snd.growth and bioessence &gt;= 2 then
-						string = impressstring.."bio growth " ..snd.target..snd.sep
-					elseif snd.checkAff("blackout") or mentcount &gt;= 6 then
-						string = impressstring.."slash "..snd.target.." "..tohit[1]..snd.sep
-						call = "wt Afflicting "..snd.target..": "..tohit[1]
-						if bioessence &gt;= 1 then
-							string = string.."bio steroid"..snd.sep
-						end
-					else
-						if #touse &gt;= 1 and mentcount &lt;= 5 then
-							if not snd.conjoin then
-								if not snd.checkAff("mercy") then
-									string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": mercy"
-								else
-									string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": "..touse[1]
-								end
-							else
-								string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-								call = "wt Afflicting "..snd.target..": "..touse[1]
-							end
-						else
-							if not snd.my_incite == "Hex" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
-								string = impressstring.."incite hex " ..snd.target..snd.sep
-							else
-                if #tohit &gt;= 1 then
-								  string = impressstring.."slash "..snd.target.." "..tohit[1]..snd.sep
-								  if bioessence &gt;= 1 then
-									 string = string.."bio steroid"..snd.sep
-								  end
-                else
-                  string = string.."incite crux "..snd.target..snd.sep
-                end
-							end
-						end
-					end
-				end
-			elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-				string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
-			else
-        if #tohit &gt;= 1 then
-          string = impressstring.."slash "..snd.target.." "..tohit[1]..snd.sep
-					if bioessence &gt;= 1 then
-            string = string.."bio steroid"..snd.sep
-					end
-        else
-				  string = string.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-        end
-			end
-      
-			if string:find("slash") then
-				if not string.find(gmcp.Char.Vitals.wield_left, "longsword") then
-					string = "quickwield left longsword"..snd.sep.."wipe longsword"..snd.sep..string
-				end
-				if not string.find(gmcp.Char.Vitals.wield_right, "codex") then
-					string = "quickwield right codex"..snd.sep..string
-				end
-			else
-				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-					string = "quickwield left buckler"..snd.sep..string
-				end
-				if not string.find(gmcp.Char.Vitals.wield_right, "codex") then
-					string = "quickwield right codex"..snd.sep..string
-				end
-			end
-
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
-			end
-
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
-				snd.attack(snd.last_attack)
-				snd.waiting.queue = true
-				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-			end 
-		end
-	end
-  
-snd.attack_function()
-
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^aff2$</regex>
-							</Alias>
-							<Alias isActive="yes" isFolder="no">
-								<name>No venoms</name>
-								<script>if snd.class == "Archivist" then
-
-	snd.starting_attack()
-	
-	function snd.attack_function()
-		if not snd.waiting.queue then
-    
-			local touse = {}
-			local touse2 = {}
-			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
-			local call = "" 
-			local biostring = ""
-			local bioessence = tonumber(gmcp.Char.Vitals.bio)
-			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-			local physcount = 0			
-			for aff in ipairs(snd.physical_affs) do
-				if table.contains(snd.target_has, snd.physical_affs[aff]) then
-					physcount = physcount + 1
-				end
-			end
-			local mentcount = 0 
-			for aff in ipairs(snd.mental_affs) do
-				if table.contains(snd.target_has, snd.mental_affs[aff]) then
-					mentcount = mentcount + 1
-				end
-			end
-      
-			if snd.timer_check("focus", 1, "more than") then
-				snd.giving = {
-					"laxity",
-					"dizziness",        
-					"faintness",
-					"epilepsy",
-					"shyness",        
-					"infatuation",
-					"peace",
-					"magnanimity",        
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			else
-				snd.giving = {
-					"dizziness",
-					"faintness",
-					"epilepsy",
-					"shyness",
-					"laxity",
-					"infatuation",
-					"peace",
-					"magnanimity",
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			end
-	
-			for i in ipairs(snd.giving) do
-				if not snd.checkAff(snd.giving[i]) then
-					if not table.contains(touse, snd.giving[i]) then
-						table.insert(touse, snd.giving[i])
-					end
-				end
-			end
-      
-			echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
-			
-			if snd.empowerready then
-				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "empower rafic"..snd.sep
-				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "empower yuef"..snd.sep
-				elseif snd.balance.madness then
-					empowerstring = "empower jhako"..snd.sep 
-				else
-					empowerstring = ""        
-				end
-			end
-      
-			if snd.my_impress == "" then
-				impressstring = "geo impress swirl"..snd.sep
-			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Bloom" then
-					impressstring = "geo impress bloom"..snd.sep
-				end
-			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) then
-				if snd.my_impress ~= "Star" then
-					impressstring = "geo impress star"..snd.sep
-				end
-			elseif not snd.checkAff("delirium") and snd.timer_check("focus", 1, "more than") then
-				if snd.my_impress ~= "Swirl" then
-					impressstring = "geo impress swirl"..snd.sep
-				end
-			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Hex" then
-					impressstring = "geo impress hex"..snd.sep
-				end
-			end
-			
-			if snd.used.shield then
-				string = impressstring.."incite fork "..snd.target..snd.sep
-			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"..snd.sep
-			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."elicit unravel "..snd.target 
-			elseif snd.instakilltarget == snd.target then
-				if snd.target == "Whirran" then
-					string = impressstring.."slash "..snd.target.." delphinium"..snd.sep
-				else
-					string = impressstring.."slash "..snd.target.." curare"..snd.sep
-				end
-			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."bio infect "..snd.target.." with one"..snd.sep
-				if bioessence &gt;= 1 then
-					string = string.."bio steroid"..snd.sep
+					route = route.."VOID POISE"..snd.sep
 				end
 			elseif physcount &gt;= 1 and bioessence &gt; 1 and not snd.checkAff("addiction") then
-				string = impressstring.."bio flare "..snd.target..snd.sep
+				route = impress.."void distress "..snd.target..snd.sep
 			elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-				string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
+				route = empower..impress.."CHAKRA TURMOIL "..snd.target..snd.sep
 			else
 				if #touse &gt;= 1 and mentcount &lt;= 5 then
 					if not snd.conjoin then
 						if not snd.checkAff("mercy") then
-							string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
+							route = impress.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": mercy"
 						else
-							string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+							route = impress.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": "..touse[1]
 						end
 					else
-						string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+						route = impress.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 						call = "wt Afflicting "..snd.target..": "..touse[1]
 					end
 				else
-					string = string.."incite crux "..snd.target..snd.sep
+					route = route.."foment sadness "..snd.target..snd.sep
 				end
 			end
 
 			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
+				route = call..snd.sep..route
 			end
 
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
+			if route ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = route
 				snd.attack(snd.last_attack)
 				snd.waiting.queue = true
 				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
@@ -43546,20 +43648,21 @@ end</script>
 							<packageName></packageName>
 							<regex></regex>
 							<Alias isActive="yes" isFolder="no">
-								<name>Normal 1v1 (Works 1/26)</name>
-								<script>if snd.class == "Archivist" then
+								<name>Aff without Venoms (Works 6/19)</name>
+								<script>if snd.class == "Voidseer" then
 
-	snd.starting_attack()	
+	snd.starting_attack()
+	
 	function snd.attack_function()
-		if not snd.waiting.queue then    
+		if not snd.waiting.queue then
 			local touse = {}
 			local touse2 = {}
 			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
+			local route = "" 
+			local empower = ""
+			local impress = ""
 			local call = "" 
-			local bioessence = tonumber(gmcp.Char.Vitals.bio)
+			local bioessence = tonumber(gmcp.Char.Vitals.insight) 
 			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 			local physcount = 0			
@@ -43619,185 +43722,178 @@ end</script>
 			
 			if snd.empowerready then
 				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "empower rafic"..snd.sep
+					empower = "affirm trunk"..snd.sep
 				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "empower yuef"..snd.sep
+					empower = "affirm root"..snd.sep
 				elseif snd.balance.madness then
-					empowerstring = "empower jhako"..snd.sep 
+					empower = "affirm branch"..snd.sep 
 				elseif mentcount &gt;= 5 and physcount &lt; 3 then
-					empowerstring = "empower yi"..snd.sep 
+					empowerstring = "affirm leaf"..snd.sep 
 				else
-					empowerstring = ""        
+					empower = ""        
 				end
 			end
       
 			if snd.my_impress == "" then
-				impressstring = "geo impress swirl"..snd.sep
+				impress = "MUSE FOSTER dread"..snd.sep
 			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Bloom" then
-					impressstring = "geo impress bloom"..snd.sep
+				if snd.my_impress ~= "Guilt" then
+					impress = "MUSE FOSTER guilt"..snd.sep
 				end
 			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Star" then
-					impressstring = "geo impress star"..snd.sep
+				if snd.my_impress ~= "Wistful" then
+					impress = "MUSE FOSTER wistful"..snd.sep
 				end
-			elseif not snd.checkAff("delirium") then
-				if snd.my_impress ~= "Swirl" then
-					impressstring = "geo impress swirl"..snd.sep
+			elseif not snd.checkAff("delirium") and snd.timer_check("focus", 1, "more than") then
+				if snd.my_impress ~= "Dread" then
+					impress = "MUSE FOSTER dread"..snd.sep
 				end
 			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Hex" then
-					impressstring = "geo impress hex"..snd.sep
+				if snd.my_impress ~= "Spite" then
+					impress = "MUSE FOSTER spite"..snd.sep
 				end
 			end
-			
+      
 			if (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-				string = string.."elicit recollection"..snd.sep
+				route = impress.."CHAKRA RETROSPECTION"..snd.sep
 			elseif snd.flying then
-				string = impressstring.."touch tentacle "..snd.target..snd.sep
+				route = impress.."touch tentacle "..snd.target..snd.sep
 			elseif snd.used.shield then
-				string = impressstring.."incite fork "..snd.target..snd.sep
+				route = impress.."FOMENT ANGER "..snd.target..snd.sep
 			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"..snd.sep
+				route = impress.."CHAKRA RESILE "..snd.target.." 3"..snd.sep
 			elseif snd.instakilltarget == snd.target then
-				string = impressstring.."incite crescent " ..snd.target..snd.sep
+				route = impress.."foment misery " ..snd.target..snd.sep
 			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."elicit unravel "..snd.target 
+				route = empower..impress.."CHAKRA TRANSCEND "..snd.target 
 			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."bio infect "..snd.target.." with one"..snd.sep
+				route = impress.."VOID BESTOW "..snd.target.." with one"..snd.sep
 				if bioessence &gt;= 1 then
-					string = string.."bio steroid"..snd.sep
+					route = route.."VOID POISE"..snd.sep
 				end
-			elseif physcount &lt;= 2 and not snd.my_impress == "Hex" then
-				string = impressstring.."incite hex " ..snd.target..snd.sep 
+			elseif physcount &lt;= 2 and snd.my_impress ~= "Spite"  then
+				route = impress.."foment spite " ..snd.target..snd.sep 
 			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
 				if bioessence &gt;= 1 and not (physcount &gt;= 3) then
-					string = impressstring.."bio flare "..snd.target..snd.sep
+					route = impress.."VOID DISTRESS "..snd.target..snd.sep
 					if bioessence &gt;= 2 then
-						string = string.."bio stimulant"..snd.sep
-					end 
+						route = route.."void aplomb"..snd.sep
+					end
 				else
 					if not snd.growth and bioessence &gt;= 2 then
-						string = impressstring.."bio growth " ..snd.target..snd.sep
-          elseif snd.empowertype == "yi" and physcount &lt; 3 then
-            string = impressstring.."elicit affliction "..snd.target..snd.sep            
+						route = impress.."VOID EDIFY " ..snd.target..snd.sep
+					elseif snd.empowertype == "leaf" and physcount &lt; 3 then
+						route = empower..impress.."chakra disorder "..snd.target..snd.sep            
 					else
 						if #touse &gt;= 1 and mentcount &lt;= 5 then
 							if not snd.conjoin then
 								if not snd.checkAff("mercy") then
-									string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
+									route = impress.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
 									call = "wt Afflicting "..snd.target..": mercy"
 								else
-									string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+									route = impress.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 									call = "wt Afflicting "..snd.target..": "..touse[1]
 								end
 							else
-								string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+								route = impress.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 								call = "wt Afflicting "..snd.target..": "..touse[1]
 							end
 							if bioessence &gt;= 1 then
-								string = string.."bio stimulant"..snd.sep
+								route = route.."void aplomb"..snd.sep
 							end
 						else
-							if snd.hexcount == 0 and snd.my_incite ~= "Hex" then
-								string = impressstring.."incite hex " ..snd.target..snd.sep
-              elseif physcount &lt;= 2 then
-                if snd.empowerready then
-                  empowerstring = "empower yi"..snd.sep
-                end
-                string = empowerstring.."elicit affliction " ..snd.target..snd.sep
+							if not snd.my_incite == "Spite" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
+								route = impress.."foment spite " ..snd.target..snd.sep
+							elseif physcount &lt;= 2 then
+								if snd.empowerready then
+									empower = "affirm leaf"..snd.sep
+								end
+								route = empower..impress.."chakra disorder "..snd.target..snd.sep  
 							else
-								string = string.."incite crux "..snd.target..snd.sep
+								route = impress.."foment sadness "..snd.target..snd.sep
 							end
 						end
 					end
 				end
 			elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-				string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
-			elseif not snd.checkAff("patterns") and snd.checksomeAffs({"lemniscate", "matrix"}, 2) then
-				string = impressstring.."geo pattern "..snd.target..snd.sep	
-			elseif snd.checkAff("lemniscate") and not snd.checkAff("matrix") then
-				string = impressstring.."geo matrix " ..snd.target..snd.sep
-			elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 3)) and not snd.checkAff("lemniscate") then
-				string = impressstring.."incite lemniscate " ..snd.target..snd.sep
-			elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("sealing_square") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				string = impressstring.."geo sealing square " ..snd.target..snd.sep
-			elseif snd.checksomeAffs({"laxity", "infatuation", "peace", "magnanimity"}, 4) and not snd.checkAff("sealing_triangle") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				string = impressstring.."geo sealing triangle " ..snd.target..snd.sep 
-			elseif snd.checksomeAffs({"mercy", "masochism", "mania", "recklessness"}, 4) and not snd.checkAff("sealing_circle") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				string = impressstring.."geo sealing circle " ..snd.target..snd.sep
+				route = empower..impress.."CHAKRA TURMOIL "..snd.target..snd.sep
+			elseif not snd.checkAff("patterns") and snd.checksomeAffs({"sonder", "matrix"}, 2) then
+				route = impress.."MUSE RECRUDESCENCE "..snd.target..snd.sep	
+			elseif snd.checkAff("sonder") and not snd.checkAff("matrix") then
+				route = impress.."MUSE HISTRIONICS " ..snd.target..snd.sep
+			elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 3)) and not snd.checkAff("sonder") then
+				route = impress.."foment sonder " ..snd.target..snd.sep
+			elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("etched_fear") and not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				route = impress.."muse etch fear " ..snd.target..snd.sep
+			elseif snd.checksomeAffs({"laxity", "infatuation", "peace", "magnanimity"}, 4) and not snd.checkAff("etched_joy") and not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				route = impress.."muse etch joy " ..snd.target..snd.sep 
+			elseif snd.checksomeAffs({"mercy", "masochism", "mania", "recklessness"}, 4) and not snd.checkAff("etched_disgust") and not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				route = impress.."muse etch disgust " ..snd.target..snd.sep
 			else
 				if mentcount &lt;= 3 then
 					if not snd.conjoin then
 						if not snd.checkAff("mercy") then
-							string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
+							route = impress.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": mercy"
 						else
-							string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+							route = impress.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": "..touse[1]
 						end
 					else
-						string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+						route = impress.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 						call = "wt Afflicting "..snd.target..": "..touse[1]
 					end
 					if bioessence &gt;= 1 then
-						string = string.."bio stimulant"..snd.sep
+						route = route.."VOID APLOMB"..snd.sep
 					end 
-        elseif mentcount &gt;= 5 and not snd.syncopatehave and snd.eqbal_timer_check("focus", 3) and snd.syncopateready then
-          string = "elicit syncopate "..snd.target
-			  else
-					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and not snd.my_incite == "Hex"  then
-						string = impressstring.."incite hex " ..snd.target..snd.sep
-					elseif snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") and snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-					  string = impressstring.."incite crescent " ..snd.target..snd.sep
-				  else
-						string = impressstring.."incite crux "..snd.target..snd.sep
+				elseif mentcount &gt;= 5 and not snd.syncopatehave and snd.eqbal_timer_check("focus", 3) and snd.syncopateready then
+					route = impress.."chakra upheaval "..snd.target
+				else
+					if physcount &lt;= 2 and mentcount &gt;= 3 and snd.my_impress ~= "Spite"  then
+						route = impress.."foment spite " ..snd.target..snd.sep
+					elseif snd.my_incite ~= "Misery" and snd.crescentable and not snd.checkAff("blackout") and snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
+						route = impress.."foment Misery " ..snd.target..snd.sep
+					else
+						route = impress.."foment sadness " ..snd.target..snd.sep
 					end
 				end
 			end
-      
-			if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-				string = "quickwield left buckler"..snd.sep..string
-			end
-			if not string.find(gmcp.Char.Vitals.wield_right, "codex") then
-				string = "quickwield right codex"..snd.sep..string
+
+			if snd.toggles.affcalling and not snd.target_gone and call~= "" then
+				route = call..snd.sep..route
 			end
 
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
-			end
-
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
+			if route ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = route
 				snd.attack(snd.last_attack)
 				snd.waiting.queue = true
 				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-			end 
+			end
 		end
 	end
   
-snd.attack_function()
-
+	snd.attack_function()
 end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^kll$</regex>
 							</Alias>
 							<Alias isActive="yes" isFolder="no">
-								<name>Try to Just Seal and Kill (Works 1/26)</name>
-								<script>if snd.class == "Archivist" then
+								<name>Try to Just Seal and Kill (Works 6/19)</name>
+								<script>if snd.class == "Voidseer" then
 
-	snd.starting_attack()	
+	snd.starting_attack()
+	
 	function snd.attack_function()
-		if not snd.waiting.queue then    
+		if not snd.waiting.queue then
 			local touse = {}
 			local touse2 = {}
 			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
+			local route = "" 
+			local empower = ""
+			local impress = ""
 			local call = "" 
-			local bioessence = tonumber(gmcp.Char.Vitals.bio)
+			local bioessence = tonumber(gmcp.Char.Vitals.insight) 
 			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 			local physcount = 0			
@@ -43844,41 +43940,6 @@ end</script>
 					"recklessness",
 				}
 			end
-      
-			if snd.eqbal_timer_check("fitness", 3) then
-				snd.giving_venom = {
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"anorexia",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}	
-			elseif snd.eqbal_timer_check("focus", 2) then	 
-				snd.giving_venom = {
-					"anorexia",
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				} 
-			else      
-				snd.giving_venom = {
-					"paresis",
-					"clumsiness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}
-			end
 	
 			for i in ipairs(snd.giving) do
 				if not snd.checkAff(snd.giving[i]) then
@@ -43888,161 +43949,146 @@ end</script>
 				end
 			end
       
-			for k in ipairs(snd.giving_venom) do
-				if not snd.checkAff(snd.giving_venom[k]) then
-					if not table.contains(touse2, snd.giving_venom[k]) then
-						table.insert(touse2, snd.giving_venom[k])
-					end
-				end
-			end
-			for aff in ipairs(touse2) do
-				table.insert(tohit, snd.effects[touse2[aff]])
-			end
-      
 			echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
 			
 			if snd.empowerready then
 				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "empower rafic"..snd.sep
+					empower = "affirm trunk"..snd.sep
 				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "empower yuef"..snd.sep
+					empower = "affirm root"..snd.sep
 				elseif snd.balance.madness then
-					empowerstring = "empower jhako"..snd.sep 
+					empower = "affirm branch"..snd.sep 
+				elseif mentcount &gt;= 5 and physcount &lt; 3 then
+					empowerstring = "affirm leaf"..snd.sep 
 				else
-					empowerstring = ""        
+					empower = ""        
 				end
 			end
       
 			if snd.my_impress == "" then
-				impressstring = "geo impress swirl"..snd.sep
+				impress = "MUSE FOSTER dread"..snd.sep
 			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Bloom" then
-					impressstring = "geo impress bloom"..snd.sep
+				if snd.my_impress ~= "Guilt" then
+					impress = "MUSE FOSTER guilt"..snd.sep
 				end
 			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Star" then
-					impressstring = "geo impress star"..snd.sep
+				if snd.my_impress ~= "Wistful" then
+					impress = "MUSE FOSTER wistful"..snd.sep
 				end
-			elseif not snd.checkAff("delirium") then
-				if snd.my_impress ~= "Swirl" then
-					impressstring = "geo impress swirl"..snd.sep
+			elseif not snd.checkAff("delirium") and snd.timer_check("focus", 1, "more than") then
+				if snd.my_impress ~= "Dread" then
+					impress = "MUSE FOSTER dread"..snd.sep
 				end
 			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Hex" then
-					impressstring = "geo impress hex"..snd.sep
+				if snd.my_impress ~= "Spite" then
+					impress = "MUSE FOSTER spite"..snd.sep
 				end
 			end
-			
+      
 			if (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-				string = string.."elicit recollection"..snd.sep
+				route = impress.."CHAKRA RETROSPECTION"..snd.sep
 			elseif snd.flying then
-				string = impressstring.."touch tentacle "..snd.target..snd.sep
+				route = impress.."touch tentacle "..snd.target..snd.sep
 			elseif snd.used.shield then
-				string = impressstring.."incite fork "..snd.target..snd.sep
+				route = impress.."FOMENT ANGER "..snd.target..snd.sep
 			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"..snd.sep
+				route = impress.."CHAKRA RESILE "..snd.target.." 3"..snd.sep
 			elseif snd.instakilltarget == snd.target then
-				string = impressstring.."incite crescent " ..snd.target..snd.sep
+				route = impress.."foment misery " ..snd.target..snd.sep
 			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."elicit unravel "..snd.target 
+				route = empower..impress.."CHAKRA TRANSCEND "..snd.target 
 			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."bio infect "..snd.target.." with one"..snd.sep
+				route = impress.."VOID BESTOW "..snd.target.." with one"..snd.sep
 				if bioessence &gt;= 1 then
-					string = string.."bio steroid"..snd.sep
+					route = route.."VOID POISE"..snd.sep
 				end
-			elseif physcount &lt;= 2 and not snd.my_impress == "Hex"  then
-				string = impressstring.."incite hex " ..snd.target..snd.sep 
-			elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("sealing_square") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				string = impressstring.."geo sealing square " ..snd.target..snd.sep
-			elseif snd.checksomeAffs({"laxity", "infatuation", "peace", "magnanimity"}, 4) and not snd.checkAff("sealing_triangle") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				string = impressstring.."geo sealing triangle " ..snd.target..snd.sep 
-			elseif snd.checksomeAffs({"mercy", "masochism", "mania", "recklessness"}, 4) and not snd.checkAff("sealing_circle") and not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				string = impressstring.."geo sealing circle " ..snd.target..snd.sep
-			elseif not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-				if not snd.checkAff("patterns") and snd.checksomeAffs({"lemniscate", "matrix"}, 1) then
-				  string = impressstring.."geo pattern "..snd.target..snd.sep
-        elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-					string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
-				elseif snd.checkAff("lemniscate") and not snd.checkAff("matrix") then
-				  string = impressstring.."geo matrix " ..snd.target..snd.sep
-			  elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 2)) and not snd.checkAff("lemniscate") then
-					string = impressstring.."incite lemniscate " ..snd.target..snd.sep
+			elseif physcount &lt;= 2 and snd.my_impress ~= "Spite"  then
+				route = impress.."foment spite " ..snd.target..snd.sep 
+			elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("etched_fear") and not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				route = impress.."muse etch fear " ..snd.target..snd.sep
+			elseif snd.checksomeAffs({"laxity", "infatuation", "peace", "magnanimity"}, 4) and not snd.checkAff("etched_joy") and not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				route = impress.."muse etch joy " ..snd.target..snd.sep 
+			elseif snd.checksomeAffs({"mercy", "masochism", "mania", "recklessness"}, 4) and not snd.checkAff("etched_disgust") and not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				route = impress.."muse etch disgust " ..snd.target..snd.sep
+			elseif not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
+				if not snd.checkAff("patterns") and snd.checksomeAffs({"sonder", "matrix"}, 2) then
+					route = impress.."MUSE RECRUDESCENCE "..snd.target..snd.sep
+				elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
+					route = empower..impress.."CHAKRA TURMOIL "..snd.target..snd.sep
+				elseif snd.checkAff("sonder") and not snd.checkAff("matrix") then
+					route = impress.."MUSE HISTRIONICS " ..snd.target..snd.sep
+				elseif snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 2) and not snd.checkAff("sonder") then
+					route = impress.."foment sonder " ..snd.target..snd.sep
 				else
 					if #touse &gt; 0 then
 						if not snd.conjoin then
 							if not snd.checkAff("mercy") then
-								string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
+								route = impress.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
 								call = "wt Afflicting "..snd.target..": mercy"
 							else
-								string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+								route = impress.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 								call = "wt Afflicting "..snd.target..": "..touse[1]
 							end
 						else
-							string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+							route = impress.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": "..touse[1]
 						end
+						if bioessence &gt;= 1 then
+							route = route.."void aplomb"..snd.sep
+						end
 					else
-						if snd.hexcount == 0 and snd.my_incite ~= "Hex" then
-								string = impressstring.."incite hex " ..snd.target..snd.sep
-							else
-								string = string.."incite crux "..snd.target..snd.sep
-							end
-							if bioessence &gt;= 1 then
-								string = string.."bio steroid"..snd.sep
-							end
+						if not snd.my_incite == "Spite" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
+							route = impress.."foment spite " ..snd.target..snd.sep 
+						else
+							route = impress.."foment sadness "..snd.target..snd.sep
+						end
 					end
 				end
-      elseif mentcount &gt;= 5 and not snd.syncopatehave and snd.eqbal_timer_check("focus", 3) and snd.syncopateready then
-        string = "elicit syncopate "..snd.target
+			elseif mentcount &gt;= 5 and not snd.syncopatehave and snd.eqbal_timer_check("focus", 3) and snd.syncopateready then
+				route = impress.."chakra upheaval "..snd.target							
 			else
-				if snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") and snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-					string = impressstring.."incite crescent " ..snd.target..snd.sep
+				if snd.my_incite ~= "Misery" and snd.crescentable and not snd.checkAff("blackout") and snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
+					route = impress.."foment Misery " ..snd.target..snd.sep
 				else
-					string = impressstring.."incite crux "..snd.target..snd.sep
+					route = impress.."foment sadness " ..snd.target..snd.sep
 				end
 			end
-      
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
+
+			if snd.toggles.affcalling and not snd.target_gone and call~= "" then
+				route = call..snd.sep..route
 			end
 
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
+			if route ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = route
 				snd.attack(snd.last_attack)
 				snd.waiting.queue = true
 				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-			end 
+			end
 		end
 	end
   
-snd.attack_function()
-
+	snd.attack_function()
 end</script>
 								<command></command>
 								<packageName></packageName>
 								<regex>^kll2$</regex>
 							</Alias>
 							<Alias isActive="yes" isFolder="no">
-								<name>lol what</name>
-								<script>--NOTE: This has things around if you're being hit by someone doing an instakill. You should take this out.
---This has built in recollection use that could be taken out.
-
-if snd.class == "Archivist" then
+								<name>Aff with Venoms (6/19)</name>
+								<script>if snd.class == "Voidseer" then
 
 	snd.starting_attack()
 	
 	function snd.attack_function()
 		if not snd.waiting.queue then
-    
 			local touse = {}
 			local touse2 = {}
 			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
+			local route = "" 
+			local empower = ""
+			local impress = ""
 			local call = "" 
-			local biostring = ""
-			local bioessence = tonumber(gmcp.Char.Vitals.bio)
+			local bioessence = tonumber(gmcp.Char.Vitals.insight) 
 			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
 			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
 			local physcount = 0			
@@ -44113,20 +44159,22 @@ if snd.class == "Archivist" then
 					"vomiting",
 					"allergies",
 					"asthma",
-				} 
+					} 
 			else      
 				snd.giving_venom = {
 					"clumsiness",
-          "feeble_arms",
-          "feeble_legs",
+					"anorexia",
+					"slickness",
 					"ringing_ears",
-          "haemophilia",
+					"haemophilia",
 					"allergies",
 					"vomiting",
-          "lethargy",
+					"lethargy",
 					"paresis",
 					"asthma",
-				}
+					"feeble_arms",
+					"feeble_legs",
+					}
 			end
 	
 			for i in ipairs(snd.giving) do
@@ -44152,1188 +44200,163 @@ if snd.class == "Archivist" then
 			
 			if snd.empowerready then
 				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "empower rafic"..snd.sep
+					empower = "affirm trunk"..snd.sep
 				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "empower yuef"..snd.sep
+					empower = "affirm root"..snd.sep
 				elseif snd.balance.madness then
-					empowerstring = "empower jhako"..snd.sep 
+					empower = "affirm branch"..snd.sep 
 				else
-					empowerstring = ""        
+					empower = ""        
 				end
 			end
       
 			if snd.my_impress == "" then
-				impressstring = "geo impress swirl"..snd.sep
+				impress = "MUSE FOSTER dread"..snd.sep
 			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Bloom" then
-					impressstring = "geo impress bloom"..snd.sep
+				if snd.my_impress ~= "Guilt" then
+					impress = "MUSE FOSTER guilt"..snd.sep
 				end
 			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Star" then
-					impressstring = "geo impress star"..snd.sep
+				if snd.my_impress ~= "Wistful" then
+					impress = "MUSE FOSTER wistful"..snd.sep
 				end
 			elseif not snd.checkAff("delirium") and snd.timer_check("focus", 1, "more than") then
-				if snd.my_impress ~= "Swirl" then
-					impressstring = "geo impress swirl"..snd.sep
+				if snd.my_impress ~= "Dread" then
+					impress = "MUSE FOSTER dread"..snd.sep
 				end
 			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Hex" then
-					impressstring = "geo impress hex"..snd.sep
+				if snd.my_impress ~= "Spite" then
+					impress = "MUSE FOSTER spite"..snd.sep
 				end
 			end
-			
+      
 			if (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-				string = string.."elicit recollection"..snd.sep
+				route = route.."CHAKRA RETROSPECTION"..snd.sep
 			elseif snd.flying then
-				string = string.."touch tentacle "..snd.target..snd.sep
+				route = route.."touch tentacle "..snd.target..snd.sep
 			elseif snd.used.shield then
-				string = impressstring.."incite fork "..snd.target..snd.sep
+				route = impress.."FOMENT ANGER "..snd.target..snd.sep
 			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"..snd.sep
+				route = impress.."CHAKRA RESILE "..snd.target.." 3"..snd.sep
 			elseif snd.instakilltarget == snd.target then
 				if snd.target == "Whirran" then
-					string = impressstring.."slash "..snd.target.." delphinium"..snd.sep
+					route = impress.."jab "..snd.target.." delphinium"..snd.sep
 				else
-					string = impressstring.."slash "..snd.target.." curare"..snd.sep
+					route = impress.."jab "..snd.target.." curare"..snd.sep
 				end
 			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."elicit unravel "..snd.target 
+				route = empower..impress.."CHAKRA TRANSCEND "..snd.target 
 			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."bio infect "..snd.target.." with one"..snd.sep
+				route = impress.."VOID BESTOW "..snd.target.." with one"..snd.sep
 				if bioessence &gt;= 1 then
-					string = string.."bio steroid"..snd.sep
+					route = route.."VOID POISE"..snd.sep
 				end
-			elseif snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") and snd.cureset == "wayfarer" and physcount &lt;= 2 then
-				string = impressstring.."incite crescent " ..snd.target..snd.sep
+			elseif snd.my_incite ~= "Misery" and snd.crescentable and not snd.checkAff("blackout") and snd.cureset == "wayfarer" and physcount &lt;= 2 then
+				route = impress.."foment misery " ..snd.target..snd.sep
+			elseif physcount &lt;= 2 and snd.my_impress ~= "Spite"  then
+				route = impress.."foment spite " ..snd.target..snd.sep 
 			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
 				if bioessence &gt; 1 and not snd.checkAff("addiction") then
-					string = impressstring.."bio flare "..snd.target..snd.sep
+					route = impress.."VOID DISTRESS "..snd.target..snd.sep
 				else
 					if not snd.growth and bioessence &gt;= 2 then
-						string = impressstring.."bio growth " ..snd.target..snd.sep
+						route = impress.."VOID EDIFY " ..snd.target..snd.sep
 					elseif snd.checkAff("blackout") or mentcount &gt;= 6 then
-						string = impressstring.."slash "..snd.target.." "..tohit[1]..snd.sep
+						route = impress.."jab "..snd.target.." "..tohit[1]..snd.sep
 						call = "wt Afflicting "..snd.target..": "..tohit[1]
 						if bioessence &gt;= 1 then
-							string = string.."bio steroid"..snd.sep
+							route = route.."VOID POISE"..snd.sep
 						end
 					else
 						if #touse &gt;= 1 and mentcount &lt;= 5 then
 							if not snd.conjoin then
 								if not snd.checkAff("mercy") then
-									string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
+									route = impress.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
 									call = "wt Afflicting "..snd.target..": mercy"
 								else
-									string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+									route = impress.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 									call = "wt Afflicting "..snd.target..": "..touse[1]
 								end
 							else
-								string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+								route = impress.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 								call = "wt Afflicting "..snd.target..": "..touse[1]
 							end
+							if bioessence &gt;= 1 then
+								route = route.."void aplomb"..snd.sep
+							end
 						else
-							if not snd.my_incite == "Hex" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
-								string = impressstring.."incite hex " ..snd.target..snd.sep
+							if not snd.my_incite == "Spite" and snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 3) then
+								route = impress.."foment spite " ..snd.target..snd.sep
 							else
 								if #tohit &gt;= 1 then
-								  string = impressstring.."slash "..snd.target.." "..tohit[1]..snd.sep
-								  if bioessence &gt;= 1 then
-									 string = string.."bio steroid"..snd.sep
-								  end
+									route = impress.."slash "..snd.target.." "..tohit[1]..snd.sep
+									if bioessence &gt;= 1 then
+										route = route.."VOID POISE"..snd.sep
+									end
 								else
-									string = string.."incite crux "..snd.target..snd.sep
+									route = route.."foment sadness "..snd.target..snd.sep
 								end
 							end
 						end
 					end
 				end
 			elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-				string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
-			elseif not snd.checkAff("patterns") and (snd.checksomeAffs({"lemniscate", "matrix"}, 1) or snd.timer_check("focus", .2, "more than")) then
-				string = impressstring.."geo pattern "..snd.target..snd.sep	
-			elseif snd.checkAff("lemniscate") and not snd.checkAff("matrix") then
-				string = impressstring.."geo matrix " ..snd.target..snd.sep
-			elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 3)) and not snd.checkAff("lemniscate") then
-				string = impressstring.."incite lemniscate " ..snd.target..snd.sep
-			else			
+				route = empower..impress.."CHAKRA TURMOIL "..snd.target..snd.sep
+			elseif not snd.checkAff("patterns") and snd.checksomeAffs({"sonder", "matrix"}, 2) then
+				route = impress.."MUSE RECRUDESCENCE "..snd.target..snd.sep	
+			elseif snd.checkAff("sonder") and not snd.checkAff("matrix") then
+				route = impress.."MUSE HISTRIONICS " ..snd.target..snd.sep
+			elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 3)) and not snd.checkAff("sonder") then
+				route = impress.."foment sonder " ..snd.target..snd.sep
+			else		
 				if mentcount &lt;= 3 then
 					if not snd.conjoin then
 						if not snd.checkAff("mercy") then
-							string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
+							route = impress.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": mercy"
 						else
-							string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+							route = impress.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 							call = "wt Afflicting "..snd.target..": "..touse[1]
 						end
 					else
-						string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+						route = impress.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
 						call = "wt Afflicting "..snd.target..": "..touse[1]
 					end
 					if bioessence &gt;= 1 then
-						string = string.."bio stimulant"..snd.sep
+						route = route.."void aplomb"..snd.sep
 					end
 				elseif #tohit &gt;= 1 then
-					string = impressstring.."slash "..snd.target.." "..tohit[1]..snd.sep
+					route = impress.."slash "..snd.target.." "..tohit[1]..snd.sep
 					if bioessence &gt;= 1 then
-						string = string.."bio steroid"..snd.sep
+						route = route.."VOID POISE"..snd.sep
 					end
 				else
-					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and not snd.my_incite == "Hex"  then
-						string = impressstring.."incite hex " ..snd.target..snd.sep
+					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and not snd.my_incite == "Spite"  then
+						route = impress.."foment spite " ..snd.target..snd.sep
 					else
 						if #touse &gt;= 1 then
-							string = string.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
+							route = route.."foment "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
 						else
-							string = impressstring.."incite crux "..snd.target..snd.sep
+							route = impress.."foment sadness "..snd.target..snd.sep
 						end
 					end
 				end
 			end
       
-			if string:find("slash") then
-				if not string.find(gmcp.Char.Vitals.wield_left, "longsword") then
-					string = "quickwield left longsword"..snd.sep.."wipe longsword"..snd.sep..string
-				end
-				if not string.find(gmcp.Char.Vitals.wield_right, "codex") then
-					string = "quickwield right codex"..snd.sep..string
-				end
+			if route:find("jab") and not gmcp.Char.Vitals.wield_left:find("longsword") then
+				route = "quickwield left longsword"..snd.sep.."wipe longsword"..snd.sep..route
 			else
-				if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-					string = "quickwield left buckler"..snd.sep..string
-				end
-				if not string.find(gmcp.Char.Vitals.wield_right, "codex") then
-					string = "quickwield right codex"..snd.sep..string
-				end
-			end
-
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
-			end
-
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
-				snd.attack(snd.last_attack)
-				snd.waiting.queue = true
-				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-			end 
-		end
-	end
-  
-snd.attack_function()
-
-end</script>
-								<command></command>
-								<packageName></packageName>
-								<regex>^kll3$</regex>
-							</Alias>
-							<AliasGroup isActive="no" isFolder="yes">
-								<name>Old</name>
-								<script></script>
-								<command></command>
-								<packageName></packageName>
-								<regex></regex>
-								<Alias isActive="no" isFolder="no">
-									<name>Crescent 1v1 (NO)</name>
-									<script>if snd.class == "Archivist" then
-
-	snd.starting_attack()	
-	function snd.attack_function()
-		if not snd.waiting.queue then    
-			local touse = {}
-			local touse2 = {}
-			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
-			local call = "" 
-			local bioessence = tonumber(gmcp.Char.Vitals.bio)
-			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-			local physcount = 0			
-			for aff in ipairs(snd.physical_affs) do
-				if table.contains(snd.target_has, snd.physical_affs[aff]) then
-					physcount = physcount + 1
-				end
-			end
-			local mentcount = 0 
-			for aff in ipairs(snd.mental_affs) do
-				if table.contains(snd.target_has, snd.mental_affs[aff]) then
-					mentcount = mentcount + 1
-				end
-			end
-      
-			if snd.timer_check("focus", 1, "more than") then
-				snd.giving = {
-					"laxity",
-					"dizziness",        
-					"faintness",
-					"epilepsy",
-					"shyness",        
-					"infatuation",
-					"peace",
-					"magnanimity",        
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			else
-				snd.giving = {
-					"dizziness",
-					"faintness",
-					"epilepsy",
-					"shyness",
-					"laxity",
-					"infatuation",
-					"peace",
-					"magnanimity",
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			end
-      
-			if snd.timer_check("fitness", 3, "more than") then
-				snd.giving_venom = {
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"anorexia",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}	
-			elseif snd.timer_check("focus", 2, "more than") then	 
-				snd.giving_venom = {
-					"anorexia",
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				} 
-			else      
-				snd.giving_venom = {
-					"paresis",
-					"clumsiness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}
-			end
-	
-			for i in ipairs(snd.giving) do
-				if not snd.checkAff(snd.giving[i]) then
-					if not table.contains(touse, snd.giving[i]) then
-						table.insert(touse, snd.giving[i])
-					end
-				end
-			end
-      
-			for k in ipairs(snd.giving_venom) do
-				if not snd.checkAff(snd.giving_venom[k]) then
-					if not table.contains(touse2, snd.giving_venom[k]) then
-						table.insert(touse2, snd.giving_venom[k])
-					end
-				end
-			end
-			for aff in ipairs(touse2) do
-				table.insert(tohit, snd.effects[touse2[aff]])
-			end
-      
-			echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
-			
-			if snd.empowerready then
-				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "empower rafic"..snd.sep
-				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "empower yuef"..snd.sep
-				elseif snd.balance.madness then
-					empowerstring = "empower jhako"..snd.sep 
-				else
-					empowerstring = ""        
-				end
-			end
-      
-			if snd.my_impress == "" then
-				impressstring = "geo impress swirl"..snd.sep
-			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Bloom" then
-					impressstring = "geo impress bloom"..snd.sep
-				end
-			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Star" then
-					impressstring = "geo impress star"..snd.sep
-				end
-			elseif not snd.checkAff("delirium") then
-				if snd.my_impress ~= "Swirl" then
-					impressstring = "geo impress swirl"..snd.sep
-				end
-			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Hex" then
-					impressstring = "geo impress hex"..snd.sep
-				end
-			end
-			
-			if snd.flying then
-				string = impressstring.."touch tentacle "..snd.target..snd.sep
-			elseif snd.used.shield then
-				string = impressstring.."incite fork "..snd.target..snd.sep
-			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"..snd.sep
-			elseif snd.instakilltarget == snd.target then
-				string = impressstring.."incite crescent " ..snd.target..snd.sep
-			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."elicit unravel "..snd.target 
-			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."bio infect "..snd.target.." with one"..snd.sep
-				if bioessence &gt;= 1 then
-					string = string.."bio steroid"..snd.sep
-				end
-			elseif physcount &gt;= 1 then
-				if bioessence &gt;= 1 and not snd.checkAff("addiction") then
-					string = impressstring.."bio flare "..snd.target..snd.sep
-				else
-					if snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") and not snd.checkAff("lemniscate") then
-            string = impressstring.."incite crescent " ..snd.target..snd.sep
-					elseif not snd.growth and bioessence &gt;= 2 then
-						string = impressstring.."bio growth " ..snd.target..snd.sep
-					else
-						if #touse &gt;= 1 and mentcount &lt;= 5 then
-							if not snd.conjoin then
-								if not snd.checkAff("mercy") then
-									string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": mercy"
-								else
-									string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": "..touse[1]
-								end
-							else
-								string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-								call = "wt Afflicting "..snd.target..": "..touse[1]
-							end
-							if bioessence &gt;= 1 then
-								string = string.."bio stimulant"..snd.sep
-							end
-						else
-							if snd.hexcount == 0 and snd.my_incite ~= "Hex" then
-								string = impressstring.."incite hex " ..snd.target..snd.sep
-							else
-                string = string.."incite crux "..snd.target..snd.sep
-							end
-						end
-					end
-				end
-			elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-				string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
-			elseif not snd.checkAff("patterns") and snd.checksomeAffs({"lemniscate", "matrix"}, 1) then
-				string = impressstring.."geo pattern "..snd.target..snd.sep	
-			elseif snd.checkAff("lemniscate") and not snd.checkAff("matrix") then
-				string = impressstring.."geo matrix " ..snd.target..snd.sep
-			elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 3)) and not snd.checkAff("lemniscate") then
-				string = impressstring.."incite lemniscate " ..snd.target..snd.sep
-			else
-				if mentcount &lt;= 3 then --physcount &gt;= 3 and 
-					if not snd.conjoin then
-						if not snd.checkAff("mercy") then
-							string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
-							call = "wt Afflicting "..snd.target..": mercy"
-						else
-							string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-							call = "wt Afflicting "..snd.target..": "..touse[1]
-						end
-					else
-						string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-						call = "wt Afflicting "..snd.target..": "..touse[1]
-					end
-					if bioessence &gt;= 1 then
-						string = string.."bio stimulant"..snd.sep
-					end 
-				else
-					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and not snd.my_incite == "Hex"  then
-						string = impressstring.."incite hex " ..snd.target..snd.sep
-					elseif snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") then
-            string = impressstring.."incite crescent " ..snd.target..snd.sep
-				  else
-            string = impressstring.."incite crux "..snd.target..snd.sep
-				  end
-				end
-			end
-      
-			if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-			 string = "quickwield left buckler"..snd.sep..string
-			end
-			if not string.find(gmcp.Char.Vitals.wield_right, "codex") then
-			 string = "quickwield right codex"..snd.sep..string
-			end
-
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
-			end
-
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
-				snd.attack(snd.last_attack)
-				snd.waiting.queue = true
-				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-			end 
-		end
-	end
-  
-snd.attack_function()
-
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll2$</regex>
-								</Alias>
-								<Alias isActive="no" isFolder="no">
-									<name>Aff into Unravel</name>
-									<script>if snd.class == "Archivist" then
-
-  snd.starting_attack()
-  function snd.attack_function()
-    if not snd.waiting.queue then
-			local touse = {}
-      local touse2 = {}
-      local tohit = {}
-      local string = "" 
-      local empowerstring = ""
-      local impressstring = ""
-      local call = "" 
-      local bioessence = tonumber(gmcp.Char.Vitals.bio) 
-      local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-      local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-      local physcount = 0
-      for aff in ipairs(snd.physical_affs) do
-          if table.contains(snd.target_has, snd.physical_affs[aff]) then
-              physcount = physcount + 1
-          end
-      end
-      local mentcount = 0 
-      for aff in ipairs(snd.mental_affs) do
-          if table.contains(snd.target_has, snd.mental_affs[aff]) then
-              mentcount = mentcount + 1
-          end
-      end
-				
-			snd.giving = {
-				"dizziness",
-        "faintness",
-        "epilepsy",
-        "shyness",
-        "laxity",
-        "infatuation",
-        "peace",
-        "magnanimity",
-        "mercy",
-        "masochism",
-        "mania",
-        "recklessness",
-			}
-      
-      snd.giving_venom = {
-		  "paresis",
-		  "clumsiness",
-		  "sensitivity",
-		  "vomiting",
-		  "allergies",
-		  "asthma",
-		  "left_leg_crippled",
-		  "right_leg_crippled",
-		  "left_arm_crippled",
-		  "right_arm_crippled",
-		  }
-	
-			for i in ipairs(snd.giving) do
-				if not snd.checkAff(snd.giving[i]) then
-					if not table.contains(touse, snd.giving[i]) then
-						table.insert(touse, snd.giving[i])
-					end
-				end
-			end
-      
-    for k in ipairs(snd.giving_venom) do
-		  if not snd.checkAff(snd.giving_venom[k]) then
-        if not table.contains(touse2, snd.giving_venom[k]) then
-          table.insert(touse2, snd.giving_venom[k])
-        end
-			end
-		end
-		for aff in ipairs(touse2) do
-		  table.insert(tohit, snd.effects[touse2[aff]])
-		end
-      
-      echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
-			
-      if snd.empowerready then
-        if physcount &gt;= 3 and mentcount &gt;= 3 then
-          empowerstring = "empower rafic"..snd.sep
-        elseif snd.balance.madness then
-          empowerstring = "empower jhako"..snd.sep 
-        else
-          empowerstring = ""        
-        end
-      end
-      
-      if snd.my_impress == "" then
-        impressstring = "geo impress swirl"..snd.sep
-      elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-        if snd.my_impress ~= "Bloom" then
-          impressstring = "geo impress bloom"..snd.sep
-        end
-      elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-        if snd.my_impress ~= "Star" then
-          impressstring = "geo impress star"..snd.sep
-        end
-      elseif not snd.checkAff("delirium") then
-        if snd.my_impress ~= "Swirl" then
-          impressstring = "geo impress swirl"..snd.sep
-        end
-      elseif not snd.checkAff("hypochondria") then
-        if snd.my_impress ~= "Hex" then
-          impressstring = "geo impress hex"..snd.sep
-        end
-      end
-      
-      if snd.flying then
-        string = string.."touch tentacle "..snd.target..snd.sep
-      elseif snd.used.shield then
-      	string = impressstring.."incite fork "..snd.target..snd.sep
-			elseif snd.theytumbling then
-				string = impressstring.."elicit return "..snd.target.." 3"
-			elseif snd.instakilltarget == snd.target then
-				string = impressstring.."incite crescent " ..snd.target..snd.sep
-			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-        string = empowerstring..impressstring.."elicit unravel "..snd.target 
-      elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-        string = impressstring.."bio infect "..snd.target.." with one"..snd.sep.."bio steroid"..snd.sep
-      elseif physcount &lt;= 2 and not snd.my_incite == "Hex"  then
-				string = impressstring.."incite hex " ..snd.target..snd.sep 
-			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
-        if bioessence &gt; 1 and not snd.checkAff("addiction") then
-          string = impressstring.."bio flare "..snd.target..snd.sep
-        else
-          if not snd.growth and bioessence &gt;= 2 then
-            string = impressstring.."bio growth " ..snd.target..snd.sep
-          else
-            if #touse &gt; 0 then
-              if not snd.conjoin then
-                if not snd.checkAff("mercy") then
-                  string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
-                  call = "wt Afflicting "..snd.target..": "..touse[1]
-                else
-					         string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-                   call = "wt Afflicting "..snd.target..": "..touse[1]
-                end
-				      else
-					       string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-                 call = "wt Afflicting "..snd.target..": "..touse[1]
-				      end
-              if bioessence &gt;= 1 then
-                string = string.."bio stimulant"..snd.sep
-              end
-            else
-              if snd.hexcount == 0 and not snd.my_incite == "Hex"  then
-				        string = impressstring.."incite hex " ..snd.target..snd.sep
-              else
-                string = string.."incite crux "..snd.target..snd.sep
-              end
-            end
-          end
-        end
-      --elseif snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") and not snd.checkAff("lemniscate") then
-      --  string = impressstring.."incite crescent " ..snd.target..snd.sep
-      elseif not snd.checkAff("patterns") and snd.checksomeAffs({"lemniscate", "matrix"}, 1) then
-				string = impressstring.."geo pattern "..snd.target..snd.sep	
-      elseif snd.checkAff("lemniscate") and not snd.checkAff("matrix") then
-				string = impressstring.."geo matrix " ..snd.target..snd.sep
-			elseif not snd.checksomeAffs({"sealing_circle", "sealing_triangle", "sealing_square"}, 2) then
-        if not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-          string = empowerstring..impressstring.."elicit madness "..snd.target..snd.sep
-        elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 2)) and not snd.checkAff("lemniscate") then
-				  string = impressstring.."incite lemniscate " ..snd.target..snd.sep
-        elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("sealing_square") then
-				  string = impressstring.."geo sealing square " ..snd.target..snd.sep
-			  elseif snd.checksomeAffs({"laxity", "infatuation", "peace", "magnanimity"}, 4) and not snd.checkAff("sealing_triangle") then
-				  string = impressstring.."geo sealing triangle " ..snd.target..snd.sep 
-			  elseif snd.checksomeAffs({"mercy", "masochism", "mania", "recklessness"}, 4) and not snd.checkAff("sealing_circle") then
-				  string = impressstring.."geo sealing circle " ..snd.target..snd.sep
-        else
-          if #touse &gt; 0 then
-				    if not snd.conjoin then
-              if not snd.checkAff("mercy") then
-                string = impressstring.."geo conjoin"..snd.sep.."incite circle "..snd.target..snd.sep
-              else
-					      string = impressstring.."geo conjoin"..snd.sep.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-                call = "wt Afflicting "..snd.target..": "..touse[1]
-              end
-				    else
-					    string = impressstring.."incite "..snd.shape_attacks[touse[1]].." "..snd.target..snd.sep
-              call = "wt Afflicting "..snd.target..": "..touse[1]
-				    end
-            if bioessence &gt;= 1 then
-              string = string.."bio stimulant"..snd.sep
-            end 
-          else
-							if snd.hexcount == 0 and snd.my_incite ~= "Hex" then
-								string = impressstring.."incite hex " ..snd.target..snd.sep
-							else
-								string = string.."incite crux "..snd.target..snd.sep
-							end
-          end
-        end
-			else
-        --if snd.my_incite ~= "Crescent" and snd.crescentable and not snd.checkAff("blackout") then
-        --  string = impressstring.."incite crescent " ..snd.target..snd.sep
-        --else
-          string = impressstring.."incite crux " ..snd.target..snd.sep
-        --end
-      end
-
-      if snd.toggles.affcalling and not snd.target_gone and call~= "" then
-          string = call..snd.sep..string
-      end
-
-      if string ~= snd.last_attack and not snd.waiting.queue then
-          snd.last_attack = string
-          snd.attack(snd.last_attack)
-          snd.waiting.queue = true
-          tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-      end
- 
-    end
-  end
-  
-snd.attack_function()
-
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll4$</regex>
-								</Alias>
-								<Alias isActive="no" isFolder="no">
-									<name>New KLL</name>
-									<script>if snd.class == "Voidseer" then
-
-	snd.starting_attack()	
-	function snd.attack_function()
-		if not snd.waiting.queue then    
-			local touse = {}
-			local touse2 = {}
-			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
-			local call = "" 
-			local bioessence = tonumber(gmcp.Char.Vitals.insight)
-			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-			local physcount = 0			
-			for aff in ipairs(snd.physical_affs) do
-				if table.contains(snd.target_has, snd.physical_affs[aff]) then
-					physcount = physcount + 1
-				end
-			end
-			local mentcount = 0 
-			for aff in ipairs(snd.mental_affs) do
-				if table.contains(snd.target_has, snd.mental_affs[aff]) then
-					mentcount = mentcount + 1
-				end
-			end
-      
-			if snd.timer_check("focus",3, "more than") then
-				snd.giving = {
-					"laxity",
-					"dizziness",        
-					"faintness",
-					"epilepsy",
-					"shyness",        
-					"infatuation",
-					"peace",
-					"magnanimity",        
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			else
-				snd.giving = {
-					"dizziness",
-					"faintness",
-					"epilepsy",
-					"shyness",
-					"laxity",
-					"infatuation",
-					"peace",
-					"magnanimity",
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			end
-	
-			for i in ipairs(snd.giving) do
-				if not snd.checkAff(snd.giving[i]) then
-					if not table.contains(touse, snd.giving[i]) then
-						table.insert(touse, snd.giving[i])
-					end
-				end
-			end
-      
-			echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
-			
-			if snd.empowerready then
-				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "affirm trunk"..snd.sep
-				elseif (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-					empowerstring = "affirm root"..snd.sep
-				elseif snd.balance.madness then
-					empowerstring = "affirm branch"..snd.sep 
-				else
-					empowerstring = ""        
-				end
-			end
-      
-			if snd.my_impress == "" then
-				impressstring = "MUSE FOSTER dread"..snd.sep
-			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Guilt" then
-					impressstring = "MUSE FOSTER guilt"..snd.sep
-				end
-			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Wistful" then
-					impressstring = "MUSE FOSTER wistful"..snd.sep
-				end
-			elseif not snd.checkAff("delirium") and snd.timer_check("focus", 2, "more than") then
-				if snd.my_impress ~= "Dread" then
-					impressstring = "MUSE FOSTER dread"..snd.sep
-				end
-			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Spite" then
-					impressstring = "MUSE FOSTER spite"..snd.sep
-				end
-			end
-			
-			if (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness and snd.need_fitness then
-				string = string.."CHAKRA RETROSPECTION"..snd.sep
-			elseif snd.flying then
-				string = string.."touch tentacle "..snd.target..snd.sep
-			elseif snd.used.shield then
-				string = impressstring.."FOMENT ANGER "..snd.target..snd.sep
-			elseif snd.theytumbling then
-				string = impressstring.."CHAKRA RESILE "..snd.target.." 3"..snd.sep
-			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."CHAKRA TRANSCEND "..snd.target 
-			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."VOID BESTOW "..snd.target.." with four"..snd.sep
-				if bioessence &gt;= 1 then
-					string = string.."VOID POISE"..snd.sep
-				end
-			elseif physcount &lt;= 2 and not snd.my_impress == "Spite"  then
-				string = impressstring.."foment spite " ..snd.target..snd.sep 
-			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
-				if bioessence &gt;= 1 and physcount &gt;= 2 then
-					string = impressstring.."VOID DISTRESS "..snd.target..snd.sep          
-					if bioessence &gt;= 2 then
-						string = string.."VOID APLOMB"..snd.sep
-					end 
-				else
-					if not snd.growth and bioessence &gt;= 2 then
-						string = impressstring.."VOID EDIFY " ..snd.target..snd.sep
-					else
-						if #touse &gt;= 1 and mentcount &lt;= 5 then
-							if not snd.conjoin then
-								if not snd.checkAff("mercy") then
-									string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": mercy"
-								else
-									string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": "..touse[1]
-								end
-							else
-								string = impressstring.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-								call = "wt Afflicting "..snd.target..": "..touse[1]
-							end
-						else
-							if snd.spitecount == 0 and not snd.my_foment == "Spite"  then
-								string = impressstring.."foment spite " ..snd.target..snd.sep
-							else
-								string = string.."foment sadness "..snd.target..snd.sep
-							end
-						end
-					end
-				end
-			elseif not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-				string = impressstring.."chakra turmoil "..snd.target..snd.sep
-			elseif not snd.checkAff("patterns") and snd.checksomeAffs({"sonder", "matrix"}, 2) then
-				string = impressstring.."MUSE RECRUDESCENCE " ..snd.target..snd.sep
-			elseif snd.checkAff("sonder") and not snd.checkAff("matrix") then
-				string = impressstring.."MUSE HISTRIONICS " ..snd.target..snd.sep
-			elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 3)) and not snd.checkAff("sonder") then
-				string = impressstring.."foment sonder " ..snd.target..snd.sep
-			else
-				if mentcount &lt;= 3 then
-					if not snd.conjoin then
-						if not snd.checkAff("mercy") then
-							string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
-							call = "wt Afflicting "..snd.target..": mercy"
-						else
-							string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-							call = "wt Afflicting "..snd.target..": "..touse[1]
-						end
-					else
-						string = impressstring.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-						call = "wt Afflicting "..snd.target..": "..touse[1]
-					end
-				else
-					if snd.hexcount == 0 and physcount &lt;= 2 and mentcount &gt;= 3 and not snd.my_foment == "Spite"  then
-						string = impressstring.."foment spite " ..snd.target..snd.sep
-					elseif snd.my_incite ~= "Misery" and snd.crescentable and not snd.checkAff("blackout") then
-						string = impressstring.."foment Misery " ..snd.target..snd.sep
-					else
-						string = impressstring.."foment sadness "..snd.target..snd.sep
-					end
-				end
-			end
-      
-			if not string.find(gmcp.Char.Vitals.wield_left, "buckler") then
-			 string = "quickwield left buckler"..snd.sep..string
-			end
-			if not string.find(gmcp.Char.Vitals.wield_right, "stone") then
-			 string = "quickwield right scryingstone"..snd.sep..string
-			end
-
-			if snd.toggles.affcalling and not snd.target_gone then
-				string = call..snd.sep..string
-			end
-
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
-				snd.attack(snd.last_attack)
-				snd.waiting.queue = true
-				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
-			end 
-		end
-	end
-  
-snd.attack_function()
-
-end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll$</regex>
-								</Alias>
-								<Alias isActive="no" isFolder="no">
-									<name>Main 1v1 (Old)</name>
-									<script>if snd.class == "Voidseer" then
-
-	snd.starting_attack()
-	function snd.attack_function()
-		if not snd.waiting.queue then
-			local touse = {}
-			local touse2 = {}
-			local tohit = {}
-			local string = "" 
-			local empowerstring = ""
-			local impressstring = ""
-			local call = "" 
-			local bioessence = tonumber(gmcp.Char.Vitals.insight) 
-			local hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
-			local mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
-			local physcount = 0			
-			for aff in ipairs(snd.physical_affs) do
-				if table.contains(snd.target_has, snd.physical_affs[aff]) then
-					physcount = physcount + 1
-				end
-			end
-			local mentcount = 0 
-			for aff in ipairs(snd.mental_affs) do
-				if table.contains(snd.target_has, snd.mental_affs[aff]) then
-					mentcount = mentcount + 1
-				end
-			end
-      
-			local activelock = false
-			local asthmacover = false
-  
-			if snd.have_aff("asthma") and (snd.have_aff("clumsiness") or snd.have_aff("weariness") or snd.have_aff("hypochondria")) then
-				asthmacover = true
-			end
-  
-			if asthmacover and snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") then
-				activelock = true
-			elseif asthmacover and (snd.have_aff("slickness") or snd.have_aff("slough")) and (snd.have_aff("left_leg_crippled") or snd.have_aff("right_leg_crippled")) and snd.have_aff("fallen") then
-				activelock = true
-			elseif snd.have_aff("asthma") and (snd.have_aff("slickness") or snd.have_aff("slough")) and snd.have_aff("anorexia") and (snd.have_aff("impatience") or snd.have_aff("stupidity") or snd.have_aff("egocentrism")) then
-				activelock = true
-			end
-  
-			if asthmacover then
-				activelock = true
-			end 
-      
-			if snd.timer_check("focus", 2, "more than") then
-				snd.giving = {
-					"laxity",
-					"dizziness",        
-					"faintness",
-					"epilepsy",
-					"shyness",        
-					"infatuation",
-					"peace",
-					"magnanimity",        
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			else
-				snd.giving = {
-					"dizziness",
-					"faintness",
-					"epilepsy",
-					"shyness",
-					"laxity",
-					"infatuation",
-					"peace",
-					"magnanimity",
-					"mercy",
-					"masochism",
-					"mania",
-					"recklessness",
-				}
-			end
-      
-			if snd.timer_check("fitness", 3, "more than") then
-				snd.giving_venom = {
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"anorexia",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}	
-			elseif snd.timer_check("focus", 2, "more than") then	 
-				snd.giving_venom = {
-					"anorexia",
-					"clumsiness",
-					"asthma",
-					"paresis",
-					"slickness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				} 
-			else      
-				snd.giving_venom = {
-					"paresis",
-					"clumsiness",
-					"sensitivity",
-					"vomiting",
-					"allergies",
-					"asthma",
-				}
-			end
-	
-			for i in ipairs(snd.giving) do
-				if not snd.checkAff(snd.giving[i]) then
-					if not table.contains(touse, snd.giving[i]) then
-						table.insert(touse, snd.giving[i])
-					end
-				end
-			end
-      
-			for k in ipairs(snd.giving_venom) do
-				if not snd.checkAff(snd.giving_venom[k]) then
-					if not table.contains(touse2, snd.giving_venom[k]) then
-						table.insert(touse2, snd.giving_venom[k])
-					end
-				end
-			end
-			for aff in ipairs(touse2) do
-				table.insert(tohit, snd.effects[touse2[aff]])
-			end
-      
-			echo("\nMutagen Given by: "..snd.mutmaster.." Bioessence: "..bioessence.." Physicals: "..physcount.." Mentals: "..mentcount)
-			
-			if snd.empowerready then
-				if physcount &gt;= 3 and mentcount &gt;= 3 then
-					empowerstring = "affirm trunk"..snd.sep
-				elseif activelock and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness then
-					empowerstring = "affirm root"..snd.sep
-				elseif snd.balance.madness then
-					empowerstring = "affirm branch"..snd.sep 
-				else
-					empowerstring = ""        
-				end
-			end
-      
-			if snd.my_impress == "" then
-				impressstring = "MUSE FOSTER dread"..snd.sep
-			elseif not snd.checkAff("vomiting") and (mentcount &gt; 3 and mentcount &lt; 12) then
-				if snd.my_impress ~= "Guilt" then
-					impressstring = "MUSE FOSTER guilt"..snd.sep
-				end
-			elseif (not snd.checkAff("paresis") and snd.checksomeAffs({"faintness", "dizziness", "epilepsy"}, 2) and not snd.checkAff("delirium")) or snd.instakilltarget == snd.target then
-				if snd.my_impress ~= "Wistful" then
-					impressstring = "MUSE FOSTER wistful"..snd.sep
-				end
-			elseif not snd.checkAff("delirium") and snd.timer_check("focus", .2, "more than") then
-				if snd.my_impress ~= "Dread" then
-					impressstring = "MUSE FOSTER dread"..snd.sep
-				end
-			elseif not snd.checkAff("hypochondria") then
-				if snd.my_impress ~= "Spite" then
-					impressstring = "MUSE FOSTER spite"..snd.sep
-				end
-			end
-      
-			if activelock and (snd.not_aff("paresis") or snd.not_aff("paralysis")) and not snd.balance.fitness then
-				string = string.."CHAKRA RETROSPECTION"..snd.sep
-			elseif snd.flying then
-				string = string.."touch tentacle "..snd.target..snd.sep
-			elseif snd.used.shield then
-				string = impressstring.."FOMENT ANGER "..snd.target..snd.sep
-			elseif snd.theytumbling then
-				string = impressstring.."CHAKRA RESILE "..snd.target.." 3"..snd.sep
-			elseif snd.instakilltarget == snd.target then
-        if snd.target == "Whirran" then
-          string = impressstring.."jab "..snd.target.." delphinium"..snd.sep
-        else
-				  string = impressstring.."jab "..snd.target.." curare"..snd.sep
-        end
-			elseif physcount &gt;= 3 and mentcount &gt;= 3 and snd.my_mutagen then
-				string = empowerstring..impressstring.."CHAKRA TRANSCEND "..snd.target 
-			elseif snd.mutmaster == "" and not snd.my_mutagen and bioessence &gt; 0 then
-				string = impressstring.."VOID BESTOW "..snd.target.." with one"..snd.sep
-				if bioessence &gt;= 1 then
-					string = string.."VOID POISE"..snd.sep
-				end
-			elseif physcount &lt;= 2 and not snd.my_impress == "Spite"  then
-				string = impressstring.."foment spite " ..snd.target..snd.sep 
-			elseif physcount &gt;= 1 and mentcount &gt;= 5 then
-				if bioessence &gt; 1 and not snd.checkAff("addiction") then
-					string = impressstring.."VOID DISTRESS "..snd.target..snd.sep
-				else
-					if snd.my_foment ~= "Misery" and snd.crescentable and not snd.checkAff("blackout") and not snd.checkAff("sonder") then
-						string = impressstring.."foment Misery " ..snd.target..snd.sep
-					elseif not snd.growth and bioessence &gt;= 2 then
-						string = impressstring.."VOID EDIFY " ..snd.target..snd.sep
-					elseif snd.checkAff("blackout") or mentcount &gt;= 6 then
-						string = impressstring.."jab "..snd.target.." "..tohit[1]..snd.sep
-						call = "wt Afflicting "..snd.target..": "..tohit[1]
-						if bioessence &gt;= 1 then
-							string = string.."VOID POISE"..snd.sep
-						end
-					else
-						if #touse &gt;= 1 then
-							if not snd.conjoin then
-								if not snd.checkAff("mercy") then
-									string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": mercy"
-								else
-									string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-									call = "wt Afflicting "..snd.target..": "..touse[1]
-								end
-							else
-								string = impressstring.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-								call = "wt Afflicting "..snd.target..": "..touse[1]
-							end
-							if bioessence &gt;= 1 then
-								string = string.."bio stimulant"..snd.sep
-							end
-						else
-							if snd.spitecount == 0 and not snd.my_foment == "Spite"  then
-								string = impressstring.."foment spite " ..snd.target..snd.sep
-							else
-								string = impressstring.."jab "..snd.target.." "..tohit[1]..snd.sep
-								if bioessence &gt;= 1 then
-									string = string.."VOID POISE"..snd.sep
-								end
-							end
-						end
-					end
-				end
-			elseif not snd.checkAff("patterns") and (snd.checksomeAffs({"sonder", "matrix"}, 1) or snd.timer_check("focus", .2, "more than")) then
-				string = impressstring.."MUSE RECRUDESCENCE "..snd.target..snd.sep	
-			elseif snd.checkAff("sonder") and not snd.checkAff("matrix") then
-				string = impressstring.."MUSE HISTRIONICS " ..snd.target..snd.sep
-			elseif not snd.checksomeAffs({"etched_fear", "etched_joy", "etched_disgust"}, 2) then
-				if not snd.checksomeAffs({"dementia", "paranoia", "hallucinations"}, 2) and snd.balance.madness then
-					string = empowerstring..impressstring.."CHAKRA TURMOIL "..snd.target..snd.sep
-				elseif (snd.checksomeAffs({"faintness","dizziness","shyness","laxity"}, 2)) and not snd.checkAff("sonder") then
-					string = impressstring.."FOMENT SONDER " ..snd.target..snd.sep
-				elseif snd.checksomeAffs({"dizziness", "faintness", "epilepsy", "shyness"}, 4) and not snd.checkAff("etched_fearv") then
-					string = impressstring.."muse etch fear " ..snd.target..snd.sep
-				elseif snd.checksomeAffs({"laxity", "infatuation", "peace", "magnanimity"}, 4) and not snd.checkAff("etched_joy") then
-					string = impressstring.."muse etch joy " ..snd.target..snd.sep 
-				elseif snd.checksomeAffs({"mercy", "masochism", "mania", "recklessness"}, 4) and not snd.checkAff("etched_disgust") then
-					string = impressstring.."muse etch disgust " ..snd.target..snd.sep
-				else
-					if #touse &gt; 0 then
-						if not snd.conjoin then
-							if not snd.checkAff("mercy") then
-								string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment disgust "..snd.target..snd.sep
-								call = "wt Afflicting "..snd.target..": mercy"
-							else
-								string = impressstring.."MUSE SUBTLETY"..snd.sep.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-								call = "wt Afflicting "..snd.target..": "..touse[1]
-							end
-						else
-							string = impressstring.."foment "..snd.foment_attacks[touse[1]].." "..snd.target..snd.sep
-							call = "wt Afflicting "..snd.target..": "..touse[1]
-						end
-						if bioessence &gt;= 1 then
-							string = string.."VOID APLOMB"..snd.sep
-						end 
-					else
-						if snd.spitecount == 0 and not snd.my_foment == "Spite"  then
-							string = impressstring.."foment spite " ..snd.target..snd.sep.."VOID POISE"..snd.sep
-						else
-							string = impressstring.."jab "..snd.target.." "..tohit[1]..snd.sep
-							if bioessence &gt;= 1 then
-								string = string.."VOID POISE"..snd.sep
-							end
-						end
-					end
-				end
-			else
-				if snd.my_foment ~= "Misery" and snd.crescentable and not snd.checkAff("blackout") then
-					string = impressstring.."foment Misery " ..snd.target..snd.sep
-				else
-					string = impressstring.."foment sadness " ..snd.target..snd.sep
-				end
-			end
-      
-			if string:find("jab") then
-				if not string.find(gmcp.Char.Vitals.wield_left, "longsword") then
-					string = "quickwield left longsword"..snd.sep..string
-				end
-			else
-				if not string.find(gmcp.Char.Vitals.wield_left, "shield") then
-					string = "quickwield left buckler"..snd.sep..string
+				if not  not gmcp.Char.Vitals.wield_left:find("shield") then
+					route = "quickwield left buckler"..snd.sep..route
 				end
 			end
 
 			if snd.toggles.affcalling and not snd.target_gone and call~= "" then
-				string = call..snd.sep..string
+				route = call..snd.sep..route
 			end
 
-			if string ~= snd.last_attack and not snd.waiting.queue then
-				snd.last_attack = string
+			if route ~= snd.last_attack and not snd.waiting.queue then
+				snd.last_attack = route
 				snd.attack(snd.last_attack)
 				snd.waiting.queue = true
 				tempTimer(snd.delay(), [[snd.waiting.queue = false]])
@@ -45343,11 +44366,10 @@ end</script>
   
 	snd.attack_function()
 end</script>
-									<command></command>
-									<packageName></packageName>
-									<regex>^kll$</regex>
-								</Alias>
-							</AliasGroup>
+								<command></command>
+								<packageName></packageName>
+								<regex>^kll3$</regex>
+							</Alias>
 						</AliasGroup>
 					</AliasGroup>
 				</AliasGroup>

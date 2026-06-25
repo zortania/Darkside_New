@@ -101,10 +101,10 @@ end</script>
 	else
 		cecho("\n&lt;yellow&gt;Health: " ..snd.percentesthealth.. " Mana: " ..snd.percentestmana)
 	end
- -- if snd.have_aff("blackout") then
+  if snd.have_aff("blackout") then
    -- snd.hidden_afflictions = snd.hidden_afflictions + 1
-    --cecho("&lt;red&gt;\nYour Hidden Aff Total: "..snd.hidden_afflictions)
-  --end
+    cecho("&lt;red&gt;\nYour Hidden Aff Total: "..snd.hidden_afflictions)
+  end
 else
 	disableTimer("recklessblackouttimer")
 end</script>
@@ -114,7 +114,7 @@ end</script>
 				</Timer>
 				<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 					<name>looktimer</name>
-					<script>if gmcp.Char.Vitals.channeling ~= "1" then
+					<script>if gmcp.Char.Vitals.channeling ~= "1" and snd.toggles.bashing then
   snd.send("ql")
 end
 disableTimer("looktimer")
@@ -125,7 +125,7 @@ end</script>
 					<packageName></packageName>
 					<time>00:00:00.500</time>
 				</Timer>
-				<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+				<Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 					<name>Firstaidstatustimer</name>
 					<script>
 if snd.toggles.active then
@@ -220,6 +220,28 @@ if snd.toggles.active then
       end
     end
     
+    if gmcp.Char.Vitals ~= nil then
+      local healthchangeval = 0
+			healthchangeval = (tonumber(gmcp.Char.Vitals.hp) - tonumber(snd.lasthealth))
+			if snd.not_aff("blackout") then
+        snd.percentesthealth = gmcp.Char.Vitals.hp
+			  snd.percentestmana = gmcp.Char.Vitals.mp
+			  snd.lasthealth = gmcp.Char.Vitals.hp
+			  snd.lastmana = gmcp.Char.Vitals.mp
+				if tonumber(healthchangeval) &gt;= 100 then
+					if tonumber(snd.lasthealth) &gt; tonumber(gmcp.Char.Vitals.hp) then 
+						cecho("&lt;red&gt;\[\- " ..healthchangeval.. " \-\]") 
+					elseif tonumber(snd.lasthealth) &lt; tonumber(gmcp.Char.Vitals.hp) then 
+						cecho("&lt;cyan&gt;\[\+ " ..healthchangeval.. " +\]")
+					end
+				end
+			end	
+			snd.percenthealth = (tonumber(gmcp.Char.Vitals.hp) / tonumber(gmcp.Char.Vitals.maxhp) * 100)
+			snd.percenthealth = roundDown(snd.percenthealth,0)
+			snd.percentmana = (tonumber(gmcp.Char.Vitals.mp) / tonumber(gmcp.Char.Vitals.maxmp) * 100)
+			snd.percentmana = roundDown(snd.percentmana,0)
+		end
+    
 		snd.hiddencheckfunc()
     
     if snd.checksomeSelfAffs({"sealing_circle", "etched_disgust"}, 1) then
@@ -296,38 +318,12 @@ if snd.toggles.active then
 		if snd.class == "Monk" then
 			snd.stance = gmcp.Char.Vitals.stance
 		end
-
-		if snd.not_aff("recklessness") and snd.not_aff("blackout") then 
-			snd.percentesthealth = gmcp.Char.Vitals.hp
-			snd.percentestmana = gmcp.Char.Vitals.mp
-			snd.lasthealth = gmcp.Char.Vitals.hp
-			snd.lastmana = gmcp.Char.Vitals.mp
-		end
     
     if snd.have_aff("shock") and gmcp.Char.Vitals.hp == gmcp.Char.Vitals.maxhp and snd.not_aff("recklessness") then
       table.remove(snd.firstaidtobepredicted, table.index_of(snd.firstaidtobepredicted, "recklessness"))
       table.insert(snd.firstaidtobepredicted, "recklessness")
     end
 
-		local healthchangeval = 0
-
-		if gmcp.Char.Vitals ~= nil then
-			healthchangeval = (tonumber(gmcp.Char.Vitals.hp) - tonumber(snd.lasthealth))
-			if snd.not_aff("blackout") then
-				if tonumber(healthchangeval) &gt;= 100 then
-					if tonumber(snd.lasthealth) &gt; tonumber(gmcp.Char.Vitals.hp) then 
-						cecho("&lt;red&gt;\[\- " ..healthchangeval.. " \-\]") 
-					elseif tonumber(snd.lasthealth) &lt; tonumber(gmcp.Char.Vitals.hp) then 
-						cecho("&lt;cyan&gt;\[\+ " ..healthchangeval.. " +\]")
-					end
-				end
-			end	
-			snd.percenthealth = (tonumber(gmcp.Char.Vitals.hp) / tonumber(gmcp.Char.Vitals.maxhp) * 100)
-			snd.percenthealth = roundDown(snd.percenthealth,0)
-			snd.percentmana = (tonumber(gmcp.Char.Vitals.mp) / tonumber(gmcp.Char.Vitals.maxmp) * 100)
-			snd.percentmana = roundDown(snd.percentmana,0)
-		end
-    
     if not table.contains(snd.firstaidpredict, "recklessness") and not table.contains(snd.firstaidtobepredicted, "recklessness") and snd.hidden_afflictions &gt;= 3 then
       if snd.cureset ~= "none" then
         if gmcp.Char.Vitals.hp == gmcp.Char.Vitals.maxhp and gmcp.Char.Vitals.mp == gmcp.Char.Vitals.maxmp and snd.not_aff("recklessness") then
@@ -490,7 +486,7 @@ disableTimer("Deathsense")</script>
 					<packageName></packageName>
 					<time>00:00:01.000</time>
 				</Timer>
-				<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+				<Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 					<name>Stay online</name>
 					<script>sendGMCP("Core.KeepAlive")
 --snd.send("ql")</script>

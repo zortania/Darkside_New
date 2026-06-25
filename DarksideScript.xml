@@ -44,6 +44,133 @@ snd.gui = snd.gui or {
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
+					<name>Sunder displays</name>
+					<packageName></packageName>
+					<script>snd.theme = snd.theme or {
+  border = "&lt;dodger_blue&gt;",
+  title = "&lt;ivory&gt;",
+  text = "&lt;light_cyan&gt;",
+  frame = "&lt;medium_turquoise&gt;",
+  darktext = "&lt;light_violet&gt;",
+}
+
+local function newLine()
+  moveCursorEnd()
+  if getCurrentLine() ~= "" then
+    echo("\n")
+    moveCursorEnd()
+  end
+end
+
+snd.disp = snd.disp or {}
+
+local function getLength(str)
+  return #str:gsub("&lt;.-&gt;", "")
+end
+
+function snd.disp.top(message)
+  message = message:gsub("&lt;r&gt;", snd.theme.title)
+  local wrap = math.min(80, getWindowWrap())
+  newLine()
+  if message then
+    cecho(snd.theme.border.."○–––"..
+          snd.theme.frame.."["..
+          snd.theme.title..message..
+          snd.theme.frame.."]"..
+          snd.theme.border..string.rep("–", wrap-(7+getLength(message))).."○"
+          )
+  else
+    cecho("\n"..snd.theme.border.."○"..string.rep("-",wrap-2).."○")
+  end
+end
+
+function snd.disp.bottom()
+  local wrap = math.min(80, getWindowWrap())
+  cecho("\n"..snd.theme.border.."○"..string.rep("–",wrap-2).."○")
+end
+
+function snd.disp.text(message)
+  message = message:gsub("&lt;r&gt;", snd.theme.text)
+  local wrap = math.min(80, getWindowWrap())
+  local words = string.split(message, " ")
+  local lines = {}
+  local line = ""
+  local x = 0
+  for _, word in ipairs(words) do
+    local len = getLength(word)
+    if x == 0 or x+len+1&lt;(wrap-2) then
+      line = line.." "..word
+      x = x + 1 + len
+    else
+      table.insert(lines, line)
+      local color = ""
+      for col in line:gmatch("&lt;.-&gt;") do
+        color = col
+      end
+      line = " "..color..word
+      x = 1+len
+    end
+  end
+  table.insert(lines, line)
+  for _, line in ipairs(lines) do
+    cecho("\n"..snd.theme.border.."|"..snd.theme.text..line..string.rep(" ", wrap-2-getLength(line))..snd.theme.border.."|")
+  end
+end
+
+function snd.disp.table(messages, dividers, alignments)
+  local wrap = math.min(80, getWindowWrap())
+  local line = ""
+  for i, msg in ipairs(messages) do
+    msg = msg:gsub("&lt;r&gt;", snd.theme.text)
+    line = line..snd.theme.border.."| "..snd.theme.text
+    local width = dividers[i] or (wrap - getLength(line))
+    local align = (alignments and alignments[i]) or "left"
+    if align == "left" then
+      line = line..msg..string.rep(" ", width-1-getLength(msg))
+    else
+      line = line..string.rep(" ", width-2-getLength(msg))..msg.." "
+    end
+  end
+  line = line..snd.theme.border.."|"
+  cecho("\n"..line)
+end
+
+
+
+
+function snd.message(string, type)
+  if snd.toggles.gags then
+    if type == "atk" then
+      color = "&lt;magenta&gt;"
+    elseif type == "death" then
+      color = "&lt;red&gt;"
+    elseif type == "q" then
+      color = "&lt;brown&gt;"
+    elseif type == "balance" then
+      color = "&lt;orange&gt;"
+    elseif type == "level" then
+      color = "&lt;yellow&gt;"
+    elseif type == "reset" then
+      color = "&lt;brown&gt;"
+    elseif type == "affliction" then
+      color = "&lt;DeepSkyBlue&gt;"
+    elseif type == "dendara" then
+      color = "&lt;green&gt;"
+    else
+      color = snd.theme.text
+    end
+    if not(type == "toggle" or type == "echo") then
+      newLine()
+    end
+    cecho(snd.theme.frame.."["..snd.theme.title.."Sunder"..snd.theme.frame.."]" .. color .. " " .. string)
+    if type == "reset" then
+      send(" ")
+    end
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
 					<name>Important functions</name>
 					<packageName></packageName>
 					<script>--- Register event handlers under the Sunder namespace
@@ -154,38 +281,38 @@ function snd.send(action)
   send(action, false)
 end
 
-function snd.message(string, type)
-  if snd.toggles.gags then
-    if type == "atk" then
-      color = "magenta"
-    elseif type == "death" then
-      color = "red"
-    elseif type == "q" then
-      color = "brown"
-    elseif type == "balance" then
-      color = "orange"
-    elseif type == "level" then
-      color = "yellow"
-    elseif type == "reset" then
-      color = "brown"
-    elseif type == "affliction" then
-      color = "DeepSkyBlue"
-    elseif type == "dendara" then
-      color = "green"
-    else
-      color = "white"
-    end
-    if type == "toggle" or type == "echo" then
-      line = ""
-    else
-      line = "\n"
-    end
-    cecho(line .. "&lt;green&gt;[&lt;white&gt;SND&lt;green&gt;]&lt;" .. color .. "&gt; " .. string)
-    if type == "reset" then
-      send(" ")
-    end
-  end
-end</script>
+--function snd.message(string, type)
+--  if snd.toggles.gags then
+  --  if type == "atk" then
+    --  color = "magenta"
+--    elseif type == "death" then
+  --    color = "red"
+    --elseif type == "q" then
+      --color = "brown"
+    --elseif type == "balance" then
+      --color = "orange"
+    --elseif type == "level" then
+      --color = "yellow"
+    --elseif type == "reset" then
+      --color = "brown"
+    --elseif type == "affliction" then
+      --color = "DeepSkyBlue"
+    --elseif type == "dendara" then
+      --color = "green"
+    --else
+      --color = "white"
+    --end
+--    if type == "toggle" or type == "echo" then
+  --    line = ""
+    --else
+      --line = "\n"
+--    end
+  --  cecho(line .. "&lt;green&gt;[&lt;white&gt;SND&lt;green&gt;]&lt;" .. color .. "&gt; " .. string)
+    --if type == "reset" then
+      --send(" ")
+    --end
+  --end
+--end</script>
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
@@ -228,6 +355,7 @@ end</script>
       if gmcp.Char.Status.name == "Affi" then
         snd.toggles.goggle_level = 20
 	      snd.toggles.gauntlet_level = 9
+        snd.my_token = "495987"
       else
         snd.toggles.goggle_level = 0
 	      snd.toggles.gauntlet_level = 0
@@ -1736,6 +1864,12 @@ function gmcp_item_update()
 end
 
 function gmcp_items()
+  if not shrine_list then
+	 load_shrine_db()
+  end
+  --if not troop_list then
+	 --load_troop_db()
+  --end
   if gmcp.Char.Items.List.location == "room" then
     snd.items = {}
     snd.agros = {}
@@ -1745,6 +1879,20 @@ function gmcp_items()
         if not snd.agros[v.name] then snd.agros[v.name] = {} end
         table.insert(snd.agros[v.name], v.id)    --insert to agros table
         table.insert(snd.items[v.name], 1, v.id) --insert at start of table
+      --elseif v.icon == "people-group" then
+        -- Make sure tables actually exist.
+        --troop_list[v.id] = troop_list[v.id] or {}
+        -- Get some basic data.
+        --troop_list[v.id].name = v.name
+        -- Track the room.
+        --troop_list[v.id].rooms = troop_list[v.id].rooms or {}
+        --if table.contains(troop_list[v.id].rooms, gmcp.Room.Info.num) then
+		    --else
+	        -- table.insert(troop_list[v.id].rooms, gmcp.Room.Info.num)
+        --end
+        -- Save data.
+        --save_troop_db()
+        --table.insert(snd.items[v.name], 1, v.id) --insert at start of table
       else
         table.insert(snd.items[v.name], v.id)    --insert at end of table
       end
@@ -1752,10 +1900,7 @@ function gmcp_items()
     snd.updateMonolith()
   end
   for item in pairs(snd.items) do
-    if not shrine_list then
-	   load_shrine_db()
-    end
-    if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
+    if item == "some gold sovereigns" and #snd.items[item] &gt;= 1 then --and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" 
       table.insert(snd.gathering, "sovereigns")
     elseif string.find(item, "shrine") or string.find(item, "totem") or string.find(item, "monument") or string.find(item, "altar") then
       -- Make sure tables actually exist.
@@ -1770,12 +1915,12 @@ function gmcp_items()
       end
       -- Save data.
       save_shrine_db()
-    elseif string.find(item, "pill") and #snd.items[item] &gt;= 1 and not (string.find(item, "omnipotence") or string.find(item, "grimstim")) and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
-      table.insert(snd.gathering, "pill")
-    elseif (string.find(item, "reishi") or string.find(item, "willow") or string.find(item, "yarrow")) and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
-      table.insert(snd.gathering, "plant")
-    elseif string.find(item, "paste") and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
-      table.insert(snd.gathering, "paste")
+    --elseif string.find(item, "pill") and #snd.items[item] &gt;= 1 and not (string.find(item, "omnipotence") or string.find(item, "grimstim")) and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
+      --table.insert(snd.gathering, "pill")
+    --elseif (string.find(item, "reishi") or string.find(item, "willow") or string.find(item, "yarrow")) and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
+      --table.insert(snd.gathering, "plant")
+    --elseif string.find(item, "paste") and #snd.items[item] &gt;= 1 and gmcp.Room.Info.name ~= "Overlooking the Enorian skyline" then
+      --table.insert(snd.gathering, "paste")
     elseif (table.contains(snd.possible_items, item) or table.contains(snd.global_items, item)) and not snd.toggles.attacking then
       for id in pairs(snd.items[item]) do
         table.insert(snd.gathering, snd.items[item][id])
@@ -1822,6 +1967,42 @@ end
 function save_shrine_db()
   if not shrine_list then return false end
   table.save(getMudletHomeDir().."/shrineDB.sav", shrine_list)
+end
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Fishing Holes</name>
+					<packageName></packageName>
+					<script>function load_fisholes_db()
+	local path = getMudletHomeDir().."/fisholesDB.sav"
+	fisholes_list = {}
+	if io.exists(path) then
+		table.load(path,fisholes_list)
+	end
+end
+
+function save_fisholes_db()
+  if not fisholes_list then return false end
+  table.save(getMudletHomeDir().."/fisholesDB.sav", fisholes_list)
+end
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Troops</name>
+					<packageName></packageName>
+					<script>function load_troop_db()
+	local path = getMudletHomeDir().."/troopDB.sav"
+	troop_list = {}
+	if io.exists(path) then
+		table.load(path,troop_list)
+	end
+end
+
+function save_troop_db()
+  if not troop_list then return false end
+  table.save(getMudletHomeDir().."/troopDB.sav", troop_list)
 end
 </script>
 					<eventHandlerList />
@@ -2212,7 +2393,7 @@ function snd.do_queue()
   snd.queue = {}
   mp = 100 * (gmcp.Char.Vitals.mp / gmcp.Char.Vitals.maxmp)
   hp = 100 * (gmcp.Char.Vitals.hp / gmcp.Char.Vitals.maxhp)
-  if gmcp.Char.Vitals.channeling ~= "1" then
+  --if gmcp.Char.Vitals.channeling ~= "1" then
     if snd.toggles.active then
       if not snd.pipes_lit and snd.toggles.lighting then
           snd.queue.lighting = true
@@ -2355,7 +2536,7 @@ function snd.do_queue()
           snd.do_dome()
         elseif gmcp.Char.Vitals.mounted == "1" then
           snd.send("qeb panic mount")
-        elseif snd.balance.barrier and snd.barriering then
+        elseif snd.balance.barrier and snd.barriering and not twinstate then
           snd.send("qeb strum lyre")
           snd.barriering = false
           tempTimer(2,[[snd.barriering = true]])
@@ -2370,7 +2551,7 @@ function snd.do_queue()
         end
       end
     end
-  end
+  --end
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -7405,7 +7586,9 @@ end  </script>
     end
     
     snd.hidden_check = true
-    send(checkstring)
+    if checkstring ~= "" then
+      send(checkstring)
+    end
     tempTimer(5, [[snd.hidden_check = false]])
     
     if table.contains(snd.firstaidpredict, snd.firstaidtobepredicted[1]) then
@@ -7786,9 +7969,15 @@ function snd.can_regenerate()
   elseif snd.healingcall == "The strength in your arms returns to you." then
     aff = "feeble_arms"
   elseif snd.healingcall == "Your legs are no longer lame." then
+    aff = "lameness"
+  elseif snd.healingcall == "You are no longer blind." then
+    aff = "blindness"
+  elseif snd.healingcall == "The strength in your legs returns to you." then
     aff = "feeble_legs"
-  elseif snd.healingcall == "The abnormal misery that held you has lifted." then
-    aff = "misery"
+  elseif snd.healingcall == "You are no longer deaf." then
+    aff = "deafness"
+  --elseif snd.healingcall == "You tactfully will your body to clot some of its open wounds." then
+    --aff = "haemophilia"
   end
   	
 	if snd.hidden_afflictions &gt; 0 and aff ~= "" and snd.not_aff(aff) then
@@ -7796,37 +7985,67 @@ function snd.can_regenerate()
 		cecho("&lt;red&gt;\nYour Hidden Aff Total: "..snd.hidden_afflictions.."&lt;green&gt; Cured hidden "..aff)
     snd.my_last_cured = aff
     
-    if snd.cureset == "archivist" then
-      if aff == "masochism" then
+    if snd.cureset == "archivist" then    
+      if aff == "masochism" and snd.not_aff("mercy") then
         snd.aff_gain("mercy")
       elseif aff == "mania" then
-        snd.aff_gain("masochism")
-        snd.aff_gain("mercy")
+        if not snd.not_aff("masochism") then
+          snd.aff_gain("masochism")
+        end
+        if not snd.not_aff("mercy") then
+          snd.aff_gain("mercy")
+        end
       elseif aff == "recklessness" then
-        snd.aff_gain("mania")
-        snd.aff_gain("masochism")
-        snd.aff_gain("mercy")
+        if not snd.not_aff("masochism") then
+          snd.aff_gain("masochism")
+        end
+        if not snd.not_aff("mercy") then
+          snd.aff_gain("mercy")
+        end
+        if not snd.not_aff("mania") then
+          snd.aff_gain("mania")
+        end
       end
-      if aff == "infatuation" then
+      if aff == "infatuation" and snd.not_aff("laxity") then
         snd.aff_gain("laxity")
       elseif aff == "peace" then
-        snd.aff_gain("infatuation")
-        snd.aff_gain("laxity")
+        if not snd.not_aff("infatuation") then
+          snd.aff_gain("infatuation")
+        end
+        if not snd.not_aff("laxity") then
+          snd.aff_gain("laxity")
+        end
       elseif aff == "magnanimity" then
-        snd.aff_gain("peace")
-        snd.aff_gain("infatuation")
-        snd.aff_gain("laxity")
+        if not snd.not_aff("infatuation") then
+          snd.aff_gain("infatuation")
+        end
+        if not snd.not_aff("laxity") then
+          snd.aff_gain("laxity")
+        end
+        if not snd.not_aff("peace") then
+          snd.aff_gain("peace")
+        end
       end
-      if aff == "faintness" then
+      if aff == "faintness" and snd.not_aff("dizziness") then
         snd.aff_gain("dizziness")
       elseif aff == "epilepsy" then
-        snd.aff_gain("faintness")
-        snd.aff_gain("dizziness")
-      elseif aff == "shyness" then
-        snd.aff_gain("epilepsy")
-        snd.aff_gain("faintness")
-        snd.aff_gain("dizziness")
-      end 
+        if not snd.not_aff("faintness") then
+          snd.aff_gain("faintness")
+        end
+        if not snd.not_aff("dizziness") then
+          snd.aff_gain("dizziness")
+        end
+      elseif aff == "shyness" and snd.not_aff("shyness") then
+        if not snd.not_aff("faintness") then
+          snd.aff_gain("faintness")
+        end
+        if not snd.not_aff("dizziness") then
+          snd.aff_gain("dizziness")
+        end
+        if not snd.not_aff("epilepsy") then
+          snd.aff_gain("epilepsy")
+        end
+      end  
     end
     if table.contains(snd.ordered_list, aff) then
       table.remove(snd.ordered_list, table.index_of(snd.ordered_list, aff))
@@ -7860,11 +8079,7 @@ function snd.can_regenerate()
         snd.aff_remove("firstaid_predict_legs")
       end
 
-      if snd.have_aff("blackout") and snd.have_aff("recklessness") then
-        enableTimer("recklessblackouttimer")
-      elseif snd.have_aff("blackout") then
-        enableTimer("blackout")
-      elseif snd.have_aff("recklessness") then
+      if snd.have_aff("blackout") or snd.have_aff("recklessness") then
         enableTimer("recklessblackouttimer")
       end
     end
@@ -8926,8 +9141,6 @@ local specialExits = {
   { from = 19344, to = 26594, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 73506, to = 58866, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 4694, to = 26585, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 9192, to = 26568, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 1253, to = 26624, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 4059, to = 9961, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 20936, to = 20059, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1745, to = 26615, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8971,7 +9184,6 @@ local specialExits = {
   { from = 1452, to = 56972, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1430, to = 32704, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 9213, to = 26566, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 1598, to = 5740, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1632, to = 26595, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1639, to = 60202, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 1643, to = 19060, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -8988,7 +9200,6 @@ local specialExits = {
   { from = 27717, to = 11300, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 19296, to = 26618, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 13051, to = 60698, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 5740, to = 1598, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 5724, to = 26600, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 17600, to = 1647, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 17546, to = 5629, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -9039,7 +9250,6 @@ local specialExits = {
   { from = 26571, to = 55135, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26570, to = 19810, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26569, to = 21001, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 26568, to = 9192, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26575, to = 71885, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26574, to = 51100, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26573, to = 19999, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -9056,7 +9266,6 @@ local specialExits = {
   { from = 26580, to = 10190, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26625, to = 74381, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26587, to = 14928, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
-  { from = 26624, to = 1253, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26586, to = 1632, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26585, to = 19854, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
   { from = 26584, to = 56842, command = [=[worm warp]=],                                                                                    locked = false, weight = 30 },
@@ -13168,7 +13377,7 @@ end</script>
 -- @function snd.aff_check
 function snd.aff_check()
   for i in pairs(snd.afflictions) do
-    if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "broken") or string.find(i, "mangled") or string.find(i, "pre_restore") or i == "aff_concussion" then
+    if snd.afflictions[i].cures.writhe ~= nil or string.find(i, "broken") or string.find(i, "mangled") or string.find(i, "pre_restore") then
       if getStopWatchTime(snd.afflictions[i].timer) &gt; 7 and snd.afflictions[i].state == "waiting" then
         snd.aff_timeout(i)
       end
@@ -13225,35 +13434,65 @@ end
 -- @param affliction string of aff
 function snd.aff_have(affliction)
   if snd.cureset == "archivist" then
-      if affliction == "masochism" then
+      if affliction == "masochism" and snd.not_aff("mercy") then
         snd.aff_gain("mercy")
       elseif affliction == "mania" then
-        snd.aff_gain("masochism")
-        snd.aff_gain("mercy")
+        if not snd.not_aff("masochism") then
+          snd.aff_gain("masochism")
+        end
+        if not snd.not_aff("mercy") then
+          snd.aff_gain("mercy")
+        end
       elseif affliction == "recklessness" then
-        snd.aff_gain("mania")
-        snd.aff_gain("masochism")
-        snd.aff_gain("mercy")
+        if not snd.not_aff("masochism") then
+          snd.aff_gain("masochism")
+        end
+        if not snd.not_aff("mercy") then
+          snd.aff_gain("mercy")
+        end
+        if not snd.not_aff("mania") then
+          snd.aff_gain("mania")
+        end
       end
-      if affliction == "infatuation" then
+      if affliction == "infatuation" and snd.not_aff("laxity") then
         snd.aff_gain("laxity")
       elseif affliction == "peace" then
-        snd.aff_gain("infatuation")
-        snd.aff_gain("laxity")
+        if not snd.not_aff("infatuation") then
+          snd.aff_gain("infatuation")
+        end
+        if not snd.not_aff("laxity") then
+          snd.aff_gain("laxity")
+        end
       elseif affliction == "magnanimity" then
-        snd.aff_gain("peace")
-        snd.aff_gain("infatuation")
-        snd.aff_gain("laxity")
+        if not snd.not_aff("infatuation") then
+          snd.aff_gain("infatuation")
+        end
+        if not snd.not_aff("laxity") then
+          snd.aff_gain("laxity")
+        end
+        if not snd.not_aff("peace") then
+          snd.aff_gain("peace")
+        end
       end
-      if affliction == "faintness" then
+      if affliction == "faintness" and snd.not_aff("dizziness") then
         snd.aff_gain("dizziness")
       elseif affliction == "epilepsy" then
-        snd.aff_gain("faintness")
-        snd.aff_gain("dizziness")
-      elseif affliction == "shyness" then
-        snd.aff_gain("epilepsy")
-        snd.aff_gain("faintness")
-        snd.aff_gain("dizziness")
+        if not snd.not_aff("faintness") then
+          snd.aff_gain("faintness")
+        end
+        if not snd.not_aff("dizziness") then
+          snd.aff_gain("dizziness")
+        end
+      elseif affliction == "shyness" and snd.not_aff("shyness") then
+        if not snd.not_aff("faintness") then
+          snd.aff_gain("faintness")
+        end
+        if not snd.not_aff("dizziness") then
+          snd.aff_gain("dizziness")
+        end
+        if not snd.not_aff("epilepsy") then
+          snd.aff_gain("epilepsy")
+        end
       end 
     end
   if not string.find(affliction, "aff_") then
@@ -13304,37 +13543,67 @@ function snd.aff_cure(affliction)
   if affliction == "asthma" then
     snd.need_fitness = false
   end
-  	if snd.cureset == "archivist" then
-      if affliction == "masochism" then
+    if snd.cureset == "archivist" then
+  	  if affliction == "masochism" and snd.not_aff("mercy") then
         snd.aff_gain("mercy")
       elseif affliction == "mania" then
-        snd.aff_gain("masochism")
-        snd.aff_gain("mercy")
+        if not snd.not_aff("masochism") then
+          snd.aff_gain("masochism")
+        end
+        if not snd.not_aff("mercy") then
+          snd.aff_gain("mercy")
+        end
       elseif affliction == "recklessness" then
-        snd.aff_gain("mania")
-        snd.aff_gain("masochism")
-        snd.aff_gain("mercy")
+        if not snd.not_aff("masochism") then
+          snd.aff_gain("masochism")
+        end
+        if not snd.not_aff("mercy") then
+          snd.aff_gain("mercy")
+        end
+        if not snd.not_aff("mania") then
+          snd.aff_gain("mania")
+        end
       end
-      if affliction == "infatuation" then
+      if affliction == "infatuation" and snd.not_aff("laxity") then
         snd.aff_gain("laxity")
       elseif affliction == "peace" then
-        snd.aff_gain("infatuation")
-        snd.aff_gain("laxity")
+        if not snd.not_aff("infatuation") then
+          snd.aff_gain("infatuation")
+        end
+        if not snd.not_aff("laxity") then
+          snd.aff_gain("laxity")
+        end
       elseif affliction == "magnanimity" then
-        snd.aff_gain("peace")
-        snd.aff_gain("infatuation")
-        snd.aff_gain("laxity")
+        if not snd.not_aff("infatuation") then
+          snd.aff_gain("infatuation")
+        end
+        if not snd.not_aff("laxity") then
+          snd.aff_gain("laxity")
+        end
+        if not snd.not_aff("peace") then
+          snd.aff_gain("peace")
+        end
       end
-      if affliction == "faintness" then
+      if affliction == "faintness" and snd.not_aff("dizziness") then
         snd.aff_gain("dizziness")
       elseif affliction == "epilepsy" then
-        snd.aff_gain("faintness")
-        snd.aff_gain("dizziness")
-      elseif affliction == "shyness" then
-        snd.aff_gain("epilepsy")
-        snd.aff_gain("faintness")
-        snd.aff_gain("dizziness")
-      end 
+        if not snd.not_aff("faintness") then
+          snd.aff_gain("faintness")
+        end
+        if not snd.not_aff("dizziness") then
+          snd.aff_gain("dizziness")
+        end
+      elseif affliction == "shyness" and snd.not_aff("shyness") then
+        if not snd.not_aff("faintness") then
+          snd.aff_gain("faintness")
+        end
+        if not snd.not_aff("dizziness") then
+          snd.aff_gain("dizziness")
+        end
+        if not snd.not_aff("epilepsy") then
+          snd.aff_gain("epilepsy")
+        end
+      end
     end
 end
 
@@ -17026,7 +17295,7 @@ end
 
 function snd.akkari_repent()
   if table.contains(snd.primary_aff, "sapped_dexterity") then
-    if not snd.checksomeAffs({ "self_pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonace", "infestation", }, 3) then
+    if not snd.checksomeAffs({ "self_pity", "stupidity", "dizziness", "faintness", "shyness", "epilepsy", "impatience", "dissonance", "infestation", }, 3) then
       table.remove(snd.primary_aff, table.index_of(snd.primary_aff, "sapped_dexterity"))
     end
   end
@@ -23277,13 +23546,13 @@ snd.banished_list = {}
 
 --Check if they're not main target, not already banished, not shielded/domed, and not on CD, then banish them
 
-function banishselect()
-  banishtarget = false
+function snd.banishselect()
+  snd.banishtarget = false
   for i, v in ipairs(snd.targeting.list) do
     if snd.target ~= v and not snd.target_gone and not table.contains(snd.banished_list, v) then
       if table.contains(snd.players_here, v) then
-        banishtarget = v
-        echo("\nNext to banish: "..banishtarget)
+        snd.banishtarget = v
+        echo("\nNext to banish: "..snd.banishtarget)
       end
       break
     end
@@ -23527,7 +23796,7 @@ snd.registerEvent("SunderTargetListen", "gmcp.Comm.Channel.Text", snd.targetList
 						<packageName></packageName>
 						<script>
 function snd.no_target()
-  --deleteLine()
+  --deleteFull()
   --snd.message("Need new targets!")
   if snd.offense_loaded then
     snd.target_gone = true
@@ -23924,7 +24193,7 @@ end</script>
 						<packageName></packageName>
 						<script>function snd.onHit()
   if snd.toggles.atkecho and snd.toggles.gags then
-    deleteLine()
+    deleteFull()
     snd.message(snd.hitting .. " hit: " .. snd.getting_hit .. ".")
   end
   snd.last_affs = {}
@@ -24333,12 +24602,12 @@ function snd.reset_target()
   snd.hexcount = 0
   if snd.geotrace then
     snd.empowerready = true
-	 snd.empowertype = "nil"
+	 --snd.empowertype = "nil"
   else
 	 snd.geotrace = false
 	 snd.geoinvert = false
 	 snd.empowerready = true
-	 snd.empowertype = "nil"
+	 --snd.empowertype = "nil"
   end
   --snd.target_cured("mutagen")
   
@@ -25076,7 +25345,7 @@ function snd.attack(attack, new)
           snd.do_dome()
         elseif snd.class == "Zealot" and snd.blitz then
           snd.send("qeb blitz")
-        elseif snd.balance.barrier and snd.barriering then
+        elseif snd.balance.barrier and snd.barriering and not twinstate then
 			   snd.send("qeb strum lyre")
 			   snd.barriering = false
    		   tempTimer(2,[[snd.barriering = true]])
@@ -25304,8 +25573,8 @@ end</script>
           else
             snd.target_got("magic_weakness")
             snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+            snd.affTimers.start("magic_weakness", 30)
+            snd.affTimers.start("fire_weakness", 30)
          end
        end,
  Avatar = function(target)
@@ -25339,8 +25608,8 @@ end</script>
       else
         snd.target_got("magic_weakness")
         snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.affTimers.start("magic_weakness", 30)
+        snd.affTimers.start("fire_weakness", 30)
       end
       snd.glory = snd.glory - 1
     end,
@@ -25403,8 +25672,8 @@ end</script>
       else
         snd.target_got("magic_weakness")
         snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.affTimers.start("magic_weakness", 30)
+        snd.affTimers.start("fire_weakness", 30)
         snd.glory = snd.glory - 1
       end
     end,    
@@ -26441,8 +26710,8 @@ end</script>
       else
         snd.target_got("magic_weakness")
         snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.affTimers.start("magic_weakness", 30)
+        snd.affTimers.start("fire_weakness", 30)
         snd.glory = snd.glory - 1
       end
     end,
@@ -27122,8 +27391,8 @@ end</script>
           else
             snd.target_got("magic_weakness")
             snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+            snd.affTimers.start("magic_weakness", 30)
+            snd.affTimers.start("fire_weakness", 30)
          end
        end,
  Lash = function(target)
@@ -27901,8 +28170,8 @@ end</script>
           else
             snd.target_got("magic_weakness")
             snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+            snd.affTimers.start("magic_weakness", 30)
+            snd.affTimers.start("fire_weakness", 30)
          end
        end,
  Carbonise = function(target)
@@ -28455,8 +28724,8 @@ end</script>
       else
         snd.target_got("magic_weakness")
         snd.target_got("fire_weakness")
-        tempTimer(30, [[snd.target_cured("magic_weakness")]])
-        tempTimer(30, [[snd.target_cured("fire_weakness")]])
+        snd.affTimers.start("magic_weakness", 30)
+        snd.affTimers.start("fire_weakness", 30)
       end
     end,  
     
@@ -28791,7 +29060,7 @@ end</script>
                 snd.last_limb_dmg = 13.75
                 snd.took_limb_dmg(snd.last_hit_limb, snd.last_limb_dmg)
                 snd.onHit2({"Dodge", "Parry"})
-                snd.affTimers.start("spinal_rip", 10)
+                --snd.affTimers.start("spinal_rip", 10)
                end, 
    Headdrop = function(target)
                 snd.last_hit_limb = "head"
@@ -29330,8 +29599,8 @@ end</script>
             else
               snd.target_got("magic_weakness")
               snd.target_got("fire_weakness")
-              tempTimer(30, [[snd.target_cured("magic_weakness")]])
-              tempTimer(30, [[snd.target_cured("fire_weakness")]])
+               snd.affTimers.start("magic_weakness", 30)
+             snd.affTimers.start("fire_weakness", 30)
               snd.glory = snd.glory - 1
            end
          end,
@@ -29561,8 +29830,8 @@ end</script>
           else
             snd.target_got("magic_weakness")
             snd.target_got("fire_weakness")
-            tempTimer(30, [[snd.target_cured("magic_weakness")]])
-            tempTimer(30, [[snd.target_cured("fire_weakness")]])
+            snd.affTimers.start("magic_weakness", 30)
+            snd.affTimers.start("fire_weakness", 30)
          end
        end,
  Spear = function(target)
@@ -36012,6 +36281,7 @@ snd.vermin = 0</script>
 {area = "Zenith's Vigil", level = "99+", targets = {"Match:a group of %a+ riled-up protesters", "a predatory kashnalda", "a four-winged ayvarin", "a swift vukon", "a riled-up protester"}}, 
 {area = "the Underbelly", level = "99+", targets ={"a pale skrell whelp", "a desiccated Utari zombie", "a massive grey rat", "a dire, plagued rat", "a gigantic white rat", "a crawling, ravenous Aslinn ghast", "an erratic Tarpen cultist", "a mangy Caentoi cultist", "an Utari cultist with grim facial markings", "a glazed-eye zombie Aslinn", "a ravenous skrell", "a venomous skrell whelp", "a feral vakmut", "a malnourished vakmut", "a snarling vakmut hound", "a grey-skinned skrell whelp", "a simple peasant", "a drooling zombie Tarpen", "a massive, tan-shelled whelk", "a gigantic black rat", "a jagged Golban ghast", "a hunched, bone-fisted Golban zombie", "a hulking Ursal ghast", "a slavering vakmut",}},
 {area = "a deep underground cavern", level = "99+", targets = {"a Chaos-warped Chiav guard", "a Chaos-warped gargantuan carrier centipede", "a Chaos-warped egg-laying spider", "a demonic Chaos-warped spider"}},
+--{area = "a deep underground cavern", level = "99+", targets = {"a Chaos-warped Chiav guard"}},
 {area = "the Squal", level ="99+", targets = {"a massive elemental", "a thuggish Keeper brute", "a camouflaged Keeper guerrilla", "a sly Keeper tamer", }},
 {area = "the Karak Forest", level = "95+", targets = {"a speckled ptarmigan", "a regally-mantled red hart", "a black mountain hare", "a svelte red hind"}},
 {area = "the Maul", level = "99", targets = {"a gaunt Aslinn guard", "an Aslinn slave catcher", "a snarling vakmut warhound", "a ravenous vakmut warhound", "a lithe Aslinn houndmaster", "a wary Aslinn slaver", "a wretched Aslinn slaver", "a cruel Aslinn guard", "a menacing Aslinn gladiator", "a scarred Aslinn gladiator"}},
@@ -42107,13 +42377,13 @@ v23911 = "pthcity"
     v56097 = "56092",
     v56098 = "56097",
     v56099 = "56098",
-    v56100 = "56106",
+    v56100 = "56105",
     v56101 = "55711",
     v56102 = "56100",
     v56103 = "56102",
     v56104 = "56103",
     v56105 = "56099",
-    v56106 = "56105",
+    --v56106 = "56105",
     v56107 = "56108",
     v56108 = "56110",
     v56109 = "56186",
@@ -48151,6 +48421,7 @@ snd.global_items = {
 "a stack of 10 anabiotic pills",
 "a stack of 10 euphoriant pills",
 "a stack of 10 depressant pills",
+
 }
 
 snd.global_targets = {
@@ -48979,6 +49250,29 @@ function snd.tidesage_bash()
   else
 		battack = battack.."tide clobber "..snd.bashing.target..snd.sep.."synth recuperate"
 	end
+end
+
+function snd.voidseer_bash()
+  hp = 100*(gmcp.Char.Vitals.hp/gmcp.Char.Vitals.maxhp)
+  bioessence = tonumber(gmcp.Char.Vitals.insight) or 0
+  mp = 100*(gmcp.Char.Vitals.mp/gmcp.Char.Vitals.maxmp)
+  
+    if hp &lt;= 70 and not snd.knit and bioessence &gt; 0 then
+        battack = "VOID ALLEVIATE"
+    elseif hp &lt;= 60 and bioessence &gt; 1 and not snd.balance.ethereal then
+        battack = "VOID disjoint"
+    elseif (hp &lt;= 65 or tonumber(gmcp.Char.Vitals.bleeding) &gt; 700) then
+      if snd.shield_check then
+        battack = "touch shield"
+      else        
+      end
+    else
+      if bioessence &gt; 1 then
+        battack = "foment sadness "..snd.bashing.target..snd.sep.."void aplomb"
+      else
+        battack = "foment sadness " ..snd.bashing.target
+      end
+    end
 end
 
 function snd.wayfarer_bash()
