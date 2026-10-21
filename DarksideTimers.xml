@@ -76,7 +76,7 @@ end</script>
 					<packageName></packageName>
 					<time>00:00:01.500</time>
 				</Timer>
-				<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+				<Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 					<name>recklessblackouttimer</name>
 					<script>if snd.have_aff("blackout") or snd.have_aff("recklessness") then
 	local percentesthealth =  (snd.percentesthealth  / gmcp.Char.Vitals.maxhp)*100
@@ -143,29 +143,37 @@ if snd.toggles.active then
     if snd.have_aff("unconsciousness") then snd.aff_remove("unconsciousness") end
   end
   
-  local have_pipe = gmcp.Char.Vitals.pipe == "1"
-  local have_pill = gmcp.Char.Vitals.herb == "1"
-  local have_poultice = gmcp.Char.Vitals.salve == "1"
-
+	local have_pipe = gmcp.Char.Vitals.pipe == "1"
+	local have_pill = gmcp.Char.Vitals.herb == "1"
+	local have_poultice = gmcp.Char.Vitals.salve == "1"
+	local have_sip = gmcp.Char.Vitals.elixir == "1"
+	
 	if (snd.checksomeSelfAffs({"slickness","slough"},1) and snd.checksomeSelfAffs({"paralysis","paresis"},1) and (have_pipe and have_pill))
 		or ((snd.checksomeSelfAffs({"accursed","hellsight"},2) or snd.checksomeSelfAffs({"weariness","slickness"},2)) and have_pipe and have_pill)
 		or (snd.checksomeSelfAffs({"slickness","anorexia"},2) and (have_pipe and have_poultice))
 		or (snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.checksomeSelfAffs({"slickness","slough","anorexia"},2) and (have_pipe and have_pill and have_poultice))
 		or ((snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.have_aff("anorexia") and (have_pill and have_poultice)))
 		or (snd.checksomeSelfAffs({"lameness","paralysis","anorexia"},3) and (have_pill and have_poultice))
-		or (snd.have_aff("aeon") and have_pipe)
-    or (snd.checksomeSelfAffs({"confusion","paralysis"},2) and have_pill)
-    or (snd.checksomeSelfAffs({"slickness", "anorexia", "impatience"}, 2) and have_pill and (have_pipe or have_poultice)) 
-    or (snd.checksomeSelfAffs({"slickness", "arrhythmia"}, 2) and (have_pipe and have_pill))
-    or (snd.checksomeSelfAffs({"slickness", "destroyed_throat"}, 2) and have_poultice)
-    or (snd.checksomeSelfAffs({"slickness", "anorexia", "paralysis"}, 3) and (have_pipe and have_pill and have_poultice)) then
-		snd.need_fitness = true 
+		or (((snd.have_aff("aeon") and have_pipe) or (snd.have_aff("anorexia") and not snd.have_def("speed") and have_sip)) and snd.checksomeSelfAffs({"clumsiness","lethargy","hypochondria"},1))
+		or (snd.checksomeSelfAffs({"confusion","paralysis"},2) and have_pill)
+		or (snd.checksomeSelfAffs({"slickness", "anorexia", "impatience"}, 2) and have_pill and (have_pipe or have_poultice)) 
+		or (snd.checksomeSelfAffs({"slickness", "arrhythmia"}, 2) and (have_pipe and have_pill))
+		or (snd.checksomeSelfAffs({"slickness", "destroyed_throat"}, 2) and have_poultice)
+		or (snd.checksomeSelfAffs({"slickness", "anorexia", "paralysis"}, 3) and (have_pipe and have_pill and have_poultice)) 
+		or (snd.checksomeSelfAffs({"impatience", "sepsis"}, 2) and (have_pipe and have_pill and have_poultice)) then
+			snd.need_fitness = true 
 	else
 		snd.need_fitness = false
 	end
   
-  if snd.checkAff("asthma") then
-    snd.used.rebounding = false
+  if snd.check_dome() and snd.toggles.dome and table.size(snd.people_hitting_me) &gt; 1 and not snd.toggles.bashing then -- or snd.aff_tally() &gt;= 5 or hp &lt; 50)
+    if snd.aff_tally() &gt;= 5 or hp &lt; 70 then
+      snd.need_dome = true
+    else
+      snd.need_dome = false
+    end
+  else
+    snd.need_dome = false
   end
 
 	if snd.firstaid then
@@ -244,25 +252,6 @@ if snd.toggles.active then
     
 		snd.hiddencheckfunc()
     
-    if snd.checksomeSelfAffs({"sealing_circle", "etched_disgust"}, 1) then
-      snd.aff_have("mercy")
-      snd.aff_have("masochism")
-      snd.aff_have("mania")
-      snd.aff_have("recklessness")
-    end    
-    if snd.checksomeSelfAffs({"sealing_triangle", "etched_joy"}, 1) then 
-      snd.aff_have("laxity")
-      snd.aff_have("infatuation")
-      snd.aff_have("peace")
-      snd.aff_have("magnanimity")
-    end
-    if snd.checksomeSelfAffs({"sealing_square", "etched_fear"}, 1) then
-      snd.aff_have("dizziness")
-      snd.aff_have("faintness")
-      snd.aff_have("epilepsy")
-      snd.aff_have("shyness")    
-    end 
-    
 		snd.firstaidresetlistnone()    
 		snd.firstaidassist()
 		snd.elevatecheck() 
@@ -272,16 +261,13 @@ if snd.toggles.active then
 		elseif not snd.disablefocus and not snd.focusing then
 			send("firstaid use focus on", false)
 		end
-    if ((snd.not_aff("impatience") and snd.checksomeSelfAffs({"blight", "infestation", "dread"}, 3)) or
-       (snd.not_aff("impatience") and snd.checksomeSelfAffs(snd.cures.tree, 2))) and not snd.focusing then
-      send("firstaid use focus on", false)
-      snd.disablefocus = false
-    end
-    if snd.not_aff("gloom") and not snd.focusing and not snd.disablefocus then
-      send("firstaid use focus on")
+    if (snd.not_aff("gloom") or (snd.not_aff("impatience") and snd.checksomeSelfAffs({"blight", "infestation", "dread"}, 3)) or
+       (snd.not_aff("impatience") and snd.checksomeSelfAffs(snd.cures.tree, 2))) and not snd.focusing and not snd.disablefocus then
+        send("firstaid use focus on", false)
+        snd.disablefocus = false
     else
-      if snd.cureset == "runecarver" and snd.have_aff("gloom") then
-        send("firstaid use focus off")
+      if snd.cureset == "sciomancer" and snd.have_aff("gloom") and snd.focusing then
+        snd.disablefocus = true
       end
     end
     if snd.cureset == "shaman" then
