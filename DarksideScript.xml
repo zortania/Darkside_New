@@ -7305,21 +7305,29 @@ function snd.firstaidresetlistnone()
 	if snd.firstaidcuretrack.right_arm_broken ~= "16" and not table.contains(snd.setting_priority, "right_arm_broken 16") and not snd.checksomeSelfAffs({"left_arm_broken", "right_arm_broken"}, 2) then
 		table.insert(snd.setting_priority, "right_arm_broken 16")
 	end 
-  if snd.firstaidcuretrack.prehead ~= "15" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE head 15% 18") then
-    table.insert(snd.setting_priority, "PRESTORE head 15% 18")      
-  end 
-  if snd.firstaidcuretrack.preleftarm ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE left arm 20% 18") then
-    table.insert(snd.setting_priority, "PRESTORE left arm 20% 18")      
+  if not snd.canprerestorenow then
+    local track = snd.firstaidcuretrack
+    local defaults = {
+      {"head",      "prehead",     "head",     15, 18},
+      {"left arm",  "preleftarm",  "leftarm",  20, 18},
+      {"right arm", "prerightarm", "rightarm", 20, 18},
+      {"left leg",  "preleftleg",  "leftleg",  20, 18},
+      {"right leg", "prerightleg", "rightleg", 20, 19},
+    }
+
+    for _, entry in ipairs(defaults) do
+      local limb, thresholdKey, priorityKey, threshold, priority = unpack(entry)
+      if tonumber(track[thresholdKey]) ~= threshold
+          or tonumber(track[priorityKey]) ~= priority then
+        local command = string.format(
+          "PRESTORE %s %d%% %d", limb, threshold, priority
+        )
+        if not table.contains(snd.setting_priority, command) then
+          table.insert(snd.setting_priority, command)
+        end
+      end
+    end
   end
-  if snd.firstaidcuretrack.prerightarm ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE right arm 20% 18") then
-    table.insert(snd.setting_priority, "PRESTORE right arm 20% 18")      
-  end
-  if snd.firstaidcuretrack.preleftleg ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE left leg 20% 18") then
-    table.insert(snd.setting_priority, "PRESTORE left leg 20% 18")     
-  end 
-  if snd.firstaidcuretrack.prerightleg ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE right leg 20% 19") then
-    table.insert(snd.setting_priority, "PRESTORE right leg 20% 19")      
-  end 
   if not snd.canprerestorenow then
     local threshold, priority = 20, 19
 
