@@ -7277,9 +7277,6 @@ function snd.firstaidresetlistnone()
 
   -- Conditional rules retained from the original function.
   -- salves  
-  if snd.firstaidcuretrack.pretorso ~= "1" and not table.contains(snd.setting_priority, "PRESTORE torso 30% 1") and not snd.canprerestorenow and tonumber(snd.my_limb_damage["right leg"]) &gt;= 30 then
-    table.insert(snd.setting_priority, "PRESTORE torso 30% 1")      
-  end
   if snd.checksomeSelfAffs({"left_leg_broken", "right_leg_broken"}, 2) then
     if snd.firstaidcuretrack.left_leg_broken ~= "5" and not table.contains(snd.setting_priority, "left_leg_broken 5") then
       table.insert(snd.setting_priority, "left_leg_broken 5")
@@ -7323,9 +7320,23 @@ function snd.firstaidresetlistnone()
   if snd.firstaidcuretrack.prerightleg ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE right leg 20% 19") then
     table.insert(snd.setting_priority, "PRESTORE right leg 20% 19")      
   end 
-  if snd.firstaidcuretrack.pretorso ~= "20" and not snd.canprerestorenow and not table.contains(snd.setting_priority, "PRESTORE torso 20% 19") then
-    table.insert(snd.setting_priority, "PRESTORE torso 20% 19")      
-  end 
+  if not snd.canprerestorenow then
+    local threshold, priority = 20, 19
+
+    if (tonumber(snd.my_limb_damage["right leg"]) or 0) &gt;= 30 then
+      threshold, priority = 30, 1
+    end
+
+    local command = string.format(
+      "PRESTORE torso %d%% %d", threshold, priority
+    )
+
+    if (tonumber(snd.firstaidcuretrack.pretorso) ~= threshold
+        or tonumber(snd.firstaidcuretrack.torso) ~= priority)
+        and not table.contains(snd.setting_priority, command) then
+      table.insert(snd.setting_priority, command)
+    end
+  end
 
   snd.firstaidchangecure = false
   if #snd.setting_priority &gt; 0 then
