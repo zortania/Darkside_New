@@ -260,15 +260,22 @@ if snd.firstaid then
   snd.firstaidassist()
   snd.elevatecheck()
 
-  local focusAllowed = snd.not_aff("gloom")
-  or (snd.not_aff("impatience")
-  and (snd.checksomeSelfAffs({"blight", "infestation", "dread"}, 3)
-  or snd.checksomeSelfAffs(snd.cures.tree, 2)))
-  if not focusAllowed and snd.cureset == "sciomancer"
-  and snd.have_aff("gloom") and snd.focusing then
-    snd.disablefocus = true
-  end
-  local wantFocus = not snd.disablefocus
+  local suppressFocusForGloom = snd.cureset == "sciomancer"
+    and snd.have_aff("gloom")
+    and not (
+      snd.not_aff("impatience")
+      and (
+        snd.checksomeSelfAffs({"blight", "infestation", "dread"}, 3)
+        or snd.checksomeSelfAffs(snd.cures.tree, 2)
+      )
+    )
+
+  local wantFocus = not snd.disablefocus and not suppressFocusForGloom
+  sendSetting(
+    "focus",
+    "firstaid use focus " .. (wantFocus and "on" or "off"),
+    wantFocus ~= snd.focusing
+  )
   sendSetting("focus", "firstaid use focus " .. (wantFocus and "on" or "off"),
   (wantFocus and not snd.focusing) or (not wantFocus and snd.focusing))
   -- Paralysis must not cause stormtouched to alternate on/off each tick.
