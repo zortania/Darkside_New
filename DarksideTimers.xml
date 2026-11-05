@@ -195,9 +195,19 @@ else
   snd.need_dome = false
 end
 
+local function discardQueuedPrestore(limb)
+  local prefix = "PRESTORE " .. limb .. " "
+  for i = #snd.setting_priority, 1, -1 do
+    if snd.setting_priority[i]:sub(1, #prefix):upper() == prefix:upper() then
+      table.remove(snd.setting_priority, i)
+    end
+  end
+end
+
 if snd.firstaid then
   snd.masterprerestore()
   if have_poultice then
+    discardQueuedPrestore("torso")
     if snd.have_aff("hypothermia")
         and (tonumber(snd.my_limb_damage.torso) or 0) &gt; 1 then
       snd.canprerestorenow = true
@@ -226,6 +236,7 @@ if snd.firstaid then
       snd.canprerestorenow = selected ~= nil
       if selected then
         local limb = selected[1]:gsub("_", " ")
+        discardQueuedPrestore(limb)
         sendSetting("prestore " .. limb,
         "FIRSTAID PRIORITY PRESTORE " .. limb .. " 1% 24",
         tonumber(snd.firstaidcuretrack[selected[2]]) ~= 24
