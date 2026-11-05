@@ -1138,6 +1138,10 @@ snd.stormtouched_coming = false
   snd.firstaidresetlistnone()
   snd.allergycount = 0
   
+  if snd.shaman_defense then
+    snd.shaman_defense.reset()
+  end
+  
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -6399,46 +6403,104 @@ end</script>
     end
 
   elseif snd.cureset == "shaman" then
-    if have("dread")
-        and snd.checksomeSelfAffs(snd.mental_affs, 3)
-        and not have("impatience") then
-      promote("dread")
+      elseif snd.cureset == "shaman" then
+    local omenPending = snd.shaman_defense
+      and snd.shaman_defense.omen_pending()
 
-    elseif have("impatience") or have("shyness") then
-      promoteFirst({
+    local phobias = {
+      "fear",
+      "agoraphobia",
+      "claustrophobia",
+      "nyctophobia",
+      "vertigo",
+      "loneliness",
+      "shyness",
+      "paranoia",
+      "superstition",
+    }
+
+    local phobiaCount = 0
+
+    for _, aff in ipairs(phobias) do
+      if have(aff) then
+        phobiaCount = phobiaCount + 1
+      end
+    end
+
+    local function promoteMentalCover()
+      -- These are preferred candidates, not assumptions
+      -- about which affliction FOCUS will select.
+      local preferred = {
+        "paranoia",
+        "confusion",
         "stupidity",
         "dizziness",
         "epilepsy",
-        "shyness",
-        "impatience",
-      })
-
-    elseif have("paranoia") then
-      promoteFirst({
-        "confusion",
-        "dementia",
         "hallucinations",
-        "paranoia",
-      })
-
-    elseif have("agoraphobia")
-        or have("vertigo")
-        or have("claustrophobia")
-        or have("nyctophobia") then
-      promoteFirst({
-        "recklessness",
-        "masochism",
+        "shyness",
+        "superstition",
         "agoraphobia",
-        "mania",
-        "vertigo",
         "claustrophobia",
         "nyctophobia",
+        "vertigo",
+        "loneliness",
+        "recklessness",
+        "mania",
+        "masochism",
+        "dementia",
+      }
+
+      for _, aff in ipairs(preferred) do
+        if have(aff) then
+          promote(aff)
+          return
+        end
+      end
+
+      for _, aff in ipairs(snd.mental_affs) do
+        if aff ~= "dread" and have(aff) then
+          promote(aff)
+          return
+        end
+      end
+    end
+
+    if have("impatience") then
+      -- Reopen focus before trying to clear dread's cover.
+      promote("impatience")
+
+    elseif have("dread") and phobiaCount &gt;= 4 then
+      -- Reduce the confirmed phobia stack before a fifth sticks.
+      promoteFirst({
+        "paranoia",
+        "shyness",
+        "superstition",
+        "agoraphobia",
+        "claustrophobia",
+        "nyctophobia",
+        "vertigo",
+        "loneliness",
+        "fear",
       })
 
+    elseif omenPending and have("sensitivity") then
+      promote("sensitivity")
+
+    elseif omenPending and have("ringing_ears") then
+      promote("ringing_ears")
+
+    elseif have("dread") then
+      -- Dread itself cannot be focused through other mentals.
+      -- Clear cover; leave FOCUS execution to Firstaid.
+      promoteMentalCover()
+
     else
+      -- Prevent the next Omen setup when the pair is curable.
       promoteFirst({
-        "superstition",
-        "loneliness",
+        "stormtouched",
+        "paranoia",
+        "infestation",
+        "blight",
       })
     end
 
@@ -7268,7 +7330,8 @@ end
 						<script>-- Adding in this script since it really doesn't have to be separate
 function snd.firstaidassist()
 
-	if table.size(snd.people_hitting_me) &lt; 3 and not table.size(snd.people_hitting_me) == 0 then
+	local attackerCount = table.size(snd.people_hitting_me)
+  if attackerCount &gt; 0 and attackerCount &lt; 3 then
     if snd.cureset == "archivist" then
 		  snd.firstaidassArchivist()
     elseif snd.cureset == "ascendril" then
@@ -7447,11 +7510,25 @@ function snd.firstaidassInfiltrator()
     {"deafness", 9},
     {"voyria", 3},
   })
-  if snd.firstaidcuretrack.void ~= "26" and snd.have_aff("anorexia") and not table.contains(snd.setting_priority, "void 26") then
-    table.insert(snd.setting_priority, "void 26")
-  end
-  if snd.firstaidcuretrack.weakvoid ~= "26" and snd.have_aff("anorexia") and not table.contains(snd.setting_priority, "weakvoid 26") then
-    table.insert(snd.setting_priority, "weakvoid 26")
+  local voidPriority = snd.have_aff("anorexia") and 26 or 20
+
+  for _, aff in ipairs({"void", "weakvoid"}) do
+    local wanted = aff .. " " .. voidPriority
+
+    -- Remove queued priorities that no longer match our decision.
+    for i = #snd.setting_priority, 1, -1 do
+      local command = snd.setting_priority[i]
+
+      if command:match("^" .. aff .. " %d+$")
+          and command ~= wanted then
+        table.remove(snd.setting_priority, i)
+      end
+    end
+
+    if tonumber(snd.firstaidcuretrack[aff]) ~= voidPriority
+        and not table.contains(snd.setting_priority, wanted) then
+      table.insert(snd.setting_priority, wanted)
+    end
   end
 
   finishPriorities()
@@ -7642,13 +7719,14 @@ function snd.firstaidassShaman()
     {"infestation", 1},
     {"blight", 1},
     {"sensitivity", 2},
+    {"ringing_ears", 2},
     {"stupidity", 2},
     {"shyness", 2},
     {"agoraphobia", 2},
     {"claustrophobia", 3},
     {"confusion", 3},
     {"hallucinations", 3},
-    {"paranoia", 3},
+    {"paranoia", 2},
     {"recklessness", 4},
     {"loneliness", 4},
     {"vertigo", 4},
@@ -7656,9 +7734,9 @@ function snd.firstaidassShaman()
     {"allergies", 5},
     {"haemophilia", 5},
     {"weariness", 5},
-	{"instawake", 9, "defence instawake"},
-    {"blindness", 12},
-    {"deafness", 12},
+	  {"instawake", 9, "defence instawake"},
+    {"blindness", 16},
+    {"deafness", 20},
   })
   if (snd.class == "Sentinel" or snd.class == "Wayfarer" or snd.class == "Carnifex" or snd.class == "Revenant" or snd.class == "Monk" or snd.class == "Teradrim" or snd.class == "Alchemist" or snd.class == "Infiltrator") then
     queuePriorities({
@@ -7825,24 +7903,31 @@ function snd.firstaidassZealot()
     {"left_arm_mangled", 15},
     {"right_arm_mangled", 15},
   })
-  if snd.firstaidcuretrack.torso ~= "21" and snd.firstaidcuretrack.pretorso ~= "15" and not table.contains(snd.setting_priority, "PRESTORE torso 15% 21") then
-    table.insert(snd.setting_priority, "PRESTORE torso 15% 21")
+    local function setPrestore(
+      limb, priorityKey, thresholdKey, threshold, priority)
+    local command = string.format(
+      "PRESTORE %s %d%% %d",
+      limb,
+      threshold,
+      priority
+    )
+
+    local needsUpdate =
+      tonumber(snd.firstaidcuretrack[priorityKey]) ~= priority
+      or tonumber(snd.firstaidcuretrack[thresholdKey]) ~= threshold
+
+    if needsUpdate
+        and not table.contains(snd.setting_priority, command) then
+      table.insert(snd.setting_priority, command)
+    end
   end
-  if snd.firstaidcuretrack.rightleg ~= "22" and snd.firstaidcuretrack.prerightleg ~= "15" and not table.contains(snd.setting_priority, "PRESTORE right leg 15% 22") then
-    table.insert(snd.setting_priority, "PRESTORE right leg 15% 22")
-  end
-  if snd.firstaidcuretrack.leftleg ~= "22" and snd.firstaidcuretrack.preleftleg ~= "15" and not table.contains(snd.setting_priority, "PRESTORE left leg 15% 22") then
-    table.insert(snd.setting_priority, "PRESTORE left leg 15% 22")
-  end
-  if snd.firstaidcuretrack.leftarm ~= "23" or snd.firstaidcuretrack.preleftarm ~= "15" and not table.contains(snd.setting_priority, "PRESTORE left arm 15% 23") then
-    table.insert(snd.setting_priority, "PRESTORE left arm 15% 23")
-  end
-  if snd.firstaidcuretrack.rightarm ~= "23" and snd.firstaidcuretrack.prerightarm ~= "15" and not table.contains(snd.setting_priority, "PRESTORE right arm 15% 23") then
-    table.insert(snd.setting_priority, "PRESTORE right arm 15% 23")
-  end
-  if snd.firstaidcuretrack.head ~= "24" and snd.firstaidcuretrack.prehead ~= "15" and not table.contains(snd.setting_priority, "PRESTORE head 15% 24") then
-    table.insert(snd.setting_priority, "PRESTORE head 15% 24")
-  end
+
+  setPrestore("torso",     "torso",    "pretorso",    15, 21)
+  setPrestore("right leg", "rightleg", "prerightleg", 15, 22)
+  setPrestore("left leg",  "leftleg",  "preleftleg",  15, 22)
+  setPrestore("left arm",  "leftarm",  "preleftarm",  15, 23)
+  setPrestore("right arm", "rightarm", "prerightarm", 15, 23)
+  setPrestore("head",      "head",     "prehead",     15, 24)
 
   finishPriorities()
 end
@@ -8262,6 +8347,53 @@ function snd.turmoil.resolve(subject, hidden)
   end
 
   send("FIRSTAID PREDICT " .. limb .. " +" .. pending.damage)
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Shaman defensive tracking</name>
+						<packageName></packageName>
+						<script>snd.shaman_defense = snd.shaman_defense or {
+  omens = {},
+}
+
+function snd.shaman_defense.is_self(target)
+  local name = gmcp.Char
+    and gmcp.Char.Status
+    and gmcp.Char.Status.name
+
+  return target
+    and (
+      target:lower() == "you"
+      or (name and target:lower() == name:lower())
+    )
+end
+
+function snd.shaman_defense.omen_cast(caster, ability)
+  local state = snd.shaman_defense
+
+  local cast = {
+    caster = caster,
+    ability = ability,
+    time = getEpoch(),
+  }
+
+  state.omens[caster] = cast
+
+  -- Omen's selected delay is not exposed by this cast line.
+  tempTimer(13, function()
+    if state.omens[caster] == cast then
+      state.omens[caster] = nil
+    end
+  end)
+end
+
+function snd.shaman_defense.omen_pending()
+  return next(snd.shaman_defense.omens) ~= nil
+end
+
+function snd.shaman_defense.reset()
+  snd.shaman_defense.omens = {}
 end</script>
 						<eventHandlerList />
 					</Script>
@@ -14491,7 +14623,7 @@ aff_right_leg_dislocated = {state = "healed", effect = "", cures = {salve = "men
 aff_right_leg_mangled = {state = "healed", effect = "", cures = {salve = "restoration to right leg"}, assess = false, timer = createStopWatch()},
 aff_right_leg_numbed = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_right_leg_ravaged = {state = "healed", effect = "not sure it's actually used since ravage is untargetted now", cures = {}, assess = false, timer = createStopWatch()},
-aff_ringing_ears = {state = "healed", effect = "unable to become deaf until cured", cures = {herb = "lobelia", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_ringing_ears = {state = "healed", effect = "Increases damage taken by 5%; becomes sensitivity after 5 seconds uncured", cures = {herb = "decongestant", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_ripped_groin = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_spleen = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
 aff_ripped_throat = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
@@ -14513,7 +14645,7 @@ aff_selarnia = {state = "healed", effect = "", cures = {salve = "mending to tors
 aff_self_loathing = {state = "healed", effect = "5s bal knock if left on for 12s", cures = {herb = "eucrasia", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_self_pity = {state = "healed", effect = "", cures = {herb = "goldenseal", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_seduction = {state = "healed", effect = "", cures = {}, assess = false, timer = createStopWatch()},
-aff_sensitivity = {state = "healed", effect = "", cures = {herb = "kelp", tree = "send"}, assess = false, timer = createStopWatch()},
+aff_sensitivity = {state = "healed", effect = "Increases damage taken by 25%", cures = {herb = "decongestant", tree = "send"}, assess = false, timer = createStopWatch()},
 aff_stoneheld = {state = "healed", effect = "Can't move", cures = {}, assess = false, timer = createStopWatch()},
 aff_rot_benign = {state = "healed", effect = "shaderot1 - no affs", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
 aff_rot_body = {state = "healed", effect = "shaderot5 - salve recovery doubled", cures = { herb = "panacea"}, assess = false, timer = createStopWatch()},
@@ -22179,6 +22311,7 @@ function snd.starting_attack()
   --snd.class_hitting = "none"
   snd.active_hound = "none"
   snd.implant = "none"
+  snd.person_hitting = "none"
 end
 
 function snd.handle_hounds()

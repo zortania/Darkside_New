@@ -2643,14 +2643,38 @@ snd.cureset = "luminary"</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Kai cripple</name>
 									<script>snd.kaicripple = false
-if not snd.cureset == "monk" then snd.cureset = "monk" end
-if gmcp.Char.Vitals.tree == "1" and not snd.checksomeSelfAffs({"paralysis","paresis"},1) and snd.not_aff("tree_seared") and snd.not_aff("faulted") then send("touch tree") end
+snd.cureset = "monk"
 
-if snd.have_aff("slickness") or snd.have_aff("slough") then
-  snd.send("restore")
+local vitals = gmcp.Char and gmcp.Char.Vitals
+if not vitals then return end
+
+-- Retain the existing tree attempt, but respect arm injuries
+-- and known restrictions.
+local bothArmsInjured =
+  snd.checksomeSelfAffs({
+    "left_arm_crippled",
+    "left_arm_broken",
+    "left_arm_mangled",
+    "left_arm_amputated",
+  }, 1)
+  and snd.checksomeSelfAffs({
+    "right_arm_crippled",
+    "right_arm_broken",
+    "right_arm_mangled",
+    "right_arm_amputated",
+  }, 1)
+
+if vitals.tree == "1"
+    and snd.functional()
+    and not bothArmsInjured
+    and not snd.checksomeSelfAffs({"paralysis", "paresis"}, 1)
+    and snd.not_aff("tree_seared")
+    and snd.not_aff("faulted") then
+  snd.send("touch tree")
 end
 
-</script>
+-- RESTORE remains governed by snd.restore_check()
+-- and snd.do_restoration() through the normal core.</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -2669,25 +2693,19 @@ end
 									</regexCodePropertyList>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-									<name>Blackout kai cripple</name>
-									<script>if snd.have_aff("blackout") then
-	if matches[2] == "left arm" then
-		if snd.not_aff("left_arm_crippled") then
-			snd.have_aff("left_arm_crippled")
-		end
-	elseif matches[2] == "right arm" then
-		if snd.not_aff("right_arm_crippled") then
-			snd.have_aff("right_arm_crippled")
-		end		
-	elseif matches[2] == "right leg" then
-		if snd.not_aff("right_leg_crippled") then
-			snd.have_aff("right_leg_crippled")
-		end			
-	elseif matches[2] == "left leg" then
-		if snd.not_aff("left_leg_crippled") then
-			snd.have_aff("left_leg_crippled")
-		end	
-	end	
+									<name>Confirmed limb cripple</name>
+									<script>local afflictions = {
+  ["left arm"] = "left_arm_crippled",
+  ["right arm"] = "right_arm_crippled",
+  ["left leg"] = "left_leg_crippled",
+  ["right leg"] = "right_leg_crippled",
+}
+
+local limb = matches[2] and matches[2]:lower()
+local aff = afflictions[limb]
+
+if aff and snd.not_aff(aff) then
+  snd.aff_gain(aff)
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -5402,12 +5420,10 @@ end</script>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Priority recovery</name>
 									<script>if not currently_fishing then
-  snd.message("REGAIN: "..snd.theme.darktext..matches[2])
+  snd.message("REGAIN: " .. snd.theme.darktext .. matches[2])
 else
   deleteFull()
-end
-if snd.have_aff("stun") then snd.aff_remove("stun") end
-if snd.have_aff("unconsciousness") then snd.aff_remove("unconsciousness") end</script>
+end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
 									<mStayOpen>0</mStayOpen>
@@ -5774,6 +5790,33 @@ echo("\n"..snd.rimespeared)</script>
 									<colorTriggerBgColor>#000000</colorTriggerBgColor>
 									<regexCodeList>
 										<string>^(\w+) uses Humourism Rimespear on you.$</string>
+									</regexCodeList>
+									<regexCodePropertyList>
+										<integer>1</integer>
+									</regexCodePropertyList>
+								</Trigger>
+								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<name>Enemy Omen or Causality cast</name>
+									<script>if snd.shaman_defense.is_self(matches[4]) then
+  snd.shaman_defense.omen_cast(matches[2], matches[3])
+
+  snd.message(
+    matches[2] .. " cast " .. matches[3]
+      .. " on you: damage may arrive within 6–12 seconds."
+  )
+end</script>
+									<triggerType>0</triggerType>
+									<conditonLineDelta>0</conditonLineDelta>
+									<mStayOpen>0</mStayOpen>
+									<mCommand></mCommand>
+									<packageName></packageName>
+									<mFgColor>#ff0000</mFgColor>
+									<mBgColor>#ffff00</mBgColor>
+									<mSoundFile></mSoundFile>
+									<colorTriggerFgColor>#000000</colorTriggerFgColor>
+									<colorTriggerBgColor>#000000</colorTriggerBgColor>
+									<regexCodeList>
+										<string>^(\w+) uses (Shamanism Omen|Experimentation Causality) on (\w+)\.$</string>
 									</regexCodeList>
 									<regexCodePropertyList>
 										<integer>1</integer>
@@ -6406,10 +6449,8 @@ end</script>
 								</Trigger>
 								<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 									<name>Already equilibrium</name>
-									<script>if snd.have_aff("stun") then snd.aff_remove("stun") end
-if snd.have_aff("unconsciousness") then snd.aff_remove("unconsciousness") end
-if snd.not_aff("blackout") then
-	deleteFull()
+									<script>if snd.not_aff("blackout") then
+  deleteFull()
 end</script>
 									<triggerType>0</triggerType>
 									<conditonLineDelta>0</conditonLineDelta>
@@ -7044,7 +7085,7 @@ cecho("\n&lt;red&gt;OMG BARBED!")</script>
 											<integer>3</integer>
 										</regexCodePropertyList>
 									</Trigger>
-									<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+									<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 										<name>equilibrium secondary</name>
 										<script>if snd.have_aff("stun") then snd.aff_remove("stun") end</script>
 										<triggerType>0</triggerType>
@@ -16280,8 +16321,10 @@ end</script>
 							<string>^Having slain (.+), you retrieve the corpse.$</string>
 							<string>^You have slain (.+).$</string>
 							<string>^Eina has slain (.+).$</string>
+							<string>^Reeloc has slain (.+).$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
@@ -16583,7 +16626,7 @@ end</script>
 							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Redrain</name>
 						<script>if snd.toggles.bashing or snd.toggles.fasthunt then
   snd.resummon = true
@@ -17903,7 +17946,7 @@ end</script>
     end
 
     snd.people_hitting_me[person] = {
-      timer = tempTimer(6, function() snd.people_hitting_me[person] = nil end),
+      timer = tempTimer(15, function() snd.people_hitting_me[person] = nil end),
       class = found_set
     } 
 end</script>
