@@ -21,7 +21,7 @@
 					<command></command>
 					<packageName></packageName>
 					<time>00:00:00.000</time>
-					<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+					<Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 						<name>moveroom</name>
 						<script>snd.move()
 disableTimer("moveroom")</script>
@@ -204,10 +204,40 @@ local function discardQueuedPrestore(limb)
   end
 end
 
+local function handoffPrestore(limb, thresholdKey, priorityKey)
+  local previous = snd.prestoreOverride
+  if previous and previous.limb == limb then
+    return
+  end
+
+  if previous then
+    discardQueuedPrestore(previous.limb)
+    snd.send(string.format(
+      "FIRSTAID PRIORITY PRESTORE %s %d%% %d",
+      previous.limb, previous.threshold, previous.priority
+    ), false)
+    snd.prestoreOverride = nil
+  end
+
+  if limb then
+    local track = snd.firstaidcuretrack
+    local threshold = tonumber(track[thresholdKey])
+    local priority = tonumber(track[priorityKey])
+
+    if threshold and threshold &gt; 1 and priority then
+      snd.prestoreOverride = {
+        limb = limb,
+        threshold = threshold,
+        priority = priority,
+      }
+    end
+  end
+end
+
 if snd.firstaid then
   snd.masterprerestore()
   if have_poultice then
-    discardQueuedPrestore("torso")
+    discardQueuedPrestore("torso")    
     if snd.have_aff("hypothermia")
         and (tonumber(snd.my_limb_damage.torso) or 0) &gt; 1 then
       snd.canprerestorenow = true
