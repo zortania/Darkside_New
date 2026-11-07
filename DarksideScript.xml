@@ -564,7 +564,7 @@ webAnnounce = false,
 lifesense = false,
 camouflage = false,
 mindseye = false,
-reboundingtime = 6,
+reboundingtime = 5.9,
 selfishness = false,
 autoarmor = false,
 
@@ -5392,7 +5392,7 @@ end
 						<packageName></packageName>
 						<script>function snd.might_check()
 if snd.balance.might and not snd.waiting.might then
-    if (snd.checksomeSelfAffs({"paralysis","asthma"},1) and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1)) or snd.aff_tally() &gt; 6 then
+    if (snd.checksomeSelfAffs({"paralysis","asthma"},1) and snd.checksomeSelfAffs({"clumsiness","weariness","hypochondria"},1)) then
       return true
     elseif snd.cureset == "shaman" and snd.checksomeSelfAffs({"fear","agoraphobia","claustrophobia", "vertigo", "loneliness", "shyness", "paranoia", "superstition", "nyctophobia"},3) then
       return true
@@ -5428,19 +5428,23 @@ if snd.balance.might and not snd.waiting.might then
 end
 
 function snd.do_might()
-  
-      if snd.class == "Sentinel" then
-        snd.send("might")
-        echo("(might)")
-      else
-        snd.send("grit")
-        echo("(grit)")        
-      end
-      
-      snd.last_type = "might"
-      snd.last_item = "might"
-      snd.waiting.might = true
-      tempTimer(snd.delay(), [[snd.waiting.might = false]])
+  if (snd.class ~= "Sentinel" and snd.class ~= "Executor")
+      or not snd.might_check() then
+    return
+  end
+
+  if snd.class == "Sentinel" then
+    snd.send("might")
+    echo("(might)")
+  else
+    snd.send("grit")
+    echo("(grit)")
+  end
+
+  snd.last_type = "might"
+  snd.last_item = "might"
+  snd.waiting.might = true
+  tempTimer(snd.delay(), [[snd.waiting.might = false]])
 end</script>
 						<eventHandlerList />
 					</Script>
@@ -6022,25 +6026,11 @@ if snd.regenerate_check() and snd.can_regenerate() and snd.balance.regenerate an
 end 
  
 function snd.regenerate_check()
- 
-if not snd.balance.regenerate then return false end
- 
-   local regenerate_affs = {
-   "left_arm_broken",
-   "left_leg_broken",
-   "right_arm_broken",
-   "right_leg_broken",
-   "torso_broken",
-   "head_broken",
-   }
- 
- for _, v in pairs(regenerate_affs) do
-    if snd.have_aff(v) then
-      return true
-    end
-  end
-  return false
-end  
+  local limb = snd.regenerateLimb
+  return snd.balance.regenerate
+    and limb ~= nil
+    and snd.have_aff(limb .. "_broken")
+end 
  
 function snd.can_regenerate()
  if snd.balance.regenerate then
