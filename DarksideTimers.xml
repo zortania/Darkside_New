@@ -21,7 +21,7 @@
 					<command></command>
 					<packageName></packageName>
 					<time>00:00:00.000</time>
-					<Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+					<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 						<name>moveroom</name>
 						<script>snd.move()
 disableTimer("moveroom")</script>
@@ -212,10 +212,14 @@ local function handoffPrestore(limb, thresholdKey, priorityKey)
 
   if previous then
     discardQueuedPrestore(previous.limb)
-    snd.send(string.format(
-      "FIRSTAID PRIORITY PRESTORE %s %d%% %d",
-      previous.limb, previous.threshold, previous.priority
-    ), false)
+    sendSetting(
+      "prestore " .. previous.limb,
+      string.format(
+        "FIRSTAID PRIORITY PRESTORE %s %d%% %d",
+        previous.limb, previous.threshold, previous.priority
+      ),
+      true
+    )
     snd.prestoreOverride = nil
   end
 
@@ -467,9 +471,21 @@ if table.size(snd.people_hitting_me) == 0 and not snd.toggles.attacking then snd
       reset_cures = true
       local x = #snd.setting_priority
       while x &gt; 0 and snd.firstaid_go do
-        snd.firstaid_go = false
-        snd.send("firstaid priority "..snd.setting_priority[x], false)
-        table.remove(snd.setting_priority, x)
+        local setting = table.remove(snd.setting_priority, x)
+        local normalized = setting:lower()
+        local limb = normalized:match("^prestore (.-) %d+%% %d+$")
+        local pending = limb and snd.statusTimerPending
+          and snd.statusTimerPending["prestore " .. limb]
+
+        local duplicate = pending
+          and pending.command:lower() == "firstaid priority " .. normalized
+          and getEpoch() - pending.time &lt; 1
+
+        if not duplicate then
+          snd.firstaid_go = false
+          snd.send("firstaid priority " .. setting, false)
+        end
+
         x = x - 1
       end
       tempTimer(.1, [[snd.firstaid_go = true]])
