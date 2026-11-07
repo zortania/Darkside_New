@@ -237,10 +237,11 @@ end
 if snd.firstaid then
   snd.masterprerestore()
   if have_poultice then
-    discardQueuedPrestore("torso")    
     if snd.have_aff("hypothermia")
         and (tonumber(snd.my_limb_damage.torso) or 0) &gt; 1 then
       snd.canprerestorenow = true
+      handoffPrestore("torso", "pretorso", "torso")
+      discardQueuedPrestore("torso")
       sendSetting(
         "prestore torso",
         "FIRSTAID PRIORITY PRESTORE torso 1% 11",
@@ -266,11 +267,14 @@ if snd.firstaid then
       snd.canprerestorenow = selected ~= nil
       if selected then
         local limb = selected[1]:gsub("_", " ")
+        handoffPrestore(limb, selected[3], selected[2])
         discardQueuedPrestore(limb)
         sendSetting("prestore " .. limb,
         "FIRSTAID PRIORITY PRESTORE " .. limb .. " 1% 24",
         tonumber(snd.firstaidcuretrack[selected[2]]) ~= 24
         or tonumber(snd.firstaidcuretrack[selected[3]]) ~= 1)
+      else
+        handoffPrestore(nil)
       end
     end
     snd.firstaidchangecure = false -- retain the original queue-cycle behavior
