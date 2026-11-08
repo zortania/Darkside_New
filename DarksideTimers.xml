@@ -478,6 +478,10 @@ if table.size(snd.people_hitting_me) == 0 and not snd.toggles.attacking then snd
         local setting = table.remove(snd.setting_priority, x)
         local normalized = setting:lower()
         local limb = normalized:match("^prestore (.-) %d+%% %d+$")
+        local affliction, priority = normalized:match("^([%w_]+) (%d+)$")
+        local alreadyConfirmed = affliction
+          and snd.firstaidcuretrack
+          and tonumber(snd.firstaidcuretrack[affliction]) == tonumber(priority)
         local pending = limb and snd.statusTimerPending
           and snd.statusTimerPending["prestore " .. limb]
 
@@ -485,7 +489,7 @@ if table.size(snd.people_hitting_me) == 0 and not snd.toggles.attacking then snd
           and pending.command:lower() == "firstaid priority " .. normalized
           and getEpoch() - pending.time &lt; 1
 
-        if not duplicate then
+        if not duplicate and not alreadyConfirmed then
           snd.firstaid_go = false
 
           local command = "firstaid priority " .. setting
