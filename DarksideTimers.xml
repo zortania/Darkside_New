@@ -471,47 +471,61 @@ if table.size(snd.people_hitting_me) == 0 and not snd.toggles.attacking then snd
 				</Timer>
 				<Timer isActive="no" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 					<name>reset check</name>
-					<script>    if #snd.setting_priority &gt; 0 then
-      reset_cures = true
-      local x = #snd.setting_priority
-      while x &gt; 0 and snd.firstaid_go do
-        local setting = table.remove(snd.setting_priority, x)
-        local normalized = setting:lower()
-        local limb = normalized:match("^prestore (.-) %d+%% %d+$")
-        local affliction, priority = normalized:match("^([%w_]+) (%d+)$")
-        local alreadyConfirmed = affliction
-          and snd.firstaidcuretrack
-          and tonumber(snd.firstaidcuretrack[affliction]) == tonumber(priority)
-        local pending = limb and snd.statusTimerPending
-          and snd.statusTimerPending["prestore " .. limb]
+					<script>if #snd.setting_priority &gt; 0 then
+  reset_cures = true
+  local x = #snd.setting_priority
 
-        local duplicate = pending
-          and pending.command:lower() == "firstaid priority " .. normalized
-          and getEpoch() - pending.time &lt; 1
+  while x &gt; 0 and snd.firstaid_go do
+    local setting = table.remove(snd.setting_priority, x)
+    local normalized = setting:lower()
+    local limb = normalized:match("^prestore (.-) %d+%% %d+$")
+    local affliction, priority = normalized:match("^([%w_]+) (%d+)$")
+    local defence, defencePriority =
+      normalized:match("^defence ([%w_]+) (%d+)$")
 
-        if not duplicate and not alreadyConfirmed then
-          snd.firstaid_go = false
+    local trackKey = affliction or defence
+    local desiredPriority = tonumber(priority or defencePriority)
+    local alreadyConfirmed = trackKey
+      and snd.firstaidcuretrack
+      and tonumber(snd.firstaidcuretrack[trackKey]) == desiredPriority
 
-          local command = "firstaid priority " .. setting
-          if limb then
-            snd.statusTimerPending = snd.statusTimerPending or {}
-            snd.statusTimerPending["prestore " .. limb] = {
-              command = command,
-              time = getEpoch(),
-            }
-          end
+    local pendingKey
+    if limb then
+      pendingKey = "prestore " .. limb
+    elseif affliction then
+      pendingKey = "affliction " .. affliction
+    elseif defence then
+      pendingKey = "defence " .. defence
+    end
 
-          snd.send(command)
-        end
+    local command = "firstaid priority " .. setting
+    local now = getEpoch()
+    snd.statusTimerPending = snd.statusTimerPending or {}
+    local pending = pendingKey and snd.statusTimerPending[pendingKey]
+    local inFlight = pending and now - pending.time &lt; 1
+    local sameCommand = inFlight
+      and pending.command:lower() == command:lower()
 
-        x = x - 1
-      end
-      tempTimer(.1, [[snd.firstaid_go = true]])
-    else
-      reset_cures = false
+    if not sameCommand and (not alreadyConfirmed or inFlight) then
       snd.firstaid_go = false
-      disableTimer("reset check")
-    end</script>
+      if pendingKey then
+        snd.statusTimerPending[pendingKey] = {
+          command = command,
+          time = now,
+        }
+      end
+      snd.send(command)
+    end
+
+    x = x - 1
+  end
+
+  tempTimer(.1, [[snd.firstaid_go = true]])
+else
+  reset_cures = false
+  snd.firstaid_go = false
+  disableTimer("reset check")
+end</script>
 					<command></command>
 					<packageName></packageName>
 					<time>00:00:00.150</time>
