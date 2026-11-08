@@ -5429,22 +5429,25 @@ end
 
 function snd.do_might()
   if (snd.class ~= "Sentinel" and snd.class ~= "Executor")
-      or not snd.might_check() then
+      or not snd.might_check()
+      or not snd.full_balance() then
     return
   end
 
-  if snd.class == "Sentinel" then
-    snd.send("might")
-    echo("(might)")
-  else
-    snd.send("grit")
-    echo("(grit)")
-  end
+  local command = snd.class == "Sentinel" and "might" or "grit"
 
   snd.last_type = "might"
   snd.last_item = "might"
   snd.waiting.might = true
-  tempTimer(snd.delay(), [[snd.waiting.might = false]])
+  snd.waiting.balance = true
+
+  snd.send(command)
+  echo("(" .. command .. ")")
+
+  tempTimer(snd.delay(), function()
+    snd.waiting.might = false
+    snd.waiting.balance = false
+  end)
 end</script>
 						<eventHandlerList />
 					</Script>
