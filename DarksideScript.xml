@@ -13314,7 +13314,24 @@ end</script>
 				<Script isActive="yes" isFolder="no">
 					<name>parrying</name>
 					<packageName></packageName>
-					<script>function snd.parry()
+					<script>function snd.clear_heelrush_parry()
+    if snd.heelrush_parry_timer then
+        killTimer(snd.heelrush_parry_timer)
+        snd.heelrush_parry_timer = nil
+    end
+    snd.heelrush = "none"
+end
+
+function snd.track_heelrush_parry(limb, timeout)
+    snd.clear_heelrush_parry()
+    snd.heelrush = limb
+    snd.heelrush_parry_timer = tempTimer(timeout, function()
+        snd.heelrush_parry_timer = nil
+        snd.heelrush = "none"
+    end)
+end
+
+function snd.parry()
 	local me_noparryaffs = {
 		"distortion",
 		"frozen",
@@ -13469,8 +13486,14 @@ end</script>
 		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 10 and snd.restorationlimbfail ~= "left leg" and gmcp.Char.Vitals.prone == "1" then
 			snd.toparry = "left leg"
 		elseif snd.have_aff("right_leg_broken") and snd.have_aff("left_leg_broken") then
-			rparry = {"left leg", "right leg"}
-			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
+      if snd.restorationlimbfail == "right leg" then
+        snd.toparry = "left leg"
+      elseif snd.restorationlimbfail == "left leg" then
+        snd.toparry = "right leg"
+      else
+        rparry = {"left leg", "right leg"}
+        snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
+      end
 		elseif snd.have_aff("left_leg_broken") and not snd.have_aff("right_leg_broken") and snd.restorationlimbfail == "left leg" then
 			snd.toparry = "right leg"
 		elseif snd.have_aff("right_leg_broken") and not snd.have_aff("left_leg_broken") and snd.restorationlimbfail == "right leg" then
@@ -13512,10 +13535,10 @@ end</script>
 		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 18 then
 			snd.toparry = "right leg"
 		else
-			rparry = {"right arm", "right leg", "left leg"}
-			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
+      rparry = {"torso", "right leg", "left leg"}
+      snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
 		end
-    elseif snd.cureset == "sciomancer" then
+  elseif snd.cureset == "sciomancer" then
 		if snd.my_limb_damage["head"]&gt;45 then
 			snd.toparry = "head"
 		elseif not snd.have_aff("right_leg_mangled") and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"]&gt;snd.my_limb_damage["left leg"] then
@@ -13542,7 +13565,7 @@ end</script>
 			rparry = {"left leg", "left arm","right arm","torso"}
 			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
 		end
-    elseif snd.cureset == "sentinel" then
+  elseif snd.cureset == "sentinel" then
 		if not snd.checksomeSelfAffs({"slickness","paresis","arrhythmia","destroyed_throat","anorexia","asthma"},3) then
 			snd.toparry = "torso"
 		elseif snd.have_aff("impatience") then
@@ -13566,8 +13589,8 @@ end</script>
 		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 15 then
 			snd.toparry = "left leg"
 		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 15 then
-			snd.toparry = "left leg"
-		elseif snd.have_aff("right_arm_crippled") and not snd.have_aff("right_arm_broken") then
+      snd.toparry = "right leg"
+    elseif snd.have_aff("right_arm_crippled") and not snd.have_aff("right_arm_broken") then
 			snd.toparry = "right arm"
 		elseif snd.have_aff("left_arm_crippled") and not snd.have_aff("left_arm_broken") then
 			snd.toparry = "left arm"
@@ -13619,27 +13642,20 @@ end</script>
 			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
 		end
 	elseif snd.cureset == "templar" then
-		local bruised = 0
-		if snd.checksomeSelfAffs({"left_leg_bruised_moderate","left_leg_bruised_moderate","right_leg_bruised_moderate","right_leg_bruised_critical", "right_arm_bruised_moderate", "right_arm_bruised_critical", "left_arm_bruised_moderate", "left_arm_bruised_critical", "torso_bruised_moderate", "torso_bruised_critical", "head_bruised_moderate", "torso_bruised_critical"},1) then
-			bruised = 1
-		else
-			bruised = 0
-		end
-    
-		if bruised &gt;= 1 then
-			if snd.have_aff("head_bruised_critical") or snd.have_aff("head_bruised_moderate") then
-				snd.toparry = "head"
-			elseif snd.have_aff("left_leg_critical") or snd.have_aff("left_leg_bruised_moderate") then
-				snd.toparry = "left leg"
-			elseif snd.have_aff("right_leg_critical") or snd.have_aff("right_leg_bruised_moderate") then
-				snd.toparry = "right leg"
-			elseif snd.have_aff("left_arm__critical") or snd.have_aff("left_arm_bruised_moderate") then
-				snd.toparry = "left arm"
-			elseif snd.have_aff("right_arm_critical") or snd.have_aff("right_arm_bruised_moderate") then
-				snd.toparry = "right arm"
-			elseif snd.have_aff("torso_critical") or snd.have_aff("torso_bruised_moderate") then
-				snd.toparry = "torso"
-			end
+		local limbs = {"head", "left leg", "right leg", "left arm", "right arm", "torso"}
+    local bruised_limb
+
+    for _, limb in ipairs(limbs) do
+        local aff_prefix = limb:gsub(" ", "_") .. "_bruised"
+        if snd.have_aff(aff_prefix .. "_moderate")
+            or snd.have_aff(aff_prefix .. "_critical") then
+            bruised_limb = limb
+            break
+        end
+    end
+
+    if bruised_limb then
+        snd.toparry = bruised_limb
 		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 10 and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"]&gt;snd.my_limb_damage["left leg"] then
 			snd.toparry = "right leg"
 		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 10 and gmcp.Char.Vitals.prone == "1" then
@@ -13761,11 +13777,11 @@ end</script>
 			snd.toparry = rparry[snd.random.num(1, #rparry, "parry", true)]
 		end
 	elseif snd.cureset == "zealot" then
-		if snd.heelrush ~= snd.toparry then
-			snd.toparry = snd.heelrush
-		elseif snd.my_limb_damage["torso"] &gt; 12 and snd.restorationlimbfail ~= "torso" then
-			snd.toparry = "torso"
-		elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 15 and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
+    if snd.my_limb_damage[snd.heelrush] ~= nil then
+        snd.toparry = snd.heelrush
+    elseif snd.my_limb_damage["torso"] &gt; 12 and snd.restorationlimbfail ~= "torso" then
+        snd.toparry = "torso"
+    elseif not snd.have_aff("right_leg_mangled") and snd.my_limb_damage["right leg"] &gt; 15 and gmcp.Char.Vitals.prone == "1" and snd.my_limb_damage["right leg"] &gt; snd.my_limb_damage["left leg"] then
 			snd.toparry = "right leg"
 		elseif not snd.have_aff("left_leg_mangled") and snd.my_limb_damage["left leg"] &gt; 15 and gmcp.Char.Vitals.prone == "1" then
 			snd.toparry = "left leg"
