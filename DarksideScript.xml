@@ -836,11 +836,10 @@ function snd.can_focus()
 end
 
 function snd.can_fitness()
-  if
-      snd.not_aff("destroyed_throat") and
-      hasSkill("Fitness") and
-      snd.balance.fitness
-  then
+  if snd.not_aff("destroyed_throat")
+      and snd.not_aff("writhe_grappled")
+      and hasSkill("Fitness")
+      and snd.balance.fitness then
     return true
   else
     return false
@@ -5018,7 +5017,10 @@ end
 						<script>
 function snd.do_fitness()
   local fitnessstring = ""
-  if snd.can_fitness() and snd.need_fitness and snd.full_balance() then
+  if snd.can_fitness()
+      and snd.need_fitness
+      and snd.have_aff("asthma")
+      and snd.full_balance() then
     local canSmokeSlickness =
       gmcp.Char.Vitals.pipe == "1" and snd.have_aff("slickness")
 
@@ -5054,10 +5056,10 @@ function snd.do_fitness()
     if gmcp.Char.Vitals.focus == "1" and snd.can_focus() and snd.aff_count_focus() &gt; 0 then
       fitnessstring = fitnessstring.."focus"..snd.sep
     end
-    snd.send("fitness"..snd.sep..fitnessstring)
     snd.last_type = "fitness"
     snd.last_item = "fitness"
     snd.waiting.balance = true
+    snd.send("fitness" .. snd.sep .. fitnessstring)
     tempTimer(snd.delay(), [[snd.waiting.balance = false]])
   end
 end</script>
@@ -22184,6 +22186,28 @@ function snd.attack_function()
 end
 
 function snd.attack(attack, new)
+  local fullLock = snd.have_aff("asthma")
+    and not snd.can_eat()
+    and not snd.can_apply()
+
+  if fullLock then
+    local grappled = snd.have_aff("writhe_grappled")
+
+    if grappled or snd.can_fitness() then
+      if not snd.holdingAttackForFitness then
+        snd.holdingAttackForFitness = true
+        snd.send("qeb")
+      end
+
+      if not grappled then
+        snd.do_fitness()
+      end
+
+      return
+    end
+  end
+
+  snd.holdingAttackForFitness = nil
   
     local str = ""
     local fitnessstring = ""
